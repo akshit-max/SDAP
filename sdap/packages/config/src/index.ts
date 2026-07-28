@@ -10,3 +10,8 @@ export const AUTH_CONFIG = {
   clockTolerance: 5,
   gracePeriodSeconds: 0,
 } as const;
+
+export const ORG_CONFIG = {
+  INVITATION_TTL: "7d", // Invitations expire in 7 days
+  MAX_ORGS_PER_USER: 10,
+} as const;
