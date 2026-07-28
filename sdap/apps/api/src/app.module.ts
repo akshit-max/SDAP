@@ -10,27 +10,31 @@ import { APP_GUARD } from '@nestjs/core';
 import { OrganizationsModule } from './organizations/organizations.module';
 
 import { ConfigModule } from '@nestjs/config';
+import { AuthorizationModule } from './authorization/authorization.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 10,
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 10,
+      },
+    ]),
     EventEmitterModule.forRoot(),
-    UsersModule, 
-    AuthModule, 
-    PrismaModule, 
-    OrganizationsModule
+    UsersModule,
+    AuthModule,
+    PrismaModule,
+    OrganizationsModule,
+    AuthorizationModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard
-    }
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}
