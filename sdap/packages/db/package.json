@@ -17,6 +17,10 @@
     "@repo/eslint-config": "*",
     "@repo/typescript-config": "*",
     "prisma": "^6.2.1",
+    "ts-node": "^10.9.2",
     "typescript": "5.9.2"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   }
 }
