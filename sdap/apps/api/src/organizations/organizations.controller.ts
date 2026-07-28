@@ -47,4 +47,23 @@ export class OrganizationsController {
     const org = await this.organizationsService.update(req.user.id, id, dto);
     return { success: true, data: org };
   }
+
+  @Post(':id/invites')
+  async invite(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body('email') email: string
+  ) {
+    const result = await this.organizationsService.invite(req.user.id, id, email);
+    return { success: true, data: result };
+  }
+
+  @Post('invites/:token/accept')
+  async acceptInvite(
+    @Request() req: any,
+    @Param('token') token: string
+  ) {
+    const result = await this.organizationsService.acceptInvite(req.user.id, token);
+    return result;
+  }
 }

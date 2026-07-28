@@ -89,4 +89,97 @@ export class OrganizationsService {
       },
     });
   }
+
+  async invite(userId: string, orgId: string, email: string) {
+    await this.accessService.requireOwner(userId, orgId);
+    
+    const crypto = await import('crypto');
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days (INVITATION_TTL)
+
+    await this.prisma.organizationInvitation.upsert({
+      where: {
+        organizationId_email: {
+          organizationId: orgId,
+          email,
+        }
+      },
+      update: {
+        tokenHash,
+        expiresAt,
+        status: 'PENDING',
+        invitedBy: userId,
+        updatedBy: userId,
+      },
+      create: {
+        organizationId: orgId,
+        email,
+        tokenHash,
+        expiresAt,
+        invitedBy: userId,
+        createdBy: userId,
+        updatedBy: userId,
+      }
+    });
+
+    const { MemberInvitedEvent } = await import('./organizations.events');
+    this.eventEmitter.emit('member.invited', new MemberInvitedEvent(orgId, email, userId));
+
+    return { rawToken };
+  }
+
+  async acceptInvite(userId: string, rawToken: string) {
+    const crypto = await import('crypto');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    const invitation = await this.prisma.organizationInvitation.findUnique({
+      where: { tokenHash }
+    });
+
+    if (!invitation) {
+      throw new ConflictException('Invalid invitation token');
+    }
+
+    if (invitation.status !== 'PENDING') {
+      throw new ConflictException(`Invitation is ${invitation.status}`);
+    }
+
+    if (new Date() > invitation.expiresAt) {
+      // Background job would eventually clean this up, but we enforce on read
+      await this.prisma.organizationInvitation.update({
+        where: { id: invitation.id },
+        data: { status: 'EXPIRED' }
+      });
+      throw new ConflictException('Invitation expired');
+    }
+
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    if (user.email !== invitation.email) {
+      throw new ConflictException('This invitation was sent to a different email address');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.organizationInvitation.update({
+        where: { id: invitation.id },
+        data: { status: 'ACCEPTED', updatedBy: userId }
+      });
+
+      await tx.organizationMember.create({
+        data: {
+          organizationId: invitation.organizationId,
+          userId: userId,
+          role: 'OWNER', // temporary until RBAC
+          invitedBy: invitation.invitedBy,
+          createdBy: userId,
+          updatedBy: userId,
+        }
+      });
+    });
+
+    const { InvitationAcceptedEvent } = await import('./organizations.events');
+    this.eventEmitter.emit('invitation.accepted', new InvitationAcceptedEvent(invitation.organizationId, userId));
+
+    return { success: true };
+  }
 }
