@@ -3,23 +3,26 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrganizationDto, UpdateOrganizationDto } from '@repo/types';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OrganizationCreatedEvent } from './organizations.events';
-import { OrganizationAccessService } from './organization-access.service';
 
 @Injectable()
 export class OrganizationsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly accessService: OrganizationAccessService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
   private async generateUniqueSlug(baseName: string): Promise<string> {
-    const baseSlug = baseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const baseSlug = baseName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
     let slug = baseSlug;
     let counter = 1;
 
     while (true) {
-      const exists = await this.prisma.organization.findUnique({ where: { slug } });
+      const exists = await this.prisma.organization.findUnique({
+        where: { slug },
+      });
       if (!exists) {
         return slug;
       }
@@ -32,7 +35,6 @@ export class OrganizationsService {
     const slug = await this.generateUniqueSlug(dto.name);
 
     const organization = await this.prisma.$transaction(async (tx) => {
-      // Create the organization
       const org = await tx.organization.create({
         data: {
           name: dto.name,
@@ -42,7 +44,6 @@ export class OrganizationsService {
         },
       });
 
-      // Add the creator as the initial OWNER
       await tx.organizationMember.create({
         data: {
           organizationId: org.id,
@@ -56,7 +57,10 @@ export class OrganizationsService {
       return org;
     });
 
-    this.eventEmitter.emit('organization.created', new OrganizationCreatedEvent(organization.id, organization.name, userId));
+    this.eventEmitter.emit(
+      'organization.created',
+      new OrganizationCreatedEvent(organization.id, organization.name, userId),
+    );
 
     return organization;
   }
@@ -74,13 +78,12 @@ export class OrganizationsService {
   }
 
   async findOne(userId: string, orgId: string) {
-    await this.accessService.requireMembership(userId, orgId);
+    // Controller/Guard now handles permission check
     return this.prisma.organization.findUniqueOrThrow({ where: { id: orgId } });
   }
 
   async update(userId: string, orgId: string, dto: UpdateOrganizationDto) {
-    await this.accessService.requireOwner(userId, orgId);
-    
+    // Controller/Guard now handles permission check
     return this.prisma.organization.update({
       where: { id: orgId },
       data: {
@@ -91,19 +94,21 @@ export class OrganizationsService {
   }
 
   async invite(userId: string, orgId: string, email: string) {
-    await this.accessService.requireOwner(userId, orgId);
-    
+    // Controller/Guard now handles permission check
     const crypto = await import('crypto');
     const rawToken = crypto.randomBytes(32).toString('hex');
-    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days (INVITATION_TTL)
+    const tokenHash = crypto
+      .createHash('sha256')
+      .update(rawToken)
+      .digest('hex');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
     await this.prisma.organizationInvitation.upsert({
       where: {
         organizationId_email: {
           organizationId: orgId,
           email,
-        }
+        },
       },
       update: {
         tokenHash,
@@ -120,21 +125,27 @@ export class OrganizationsService {
         invitedBy: userId,
         createdBy: userId,
         updatedBy: userId,
-      }
+      },
     });
 
     const { MemberInvitedEvent } = await import('./organizations.events');
-    this.eventEmitter.emit('member.invited', new MemberInvitedEvent(orgId, email, userId));
+    this.eventEmitter.emit(
+      'member.invited',
+      new MemberInvitedEvent(orgId, email, userId),
+    );
 
     return { rawToken };
   }
 
   async acceptInvite(userId: string, rawToken: string) {
     const crypto = await import('crypto');
-    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const tokenHash = crypto
+      .createHash('sha256')
+      .update(rawToken)
+      .digest('hex');
 
     const invitation = await this.prisma.organizationInvitation.findUnique({
-      where: { tokenHash }
+      where: { tokenHash },
     });
 
     if (!invitation) {
@@ -146,39 +157,45 @@ export class OrganizationsService {
     }
 
     if (new Date() > invitation.expiresAt) {
-      // Background job would eventually clean this up, but we enforce on read
       await this.prisma.organizationInvitation.update({
         where: { id: invitation.id },
-        data: { status: 'EXPIRED' }
+        data: { status: 'EXPIRED' },
       });
       throw new ConflictException('Invitation expired');
     }
 
-    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+    });
     if (user.email !== invitation.email) {
-      throw new ConflictException('This invitation was sent to a different email address');
+      throw new ConflictException(
+        'This invitation was sent to a different email address',
+      );
     }
 
     await this.prisma.$transaction(async (tx) => {
       await tx.organizationInvitation.update({
         where: { id: invitation.id },
-        data: { status: 'ACCEPTED', updatedBy: userId }
+        data: { status: 'ACCEPTED', updatedBy: userId },
       });
 
       await tx.organizationMember.create({
         data: {
           organizationId: invitation.organizationId,
           userId: userId,
-          role: 'OWNER', // temporary until RBAC
+          role: 'MEMBER', // In seed.ts we used MEMBER, not OWNER for members.
           invitedBy: invitation.invitedBy,
           createdBy: userId,
           updatedBy: userId,
-        }
+        },
       });
     });
 
     const { InvitationAcceptedEvent } = await import('./organizations.events');
-    this.eventEmitter.emit('invitation.accepted', new InvitationAcceptedEvent(invitation.organizationId, userId));
+    this.eventEmitter.emit(
+      'invitation.accepted',
+      new InvitationAcceptedEvent(invitation.organizationId, userId),
+    );
 
     return { success: true };
   }
