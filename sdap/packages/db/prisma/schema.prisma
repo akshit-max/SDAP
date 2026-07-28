@@ -20,6 +20,32 @@ enum MembershipRole {
   MEMBER
 }
 
+enum SecretType {
+  PASSWORD
+  API_KEY
+  TOKEN
+  SSH_KEY
+  CERTIFICATE
+  OAUTH
+  COOKIE
+  TEXT
+  JSON
+  OTHER
+}
+
+enum SecretStatus {
+  ACTIVE
+  DISABLED
+  PENDING_ROTATION
+  DELETED
+}
+
+enum KeyStatus {
+  ACTIVE
+  ROTATED
+  REVOKED
+}
+
 model User {
   id                     String    @id @default(uuid())
   email                  String    @unique
@@ -81,6 +107,7 @@ model Organization {
 
   members     OrganizationMember[]
   invitations OrganizationInvitation[]
+  vaults      Vault[]
 }
 
 model OrganizationMember {
@@ -125,4 +152,91 @@ model OrganizationInvitation {
 
   @@unique([organizationId, email])
   @@index([tokenHash])
+}
+
+model KeyMetadata {
+  id        String    @id @default(uuid())
+  version   Int       @unique
+  algorithm String    @default("AES-256-GCM")
+  status    KeyStatus @default(ACTIVE)
+  createdAt DateTime  @default(now())
+  rotatedAt DateTime?
+
+  secrets        Secret[]
+  secretVersions SecretVersion[]
+}
+
+model Vault {
+  id             String    @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  defaultTTL     Int? // Future: Default session TTL in seconds
+  rotationPolicy Json? // Future: Auto-rotation configuration
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  createdBy String?
+  updatedBy String?
+  deletedBy String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  secrets      Secret[]
+
+  @@index([organizationId])
+}
+
+model Secret {
+  id            String       @id @default(uuid())
+  vaultId       String
+  name          String
+  description   String?
+  type          SecretType   @default(OTHER)
+  status        SecretStatus @default(ACTIVE)
+  encryptedDek  String // DEK encrypted by MEK
+  keyMetadataId String // References KeyMetadata.id
+
+  lastRevealedAt DateTime?
+  revealCount    Int       @default(0)
+  lastRotatedAt  DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  createdBy String?
+  updatedBy String?
+  deletedBy String?
+
+  vault       Vault           @relation(fields: [vaultId], references: [id], onDelete: Cascade)
+  keyMetadata KeyMetadata     @relation(fields: [keyMetadataId], references: [id])
+  versions    SecretVersion[]
+
+  @@unique([vaultId, name])
+  @@index([vaultId])
+}
+
+model SecretVersion {
+  id            String  @id @default(uuid())
+  secretId      String
+  version       Int
+  ciphertext    String
+  iv            String
+  authTag       String
+  fingerprint   String // SHA-256 of plaintext
+  algorithm     String  @default("AES-256-GCM")
+  keyMetadataId String
+  aadHash       String?
+
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  createdBy String?
+
+  secret      Secret      @relation(fields: [secretId], references: [id], onDelete: Cascade)
+  keyMetadata KeyMetadata @relation(fields: [keyMetadataId], references: [id])
+
+  @@unique([secretId, version])
+  @@index([secretId])
 }
