@@ -3,8 +3,19 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+
+enum MembershipRole {
+  OWNER
 }
 
 model User {
@@ -18,7 +29,12 @@ model User {
   updatedAt             DateTime  @updatedAt
   deletedAt             DateTime?
 
-  refreshTokens RefreshToken[]
+  createdBy             String?
+  updatedBy             String?
+  deletedBy             String?
+
+  refreshTokens         RefreshToken[]
+  organizationMemberships OrganizationMember[]
 }
 
 model RefreshToken {
@@ -36,7 +52,73 @@ model RefreshToken {
   ipAddress        String?
   userAgent        String?
   createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  createdBy        String?
+  updatedBy        String?
+  deletedBy        String?
 
   @@index([userId])
   @@index([familyId])
+}
+
+model Organization {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  settings    Json?    
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  createdBy   String?
+  updatedBy   String?
+  deletedBy   String?
+
+  members     OrganizationMember[]
+  invitations OrganizationInvitation[]
+}
+
+model OrganizationMember {
+  id             String         @id @default(uuid())
+  organizationId String
+  userId         String
+  role           MembershipRole @default(OWNER)
+  joinedAt       DateTime       @default(now())
+  removedAt      DateTime?
+  invitedBy      String?
+  lastActiveAt   DateTime?
+  
+  createdBy      String?
+  updatedBy      String?
+  deletedBy      String?
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+}
+
+model OrganizationInvitation {
+  id             String           @id @default(uuid())
+  organizationId String
+  email          String
+  tokenHash      String           @unique
+  expiresAt      DateTime
+  status         InvitationStatus @default(PENDING)
+  invitedBy      String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  deletedAt      DateTime?
+
+  createdBy      String?
+  updatedBy      String?
+  deletedBy      String?
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, email])
+  @@index([tokenHash])
 }
