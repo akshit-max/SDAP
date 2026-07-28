@@ -26,3 +26,4 @@ Before creating any new service, helper, utility, interface, DTO, or abstraction
 8. **Module Completion Checklist**: Verify requirements, DB, API, runtime, unit/integration tests, typecheck, lint, build, docs, and ADRs before freezing.
 9. **Keep Architecture Visible**: Maintain `docs/architecture/roadmap.md`, `module-registry.md`, and `dependency-graph.md`.
 10. **Continuous Architecture Review**: Start every phase by reviewing current architecture, preventing duplication, validating patterns, and resolving drift.
+11. **Foundation Freeze**: From Phase 4 onward, assume the foundation is frozen. Do not modify Authentication, Organizations, RBAC, Infrastructure, or CI unless it fixes a production bug, addresses a security issue, or is explicitly approved as an architectural change. All new functionality should build on the existing foundation rather than altering it to prevent "foundation drift".
