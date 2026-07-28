@@ -30,7 +30,6 @@
   ],
   "lint-staged": {
     "*.{js,ts,tsx}": [
-      "eslint --fix",
       "prettier --write"
     ],
     "packages/db/prisma/schema.prisma": [
