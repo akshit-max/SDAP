@@ -6,21 +6,17 @@ describe('AuthController', () => {
   let controller: AuthController;
 
   const mockAuthService = {
-    register: jest
-      .fn()
-      .mockResolvedValue({
-        success: true,
-        message: 'User registered successfully',
-      }),
+    register: jest.fn().mockResolvedValue({
+      success: true,
+      message: 'User registered successfully',
+    }),
     login: jest
       .fn()
       .mockResolvedValue({ accessToken: 'access', refreshToken: 'refresh' }),
-    refresh: jest
-      .fn()
-      .mockResolvedValue({
-        accessToken: 'new-access',
-        refreshToken: 'new-refresh',
-      }),
+    refresh: jest.fn().mockResolvedValue({
+      accessToken: 'new-access',
+      refreshToken: 'new-refresh',
+    }),
     logout: jest.fn().mockResolvedValue({ success: true }),
   };
 

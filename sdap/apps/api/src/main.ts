@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import helmet from 'helmet';
+import * as express from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -16,16 +17,15 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // ─── Request Size Limit (via express default) ──────────────────────────────
-  // NestJS/Express defaults to 100kb. Override for security:
-  app.use(require('express').json({ limit: '1mb' }));
-  app.use(require('express').urlencoded({ extended: true, limit: '1mb' }));
+  // ─── Request Size Limits ───────────────────────────────────────────────────
+  app.use(express.json({ limit: '1mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
   // ─── Global Exception Filter ───────────────────────────────────────────────
   app.useGlobalFilters(new GlobalExceptionFilter());
 
   // ─── Startup ───────────────────────────────────────────────────────────────
   const port = process.env.PORT ?? 4000;
-  await app.listen(port);
+  void app.listen(port);
 }
 bootstrap();

@@ -3,10 +3,15 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
+import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrganizationDto, UpdateOrganizationDto } from '@repo/types';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { OrganizationCreatedEvent } from './organizations.events';
+import {
+  OrganizationCreatedEvent,
+  MemberInvitedEvent,
+  InvitationAcceptedEvent,
+} from './organizations.events';
 import { ORG_CONFIG } from '@repo/config';
 
 @Injectable()
@@ -92,13 +97,11 @@ export class OrganizationsService {
     return memberships.map((m) => m.organization);
   }
 
-  async findOne(userId: string, orgId: string) {
-    // Controller/Guard now handles permission check
+  async findOne(orgId: string) {
     return this.prisma.organization.findUniqueOrThrow({ where: { id: orgId } });
   }
 
   async update(userId: string, orgId: string, dto: UpdateOrganizationDto) {
-    // Controller/Guard now handles permission check
     return this.prisma.organization.update({
       where: { id: orgId },
       data: {
@@ -109,8 +112,6 @@ export class OrganizationsService {
   }
 
   async invite(userId: string, orgId: string, email: string) {
-    // Controller/Guard now handles permission check
-    const crypto = await import('crypto');
     const rawToken = crypto.randomBytes(32).toString('hex');
     const tokenHash = crypto
       .createHash('sha256')
@@ -143,7 +144,6 @@ export class OrganizationsService {
       },
     });
 
-    const { MemberInvitedEvent } = await import('./organizations.events');
     this.eventEmitter.emit(
       'member.invited',
       new MemberInvitedEvent(orgId, email, userId),
@@ -153,7 +153,6 @@ export class OrganizationsService {
   }
 
   async acceptInvite(userId: string, rawToken: string) {
-    const crypto = await import('crypto');
     const tokenHash = crypto
       .createHash('sha256')
       .update(rawToken)
@@ -198,7 +197,7 @@ export class OrganizationsService {
         data: {
           organizationId: invitation.organizationId,
           userId: userId,
-          role: 'MEMBER', // In seed.ts we used MEMBER, not OWNER for members.
+          role: 'MEMBER',
           invitedBy: invitation.invitedBy,
           createdBy: userId,
           updatedBy: userId,
@@ -206,7 +205,6 @@ export class OrganizationsService {
       });
     });
 
-    const { InvitationAcceptedEvent } = await import('./organizations.events');
     this.eventEmitter.emit(
       'invitation.accepted',
       new InvitationAcceptedEvent(invitation.organizationId, userId),

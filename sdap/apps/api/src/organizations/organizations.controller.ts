@@ -16,6 +16,8 @@ import {
   CreateOrganizationDto,
   UpdateOrganizationSchema,
   UpdateOrganizationDto,
+  CreateInvitationSchema,
+  CreateInvitationDto,
   Permission,
 } from '@repo/types';
 import { PermissionsGuard } from '../authorization/guards/permissions.guard';
@@ -53,7 +55,7 @@ export class OrganizationsController {
   @OrganizationContext('id')
   @Get(':id')
   async findOne(@Request() req: any, @Param('id') id: string) {
-    const org = await this.organizationsService.findOne(req.user.id, id);
+    const org = await this.organizationsService.findOne(id);
     return { success: true, data: org };
   }
 
@@ -76,12 +78,13 @@ export class OrganizationsController {
   async invite(
     @Request() req: any,
     @Param('id') id: string,
-    @Body('email') email: string,
+    @Body(new ZodValidationPipe(CreateInvitationSchema))
+    dto: CreateInvitationDto,
   ) {
     const result = await this.organizationsService.invite(
       req.user.id,
       id,
-      email,
+      dto.email,
     );
     return { success: true, data: result };
   }

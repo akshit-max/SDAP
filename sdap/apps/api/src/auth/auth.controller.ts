@@ -1,6 +1,13 @@
 import { Controller, Post, Body, Req, Ip, UsePipes } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { RegisterSchema, RegisterDto, LoginSchema, LoginDto, RefreshSchema, RefreshDto } from '@repo/types';
+import {
+  RegisterSchema,
+  RegisterDto,
+  LoginSchema,
+  LoginDto,
+  RefreshSchema,
+  RefreshDto,
+} from '@repo/types';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { Request } from 'express';
 
@@ -22,8 +29,16 @@ export class AuthController {
 
   @Post('refresh')
   @UsePipes(new ZodValidationPipe(RefreshSchema))
-  async refresh(@Body() dto: RefreshDto, @Req() req: Request, @Ip() ip: string) {
-    return this.authService.refresh(dto.refreshToken, ip, req.headers['user-agent']);
+  async refresh(
+    @Body() dto: RefreshDto,
+    @Req() req: Request,
+    @Ip() ip: string,
+  ) {
+    return this.authService.refresh(
+      dto.refreshToken,
+      ip,
+      req.headers['user-agent'],
+    );
   }
 
   @Post('logout')

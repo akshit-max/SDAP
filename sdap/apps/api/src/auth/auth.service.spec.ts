@@ -7,9 +7,9 @@ import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let usersService: UsersService;
-  let tokenService: TokenService;
-  let prisma: PrismaService;
+  let _usersService: UsersService;
+  let _tokenService: TokenService;
+  let _prisma: PrismaService;
 
   const mockUsersService = {
     findByEmail: jest.fn(),
@@ -43,9 +43,9 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    usersService = module.get<UsersService>(UsersService);
-    tokenService = module.get<TokenService>(TokenService);
-    prisma = module.get<PrismaService>(PrismaService);
+    _usersService = module.get<UsersService>(UsersService);
+    _tokenService = module.get<TokenService>(TokenService);
+    _prisma = module.get<PrismaService>(PrismaService);
   });
 
   it('should be defined', () => {

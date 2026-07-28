@@ -29,7 +29,10 @@
     "packages/*"
   ],
   "lint-staged": {
-    "*.{js,ts,tsx}": [
+    "apps/api/src/**/*.ts": [
+      "prettier --write"
+    ],
+    "packages/**/*.ts": [
       "prettier --write"
     ],
     "packages/db/prisma/schema.prisma": [

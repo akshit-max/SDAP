@@ -14,15 +14,15 @@ export interface JwtPayload {
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private configService: ConfigService) {
     const isProd = process.env.NODE_ENV === 'production';
-    
+
     // In production, we'd pull from secrets manager. For local dev, read from keys/
     let publicKey = configService.get<string>('JWT_PUBLIC_KEY');
-    
+
     if (!publicKey && !isProd) {
       try {
         const rootDir = process.cwd();
         publicKey = readFileSync(join(rootDir, 'keys', 'public.pem'), 'utf-8');
-      } catch (err) {
+      } catch {
         throw new Error('Public key not found for JwtStrategy initialization');
       }
     }

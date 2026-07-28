@@ -1,4 +1,9 @@
-import { Controller, Get, Logger, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { AppService } from './app.service';
 import { PrismaService } from './prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
@@ -41,8 +46,12 @@ export class AppController {
 
     // 2. Redis Check
     try {
-      const redisUrl = this.configService.get<string>('REDIS_URL') || 'redis://localhost:6379';
-      const redis = new Redis(redisUrl, { maxRetriesPerRequest: 1, connectTimeout: 2000 });
+      const redisUrl =
+        this.configService.get<string>('REDIS_URL') || 'redis://localhost:6379';
+      const redis = new Redis(redisUrl, {
+        maxRetriesPerRequest: 1,
+        connectTimeout: 2000,
+      });
       await redis.ping();
       redis.disconnect();
       checks.redis = 'up';
@@ -55,11 +64,11 @@ export class AppController {
     // 3. JWT Keys Check
     try {
       const isProd = process.env.NODE_ENV === 'production';
-      let publicKey = this.configService.get<string>('JWT_PUBLIC_KEY');
+      const publicKey = this.configService.get<string>('JWT_PUBLIC_KEY');
       if (!publicKey && !isProd) {
         const rootDir = process.cwd();
         if (!existsSync(join(rootDir, 'keys', 'public.pem'))) {
-           throw new Error('Missing keys/public.pem');
+          throw new Error('Missing keys/public.pem');
         }
       } else if (!publicKey && isProd) {
         throw new Error('JWT_PUBLIC_KEY is required in production');

@@ -8,7 +8,7 @@ import { ForbiddenException } from '@nestjs/common';
 describe('AuthorizationService', () => {
   let service: AuthorizationService;
   let membershipResolver: MembershipResolver;
-  let permissionEvaluator: PermissionEvaluator;
+  let _permissionEvaluator: PermissionEvaluator;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -26,7 +26,7 @@ describe('AuthorizationService', () => {
 
     service = module.get<AuthorizationService>(AuthorizationService);
     membershipResolver = module.get<MembershipResolver>(MembershipResolver);
-    permissionEvaluator = module.get<PermissionEvaluator>(PermissionEvaluator);
+    _permissionEvaluator = module.get<PermissionEvaluator>(PermissionEvaluator);
   });
 
   it('should be defined', () => {
