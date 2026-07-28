@@ -16,66 +16,68 @@ enum InvitationStatus {
 
 enum MembershipRole {
   OWNER
+  ADMIN
+  MEMBER
 }
 
 model User {
-  id                    String    @id @default(uuid())
-  email                 String    @unique
-  passwordHash          String
-  emailVerifiedAt       DateTime?
+  id                     String    @id @default(uuid())
+  email                  String    @unique
+  passwordHash           String
+  emailVerifiedAt        DateTime?
   emailVerificationToken String?
-  isActive              Boolean   @default(true)
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  deletedAt             DateTime?
+  isActive               Boolean   @default(true)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  deletedAt              DateTime?
 
-  createdBy             String?
-  updatedBy             String?
-  deletedBy             String?
+  createdBy String?
+  updatedBy String?
+  deletedBy String?
 
-  refreshTokens         RefreshToken[]
+  refreshTokens           RefreshToken[]
   organizationMemberships OrganizationMember[]
 }
 
 model RefreshToken {
-  id               String    @id @default(uuid())
-  userId           String
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash        String    @unique
-  familyId         String
-  isRevoked        Boolean   @default(false)
-  expiresAt        DateTime
-  lastUsedAt       DateTime?
-  revokedAt        DateTime?
+  id                String    @id @default(uuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash         String    @unique
+  familyId          String
+  isRevoked         Boolean   @default(false)
+  expiresAt         DateTime
+  lastUsedAt        DateTime?
+  revokedAt         DateTime?
   replacedByTokenId String?
-  deviceInfo       Json?
-  ipAddress        String?
-  userAgent        String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  deletedAt        DateTime?
+  deviceInfo        Json?
+  ipAddress         String?
+  userAgent         String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
 
-  createdBy        String?
-  updatedBy        String?
-  deletedBy        String?
+  createdBy String?
+  updatedBy String?
+  deletedBy String?
 
   @@index([userId])
   @@index([familyId])
 }
 
 model Organization {
-  id          String   @id @default(uuid())
-  name        String
-  slug        String   @unique
-  settings    Json?    
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  deletedAt   DateTime?
+  id        String    @id @default(uuid())
+  name      String
+  slug      String    @unique
+  settings  Json?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  createdBy   String?
-  updatedBy   String?
-  deletedBy   String?
+  createdBy String?
+  updatedBy String?
+  deletedBy String?
 
   members     OrganizationMember[]
   invitations OrganizationInvitation[]
@@ -90,13 +92,13 @@ model OrganizationMember {
   removedAt      DateTime?
   invitedBy      String?
   lastActiveAt   DateTime?
-  
-  createdBy      String?
-  updatedBy      String?
-  deletedBy      String?
 
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdBy String?
+  updatedBy String?
+  deletedBy String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, userId])
 }
@@ -113,11 +115,11 @@ model OrganizationInvitation {
   updatedAt      DateTime         @updatedAt
   deletedAt      DateTime?
 
-  createdBy      String?
-  updatedBy      String?
-  deletedBy      String?
+  createdBy String?
+  updatedBy String?
+  deletedBy String?
 
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, email])
   @@index([tokenHash])
