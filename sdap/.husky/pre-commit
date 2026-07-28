@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+
+cd sdap
+npx lint-staged
