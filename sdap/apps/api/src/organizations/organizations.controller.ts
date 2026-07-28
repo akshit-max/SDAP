@@ -20,6 +20,7 @@ import {
 } from '@repo/types';
 import { PermissionsGuard } from '../authorization/guards/permissions.guard';
 import { RequirePermissions } from '../authorization/decorators/require-permissions.decorator';
+import { OrganizationContext } from '../authorization/decorators/organization-context.decorator';
 
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('api/v1/organizations')
@@ -49,6 +50,7 @@ export class OrganizationsController {
   }
 
   @RequirePermissions(Permission.ORGANIZATION_READ)
+  @OrganizationContext('id')
   @Get(':id')
   async findOne(@Request() req: any, @Param('id') id: string) {
     const org = await this.organizationsService.findOne(req.user.id, id);
@@ -56,6 +58,7 @@ export class OrganizationsController {
   }
 
   @RequirePermissions(Permission.ORGANIZATION_UPDATE)
+  @OrganizationContext('id')
   @Patch(':id')
   async update(
     @Request() req: any,
@@ -68,6 +71,7 @@ export class OrganizationsController {
   }
 
   @RequirePermissions(Permission.MEMBER_INVITE)
+  @OrganizationContext('id')
   @Post(':id/invites')
   async invite(
     @Request() req: any,

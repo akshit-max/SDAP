@@ -1,8 +1,13 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrganizationDto, UpdateOrganizationDto } from '@repo/types';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OrganizationCreatedEvent } from './organizations.events';
+import { ORG_CONFIG } from '@repo/config';
 
 @Injectable()
 export class OrganizationsService {
@@ -32,6 +37,16 @@ export class OrganizationsService {
   }
 
   async create(userId: string, dto: CreateOrganizationDto) {
+    // Enforce maximum organizations per user
+    const existingCount = await this.prisma.organizationMember.count({
+      where: { userId, removedAt: null },
+    });
+    if (existingCount >= ORG_CONFIG.MAX_ORGS_PER_USER) {
+      throw new BadRequestException(
+        `You cannot belong to more than ${ORG_CONFIG.MAX_ORGS_PER_USER} organizations.`,
+      );
+    }
+
     const slug = await this.generateUniqueSlug(dto.name);
 
     const organization = await this.prisma.$transaction(async (tx) => {

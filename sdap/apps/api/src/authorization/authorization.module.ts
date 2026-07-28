@@ -1,4 +1,5 @@
 import { Global, Module } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { AuthorizationService } from './authorization.service';
 import { PermissionsGuard } from './guards/permissions.guard';
 import { MembershipResolver } from './resolvers/membership.resolver';
@@ -15,6 +16,7 @@ import { PrismaModule } from '../prisma/prisma.module';
     MembershipResolver,
     PolicyResolver,
     PermissionEvaluator,
+    Reflector,
   ],
   exports: [AuthorizationService, PermissionsGuard, PolicyResolver],
 })

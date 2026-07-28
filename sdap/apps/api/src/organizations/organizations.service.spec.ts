@@ -25,6 +25,7 @@ describe('OrganizationsService', () => {
     organizationMember: {
       findMany: jest.fn(),
       create: jest.fn(),
+      count: jest.fn().mockResolvedValue(0),
     },
     organizationInvitation: {
       upsert: jest.fn(),
