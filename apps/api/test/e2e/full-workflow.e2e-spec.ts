@@ -35,7 +35,7 @@ describe('Full Workflow (e2e)', () => {
 
   it('should register an admin and create an organization', async () => {
     // Register Admin
-    const regRes = await request(app.getHttpServer())
+    await request(app.getHttpServer())
       .post('/api/v1/auth/register')
       .send({ email: adminEmail, password, name: 'Admin' })
       .expect(201);

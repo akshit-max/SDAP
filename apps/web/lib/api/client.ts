@@ -23,7 +23,7 @@ apiClient.interceptors.response.use(
     
     if (error.response) {
       const status = error.response.status;
-      const data = error.response.data as any;
+      const data = error.response.data as { message?: string; error?: string };
       message = data?.message || data?.error || message;
 
       if (status === 401) {

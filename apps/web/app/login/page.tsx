@@ -26,8 +26,12 @@ export default function LoginPage() {
       } else {
         setError('Invalid response from server.');
       }
-    } catch (err: any) {
-      setError(err.message || 'Login failed. Please try again.');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'Login failed. Please try again.');
+      } else {
+        setError('Login failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

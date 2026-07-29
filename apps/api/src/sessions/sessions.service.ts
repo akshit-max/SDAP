@@ -10,7 +10,7 @@ import { Prisma } from '@prisma/client';
 import { SecretLifecycleService } from '../vaults/secret-lifecycle.service';
 import { DelegatedSessionCreatedEvent } from './events/session-created.event';
 import { DelegatedSessionRevokedEvent } from './events/session-revoked.event';
-import { CreateSessionDto, SessionStatus } from '@repo/types';
+import { CreateSessionDto } from '@repo/types';
 
 @Injectable()
 export class SessionsService {

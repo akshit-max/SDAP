@@ -30,7 +30,7 @@ export interface ApprovalRequestDto {
   organizationId: string;
   requesterId: string;
   type: ApprovalType;
-  requestPayload: any;
+  requestPayload: unknown;
   status: ApprovalRequestStatus;
   createdAt: Date | string;
   updatedAt: Date | string;

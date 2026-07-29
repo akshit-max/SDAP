@@ -7,7 +7,6 @@ import { DashboardShell } from '../../components/layout/DashboardShell';
 import { CreateSessionModal } from '../../components/sessions/CreateSessionModal';
 import { Plus, Trash2, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { SessionStatus } from '@repo/types';
-import clsx from 'clsx';
 
 const ORG_ID = 'org-1'; // Hardcoded for this UI foundation sprint
 

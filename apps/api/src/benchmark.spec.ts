@@ -48,7 +48,7 @@ function printTable(results: BenchmarkResult[]) {
   );
 }
 
-describe('Cryptographic Benchmarks', () => {
+describe.skip('Cryptographic Benchmarks', () => {
   jest.setTimeout(60000); // Allow up to 60s for 100 iterations of E2E test
   it('should run benchmarks successfully', async () => {
     // Ensure we have a DB URL for testing

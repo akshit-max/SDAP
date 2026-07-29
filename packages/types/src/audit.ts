@@ -10,7 +10,7 @@ export interface AuditEventDto {
   resourceId: string | null;
   
   eventVersion: number;
-  metadata: any | null;
+  metadata: unknown;
   
   createdAt: Date | string;
   

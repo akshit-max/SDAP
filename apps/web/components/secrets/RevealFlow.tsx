@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRevealSecret } from '../../hooks/useRevealSecret';
 import { Eye, EyeOff, AlertTriangle, Loader2, Copy, Check } from 'lucide-react';
 
@@ -18,6 +18,13 @@ export function RevealFlow({ orgId, vaultId, secretId }: RevealFlowProps) {
 
   const { mutate, isPending, error, reset } = useRevealSecret();
 
+  const handleClear = useCallback(() => {
+    setPlaintext(null);
+    setReason('');
+    setShowForm(false);
+    reset();
+  }, [reset]);
+
   // Clear plaintext on unmount or after 60 seconds
   useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -29,7 +36,7 @@ export function RevealFlow({ orgId, vaultId, secretId }: RevealFlowProps) {
     return () => {
       clearTimeout(timeout);
     };
-  }, [plaintext]);
+  }, [plaintext, handleClear]);
 
   const handleReveal = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,12 +54,7 @@ export function RevealFlow({ orgId, vaultId, secretId }: RevealFlowProps) {
     );
   };
 
-  const handleClear = () => {
-    setPlaintext(null);
-    setReason('');
-    setShowForm(false);
-    reset();
-  };
+
 
   const handleCopy = async () => {
     if (plaintext) {

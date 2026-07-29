@@ -39,7 +39,7 @@ export function CreateSessionModal({ orgId, isOpen, onClose }: CreateSessionModa
         maxReveals: maxReveals === '' ? undefined : Number(maxReveals),
       },
       {
-        onSuccess: (data: any) => {
+        onSuccess: (data: { status?: string }) => {
           if (data?.status === 'PENDING_APPROVAL') {
             alert('Your request requires approval. It has been submitted to the organization admins.');
           } else {
@@ -51,8 +51,9 @@ export function CreateSessionModal({ orgId, isOpen, onClose }: CreateSessionModa
           setExpiresInHours(1);
           setMaxReveals('');
         },
-        onError: (err: any) => {
-          setError(err.response?.data?.message || 'Failed to create session');
+        onError: (err: unknown) => {
+          const apiError = err as { response?: { data?: { message?: string } } };
+          setError(apiError.response?.data?.message || 'Failed to create session');
         },
       }
     );

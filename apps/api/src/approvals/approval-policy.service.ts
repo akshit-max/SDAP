@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { ApprovalType, CreateSessionDto } from '@repo/types';
+import { ApprovalType } from '@repo/types';
 
 @Injectable()
 export class ApprovalPolicyService {
@@ -14,8 +14,8 @@ export class ApprovalPolicyService {
   async requiresApproval(
     organizationId: string,
     requesterId: string,
-    type: ApprovalType,
-    payload: any,
+    _type: ApprovalType,
+    _payload: any,
   ): Promise<boolean> {
     const membership = await this.prisma.organizationMember.findUnique({
       where: {

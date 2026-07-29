@@ -8,7 +8,7 @@ import { DashboardShell } from '../../../../../components/layout/DashboardShell'
 import { Loading } from '../../../../../components/common/Loading';
 import { ErrorState } from '../../../../../components/common/ErrorState';
 import { RevealFlow } from '../../../../../components/secrets/RevealFlow';
-import { FileKey2, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { FileKey2, Clock, CheckCircle } from 'lucide-react';
 
 const ORG_ID = 'org-1'; // Hardcoded for this UI foundation sprint
 
