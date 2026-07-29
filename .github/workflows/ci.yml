@@ -73,7 +73,7 @@ jobs:
           VAULT_ENCRYPTION_KEY: "c3VwZXJzZWNyZXRrZXliYXNlNjRtdXN0YmUzMmJ5dGVz" # 32 bytes base64
         run: |
           npx prisma db push --schema=packages/db/prisma/schema.prisma
-          npx ts-node apps/api/scripts/verify-crypto.ts
+          npx ts-node apps/api/verification/crypto/verify-crypto.ts
           npm run test:e2e --workspace=api
 
   build:
