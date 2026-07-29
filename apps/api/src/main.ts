@@ -4,6 +4,8 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
 import helmet from 'helmet';
 import * as express from 'express';
 
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
@@ -23,6 +25,16 @@ async function bootstrap() {
 
   // ─── Global Exception Filter ───────────────────────────────────────────────
   app.useGlobalFilters(new GlobalExceptionFilter());
+
+  // ─── Swagger ───────────────────────────────────────────────────────────────
+  const config = new DocumentBuilder()
+    .setTitle('SDAP API')
+    .setDescription('Secure Delegation & Approval Platform API')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
 
   // ─── Startup ───────────────────────────────────────────────────────────────
   const port = process.env.PORT ?? 4000;

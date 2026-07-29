@@ -12,10 +12,19 @@ import { OrganizationsModule } from './organizations/organizations.module';
 import { ConfigModule } from '@nestjs/config';
 import { AuthorizationModule } from './authorization/authorization.module';
 import { VaultsModule } from './vaults/vaults.module';
+import { SessionsModule } from './sessions/sessions.module';
+import { ApprovalsModule } from './approvals/approvals.module';
+import { AuditModule } from './audit/audit.module';
+import { HealthModule } from './health/health.module';
+
+import { validate } from './config/env.validation';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validate,
+    }),
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
@@ -29,6 +38,10 @@ import { VaultsModule } from './vaults/vaults.module';
     OrganizationsModule,
     AuthorizationModule,
     VaultsModule,
+    SessionsModule,
+    ApprovalsModule,
+    AuditModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [
