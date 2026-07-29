@@ -176,6 +176,7 @@ describe('SecretLifecycleService', () => {
       encryptedDek: mockEncryptedDek,
       keyMetadataId: mockKeyId,
       deletedAt: null,
+      vault: { organizationId: mockOrgId },
       versions: [{ version: 1 }],
     };
 
@@ -260,6 +261,7 @@ describe('SecretLifecycleService', () => {
               vaultId: mockVaultId,
               encryptedDek: mockEncryptedDek,
               deletedAt: null,
+              vault: { organizationId: mockOrgId },
               versions: [{ version: 1, ciphertext: '', iv: '', authTag: '' }],
             }),
             update: jest.fn(),
@@ -292,6 +294,7 @@ describe('SecretLifecycleService', () => {
               vaultId: mockVaultId,
               encryptedDek: mockEncryptedDek,
               deletedAt: null,
+              vault: { organizationId: mockOrgId },
               versions: [{ version: 1, ciphertext: '', iv: '', authTag: '' }],
             }),
           },
@@ -314,6 +317,7 @@ describe('SecretLifecycleService', () => {
             findUnique: jest.fn().mockResolvedValue({
               id: mockSecretId,
               deletedAt: new Date(),
+              vault: { organizationId: mockOrgId },
               versions: [],
             }),
           },
@@ -339,7 +343,7 @@ describe('SecretLifecycleService', () => {
               id: 'secret-id',
               deletedAt: null,
               vaultId: mockVaultId,
-              vault: { organizationId: mockOrgId },
+              vault: { organizationId: 'org1' },
             }),
             update: jest.fn(),
           },
@@ -353,7 +357,7 @@ describe('SecretLifecycleService', () => {
         return true;
       });
 
-      await service.softDeleteSecret('secret-id', mockUserId);
+      await service.softDeleteSecret('secret-id', mockUserId, 'org1');
     });
 
     it('should throw NotFoundException if already deleted', async () => {
@@ -369,7 +373,7 @@ describe('SecretLifecycleService', () => {
       });
 
       await expect(
-        service.softDeleteSecret('secret-id', mockUserId),
+        service.softDeleteSecret('secret-id', mockUserId, 'org1'),
       ).rejects.toThrow(NotFoundException);
     });
   });

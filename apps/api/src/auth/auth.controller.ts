@@ -10,6 +10,7 @@ import {
 } from '@repo/types';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { Request } from 'express';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('api/v1/auth')
 export class AuthController {
@@ -22,6 +23,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @UsePipes(new ZodValidationPipe(LoginSchema))
   async login(@Body() dto: LoginDto, @Req() req: Request, @Ip() ip: string) {
     return this.authService.login(dto, ip, req.headers['user-agent']);

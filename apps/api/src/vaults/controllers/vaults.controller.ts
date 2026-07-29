@@ -21,8 +21,11 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../../authorization/guards/permissions.guard';
 import { RequirePermissions } from '../../authorization/decorators/require-permissions.decorator';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { RequestWithUser } from '../../common/interfaces/request-with-user.interface';
+import { OrganizationContext } from '../../authorization/decorators/organization-context.decorator';
 
 @Controller('organizations/:orgId/vaults')
+@OrganizationContext('orgId')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class VaultsController {
   constructor(private readonly vaultsService: VaultsService) {}
@@ -31,7 +34,7 @@ export class VaultsController {
   @RequirePermissions(Permission.VAULT_CREATE)
   async createVault(
     @Param('orgId') orgId: string,
-    @Request() req: any,
+    @Request() req: RequestWithUser,
     @Body(new ZodValidationPipe(CreateVaultSchema)) dto: CreateVaultDto,
   ) {
     return this.vaultsService.createVault(orgId, req.user.id, dto);
@@ -57,7 +60,7 @@ export class VaultsController {
   async updateVault(
     @Param('orgId') orgId: string,
     @Param('vaultId') vaultId: string,
-    @Request() req: any,
+    @Request() req: RequestWithUser,
     @Body(new ZodValidationPipe(UpdateVaultSchema)) dto: UpdateVaultDto,
   ) {
     return this.vaultsService.updateVault(orgId, vaultId, req.user.id, dto);
@@ -68,7 +71,7 @@ export class VaultsController {
   async deleteVault(
     @Param('orgId') orgId: string,
     @Param('vaultId') vaultId: string,
-    @Request() req: any,
+    @Request() req: RequestWithUser,
   ) {
     return this.vaultsService.deleteVault(orgId, vaultId, req.user.id);
   }

@@ -8,6 +8,8 @@ import {
   VaultDeletedEvent,
 } from './vaults.events';
 
+import { Prisma } from '@prisma/client';
+
 @Injectable()
 export class VaultsService {
   constructor(
@@ -87,7 +89,7 @@ export class VaultsService {
     // Ensure vault exists
     await this.getVaultById(orgId, vaultId);
 
-    await this.prisma.$transaction(async (tx: any) => {
+    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const now = new Date();
       // Soft delete the vault
       await tx.vault.update({

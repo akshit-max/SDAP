@@ -21,8 +21,11 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../../authorization/guards/permissions.guard';
 import { RequirePermissions } from '../../authorization/decorators/require-permissions.decorator';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { RequestWithUser } from '../../common/interfaces/request-with-user.interface';
+import { OrganizationContext } from '../../authorization/decorators/organization-context.decorator';
 
 @Controller('organizations/:orgId/vaults/:vaultId/secrets')
+@OrganizationContext('orgId')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class SecretsController {
   constructor(private readonly secretService: SecretLifecycleService) {}
@@ -32,7 +35,7 @@ export class SecretsController {
   async createSecret(
     @Param('orgId') orgId: string,
     @Param('vaultId') vaultId: string,
-    @Request() req: any,
+    @Request() req: RequestWithUser,
     @Body(new ZodValidationPipe(CreateSecretSchema)) dto: CreateSecretDto,
   ) {
     return this.secretService.createSecret({
@@ -63,7 +66,7 @@ export class SecretsController {
   async revealSecret(
     @Param('orgId') orgId: string,
     @Param('secretId') secretId: string,
-    @Request() req: any,
+    @Request() req: RequestWithUser,
     @Body('reason') reason?: string,
   ) {
     const plaintext = await this.secretService.revealSecret({
@@ -80,11 +83,11 @@ export class SecretsController {
   async updateSecret(
     @Param('orgId') orgId: string,
     @Param('secretId') secretId: string,
-    @Request() req: any,
-    @Body() body: any,
+    @Request() req: RequestWithUser,
+    @Body() body: Record<string, unknown>,
   ) {
     // Determine if this is a plaintext update or a metadata update
-    if (body.plaintext) {
+    if ('plaintext' in body && body.plaintext !== undefined) {
       const dto = new ZodValidationPipe(UpdateSecretSchema).transform(body, {
         type: 'body',
       });
@@ -112,7 +115,11 @@ export class SecretsController {
 
   @Delete(':secretId')
   @RequirePermissions(Permission.SECRET_DELETE)
-  async deleteSecret(@Param('secretId') secretId: string, @Request() req: any) {
-    return this.secretService.softDeleteSecret(secretId, req.user.id);
+  async deleteSecret(
+    @Param('orgId') orgId: string,
+    @Param('secretId') secretId: string,
+    @Request() req: RequestWithUser,
+  ) {
+    return this.secretService.softDeleteSecret(secretId, req.user.id, orgId);
   }
 }

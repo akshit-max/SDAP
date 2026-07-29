@@ -235,10 +235,17 @@ export class SecretLifecycleService {
       return await this.prisma.$transaction(async (tx) => {
         const secret = await tx.secret.findUnique({
           where: { id: secretId },
-          include: { versions: { orderBy: { version: 'desc' }, take: 1 } },
+          include: {
+            vault: true,
+            versions: { orderBy: { version: 'desc' }, take: 1 },
+          },
         });
 
-        if (!secret || secret.deletedAt) {
+        if (
+          !secret ||
+          secret.deletedAt ||
+          secret.vault.organizationId !== organizationId
+        ) {
           throw new NotFoundException('Secret not found');
         }
 
@@ -291,7 +298,7 @@ export class SecretLifecycleService {
         }
 
         // Update metadata
-        updatedSecret = (await tx.secret.update({
+        updatedSecret = await tx.secret.update({
           where: { id: secretId },
           data: {
             ...(input.name !== undefined && { name: input.name }),
@@ -302,7 +309,11 @@ export class SecretLifecycleService {
             updatedAt: new Date(),
             updatedBy: userId,
           },
-        })) as any;
+          include: {
+            vault: true,
+            versions: { orderBy: { version: 'desc' }, take: 1 },
+          },
+        });
 
         this.logger.log(
           `[AUDIT SUCCESS] User ${userId} successfully updated metadata/version for Secret ${secret.id}`,
@@ -336,137 +347,159 @@ export class SecretLifecycleService {
   async revealSecret(
     input: RevealSecretInput,
     versionNumber?: number,
+    tx?: Prisma.TransactionClient,
+  ): Promise<string> {
+    if (tx) {
+      return this.executeRevealSecret(input, versionNumber, tx);
+    }
+    return this.prisma.$transaction((innerTx) =>
+      this.executeRevealSecret(input, versionNumber, innerTx),
+    );
+  }
+
+  private async executeRevealSecret(
+    input: RevealSecretInput,
+    versionNumber: number | undefined,
+    tx: Prisma.TransactionClient,
   ): Promise<string> {
     const { secretId, organizationId, userId, reason } = input;
 
-    return this.prisma.$transaction(async (tx) => {
-      this.logger.log(
-        `[AUDIT INTENT] User ${userId} requesting reveal of Secret ${secretId} ${versionNumber ? `(v${versionNumber})` : '(latest)'}. Reason: ${reason || 'None'}`,
-      );
+    this.logger.log(
+      `[AUDIT INTENT] User ${userId} requesting reveal of Secret ${secretId} ${versionNumber ? `(v${versionNumber})` : '(latest)'}. Reason: ${reason || 'None'}`,
+    );
 
-      const secret = await tx.secret.findUnique({
-        where: { id: secretId },
-        include: {
-          versions: versionNumber
-            ? { where: { version: versionNumber } }
-            : { orderBy: { version: 'desc' }, take: 1 },
-        },
-      });
+    const secret = await tx.secret.findUnique({
+      where: { id: secretId },
+      include: {
+        vault: true,
+        versions: versionNumber
+          ? { where: { version: versionNumber } }
+          : { orderBy: { version: 'desc' }, take: 1 },
+      },
+    });
 
-      if (!secret || secret.deletedAt || secret.versions.length === 0) {
-        this.eventEmitter.emit(
-          SecretRevealRequestedEvent.EVENT_NAME,
-          new SecretRevealRequestedEvent(
-            organizationId,
-            'unknown',
-            secretId,
-            userId,
-            'unknown',
-            'unknown',
-          ),
-        );
-        this.eventEmitter.emit(
-          SecretRevealFailedEvent.EVENT_NAME,
-          new SecretRevealFailedEvent(
-            organizationId,
-            'unknown',
-            secretId,
-            userId,
-            'Secret unavailable',
-          ),
-        );
-        throw new InternalServerErrorException('Unable to reveal secret');
-      }
-
+    if (
+      !secret ||
+      secret.deletedAt ||
+      secret.vault.organizationId !== organizationId ||
+      secret.versions.length === 0
+    ) {
       this.eventEmitter.emit(
         SecretRevealRequestedEvent.EVENT_NAME,
         new SecretRevealRequestedEvent(
           organizationId,
-          secret.vaultId,
+          'unknown',
           secretId,
           userId,
           'unknown',
           'unknown',
         ),
       );
-
-      try {
-        const targetVersion = secret.versions[0];
-        if (!targetVersion) {
-          throw new Error('Secret unavailable');
-        }
-
-        // Decrypt DEK
-        const dekParts = this.deserializeDek(secret.encryptedDek);
-        const dek = this.encryption.decryptDEK(
-          dekParts.ciphertext,
-          dekParts.iv,
-          dekParts.authTag,
-        );
-
-        // Decrypt Payload
-        const context = {
+      this.eventEmitter.emit(
+        SecretRevealFailedEvent.EVENT_NAME,
+        new SecretRevealFailedEvent(
           organizationId,
-          vaultId: secret.vaultId,
+          'unknown',
           secretId,
-          version: targetVersion.version,
-        };
-        const plaintextBuffer = this.encryption.decryptPayload(
-          Buffer.from(targetVersion.ciphertext, 'base64'),
-          dek,
-          Buffer.from(targetVersion.iv, 'base64'),
-          Buffer.from(targetVersion.authTag, 'base64'),
-          context,
-        );
+          userId,
+          'Secret unavailable',
+        ),
+      );
+      throw new InternalServerErrorException('Unable to reveal secret');
+    }
 
-        // Update Reveal Metadata
-        await tx.secret.update({
-          where: { id: secretId },
-          data: {
-            lastRevealedAt: new Date(),
-            revealCount: { increment: 1 },
-          },
-        });
+    this.eventEmitter.emit(
+      SecretRevealRequestedEvent.EVENT_NAME,
+      new SecretRevealRequestedEvent(
+        organizationId,
+        secret.vaultId,
+        secretId,
+        userId,
+        'unknown',
+        'unknown',
+      ),
+    );
 
-        this.logger.log(
-          `[AUDIT SUCCESS] User ${userId} successfully revealed Secret ${secretId} (v${targetVersion.version})`,
-        );
-
-        this.eventEmitter.emit(
-          SecretRevealSucceededEvent.EVENT_NAME,
-          new SecretRevealSucceededEvent(
-            organizationId,
-            secret.vaultId,
-            secret.id,
-            userId,
-          ),
-        );
-
-        return plaintextBuffer.toString('utf8');
-      } catch (err: unknown) {
-        let msg = 'Unknown error';
-        if (err instanceof Error) msg = err.message;
-        this.logger.warn(
-          `[AUDIT FAILURE] User ${userId} failed to reveal Secret ${secretId}: ${msg}`,
-        );
-
-        this.eventEmitter.emit(
-          SecretRevealFailedEvent.EVENT_NAME,
-          new SecretRevealFailedEvent(
-            organizationId,
-            secret?.vaultId || 'unknown',
-            secretId,
-            userId,
-            msg,
-          ),
-        );
-
-        throw new InternalServerErrorException('Unable to reveal secret');
+    try {
+      const targetVersion = secret.versions[0];
+      if (!targetVersion) {
+        throw new Error('Secret unavailable');
       }
-    });
+
+      // Decrypt DEK
+      const dekParts = this.deserializeDek(secret.encryptedDek);
+      const dek = this.encryption.decryptDEK(
+        dekParts.ciphertext,
+        dekParts.iv,
+        dekParts.authTag,
+      );
+
+      // Decrypt Payload
+      const context = {
+        organizationId,
+        vaultId: secret.vaultId,
+        secretId,
+        version: targetVersion.version,
+      };
+      const plaintextBuffer = this.encryption.decryptPayload(
+        Buffer.from(targetVersion.ciphertext, 'base64'),
+        dek,
+        Buffer.from(targetVersion.iv, 'base64'),
+        Buffer.from(targetVersion.authTag, 'base64'),
+        context,
+      );
+
+      // Update Reveal Metadata
+      await tx.secret.update({
+        where: { id: secretId },
+        data: {
+          lastRevealedAt: new Date(),
+          revealCount: { increment: 1 },
+        },
+      });
+
+      this.logger.log(
+        `[AUDIT SUCCESS] User ${userId} successfully revealed Secret ${secretId} (v${targetVersion.version})`,
+      );
+
+      this.eventEmitter.emit(
+        SecretRevealSucceededEvent.EVENT_NAME,
+        new SecretRevealSucceededEvent(
+          organizationId,
+          secret.vaultId,
+          secret.id,
+          userId,
+        ),
+      );
+
+      return plaintextBuffer.toString('utf8');
+    } catch (err: unknown) {
+      let msg = 'Unknown error';
+      if (err instanceof Error) msg = err.message;
+      this.logger.warn(
+        `[AUDIT FAILURE] User ${userId} failed to reveal Secret ${secretId}: ${msg}`,
+      );
+
+      this.eventEmitter.emit(
+        SecretRevealFailedEvent.EVENT_NAME,
+        new SecretRevealFailedEvent(
+          organizationId,
+          secret?.vaultId || 'unknown',
+          secretId,
+          userId,
+          msg,
+        ),
+      );
+
+      throw new InternalServerErrorException('Unable to reveal secret');
+    }
   }
 
-  async softDeleteSecret(secretId: string, userId: string) {
+  async softDeleteSecret(
+    secretId: string,
+    userId: string,
+    organizationId: string,
+  ) {
     return this.prisma.$transaction(async (tx) => {
       this.logger.log(
         `[AUDIT INTENT] User ${userId} soft-deleting Secret ${secretId}`,
@@ -476,7 +509,11 @@ export class SecretLifecycleService {
         where: { id: secretId },
         include: { vault: true },
       });
-      if (!secret || secret.deletedAt) {
+      if (
+        !secret ||
+        secret.deletedAt ||
+        secret.vault.organizationId !== organizationId
+      ) {
         throw new NotFoundException('Secret not found');
       }
 
