@@ -68,9 +68,9 @@ export class SecretLifecycleService {
       );
     }
     return {
-      iv: Buffer.from(parts[0], 'base64'),
-      authTag: Buffer.from(parts[1], 'base64'),
-      ciphertext: Buffer.from(parts[2], 'base64'),
+      iv: Buffer.from(parts[0]!, 'base64'),
+      authTag: Buffer.from(parts[1]!, 'base64'),
+      ciphertext: Buffer.from(parts[2]!, 'base64'),
     };
   }
 

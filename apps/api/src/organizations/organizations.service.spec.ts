@@ -15,7 +15,7 @@ describe('OrganizationsService', () => {
     deletedAt: null,
   };
 
-  const mockPrismaService = {
+  const mockPrismaService: any = {
     organization: {
       findUnique: jest.fn(),
       findUniqueOrThrow: jest.fn(),

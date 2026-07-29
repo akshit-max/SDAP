@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { EncryptionService, EncryptionContext } from './encryption.service';
+import { EncryptionService, EncryptionContext, EncryptionResult } from './encryption.service';
 import * as crypto from 'crypto';
 
 describe('EncryptionService', () => {
@@ -138,7 +138,7 @@ describe('EncryptionService', () => {
 
       // Tamper with the first byte
       const tamperedCiphertext = Buffer.from(encrypted.ciphertext);
-      tamperedCiphertext[0] ^= 1;
+      tamperedCiphertext[0] = tamperedCiphertext[0]! ^ 1;
 
       expect(() => {
         service.decryptPayload(
@@ -157,7 +157,7 @@ describe('EncryptionService', () => {
 
       // Tamper with auth tag
       const tamperedTag = Buffer.from(encrypted.authTag);
-      tamperedTag[0] ^= 1;
+      tamperedTag[0] = tamperedTag[0]! ^ 1;
 
       expect(() => {
         service.decryptPayload(
