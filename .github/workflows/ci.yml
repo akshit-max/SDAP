@@ -23,7 +23,7 @@ jobs:
       run: npm ci
       
     - name: Generate Prisma Client
-      run: npx prisma generate --workspace=@repo/db
+      run: npm run generate --workspace=@repo/db
       
     - name: Lint
       run: npm run lint
