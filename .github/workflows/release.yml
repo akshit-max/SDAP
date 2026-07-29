@@ -1,0 +1,39 @@
+name: Release Validation
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  validate-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Generate Prisma Client
+      run: npm run db:generate
+
+    - name: Verify API Docker Build
+      run: docker build -t sdap-api:test -f apps/api/Dockerfile .
+
+    - name: Verify Web Docker Build
+      run: docker build -t sdap-web:test -f apps/web/Dockerfile .
+      
+    - name: Validate Prisma Migrations
+      run: |
+        docker-compose -f docker-compose.prod.yml up -d db
+        sleep 5
+        DATABASE_URL="postgresql://sdap_user:sdap_password@localhost:5432/sdap_db?schema=public" npm run db:push
+        docker-compose -f docker-compose.prod.yml down

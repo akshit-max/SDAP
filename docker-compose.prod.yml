@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: sdap_user
+      POSTGRES_PASSWORD: sdap_password
+      POSTGRES_DB: sdap_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sdap_user -d sdap_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://sdap_user:sdap_password@db:5432/sdap_db?schema=public}
+      - VAULT_ENCRYPTION_KEY=${VAULT_ENCRYPTION_KEY}
+      - NODE_ENV=production
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./keys:/app/keys:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
+    ports:
+      - "3001:3000"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
