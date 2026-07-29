@@ -42,7 +42,9 @@ describe('Vaults & Secrets Integration (e2e)', () => {
     eventEmitter = app.get<EventEmitter2>(EventEmitter2);
 
     // Ensure clean state and DB seeding
-    await prisma.organization.create({ data: { id: testOrgId, name: 'E2E Org', slug: 'e2e-org' } });
+    await prisma.organization.create({
+      data: { id: testOrgId, name: 'E2E Org', slug: 'e2e-org' },
+    });
     await prisma.keyMetadata.create({
       data: { id: 'key-1', version: 1, status: 'ACTIVE' },
     });
