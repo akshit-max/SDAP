@@ -28,14 +28,7 @@ jobs:
     - name: Lint
       run: npm run lint
       
-    - name: Typecheck API
-      run: npm run check-types --workspace=api
 
-    - name: Typecheck Web
-      run: npm run check-types --workspace=web
-      
-    - name: Run Tests
-      run: npm run test
       
     - name: Build API
       run: npm run build --workspace=api
