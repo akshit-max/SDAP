@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { EncryptionService, EncryptionContext, EncryptionResult } from './encryption.service';
+import {
+  EncryptionService,
+  EncryptionContext,
+  EncryptionResult,
+} from './encryption.service';
 import * as crypto from 'crypto';
 
 describe('EncryptionService', () => {

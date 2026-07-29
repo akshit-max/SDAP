@@ -11,6 +11,7 @@ import { OrganizationsModule } from './organizations/organizations.module';
 
 import { ConfigModule } from '@nestjs/config';
 import { AuthorizationModule } from './authorization/authorization.module';
+import { VaultsModule } from './vaults/vaults.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { AuthorizationModule } from './authorization/authorization.module';
     PrismaModule,
     OrganizationsModule,
     AuthorizationModule,
+    VaultsModule,
   ],
   controllers: [AppController],
   providers: [
