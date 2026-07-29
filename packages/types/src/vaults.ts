@@ -41,3 +41,29 @@ export const UpdateSecretMetadataSchema = z.object({
 });
 
 export type UpdateSecretMetadataDto = z.infer<typeof UpdateSecretMetadataSchema>;
+
+export interface VaultResponse {
+  id: string;
+  organizationId: string;
+  name: string;
+  description: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date | null;
+}
+
+export interface SecretResponse {
+  id: string;
+  vaultId: string;
+  name: string;
+  description: string | null;
+  type: string;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date | null;
+}
+
+export interface RevealResponse {
+  plaintext: string;
+}

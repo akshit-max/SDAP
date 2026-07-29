@@ -63,6 +63,10 @@ model User {
 
   refreshTokens           RefreshToken[]
   organizationMemberships OrganizationMember[]
+  grantedSessions         DelegatedSession[]   @relation("SessionGrantor")
+  receivedSessions        DelegatedSession[]   @relation("SessionGrantee")
+  approvalRequests        ApprovalRequest[]
+  auditEvents             AuditEvent[]
 }
 
 model RefreshToken {
@@ -105,9 +109,12 @@ model Organization {
   updatedBy String?
   deletedBy String?
 
-  members     OrganizationMember[]
-  invitations OrganizationInvitation[]
-  vaults      Vault[]
+  members           OrganizationMember[]
+  invitations       OrganizationInvitation[]
+  vaults            Vault[]
+  delegatedSessions DelegatedSession[]
+  approvalRequests  ApprovalRequest[]
+  auditEvents       AuditEvent[]
 }
 
 model OrganizationMember {
@@ -239,4 +246,105 @@ model SecretVersion {
 
   @@unique([secretId, version])
   @@index([secretId])
+}
+
+enum SessionStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+enum SessionScope {
+  VAULT
+  SECRET
+}
+
+enum SessionPermission {
+  REVEAL
+}
+
+model DelegatedSession {
+  id             String @id @default(uuid())
+  organizationId String
+  grantorId      String // User who created the session
+  granteeId      String // Internal User who can use the session
+
+  scope      SessionScope
+  resourceId String // ID of the Vault or Secret based on scope
+  permission SessionPermission @default(REVEAL)
+
+  status      SessionStatus @default(ACTIVE)
+  expiresAt   DateTime
+  maxReveals  Int? // Optional limit on reveals
+  revealCount Int           @default(0)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  revokedAt DateTime?
+  revokedBy String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  grantor      User         @relation("SessionGrantor", fields: [grantorId], references: [id])
+  grantee      User         @relation("SessionGrantee", fields: [granteeId], references: [id])
+
+  @@index([organizationId])
+  @@index([granteeId])
+  @@index([status])
+  @@index([resourceId])
+}
+
+enum ApprovalRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ApprovalType {
+  DELEGATED_SESSION
+}
+
+model ApprovalRequest {
+  id             String @id @default(uuid())
+  organizationId String
+  requesterId    String
+
+  type           ApprovalType @default(DELEGATED_SESSION)
+  requestPayload Json
+
+  status ApprovalRequestStatus @default(PENDING)
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  resolvedAt DateTime?
+  resolvedBy String?
+  reason     String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  requester    User         @relation(fields: [requesterId], references: [id])
+
+  @@index([organizationId])
+  @@index([status])
+}
+
+model AuditEvent {
+  id             String  @id @default(uuid())
+  organizationId String
+  actorId        String? // The user who performed the action
+
+  action       String // e.g., "secret.revealed", "session.created"
+  resourceType String? // e.g., "SECRET", "DELEGATED_SESSION", "APPROVAL_REQUEST"
+  resourceId   String? // e.g., secretId, sessionId, approvalId
+
+  eventVersion Int   @default(1)
+  metadata     Json? // Serialized event data (e.g., reason for reveal)
+
+  createdAt DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  actor        User?        @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt(sort: Desc)])
+  @@index([action])
+  @@index([actorId])
+  @@index([resourceType, resourceId])
 }
