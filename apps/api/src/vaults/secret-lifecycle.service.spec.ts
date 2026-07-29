@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SecretLifecycleService } from './secret-lifecycle.service';
 import { EncryptionService } from './encryption.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   NotFoundException,
   ConflictException,
@@ -22,6 +23,7 @@ describe('SecretLifecycleService', () => {
 
   const mockKeyMetadata = { id: mockKeyId, version: 1, status: 'ACTIVE' };
   let originalEnv: NodeJS.ProcessEnv;
+  let eventEmitter: EventEmitter2;
 
   beforeAll(() => {
     originalEnv = process.env;
@@ -78,12 +80,17 @@ describe('SecretLifecycleService', () => {
           provide: PrismaService,
           useValue: mockPrisma,
         },
+        {
+          provide: EventEmitter2,
+          useValue: { emit: jest.fn() },
+        },
       ],
     }).compile();
 
     service = module.get<SecretLifecycleService>(SecretLifecycleService);
     prisma = module.get<PrismaService>(PrismaService);
     encryption = module.get<EncryptionService>(EncryptionService);
+    eventEmitter = module.get<EventEmitter2>(EventEmitter2);
   });
 
   afterEach(() => {
@@ -111,6 +118,10 @@ describe('SecretLifecycleService', () => {
       expect(result.status).toBe(SecretStatus.ACTIVE);
       expect(result.type).toBe(SecretType.OTHER);
       expect(result.encryptedDek).toBeDefined(); // serialized dek
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        'secret.created',
+        expect.anything(),
+      );
     });
 
     it('should throw if no active key metadata is found', async () => {
@@ -134,6 +145,23 @@ describe('SecretLifecycleService', () => {
   });
 
   describe('updateSecret', () => {
+    it('should throw ConflictException on concurrent version append (P2002)', async () => {
+      jest.spyOn(prisma, '$transaction').mockRejectedValueOnce(
+        new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+          code: 'P2002',
+          clientVersion: 'x',
+        }),
+      );
+
+      await expect(
+        service.updateSecret({
+          secretId: 'existing-secret',
+          plaintext: 'New Payload',
+          organizationId: mockOrgId,
+          userId: mockUserId,
+        }),
+      ).rejects.toThrow(ConflictException);
+    });
     const mockSecretId = 'secret-uuid';
     const mockEncryptedDek =
       Buffer.from('iv').toString('base64') +
@@ -307,9 +335,12 @@ describe('SecretLifecycleService', () => {
       (prisma.$transaction as jest.Mock).mockImplementationOnce(async (cb) => {
         const mockTx = {
           secret: {
-            findUnique: jest
-              .fn()
-              .mockResolvedValue({ id: 'secret-id', deletedAt: null }),
+            findUnique: jest.fn().mockResolvedValue({
+              id: 'secret-id',
+              deletedAt: null,
+              vaultId: mockVaultId,
+              vault: { organizationId: mockOrgId },
+            }),
             update: jest.fn(),
           },
           secretVersion: {

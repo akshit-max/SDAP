@@ -16,6 +16,13 @@ export enum Permission {
   VAULT_UPDATE = "vault.update",
   VAULT_DELETE = "vault.delete",
 
+  // Secrets (Phase 4)
+  SECRET_CREATE = "secret.create",
+  SECRET_READ = "secret.read",
+  SECRET_UPDATE = "secret.update",
+  SECRET_DELETE = "secret.delete",
+  SECRET_REVEAL = "secret.reveal",
+
   // Applications (Phase 5)
   APPLICATION_READ = "application.read",
   APPLICATION_CREATE = "application.create",
