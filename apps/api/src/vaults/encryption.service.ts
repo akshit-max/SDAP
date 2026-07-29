@@ -25,10 +25,12 @@ export class EncryptionService {
     if (!mekBase64) {
       throw new Error('VAULT_ENCRYPTION_KEY environment variable is missing.');
     }
-    
+
     this.MEK = Buffer.from(mekBase64, 'base64');
     if (this.MEK.length !== 32) {
-      throw new Error('VAULT_ENCRYPTION_KEY must be a valid 256-bit (32 byte) key encoded in Base64.');
+      throw new Error(
+        'VAULT_ENCRYPTION_KEY must be a valid 256-bit (32 byte) key encoded in Base64.',
+      );
     }
   }
 
@@ -49,7 +51,7 @@ export class EncryptionService {
 
     const iv = crypto.randomBytes(12);
     const cipher = crypto.createCipheriv(this.ALGORITHM, this.MEK, iv);
-    
+
     const ciphertext = Buffer.concat([cipher.update(dek), cipher.final()]);
     const authTag = cipher.getAuthTag();
 
@@ -68,9 +70,9 @@ export class EncryptionService {
     try {
       const decipher = crypto.createDecipheriv(this.ALGORITHM, this.MEK, iv);
       decipher.setAuthTag(authTag);
-      
+
       return Buffer.concat([decipher.update(encryptedDek), decipher.final()]);
-    } catch (err) {
+    } catch {
       // Swallowing cryptographic errors to maintain constant-time response profiles externally
       // In a real app, this should log to an internal secure logger
       throw new Error('Decryption failed');
@@ -80,18 +82,25 @@ export class EncryptionService {
   /**
    * Encrypts the actual secret payload using the provided DEK and contextual AAD.
    */
-  encryptPayload(plaintext: Buffer, dek: Buffer, context: EncryptionContext): EncryptionResult {
+  encryptPayload(
+    plaintext: Buffer,
+    dek: Buffer,
+    context: EncryptionContext,
+  ): EncryptionResult {
     if (dek.length !== 32) {
       throw new InternalServerErrorException('Invalid DEK length');
     }
 
     const iv = crypto.randomBytes(12);
     const aad = this.computeAAD(context);
-    
+
     const cipher = crypto.createCipheriv(this.ALGORITHM, dek, iv);
     cipher.setAAD(aad);
-    
-    const ciphertext = Buffer.concat([cipher.update(plaintext), cipher.final()]);
+
+    const ciphertext = Buffer.concat([
+      cipher.update(plaintext),
+      cipher.final(),
+    ]);
     const authTag = cipher.getAuthTag();
 
     return {
@@ -105,7 +114,13 @@ export class EncryptionService {
   /**
    * Decrypts the secret payload using the provided DEK and contextual AAD.
    */
-  decryptPayload(ciphertext: Buffer, dek: Buffer, iv: Buffer, authTag: Buffer, context: EncryptionContext): Buffer {
+  decryptPayload(
+    ciphertext: Buffer,
+    dek: Buffer,
+    iv: Buffer,
+    authTag: Buffer,
+    context: EncryptionContext,
+  ): Buffer {
     if (dek.length !== 32) {
       throw new InternalServerErrorException('Invalid DEK length');
     }
@@ -115,15 +130,15 @@ export class EncryptionService {
       const decipher = crypto.createDecipheriv(this.ALGORITHM, dek, iv);
       decipher.setAuthTag(authTag);
       decipher.setAAD(aad);
-      
+
       return Buffer.concat([decipher.update(ciphertext), decipher.final()]);
-    } catch (err) {
+    } catch {
       throw new Error('Decryption failed');
     }
   }
 
   /**
-   * Generates a deterministic, serialized string for the AAD context and hashes it for logging/storage, 
+   * Generates a deterministic, serialized string for the AAD context and hashes it for logging/storage,
    * but the actual AAD passed to AES-GCM is a Buffer.
    */
   computeAAD(context: EncryptionContext): Buffer {

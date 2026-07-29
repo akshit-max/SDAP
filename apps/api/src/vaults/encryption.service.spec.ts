@@ -43,7 +43,8 @@ describe('EncryptionService', () => {
     });
 
     it('should throw if VAULT_ENCRYPTION_KEY is not 32 bytes', () => {
-      process.env.VAULT_ENCRYPTION_KEY = Buffer.from('too-short').toString('base64');
+      process.env.VAULT_ENCRYPTION_KEY =
+        Buffer.from('too-short').toString('base64');
       expect(() => new EncryptionService()).toThrow();
       process.env.VAULT_ENCRYPTION_KEY = mockMek; // restore
     });
@@ -64,7 +65,11 @@ describe('EncryptionService', () => {
       expect(encrypted.iv.length).toBe(12);
       expect(encrypted.authTag.length).toBe(16);
 
-      const decryptedDek = service.decryptDEK(encrypted.ciphertext, encrypted.iv, encrypted.authTag);
+      const decryptedDek = service.decryptDEK(
+        encrypted.ciphertext,
+        encrypted.iv,
+        encrypted.authTag,
+      );
       expect(decryptedDek.equals(dek)).toBe(true);
     });
 
@@ -89,52 +94,79 @@ describe('EncryptionService', () => {
       const plaintext = Buffer.from('SuperSecretPassword123');
       const encrypted = service.encryptPayload(plaintext, dek, mockContext);
 
-      const decrypted = service.decryptPayload(encrypted.ciphertext, dek, encrypted.iv, encrypted.authTag, mockContext);
+      const decrypted = service.decryptPayload(
+        encrypted.ciphertext,
+        dek,
+        encrypted.iv,
+        encrypted.authTag,
+        mockContext,
+      );
       expect(decrypted.equals(plaintext)).toBe(true);
     });
 
     it('should generate a valid fingerprint for the plaintext', () => {
       const plaintext = Buffer.from('SuperSecretPassword123');
       const encrypted = service.encryptPayload(plaintext, dek, mockContext);
-      
-      const expectedHash = crypto.createHash('sha256').update(plaintext).digest('hex');
+
+      const expectedHash = crypto
+        .createHash('sha256')
+        .update(plaintext)
+        .digest('hex');
       expect(encrypted.fingerprint).toBe(expectedHash);
     });
 
     it('should fail decryption if DEK is wrong', () => {
       const plaintext = Buffer.from('SuperSecretPassword123');
       const encrypted = service.encryptPayload(plaintext, dek, mockContext);
-      
+
       const wrongDek = service.generateDEK();
-      
+
       expect(() => {
-        service.decryptPayload(encrypted.ciphertext, wrongDek, encrypted.iv, encrypted.authTag, mockContext);
+        service.decryptPayload(
+          encrypted.ciphertext,
+          wrongDek,
+          encrypted.iv,
+          encrypted.authTag,
+          mockContext,
+        );
       }).toThrow('Decryption failed');
     });
 
     it('should fail decryption if ciphertext is tampered', () => {
       const plaintext = Buffer.from('SuperSecretPassword123');
       const encrypted = service.encryptPayload(plaintext, dek, mockContext);
-      
+
       // Tamper with the first byte
       const tamperedCiphertext = Buffer.from(encrypted.ciphertext);
       tamperedCiphertext[0] ^= 1;
-      
+
       expect(() => {
-        service.decryptPayload(tamperedCiphertext, dek, encrypted.iv, encrypted.authTag, mockContext);
+        service.decryptPayload(
+          tamperedCiphertext,
+          dek,
+          encrypted.iv,
+          encrypted.authTag,
+          mockContext,
+        );
       }).toThrow('Decryption failed');
     });
 
     it('should fail decryption if authTag is tampered', () => {
       const plaintext = Buffer.from('SuperSecretPassword123');
       const encrypted = service.encryptPayload(plaintext, dek, mockContext);
-      
+
       // Tamper with auth tag
       const tamperedTag = Buffer.from(encrypted.authTag);
       tamperedTag[0] ^= 1;
-      
+
       expect(() => {
-        service.decryptPayload(encrypted.ciphertext, dek, encrypted.iv, tamperedTag, mockContext);
+        service.decryptPayload(
+          encrypted.ciphertext,
+          dek,
+          encrypted.iv,
+          tamperedTag,
+          mockContext,
+        );
       }).toThrow('Decryption failed');
     });
   });
@@ -151,24 +183,27 @@ describe('EncryptionService', () => {
 
     it('should decrypt with identical AAD context', () => {
       const decrypted = service.decryptPayload(
-        encryptedPayload.ciphertext, 
-        dek, 
-        encryptedPayload.iv, 
-        encryptedPayload.authTag, 
-        mockContext
+        encryptedPayload.ciphertext,
+        dek,
+        encryptedPayload.iv,
+        encryptedPayload.authTag,
+        mockContext,
       );
       expect(decrypted.equals(plaintext)).toBe(true);
     });
 
     it('should fail decryption if organizationId changes (ciphertext relocation)', () => {
-      const tamperedContext = { ...mockContext, organizationId: 'hacker-org-999' };
+      const tamperedContext = {
+        ...mockContext,
+        organizationId: 'hacker-org-999',
+      };
       expect(() => {
         service.decryptPayload(
-          encryptedPayload.ciphertext, 
-          dek, 
-          encryptedPayload.iv, 
-          encryptedPayload.authTag, 
-          tamperedContext
+          encryptedPayload.ciphertext,
+          dek,
+          encryptedPayload.iv,
+          encryptedPayload.authTag,
+          tamperedContext,
         );
       }).toThrow('Decryption failed');
     });
@@ -177,11 +212,11 @@ describe('EncryptionService', () => {
       const tamperedContext = { ...mockContext, vaultId: 'another-vault' };
       expect(() => {
         service.decryptPayload(
-          encryptedPayload.ciphertext, 
-          dek, 
-          encryptedPayload.iv, 
-          encryptedPayload.authTag, 
-          tamperedContext
+          encryptedPayload.ciphertext,
+          dek,
+          encryptedPayload.iv,
+          encryptedPayload.authTag,
+          tamperedContext,
         );
       }).toThrow('Decryption failed');
     });
@@ -190,11 +225,11 @@ describe('EncryptionService', () => {
       const tamperedContext = { ...mockContext, secretId: 'another-secret' };
       expect(() => {
         service.decryptPayload(
-          encryptedPayload.ciphertext, 
-          dek, 
-          encryptedPayload.iv, 
-          encryptedPayload.authTag, 
-          tamperedContext
+          encryptedPayload.ciphertext,
+          dek,
+          encryptedPayload.iv,
+          encryptedPayload.authTag,
+          tamperedContext,
         );
       }).toThrow('Decryption failed');
     });
@@ -203,11 +238,11 @@ describe('EncryptionService', () => {
       const tamperedContext = { ...mockContext, version: 2 }; // Trying to rollback by swapping ciphertexts
       expect(() => {
         service.decryptPayload(
-          encryptedPayload.ciphertext, 
-          dek, 
-          encryptedPayload.iv, 
-          encryptedPayload.authTag, 
-          tamperedContext
+          encryptedPayload.ciphertext,
+          dek,
+          encryptedPayload.iv,
+          encryptedPayload.authTag,
+          tamperedContext,
         );
       }).toThrow('Decryption failed');
     });

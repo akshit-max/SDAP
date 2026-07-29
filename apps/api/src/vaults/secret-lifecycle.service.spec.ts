@@ -2,7 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SecretLifecycleService } from './secret-lifecycle.service';
 import { EncryptionService } from './encryption.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { NotFoundException, ConflictException, InternalServerErrorException } from '@nestjs/common';
+import {
+  NotFoundException,
+  ConflictException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { Prisma, SecretStatus, SecretType } from '@prisma/client';
 
 describe('SecretLifecycleService', () => {
@@ -18,10 +22,13 @@ describe('SecretLifecycleService', () => {
 
   const mockKeyMetadata = { id: mockKeyId, version: 1, status: 'ACTIVE' };
   let originalEnv: NodeJS.ProcessEnv;
-  
+
   beforeAll(() => {
     originalEnv = process.env;
-    process.env = { ...originalEnv, VAULT_ENCRYPTION_KEY: Buffer.from('a'.repeat(32)).toString('base64') };
+    process.env = {
+      ...originalEnv,
+      VAULT_ENCRYPTION_KEY: Buffer.from('a'.repeat(32)).toString('base64'),
+    };
   });
 
   afterAll(() => {
@@ -35,12 +42,24 @@ describe('SecretLifecycleService', () => {
         findFirst: jest.fn().mockResolvedValue(mockKeyMetadata),
       },
       secret: {
-        create: jest.fn().mockImplementation((args) => Promise.resolve({ id: args.data.id, ...args.data })),
+        create: jest
+          .fn()
+          .mockImplementation((args) =>
+            Promise.resolve({ id: args.data.id, ...args.data }),
+          ),
         findUnique: jest.fn(),
-        update: jest.fn().mockImplementation((args) => Promise.resolve({ id: args.where.id, ...args.data })),
+        update: jest
+          .fn()
+          .mockImplementation((args) =>
+            Promise.resolve({ id: args.where.id, ...args.data }),
+          ),
       },
       secretVersion: {
-        create: jest.fn().mockImplementation((args) => Promise.resolve({ id: 'ver-id', ...args.data })),
+        create: jest
+          .fn()
+          .mockImplementation((args) =>
+            Promise.resolve({ id: 'ver-id', ...args.data }),
+          ),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
     };
@@ -116,9 +135,12 @@ describe('SecretLifecycleService', () => {
 
   describe('updateSecret', () => {
     const mockSecretId = 'secret-uuid';
-    const mockEncryptedDek = Buffer.from('iv').toString('base64') + '.' + 
-                             Buffer.from('authTag').toString('base64') + '.' + 
-                             Buffer.from('ciphertext').toString('base64');
+    const mockEncryptedDek =
+      Buffer.from('iv').toString('base64') +
+      '.' +
+      Buffer.from('authTag').toString('base64') +
+      '.' +
+      Buffer.from('ciphertext').toString('base64');
 
     const mockSecretData = {
       id: mockSecretId,
@@ -126,29 +148,33 @@ describe('SecretLifecycleService', () => {
       encryptedDek: mockEncryptedDek,
       keyMetadataId: mockKeyId,
       deletedAt: null,
-      versions: [
-        { version: 1 }
-      ]
+      versions: [{ version: 1 }],
     };
 
     it('should create version 2 sequentially', async () => {
-      jest.spyOn(encryption, 'decryptDEK').mockReturnValue(Buffer.from('a'.repeat(32)));
+      jest
+        .spyOn(encryption, 'decryptDEK')
+        .mockReturnValue(Buffer.from('a'.repeat(32)));
       jest.spyOn(encryption, 'encryptPayload').mockReturnValue({
         ciphertext: Buffer.from('c'),
         iv: Buffer.from('i'),
         authTag: Buffer.from('a'),
-        fingerprint: 'hash'
+        fingerprint: 'hash',
       });
 
       (prisma.$transaction as jest.Mock).mockImplementationOnce(async (cb) => {
         return cb({
           secret: {
             findUnique: jest.fn().mockResolvedValue(mockSecretData),
-            update: jest.fn().mockResolvedValue({ id: mockSecretId, updatedAt: new Date() }),
+            update: jest
+              .fn()
+              .mockResolvedValue({ id: mockSecretId, updatedAt: new Date() }),
           },
           secretVersion: {
-            create: jest.fn().mockImplementation((args) => Promise.resolve(args.data)),
-          }
+            create: jest
+              .fn()
+              .mockImplementation((args) => Promise.resolve(args.data)),
+          },
         });
       });
 
@@ -168,7 +194,7 @@ describe('SecretLifecycleService', () => {
         new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
           code: 'P2002',
           clientVersion: 'x',
-        })
+        }),
       );
 
       await expect(
@@ -177,20 +203,25 @@ describe('SecretLifecycleService', () => {
           plaintext: 'concurrently-updated-secret',
           organizationId: mockOrgId,
           userId: mockUserId,
-        })
+        }),
       ).rejects.toThrow(ConflictException);
     });
   });
 
   describe('revealSecret', () => {
     const mockSecretId = 'secret-uuid';
-    const mockEncryptedDek = Buffer.from('iv').toString('base64') + '.' + 
-                             Buffer.from('authTag').toString('base64') + '.' + 
-                             Buffer.from('ciphertext').toString('base64');
+    const mockEncryptedDek =
+      Buffer.from('iv').toString('base64') +
+      '.' +
+      Buffer.from('authTag').toString('base64') +
+      '.' +
+      Buffer.from('ciphertext').toString('base64');
 
     it('should decrypt and return plaintext successfully', async () => {
       const plaintextBuffer = Buffer.from('decrypted-secret');
-      jest.spyOn(encryption, 'decryptDEK').mockReturnValue(Buffer.from('a'.repeat(32)));
+      jest
+        .spyOn(encryption, 'decryptDEK')
+        .mockReturnValue(Buffer.from('a'.repeat(32)));
       jest.spyOn(encryption, 'decryptPayload').mockReturnValue(plaintextBuffer);
 
       (prisma.$transaction as jest.Mock).mockImplementationOnce(async (cb) => {
@@ -201,7 +232,7 @@ describe('SecretLifecycleService', () => {
               vaultId: mockVaultId,
               encryptedDek: mockEncryptedDek,
               deletedAt: null,
-              versions: [{ version: 1, ciphertext: '', iv: '', authTag: '' }]
+              versions: [{ version: 1, ciphertext: '', iv: '', authTag: '' }],
             }),
             update: jest.fn(),
           },
@@ -218,7 +249,9 @@ describe('SecretLifecycleService', () => {
     });
 
     it('should throw generic InternalServerErrorException on decryption failure (constant-time)', async () => {
-      jest.spyOn(encryption, 'decryptDEK').mockReturnValue(Buffer.from('a'.repeat(32)));
+      jest
+        .spyOn(encryption, 'decryptDEK')
+        .mockReturnValue(Buffer.from('a'.repeat(32)));
       jest.spyOn(encryption, 'decryptPayload').mockImplementation(() => {
         throw new Error('Internal Crypto Error (e.g. invalid auth tag)');
       });
@@ -231,7 +264,7 @@ describe('SecretLifecycleService', () => {
               vaultId: mockVaultId,
               encryptedDek: mockEncryptedDek,
               deletedAt: null,
-              versions: [{ version: 1, ciphertext: '', iv: '', authTag: '' }]
+              versions: [{ version: 1, ciphertext: '', iv: '', authTag: '' }],
             }),
           },
         });
@@ -242,7 +275,7 @@ describe('SecretLifecycleService', () => {
           secretId: mockSecretId,
           organizationId: mockOrgId,
           userId: mockUserId,
-        })
+        }),
       ).rejects.toThrow(InternalServerErrorException);
     });
 
@@ -253,7 +286,7 @@ describe('SecretLifecycleService', () => {
             findUnique: jest.fn().mockResolvedValue({
               id: mockSecretId,
               deletedAt: new Date(),
-              versions: []
+              versions: [],
             }),
           },
         });
@@ -264,7 +297,7 @@ describe('SecretLifecycleService', () => {
           secretId: mockSecretId,
           organizationId: mockOrgId,
           userId: mockUserId,
-        })
+        }),
       ).rejects.toThrow(InternalServerErrorException);
     });
   });
@@ -274,12 +307,14 @@ describe('SecretLifecycleService', () => {
       (prisma.$transaction as jest.Mock).mockImplementationOnce(async (cb) => {
         const mockTx = {
           secret: {
-            findUnique: jest.fn().mockResolvedValue({ id: 'secret-id', deletedAt: null }),
+            findUnique: jest
+              .fn()
+              .mockResolvedValue({ id: 'secret-id', deletedAt: null }),
             update: jest.fn(),
           },
           secretVersion: {
             updateMany: jest.fn(),
-          }
+          },
         };
         await cb(mockTx);
         expect(mockTx.secret.update).toHaveBeenCalled();
@@ -294,13 +329,17 @@ describe('SecretLifecycleService', () => {
       (prisma.$transaction as jest.Mock).mockImplementationOnce(async (cb) => {
         const mockTx = {
           secret: {
-            findUnique: jest.fn().mockResolvedValue({ id: 'secret-id', deletedAt: new Date() }),
+            findUnique: jest
+              .fn()
+              .mockResolvedValue({ id: 'secret-id', deletedAt: new Date() }),
           },
         };
         return cb(mockTx);
       });
 
-      await expect(service.softDeleteSecret('secret-id', mockUserId)).rejects.toThrow(NotFoundException);
+      await expect(
+        service.softDeleteSecret('secret-id', mockUserId),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

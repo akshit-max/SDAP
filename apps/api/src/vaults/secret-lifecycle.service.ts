@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, ConflictException, InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EncryptionService, EncryptionResult } from './encryption.service';
 import { SecretType, SecretStatus, Prisma } from '@prisma/client';
@@ -50,10 +56,16 @@ export class SecretLifecycleService {
   /**
    * Deserializes a Base64 string back into IV, AuthTag, and Ciphertext buffers
    */
-  private deserializeDek(serialized: string): { iv: Buffer; authTag: Buffer; ciphertext: Buffer } {
+  private deserializeDek(serialized: string): {
+    iv: Buffer;
+    authTag: Buffer;
+    ciphertext: Buffer;
+  } {
     const parts = serialized.split('.');
     if (parts.length !== 3) {
-      throw new InternalServerErrorException('Corrupted DEK format in database');
+      throw new InternalServerErrorException(
+        'Corrupted DEK format in database',
+      );
     }
     return {
       iv: Buffer.from(parts[0], 'base64'),
@@ -72,30 +84,48 @@ export class SecretLifecycleService {
     });
 
     if (!activeKey) {
-      this.logger.error('No active KeyMetadata record found in the database. Cannot encrypt secrets.');
-      throw new InternalServerErrorException('Cryptographic configuration error');
+      this.logger.error(
+        'No active KeyMetadata record found in the database. Cannot encrypt secrets.',
+      );
+      throw new InternalServerErrorException(
+        'Cryptographic configuration error',
+      );
     }
 
     return activeKey;
   }
 
   async createSecret(input: CreateSecretInput) {
-    const { vaultId, name, description, type, plaintext, organizationId, userId } = input;
+    const {
+      vaultId,
+      name,
+      description,
+      type,
+      plaintext,
+      organizationId,
+      userId,
+    } = input;
     const plaintextBuffer = Buffer.from(plaintext, 'utf8');
     const secretId = crypto.randomUUID(); // Predetermine ID for AAD
 
     return this.prisma.$transaction(async (tx) => {
       const activeKey = await this.getActiveKeyMetadata(tx);
-      
+
       const dek = this.encryption.generateDEK();
       const encryptedDekResult = this.encryption.encryptDEK(dek);
       const serializedDek = this.serializeDek(encryptedDekResult);
 
       const version = 1;
       const context = { organizationId, vaultId, secretId, version };
-      const encryptedPayload = this.encryption.encryptPayload(plaintextBuffer, dek, context);
+      const encryptedPayload = this.encryption.encryptPayload(
+        plaintextBuffer,
+        dek,
+        context,
+      );
 
-      this.logger.log(`[AUDIT INTENT] User ${userId} creating Secret ${secretId} (v1) in Vault ${vaultId}`);
+      this.logger.log(
+        `[AUDIT INTENT] User ${userId} creating Secret ${secretId} (v1) in Vault ${vaultId}`,
+      );
 
       const secret = await tx.secret.create({
         data: {
@@ -125,7 +155,9 @@ export class SecretLifecycleService {
         },
       });
 
-      this.logger.log(`[AUDIT SUCCESS] User ${userId} successfully created Secret ${secret.id} (v1)`);
+      this.logger.log(
+        `[AUDIT SUCCESS] User ${userId} successfully created Secret ${secret.id} (v1)`,
+      );
       return secret;
     });
   }
@@ -150,13 +182,28 @@ export class SecretLifecycleService {
 
         // Decrypt the DEK
         const dekParts = this.deserializeDek(secret.encryptedDek);
-        const dek = this.encryption.decryptDEK(dekParts.ciphertext, dekParts.iv, dekParts.authTag);
+        const dek = this.encryption.decryptDEK(
+          dekParts.ciphertext,
+          dekParts.iv,
+          dekParts.authTag,
+        );
 
         // Encrypt the new payload
-        const context = { organizationId, vaultId: secret.vaultId, secretId, version: newVersionNumber };
-        const encryptedPayload = this.encryption.encryptPayload(plaintextBuffer, dek, context);
+        const context = {
+          organizationId,
+          vaultId: secret.vaultId,
+          secretId,
+          version: newVersionNumber,
+        };
+        const encryptedPayload = this.encryption.encryptPayload(
+          plaintextBuffer,
+          dek,
+          context,
+        );
 
-        this.logger.log(`[AUDIT INTENT] User ${userId} updating Secret ${secretId} to v${newVersionNumber}`);
+        this.logger.log(
+          `[AUDIT INTENT] User ${userId} updating Secret ${secretId} to v${newVersionNumber}`,
+        );
 
         // Persist new version
         await tx.secretVersion.create({
@@ -181,30 +228,42 @@ export class SecretLifecycleService {
           },
         });
 
-        this.logger.log(`[AUDIT SUCCESS] User ${userId} successfully updated Secret ${secret.id} to v${newVersionNumber}`);
+        this.logger.log(
+          `[AUDIT SUCCESS] User ${userId} successfully updated Secret ${secret.id} to v${newVersionNumber}`,
+        );
         return updatedSecret;
       });
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new ConflictException('Concurrent update detected. Please try again.');
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException(
+          'Concurrent update detected. Please try again.',
+        );
       }
       throw error;
     }
   }
 
-  async revealSecret(input: RevealSecretInput, versionNumber?: number): Promise<string> {
+  async revealSecret(
+    input: RevealSecretInput,
+    versionNumber?: number,
+  ): Promise<string> {
     const { secretId, organizationId, userId, reason } = input;
 
     return this.prisma.$transaction(async (tx) => {
-      this.logger.log(`[AUDIT INTENT] User ${userId} requesting reveal of Secret ${secretId} ${versionNumber ? `(v${versionNumber})` : '(latest)'}. Reason: ${reason || 'None'}`);
+      this.logger.log(
+        `[AUDIT INTENT] User ${userId} requesting reveal of Secret ${secretId} ${versionNumber ? `(v${versionNumber})` : '(latest)'}. Reason: ${reason || 'None'}`,
+      );
 
       try {
         const secret = await tx.secret.findUnique({
           where: { id: secretId },
-          include: { 
-            versions: versionNumber 
+          include: {
+            versions: versionNumber
               ? { where: { version: versionNumber } }
-              : { orderBy: { version: 'desc' }, take: 1 } 
+              : { orderBy: { version: 'desc' }, take: 1 },
           },
         });
 
@@ -214,21 +273,30 @@ export class SecretLifecycleService {
 
         const targetVersion = secret.versions[0];
         if (!targetVersion) {
-            throw new Error('Secret unavailable');
+          throw new Error('Secret unavailable');
         }
 
         // Decrypt DEK
         const dekParts = this.deserializeDek(secret.encryptedDek);
-        const dek = this.encryption.decryptDEK(dekParts.ciphertext, dekParts.iv, dekParts.authTag);
+        const dek = this.encryption.decryptDEK(
+          dekParts.ciphertext,
+          dekParts.iv,
+          dekParts.authTag,
+        );
 
         // Decrypt Payload
-        const context = { organizationId, vaultId: secret.vaultId, secretId, version: targetVersion.version };
+        const context = {
+          organizationId,
+          vaultId: secret.vaultId,
+          secretId,
+          version: targetVersion.version,
+        };
         const plaintextBuffer = this.encryption.decryptPayload(
           Buffer.from(targetVersion.ciphertext, 'base64'),
           dek,
           Buffer.from(targetVersion.iv, 'base64'),
           Buffer.from(targetVersion.authTag, 'base64'),
-          context
+          context,
         );
 
         // Update Reveal Metadata
@@ -240,14 +308,17 @@ export class SecretLifecycleService {
           },
         });
 
-        this.logger.log(`[AUDIT SUCCESS] User ${userId} successfully revealed Secret ${secretId} (v${targetVersion.version})`);
+        this.logger.log(
+          `[AUDIT SUCCESS] User ${userId} successfully revealed Secret ${secretId} (v${targetVersion.version})`,
+        );
         return plaintextBuffer.toString('utf8');
-
       } catch (err: unknown) {
         let msg = 'Unknown error';
         if (err instanceof Error) msg = err.message;
-        this.logger.warn(`[AUDIT FAILURE] User ${userId} failed to reveal Secret ${secretId}: ${msg}`);
-        
+        this.logger.warn(
+          `[AUDIT FAILURE] User ${userId} failed to reveal Secret ${secretId}: ${msg}`,
+        );
+
         throw new InternalServerErrorException('Unable to reveal secret');
       }
     });
@@ -255,7 +326,9 @@ export class SecretLifecycleService {
 
   async softDeleteSecret(secretId: string, userId: string) {
     return this.prisma.$transaction(async (tx) => {
-      this.logger.log(`[AUDIT INTENT] User ${userId} soft-deleting Secret ${secretId}`);
+      this.logger.log(
+        `[AUDIT INTENT] User ${userId} soft-deleting Secret ${secretId}`,
+      );
 
       const secret = await tx.secret.findUnique({ where: { id: secretId } });
       if (!secret || secret.deletedAt) {
@@ -277,7 +350,9 @@ export class SecretLifecycleService {
         data: { deletedAt: now },
       });
 
-      this.logger.log(`[AUDIT SUCCESS] User ${userId} soft-deleted Secret ${secretId}`);
+      this.logger.log(
+        `[AUDIT SUCCESS] User ${userId} soft-deleted Secret ${secretId}`,
+      );
     });
   }
 }
