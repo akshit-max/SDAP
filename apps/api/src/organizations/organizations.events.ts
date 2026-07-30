@@ -11,6 +11,8 @@ export class MemberInvitedEvent {
     public readonly organizationId: string,
     public readonly email: string,
     public readonly inviterId: string,
+    /** The raw (unhashed) invite token — used to construct the invite URL in email */
+    public readonly rawToken: string,
   ) {}
 }
 

@@ -16,6 +16,7 @@ import { SessionsModule } from './sessions/sessions.module';
 import { ApprovalsModule } from './approvals/approvals.module';
 import { AuditModule } from './audit/audit.module';
 import { HealthModule } from './health/health.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 import { validate } from './config/env.validation';
 
@@ -42,6 +43,7 @@ import { validate } from './config/env.validation';
     ApprovalsModule,
     AuditModule,
     HealthModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [

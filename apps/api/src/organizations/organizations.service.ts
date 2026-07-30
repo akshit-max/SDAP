@@ -155,7 +155,7 @@ export class OrganizationsService {
 
     this.eventEmitter.emit(
       'member.invited',
-      new MemberInvitedEvent(orgId, email, userId),
+      new MemberInvitedEvent(orgId, email, userId, rawToken),
     );
 
     return { rawToken };
