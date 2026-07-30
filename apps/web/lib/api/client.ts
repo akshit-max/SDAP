@@ -1,5 +1,6 @@
 import axios, { AxiosError } from 'axios';
-import { getToken, clearToken } from '../auth/token';
+import { getToken } from '../auth/token';
+import { clearAuthStorage } from '../auth/auth-storage';
 
 export const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1',
@@ -31,7 +32,8 @@ apiClient.interceptors.response.use(
           (window.location.pathname.startsWith('/login') || window.location.pathname.startsWith('/register'));
 
         if (!isAuthPage) {
-          clearToken();
+          // B-3: Clear full session (token + user + org) — not just the token
+          clearAuthStorage();
           window.location.href = '/login';
         }
         message = 'Invalid credentials. Please check your email and password.';

@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AuthSession, UserSession, OrganizationSession } from './session';
+import { STORAGE_KEYS } from './auth-storage';
 
 interface AuthContextType {
   user: UserSession | null;
@@ -23,6 +24,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   const loadSession = () => {
+    // B-3: Clear stale localStorage sessions on startup.
+    // If the stored token is past its tracked expiry, clear everything
+    // rather than hydrating the user with a session that will immediately
+    // 401 on the first API call.
+    if (AuthSession.isExpired()) {
+      AuthSession.clear();
+      setUser(null);
+      setOrganization(null);
+      setIsLoading(false);
+      return;
+    }
+
     setUser(AuthSession.getCurrentUser());
     setOrganization(AuthSession.getCurrentOrganization());
     setIsLoading(false);
@@ -30,10 +43,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     loadSession();
-    
-    // Listen for storage changes in case of cross-tab login/logout
+
+    // Listen for storage changes (cross-tab login/logout)
+    // B-3: Use STORAGE_KEYS constants — no hard-coded strings
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'auth_user' || e.key === 'auth_org') {
+      if (e.key === STORAGE_KEYS.USER || e.key === STORAGE_KEYS.ORG) {
         loadSession();
       }
     };
