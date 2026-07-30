@@ -30,3 +30,16 @@ export const AuthTokensSchema = z.object({
 });
 
 export type AuthTokensDto = z.infer<typeof AuthTokensSchema>;
+
+export const ForgotPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+export type ForgotPasswordDto = z.infer<typeof ForgotPasswordSchema>;
+
+export const ResetPasswordSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+});
+
+export type ResetPasswordDto = z.infer<typeof ResetPasswordSchema>;

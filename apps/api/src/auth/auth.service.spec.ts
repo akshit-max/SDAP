@@ -3,6 +3,7 @@ import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { TokenService } from './token.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailerService } from '../notifications/mailer.service';
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 
 describe('AuthService', () => {
@@ -46,6 +47,10 @@ describe('AuthService', () => {
     }),
   };
 
+  const mockMailerService = {
+    send: jest.fn().mockResolvedValue(undefined),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -55,6 +60,7 @@ describe('AuthService', () => {
         { provide: UsersService, useValue: mockUsersService },
         { provide: TokenService, useValue: mockTokenService },
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: MailerService, useValue: mockMailerService },
       ],
     }).compile();
 

@@ -7,6 +7,10 @@ import {
   LoginDto,
   RefreshSchema,
   RefreshDto,
+  ForgotPasswordSchema,
+  ForgotPasswordDto,
+  ResetPasswordSchema,
+  ResetPasswordDto,
 } from '@repo/types';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { Request } from 'express';
@@ -47,5 +51,30 @@ export class AuthController {
   @UsePipes(new ZodValidationPipe(RefreshSchema))
   async logout(@Body() dto: RefreshDto) {
     return this.authService.logout(dto.refreshToken);
+  }
+
+  /**
+   * POST /api/v1/auth/forgot-password
+   * Sends a reset link to the provided email.
+   * Rate-limited: 5 requests per minute to prevent abuse.
+   * Always returns success — prevents email enumeration.
+   */
+  @Post('forgot-password')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @UsePipes(new ZodValidationPipe(ForgotPasswordSchema))
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.requestPasswordReset(dto.email);
+  }
+
+  /**
+   * POST /api/v1/auth/reset-password
+   * Consumes a reset token and sets a new password.
+   * Token expires in 15 minutes and can only be used once.
+   */
+  @Post('reset-password')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @UsePipes(new ZodValidationPipe(ResetPasswordSchema))
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto.token, dto.password);
   }
 }

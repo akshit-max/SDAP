@@ -9,6 +9,7 @@ import { TokenService } from './token.service';
 import { HashService } from '@repo/security';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto, LoginDto } from '@repo/types';
+import { MailerService } from '../notifications/mailer.service';
 import * as crypto from 'crypto';
 import { randomUUID } from 'crypto';
 
@@ -20,6 +21,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly tokenService: TokenService,
     private readonly prisma: PrismaService,
+    private readonly mailer: MailerService,
   ) {}
 
   async register(dto: RegisterDto, ipAddress?: string, userAgent?: string) {
@@ -228,6 +230,124 @@ export class AuthService {
       data: { isRevoked: true, revokedAt: new Date() },
     });
     return { success: true };
+  }
+
+  /**
+   * Initiates a password reset by sending an email with a time-limited token.
+   *
+   * SECURITY: Always returns { success: true } regardless of whether the email
+   * exists — prevents user enumeration attacks. The caller cannot distinguish
+   * between a registered and unregistered email.
+   *
+   * Token expires in 15 minutes. The raw token travels only via email;
+   * only the SHA-256 hash is stored in the database.
+   */
+  async requestPasswordReset(email: string) {
+    const user = await this.usersService.findByEmail(email);
+
+    if (user) {
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+      // Upsert: one active reset token per user at a time
+      await this.prisma.passwordResetToken.upsert({
+        where: { tokenHash },
+        create: { userId: user.id, tokenHash, expiresAt },
+        update: { tokenHash, expiresAt, usedAt: null },
+      });
+
+      const appUrl = process.env.APP_URL ?? 'http://localhost:3000';
+      const resetUrl = `${appUrl}/reset-password?token=${rawToken}`;
+
+      await this.mailer.send({
+        to: email,
+        subject: 'Reset your WITHUS password',
+        html: this.buildPasswordResetEmailHtml(resetUrl),
+        text: `Reset your password here: ${resetUrl}\n\nThis link expires in 15 minutes. If you did not request a reset, ignore this email.`,
+      });
+
+      this.logger.log(`Password reset requested for user ${user.id}`);
+    }
+
+    // Always return success — prevents email enumeration
+    return { success: true, message: 'If that email is registered, a reset link has been sent.' };
+  }
+
+  /**
+   * Validates a reset token and updates the user's password.
+   *
+   * Security guarantees:
+   *   - Token must exist, be unused, and not expired
+   *   - Marks token as used atomically
+   *   - Invalidates all active refresh tokens on success (forces re-login)
+   */
+  async resetPassword(rawToken: string, newPassword: string) {
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    const record = await this.prisma.passwordResetToken.findUnique({
+      where: { tokenHash },
+      include: { user: true },
+    });
+
+    if (!record || record.usedAt || record.expiresAt < new Date()) {
+      throw new BadRequestException('Password reset link is invalid or has expired.');
+    }
+
+    const passwordHash = await HashService.hash(newPassword);
+
+    await this.prisma.$transaction([
+      // Mark token as used
+      this.prisma.passwordResetToken.update({
+        where: { id: record.id },
+        data: { usedAt: new Date() },
+      }),
+      // Update password
+      this.prisma.user.update({
+        where: { id: record.userId },
+        data: { passwordHash },
+      }),
+      // Revoke all refresh tokens — force re-login on all devices
+      this.prisma.refreshToken.updateMany({
+        where: { userId: record.userId, isRevoked: false },
+        data: { isRevoked: true, revokedAt: new Date() },
+      }),
+    ]);
+
+    this.logger.log(`Password reset completed for user ${record.userId}`);
+    return { success: true };
+  }
+
+  private buildPasswordResetEmailHtml(resetUrl: string): string {
+    return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8" /><title>Reset your WITHUS password</title></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; margin: 0; padding: 40px 0;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 480px; margin: 0 auto;">
+    <tr>
+      <td style="background: #ffffff; border-radius: 12px; padding: 40px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+        <div style="text-align: center; margin-bottom: 32px;">
+          <div style="display: inline-flex; background: #0f172a; color: white; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600;">🔐 WITHUS</div>
+        </div>
+        <h1 style="font-size: 20px; font-weight: 700; color: #0f172a; margin: 0 0 8px 0; text-align: center;">Reset your password</h1>
+        <p style="font-size: 14px; color: #64748b; margin: 0 0 32px 0; text-align: center; line-height: 1.6;">
+          Click the button below to set a new password. This link expires in <strong>15 minutes</strong>.
+        </p>
+        <div style="text-align: center; margin-bottom: 32px;">
+          <a href="${resetUrl}" style="display: inline-block; background: #0f172a; color: #ffffff; font-size: 14px; font-weight: 600; text-decoration: none; padding: 12px 28px; border-radius: 8px;">Reset Password</a>
+        </div>
+        <p style="font-size: 12px; color: #94a3b8; text-align: center; margin: 0; line-height: 1.6;">
+          If you didn't request a password reset, you can safely ignore this email.<br/>
+          Your password will not be changed.
+        </p>
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+        <p style="font-size: 11px; color: #cbd5e1; text-align: center; margin: 0;">WITHUS — Secure Delegated Access Platform</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
   }
 
   private generateRefreshToken() {
