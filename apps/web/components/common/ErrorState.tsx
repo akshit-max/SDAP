@@ -10,16 +10,16 @@ interface ErrorStateProps {
 
 export function ErrorState({ title = 'Something went wrong', message, onRetry, className = '' }: ErrorStateProps) {
   return (
-    <div className={`flex flex-col items-center justify-center p-8 text-center space-y-4 rounded-lg border border-red-200 bg-red-50 text-red-900 ${className}`}>
-      <AlertCircle className="w-10 h-10 text-red-500" />
+    <div className={`flex flex-col items-center justify-center p-6 text-center space-y-3.5 rounded-xl border border-red-200/50 dark:border-red-900/30 bg-red-50/50 dark:bg-red-950/10 text-red-900 ${className}`}>
+      <AlertCircle className="w-8 h-8 text-red-500" />
       <div>
-        <h3 className="text-lg font-semibold">{title}</h3>
-        <p className="text-sm mt-1 text-red-700">{message}</p>
+        <h3 className="text-xs font-bold text-red-900 dark:text-red-400 uppercase tracking-wider">{title}</h3>
+        <p className="text-xs mt-1 text-red-700/80 dark:text-red-300/80 font-medium">{message}</p>
       </div>
       {onRetry && (
         <button
           onClick={onRetry}
-          className="mt-4 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-800 rounded-md font-medium transition-colors text-sm"
+          className="px-3 py-1.5 bg-red-100 hover:bg-red-200/80 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-800 dark:text-red-300 rounded-lg font-semibold transition-colors text-xs shadow-sm"
         >
           Try Again
         </button>
