@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Patch,
+  Delete,
   Param,
   UseGuards,
   Request,
@@ -25,7 +26,7 @@ import { RequirePermissions } from '../authorization/decorators/require-permissi
 import { OrganizationContext } from '../authorization/decorators/organization-context.decorator';
 
 @UseGuards(JwtAuthGuard, PermissionsGuard)
-@Controller('api/v1/organizations')
+@Controller('organizations')
 export class OrganizationsController {
   constructor(private readonly organizationsService: OrganizationsService) {}
 
@@ -57,6 +58,14 @@ export class OrganizationsController {
   async findOne(@Request() req: any, @Param('id') id: string) {
     const org = await this.organizationsService.findOne(id);
     return { success: true, data: org };
+  }
+
+  @RequirePermissions(Permission.ORGANIZATION_READ)
+  @OrganizationContext('id')
+  @Get(':id/members')
+  async getMembers(@Request() req: any, @Param('id') id: string) {
+    const members = await this.organizationsService.getMembers(id);
+    return { success: true, data: members };
   }
 
   @RequirePermissions(Permission.ORGANIZATION_UPDATE)
@@ -96,5 +105,55 @@ export class OrganizationsController {
       token,
     );
     return result;
+  }
+
+  @RequirePermissions(Permission.MEMBER_INVITE)
+  @OrganizationContext('id')
+  @Get(':id/invites')
+  async getPendingInvitations(@Param('id') id: string) {
+    const invites = await this.organizationsService.getPendingInvitations(id);
+    return { success: true, data: invites };
+  }
+
+  @RequirePermissions(Permission.MEMBER_INVITE)
+  @OrganizationContext('id')
+  @Delete(':id/invites/:inviteId')
+  async cancelInvitation(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Param('inviteId') inviteId: string,
+  ) {
+    await this.organizationsService.cancelInvitation(id, inviteId, req.user.id);
+    return { success: true };
+  }
+
+  @RequirePermissions(Permission.MEMBER_UPDATE_ROLE)
+  @OrganizationContext('id')
+  @Patch(':id/members/:memberId/role')
+  async changeMemberRole(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Param('memberId') memberId: string,
+    @Body() body: { role: 'ADMIN' | 'MEMBER' },
+  ) {
+    const updated = await this.organizationsService.changeMemberRole(
+      id,
+      memberId,
+      body.role,
+      req.user.id,
+    );
+    return { success: true, data: updated };
+  }
+
+  @RequirePermissions(Permission.MEMBER_REMOVE)
+  @OrganizationContext('id')
+  @Delete(':id/members/:memberId')
+  async removeMember(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Param('memberId') memberId: string,
+  ) {
+    await this.organizationsService.removeMember(id, memberId, req.user.id);
+    return { success: true };
   }
 }

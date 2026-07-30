@@ -101,6 +101,15 @@ export class OrganizationsService {
     return this.prisma.organization.findUniqueOrThrow({ where: { id: orgId } });
   }
 
+  async getMembers(orgId: string) {
+    const members = await this.prisma.organizationMember.findMany({
+      where: { organizationId: orgId, removedAt: null },
+      include: { user: { select: { id: true, email: true, fullName: true, isActive: true } } },
+      orderBy: { joinedAt: 'asc' },
+    });
+    return members;
+  }
+
   async update(userId: string, orgId: string, dto: UpdateOrganizationDto) {
     return this.prisma.organization.update({
       where: { id: orgId },
@@ -211,5 +220,70 @@ export class OrganizationsService {
     );
 
     return { success: true };
+  }
+
+  async getPendingInvitations(orgId: string) {
+    return this.prisma.organizationInvitation.findMany({
+      where: { organizationId: orgId, status: 'PENDING' },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        email: true,
+        status: true,
+        expiresAt: true,
+        createdAt: true,
+        invitedBy: true,
+      },
+    });
+  }
+
+  async cancelInvitation(orgId: string, inviteId: string, userId: string) {
+    const invite = await this.prisma.organizationInvitation.findFirst({
+      where: { id: inviteId, organizationId: orgId, status: 'PENDING' },
+    });
+    if (!invite) {
+      throw new ConflictException('Invitation not found or already processed');
+    }
+    return this.prisma.organizationInvitation.update({
+      where: { id: inviteId },
+      data: { status: 'REVOKED', updatedBy: userId },
+    });
+  }
+
+  async changeMemberRole(
+    orgId: string,
+    memberId: string,
+    role: 'ADMIN' | 'MEMBER',
+    requestorId: string,
+  ) {
+    const member = await this.prisma.organizationMember.findFirst({
+      where: { id: memberId, organizationId: orgId, removedAt: null },
+    });
+    if (!member) throw new ConflictException('Member not found');
+    if (member.role === 'OWNER') {
+      throw new ConflictException('Cannot change the role of an OWNER');
+    }
+    return this.prisma.organizationMember.update({
+      where: { id: memberId },
+      data: { role, updatedBy: requestorId },
+      include: { user: { select: { id: true, email: true, fullName: true } } },
+    });
+  }
+
+  async removeMember(orgId: string, memberId: string, requestorId: string) {
+    const member = await this.prisma.organizationMember.findFirst({
+      where: { id: memberId, organizationId: orgId, removedAt: null },
+    });
+    if (!member) throw new ConflictException('Member not found');
+    if (member.role === 'OWNER') {
+      throw new ConflictException('Cannot remove the OWNER of an organization');
+    }
+    if (member.userId === requestorId) {
+      throw new ConflictException('You cannot remove yourself');
+    }
+    return this.prisma.organizationMember.update({
+      where: { id: memberId },
+      data: { removedAt: new Date(), updatedBy: requestorId },
+    });
   }
 }
