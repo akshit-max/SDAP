@@ -14,12 +14,15 @@ import { RequirePermissions } from '../../authorization/decorators/require-permi
 import {
   Permission,
   ResolveApprovalRequestSchema,
-  ResolveApprovalRequestDto,
 } from '@repo/types';
+import { ResolveApprovalRequestDto } from '../dto/approvals.dto';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { RequestWithUser } from '../../common/interfaces/request-with-user.interface';
 import { OrganizationContext } from '../../authorization/decorators/organization-context.decorator';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiTags('Approvals')
+@ApiBearerAuth()
 @Controller('organizations/:orgId/approvals')
 @OrganizationContext('orgId')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -27,12 +30,14 @@ export class ApprovalsController {
   constructor(private readonly approvalsService: ApprovalsService) {}
 
   @Get('pending')
+  @ApiOperation({ summary: 'Get all pending approvals for the organization' })
   @RequirePermissions(Permission.APPROVAL_READ)
   async getPendingApprovals(@Param('orgId') orgId: string) {
     return this.approvalsService.getPendingApprovals(orgId);
   }
 
   @Get('requests')
+  @ApiOperation({ summary: 'Get approval requests created by the current user' })
   @RequirePermissions(Permission.APPROVAL_READ)
   async getMyRequests(
     @Param('orgId') orgId: string,
@@ -42,6 +47,7 @@ export class ApprovalsController {
   }
 
   @Post(':id/resolve')
+  @ApiOperation({ summary: 'Approve or reject a pending request' })
   @RequirePermissions(Permission.APPROVAL_APPROVE)
   async resolveApproval(
     @Param('orgId') orgId: string,

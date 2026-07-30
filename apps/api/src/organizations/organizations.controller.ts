@@ -14,23 +14,29 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import {
   CreateOrganizationSchema,
-  CreateOrganizationDto,
   UpdateOrganizationSchema,
-  UpdateOrganizationDto,
   CreateInvitationSchema,
-  CreateInvitationDto,
   Permission,
 } from '@repo/types';
+import {
+  CreateOrganizationDto,
+  UpdateOrganizationDto,
+  CreateInvitationDto,
+} from './dto/organizations.dto';
 import { PermissionsGuard } from '../authorization/guards/permissions.guard';
 import { RequirePermissions } from '../authorization/decorators/require-permissions.decorator';
 import { OrganizationContext } from '../authorization/decorators/organization-context.decorator';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiTags('Organizations')
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('organizations')
 export class OrganizationsController {
   constructor(private readonly organizationsService: OrganizationsService) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create a new organization' })
   async create(
     @Request() req: any,
     @Body(new ZodValidationPipe(CreateOrganizationSchema))
@@ -41,12 +47,14 @@ export class OrganizationsController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'List all organizations for user' })
   async findAll(@Request() req: any) {
     const orgs = await this.organizationsService.findAllForUser(req.user.id);
     return { success: true, data: orgs };
   }
 
   @Get('current')
+  @ApiOperation({ summary: 'Get current organization' })
   async findCurrent(@Request() req: any) {
     const orgs = await this.organizationsService.findAllForUser(req.user.id);
     return { success: true, data: orgs.length > 0 ? orgs[0] : null };
@@ -55,6 +63,7 @@ export class OrganizationsController {
   @RequirePermissions(Permission.ORGANIZATION_READ)
   @OrganizationContext('id')
   @Get(':id')
+  @ApiOperation({ summary: 'Get an organization by ID' })
   async findOne(@Request() req: any, @Param('id') id: string) {
     const org = await this.organizationsService.findOne(id);
     return { success: true, data: org };
@@ -63,6 +72,7 @@ export class OrganizationsController {
   @RequirePermissions(Permission.ORGANIZATION_READ)
   @OrganizationContext('id')
   @Get(':id/members')
+  @ApiOperation({ summary: 'Get organization members' })
   async getMembers(@Request() req: any, @Param('id') id: string) {
     const members = await this.organizationsService.getMembers(id);
     return { success: true, data: members };
@@ -71,6 +81,7 @@ export class OrganizationsController {
   @RequirePermissions(Permission.ORGANIZATION_UPDATE)
   @OrganizationContext('id')
   @Patch(':id')
+  @ApiOperation({ summary: 'Update an organization' })
   async update(
     @Request() req: any,
     @Param('id') id: string,
@@ -84,6 +95,7 @@ export class OrganizationsController {
   @RequirePermissions(Permission.MEMBER_INVITE)
   @OrganizationContext('id')
   @Post(':id/invites')
+  @ApiOperation({ summary: 'Invite a member to the organization' })
   async invite(
     @Request() req: any,
     @Param('id') id: string,
@@ -99,6 +111,7 @@ export class OrganizationsController {
   }
 
   @Post('invites/:token/accept')
+  @ApiOperation({ summary: 'Accept an invitation' })
   async acceptInvite(@Request() req: any, @Param('token') token: string) {
     const result = await this.organizationsService.acceptInvite(
       req.user.id,
@@ -110,6 +123,7 @@ export class OrganizationsController {
   @RequirePermissions(Permission.MEMBER_INVITE)
   @OrganizationContext('id')
   @Get(':id/invites')
+  @ApiOperation({ summary: 'Get pending invitations' })
   async getPendingInvitations(@Param('id') id: string) {
     const invites = await this.organizationsService.getPendingInvitations(id);
     return { success: true, data: invites };
@@ -118,6 +132,7 @@ export class OrganizationsController {
   @RequirePermissions(Permission.MEMBER_INVITE)
   @OrganizationContext('id')
   @Delete(':id/invites/:inviteId')
+  @ApiOperation({ summary: 'Cancel a pending invitation' })
   async cancelInvitation(
     @Request() req: any,
     @Param('id') id: string,
@@ -130,6 +145,7 @@ export class OrganizationsController {
   @RequirePermissions(Permission.MEMBER_UPDATE_ROLE)
   @OrganizationContext('id')
   @Patch(':id/members/:memberId/role')
+  @ApiOperation({ summary: 'Change a member role' })
   async changeMemberRole(
     @Request() req: any,
     @Param('id') id: string,
@@ -148,6 +164,7 @@ export class OrganizationsController {
   @RequirePermissions(Permission.MEMBER_REMOVE)
   @OrganizationContext('id')
   @Delete(':id/members/:memberId')
+  @ApiOperation({ summary: 'Remove a member' })
   async removeMember(
     @Request() req: any,
     @Param('id') id: string,

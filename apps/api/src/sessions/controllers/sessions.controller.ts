@@ -14,9 +14,10 @@ import { RequirePermissions } from '../../authorization/decorators/require-permi
 import {
   Permission,
   CreateSessionSchema,
-  CreateSessionDto,
   ApprovalType,
 } from '@repo/types';
+import { CreateSessionDto, RevealSessionDto } from '../dto/sessions.dto';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { RequestWithUser } from '../../common/interfaces/request-with-user.interface';
 import { z } from 'zod';
@@ -29,6 +30,8 @@ const RevealSessionSchema = z.object({
   reason: z.string().min(1, 'Reason is required for auditing purposes'),
 });
 
+@ApiTags('Sessions')
+@ApiBearerAuth()
 @Controller('organizations/:orgId/sessions')
 @OrganizationContext('orgId')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -40,6 +43,7 @@ export class SessionsController {
   ) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create a delegated session' })
   @RequirePermissions(Permission.SECRET_READ)
   async createSession(
     @Param('orgId') orgId: string,
@@ -78,8 +82,7 @@ export class SessionsController {
   }
 
   @Get('incoming')
-  // No specific org permission needed to view what is granted TO you, but you need to be in the org
-  // We'll require basic read access.
+  @ApiOperation({ summary: 'Get sessions granted to me' })
   @RequirePermissions(Permission.SECRET_READ)
   async getIncomingSessions(
     @Param('orgId') orgId: string,
@@ -89,6 +92,7 @@ export class SessionsController {
   }
 
   @Get('outgoing')
+  @ApiOperation({ summary: 'Get sessions I have granted to others' })
   @RequirePermissions(Permission.SECRET_READ)
   async getOutgoingSessions(
     @Param('orgId') orgId: string,
@@ -97,29 +101,25 @@ export class SessionsController {
     return this.sessionsService.getOutgoingSessions(orgId, req.user.id);
   }
 
-  @Post(':id/revoke')
-  // Revocation requires the same permission as creation
+  @Post(':sessionId/revoke')
+  @ApiOperation({ summary: 'Revoke a delegated session' })
   @RequirePermissions(Permission.SECRET_READ)
   async revokeSession(
     @Param('orgId') orgId: string,
-    @Param('id') sessionId: string,
+    @Param('sessionId') sessionId: string,
     @Request() req: RequestWithUser,
   ) {
     return this.sessionsService.revokeSession(orgId, sessionId, req.user.id);
   }
 
-  @Post(':id/reveal')
-  @Throttle({ default: { limit: 5, ttl: 60000 } }) // Sensitive endpoint, tighter limits
-  // Reveal using session: The grantee might NOT have SECRET_READ.
-  // We should NOT use @RequirePermissions(Permission.SECRET_READ) here!
-  // Instead, the session itself acts as the capability. The JwtAuthGuard ensures they are authenticated.
-  // We'll drop PermissionsGuard for this specific route, or we create an empty array of required permissions.
-  // Because PermissionsGuard requires all permissions passed to @RequirePermissions, if we don't pass it, it defaults to checking if they are just in the org.
-  async revealSecretViaSession(
+  @Post(':sessionId/reveal')
+  @ApiOperation({ summary: 'Reveal a secret using a delegated session' })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  async revealSession(
     @Param('orgId') orgId: string,
-    @Param('id') sessionId: string,
+    @Param('sessionId') sessionId: string,
     @Request() req: RequestWithUser,
-    @Body(new ZodValidationPipe(RevealSessionSchema)) dto: { reason: string },
+    @Body(new ZodValidationPipe(RevealSessionSchema)) dto: RevealSessionDto,
   ) {
     return this.sessionsService.revealSecretViaSession(
       orgId,

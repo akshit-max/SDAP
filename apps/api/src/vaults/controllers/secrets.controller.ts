@@ -11,12 +11,17 @@ import {
 } from '@nestjs/common';
 import { SecretLifecycleService } from '../secret-lifecycle.service';
 import {
-  CreateSecretDto,
   CreateSecretSchema,
   UpdateSecretSchema,
   UpdateSecretMetadataSchema,
   Permission,
 } from '@repo/types';
+import {
+  CreateSecretDto,
+  UpdateSecretDto,
+  UpdateSecretMetadataDto,
+} from '../dto/vaults.dto';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../../authorization/guards/permissions.guard';
 import { RequirePermissions } from '../../authorization/decorators/require-permissions.decorator';
@@ -24,6 +29,8 @@ import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { RequestWithUser } from '../../common/interfaces/request-with-user.interface';
 import { OrganizationContext } from '../../authorization/decorators/organization-context.decorator';
 
+@ApiTags('Secrets')
+@ApiBearerAuth()
 @Controller('organizations/:orgId/vaults/:vaultId/secrets')
 @OrganizationContext('orgId')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -31,6 +38,7 @@ export class SecretsController {
   constructor(private readonly secretService: SecretLifecycleService) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create a new secret in a vault' })
   @RequirePermissions(Permission.SECRET_CREATE)
   async createSecret(
     @Param('orgId') orgId: string,
@@ -50,18 +58,21 @@ export class SecretsController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'List secrets in a vault (metadata only)' })
   @RequirePermissions(Permission.SECRET_READ)
   async getSecrets(@Param('vaultId') vaultId: string) {
     return this.secretService.getSecretsByVaultId(vaultId);
   }
 
   @Get(':secretId')
+  @ApiOperation({ summary: 'Get secret details (metadata only)' })
   @RequirePermissions(Permission.SECRET_READ)
   async getSecretById(@Param('secretId') secretId: string) {
     return this.secretService.getSecretMetadataById(secretId);
   }
 
   @Post(':secretId/reveal')
+  @ApiOperation({ summary: 'Reveal the plaintext value of a secret' })
   @RequirePermissions(Permission.SECRET_REVEAL)
   async revealSecret(
     @Param('orgId') orgId: string,
@@ -79,6 +90,7 @@ export class SecretsController {
   }
 
   @Patch(':secretId')
+  @ApiOperation({ summary: 'Update the metadata of a secret' })
   @RequirePermissions(Permission.SECRET_UPDATE)
   async updateSecret(
     @Param('orgId') orgId: string,
@@ -114,6 +126,7 @@ export class SecretsController {
   }
 
   @Delete(':secretId')
+  @ApiOperation({ summary: 'Delete a secret' })
   @RequirePermissions(Permission.SECRET_DELETE)
   async deleteSecret(
     @Param('orgId') orgId: string,

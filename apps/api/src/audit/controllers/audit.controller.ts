@@ -5,7 +5,10 @@ import { PermissionsGuard } from '../../authorization/guards/permissions.guard';
 import { RequirePermissions } from '../../authorization/decorators/require-permissions.decorator';
 import { Permission } from '@repo/types';
 import { OrganizationContext } from '../../authorization/decorators/organization-context.decorator';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
+@ApiTags('Audit')
+@ApiBearerAuth()
 @Controller('organizations/:orgId/audit')
 @OrganizationContext('orgId')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -13,6 +16,14 @@ export class AuditController {
   constructor(private readonly auditService: AuditService) {}
 
   @Get()
+  @ApiOperation({ summary: 'Get audit events for the organization' })
+  @ApiQuery({ name: 'action', required: false, type: String })
+  @ApiQuery({ name: 'actorId', required: false, type: String })
+  @ApiQuery({ name: 'startDate', required: false, type: String })
+  @ApiQuery({ name: 'endDate', required: false, type: String })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+
   @RequirePermissions(Permission.SECRET_READ) // Usually AUDIT_READ or ADMIN role
   async getAuditEvents(
     @Param('orgId') orgId: string,
