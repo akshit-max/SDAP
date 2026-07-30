@@ -3,6 +3,7 @@ import { SessionsController } from './controllers/sessions.controller';
 import { GlobalSessionsController } from './controllers/global-sessions.controller';
 import { SessionsService } from './sessions.service';
 import { SessionValidationService } from './session-validation.service';
+import { SessionExpiryScheduler } from './session-expiry.scheduler';
 import { VaultsModule } from '../vaults/vaults.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthorizationModule } from '../authorization/authorization.module';
@@ -16,7 +17,7 @@ import { ApprovalsModule } from '../approvals/approvals.module';
     forwardRef(() => ApprovalsModule),
   ],
   controllers: [SessionsController, GlobalSessionsController],
-  providers: [SessionsService, SessionValidationService],
+  providers: [SessionsService, SessionValidationService, SessionExpiryScheduler],
   exports: [SessionsService, SessionValidationService],
 })
 export class SessionsModule {}
