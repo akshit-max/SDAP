@@ -7,8 +7,10 @@ describe('AuthController', () => {
 
   const mockAuthService = {
     register: jest.fn().mockResolvedValue({
-      success: true,
-      message: 'User registered successfully',
+      accessToken: 'access',
+      refreshToken: 'refresh',
+      user: { id: 'user-1', email: 'test@test.com', fullName: 'Test' },
+      organization: { id: 'org-1', name: 'Corp' },
     }),
     login: jest
       .fn()

@@ -12,26 +12,31 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Use Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20.x'
         cache: 'npm'
-        
+
     - name: Install dependencies
       run: npm ci
-      
+
     - name: Generate Prisma Client
       run: npm run generate --workspace=@repo/db
-      
+
     - name: Lint
       run: npm run lint
-      
 
-      
+    - name: Run unit tests
+      run: npm run test --workspace=api
+      env:
+        DATABASE_URL: postgresql://postgres:password@localhost:5432/sdap_test
+        VAULT_ENCRYPTION_KEY: test-encryption-key-must-be-32-chars!!
+        NODE_ENV: test
+
     - name: Build API
       run: npm run build --workspace=api
-      
+
     - name: Build Web
       run: npm run build --workspace=web
