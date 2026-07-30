@@ -31,6 +31,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       code = exception.constructor.name.replace('Exception', '').toUpperCase();
     } else {
       // Log unexpected errors without exposing internals
+      require('fs').writeFileSync('exception.log', exception instanceof Error ? exception.stack : String(exception));
+      console.error(exception);
       this.logger.error(
         `Unhandled exception on [${request.method} ${request.url}]`,
         exception instanceof Error ? exception.stack : String(exception),
