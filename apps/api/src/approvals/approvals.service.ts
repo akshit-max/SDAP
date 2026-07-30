@@ -137,7 +137,6 @@ export class ApprovalsService {
   }
 
   async getPendingApprovals(organizationId: string) {
-    // Returns all pending requests in the org (A real app would filter by what the user is authorized to approve)
     return this.prisma.approvalRequest.findMany({
       where: {
         organizationId,
@@ -145,7 +144,7 @@ export class ApprovalsService {
       },
       orderBy: { createdAt: 'desc' },
       include: {
-        requester: { select: { email: true } },
+        requester: { select: { fullName: true, email: true } },
       },
     });
   }

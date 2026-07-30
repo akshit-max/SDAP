@@ -72,16 +72,41 @@ export default function ApprovalsPage() {
               <ul className="divide-y divide-slate-100 dark:divide-slate-800/50">
                 {pendingApprovals?.map((request) => (
                   <li key={request.id} className="p-4 hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div>
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex-1 min-w-0">
                         <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                          Type: {request.type.replace('_', ' ')}
+                          Session Access Request
                         </p>
                         <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                          Requester: <span className="font-semibold text-slate-900 dark:text-slate-100">{request.requesterId}</span>
+                          Requested by{' '}
+                          <span className="font-semibold text-slate-900 dark:text-slate-100">
+                            {(request as any).requester?.fullName || (request as any).requester?.email || 'Unknown'}
+                          </span>
                         </p>
-                        <div className="mt-2 text-[10px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/50 border border-slate-150/40 dark:border-slate-850 p-2 rounded-lg max-w-lg overflow-auto font-mono">
-                           <pre>{JSON.stringify(request.requestPayload, null, 2)}</pre>
+                        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                          {(request.requestPayload as any)?.scope && (
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                              <span className="font-medium text-slate-700 dark:text-slate-300">Scope:</span>{' '}
+                              {String((request.requestPayload as any).scope).replace('_', ' ')}
+                            </span>
+                          )}
+                          {(request.requestPayload as any)?.expiresAt && (
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                              <span className="font-medium text-slate-700 dark:text-slate-300">Expires:</span>{' '}
+                              {new Date((request.requestPayload as any).expiresAt).toLocaleString()}
+                            </span>
+                          )}
+                          {(request.requestPayload as any)?.maxReveals && (
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                              <span className="font-medium text-slate-700 dark:text-slate-300">Max reveals:</span>{' '}
+                              {(request.requestPayload as any).maxReveals}
+                            </span>
+                          )}
+                          {!(request.requestPayload as any)?.maxReveals && (
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                              <span className="font-medium text-slate-700 dark:text-slate-300">Max reveals:</span> Unlimited
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center space-x-4">
@@ -130,10 +155,15 @@ export default function ApprovalsPage() {
                   <li key={request.id} className="p-4 hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors flex items-center justify-between">
                     <div>
                       <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                        {request.type.replace('_', ' ')}
+                        Session Access Request
                       </p>
-                      <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400 max-w-lg truncate font-mono">
-                         Payload: {JSON.stringify(request.requestPayload)}
+                      <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">
+                        {(request.requestPayload as any)?.scope && (
+                          <span>Scope: {String((request.requestPayload as any).scope).replace('_', ' ')} &bull; </span>
+                        )}
+                        {(request.requestPayload as any)?.expiresAt && (
+                          <span>Expires: {new Date((request.requestPayload as any).expiresAt).toLocaleString()}</span>
+                        )}
                       </p>
                       {request.reason && (
                         <p className="mt-1 text-xs text-red-500 font-medium">
