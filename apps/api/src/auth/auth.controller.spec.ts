@@ -36,10 +36,11 @@ describe('AuthController', () => {
   });
 
   it('register() should call authService.register', async () => {
-    const dto = { email: 'test@test.com', password: 'password123' };
-    const result = await controller.register(dto);
-    expect(mockAuthService.register).toHaveBeenCalledWith(dto);
-    expect(result.success).toBe(true);
+    const dto = { email: 'test@test.com', password: 'password123', fullName: 'Test', companyName: 'Corp' };
+    const mockReq = { headers: { 'user-agent': 'jest' } } as any;
+    const result = await controller.register(dto, mockReq, '127.0.0.1');
+    expect(mockAuthService.register).toHaveBeenCalledWith(dto, '127.0.0.1', 'jest');
+    expect(result.accessToken).toBe('access');
   });
 
   it('login() should call authService.login', async () => {

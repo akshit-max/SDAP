@@ -12,18 +12,18 @@ import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
 
-@Controller('api/v1/auth')
+@Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
   @UsePipes(new ZodValidationPipe(RegisterSchema))
-  async register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+  async register(@Body() dto: RegisterDto, @Req() req: Request, @Ip() ip: string) {
+    return this.authService.register(dto, ip, req.headers['user-agent']);
   }
 
   @Post('login')
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @UsePipes(new ZodValidationPipe(LoginSchema))
   async login(@Body() dto: LoginDto, @Req() req: Request, @Ip() ip: string) {
     return this.authService.login(dto, ip, req.headers['user-agent']);

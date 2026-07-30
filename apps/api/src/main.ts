@@ -8,6 +8,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.setGlobalPrefix('api/v1');
 
   // ─── Security Headers ──────────────────────────────────────────────────────
   app.use(helmet());
@@ -41,3 +42,4 @@ async function bootstrap() {
   void app.listen(port);
 }
 bootstrap();
+// trigger reload

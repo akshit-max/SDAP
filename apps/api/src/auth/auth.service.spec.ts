@@ -20,14 +20,30 @@ describe('AuthService', () => {
     generateAccessToken: jest.fn().mockReturnValue('mock-access-token'),
   };
 
-  const mockPrismaService = {
+  const mockPrismaService: any = {
     refreshToken: {
       create: jest.fn(),
       findUnique: jest.fn(),
       update: jest.fn(),
       updateMany: jest.fn(),
     },
-    $transaction: jest.fn((ops) => Promise.all(ops)),
+    organization: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      create: jest.fn().mockResolvedValue({ id: 'org-1', name: 'Test Org' }),
+    },
+    user: {
+      create: jest.fn().mockResolvedValue({ id: '1', email: 'new@test.com', fullName: 'Test User' }),
+    },
+    organizationMember: {
+      create: jest.fn(),
+      findFirst: jest.fn().mockResolvedValue({ organization: { id: 'org-1', name: 'Test Org' } }),
+    },
+    $transaction: jest.fn(async (cb) => {
+      if (typeof cb === 'function') {
+         return cb(mockPrismaService);
+      }
+      return Promise.all(cb);
+    }),
   };
 
   beforeEach(async () => {
@@ -60,23 +76,27 @@ describe('AuthService', () => {
       });
 
       await expect(
-        service.register({ email: 'test@test.com', password: 'password123' }),
+        service.register({ email: 'test@test.com', password: 'password123', fullName: 'Test User', companyName: 'Acme Corp' }),
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should create user and return success', async () => {
+    it('should create user, org, and member and return tokens', async () => {
       mockUsersService.findByEmail.mockResolvedValue(null);
-      mockUsersService.create.mockResolvedValue({
-        id: '1',
-        email: 'new@test.com',
-      });
 
       const result = await service.register({
         email: 'new@test.com',
         password: 'password123',
+        fullName: 'Test User',
+        companyName: 'Acme Corp'
       });
-      expect(result.success).toBe(true);
-      expect(mockUsersService.create).toHaveBeenCalled();
+      expect(result.accessToken).toBe('mock-access-token');
+      expect(result.refreshToken).toBeDefined();
+      expect(result.user).toBeDefined();
+      expect(result.organization).toBeDefined();
+      expect(mockPrismaService.$transaction).toHaveBeenCalled();
+      expect(mockPrismaService.user.create).toHaveBeenCalled();
+      expect(mockPrismaService.organization.create).toHaveBeenCalled();
+      expect(mockPrismaService.organizationMember.create).toHaveBeenCalled();
     });
   });
 
