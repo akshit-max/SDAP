@@ -4,14 +4,16 @@ import { CreateVaultDto } from '@repo/types';
 
 export const vaultKeys = {
   all: (orgId: string) => ['vaults', orgId] as const,
+  list: (orgId: string, page: number) => ['vaults', orgId, 'list', page] as const,
   detail: (orgId: string, vaultId: string) => ['vaults', orgId, vaultId] as const,
 };
 
-export function useVaults(orgId: string) {
+export function useVaults(orgId: string, page = 1, limit = 20) {
   return useQuery({
-    queryKey: vaultKeys.all(orgId),
-    queryFn: () => vaultsApi.getVaults(orgId),
+    queryKey: vaultKeys.list(orgId, page),
+    queryFn: () => vaultsApi.getVaults(orgId, page, limit),
     enabled: !!orgId,
+    placeholderData: (prev) => prev, // Keep previous page data while fetching next
   });
 }
 

@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   Request,
 } from '@nestjs/common';
@@ -42,8 +43,16 @@ export class VaultsController {
 
   @Get()
   @RequirePermissions(Permission.VAULT_READ)
-  async getVaults(@Param('orgId') orgId: string) {
-    return this.vaultsService.getVaults(orgId);
+  async getVaults(
+    @Param('orgId') orgId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.vaultsService.getVaults(
+      orgId,
+      page ? parseInt(page, 10) : 1,
+      limit ? Math.min(parseInt(limit, 10), 100) : 20,
+    );
   }
 
   @Get(':vaultId')

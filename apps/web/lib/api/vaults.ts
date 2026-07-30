@@ -1,9 +1,18 @@
 import { apiClient } from './client';
 import { VaultResponse, CreateVaultDto } from '@repo/types';
 
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export const vaultsApi = {
-  getVaults: async (orgId: string): Promise<VaultResponse[]> => {
-    const response = await apiClient.get(`/organizations/${orgId}/vaults`);
+  getVaults: async (orgId: string, page = 1, limit = 20): Promise<PaginatedResponse<VaultResponse>> => {
+    const response = await apiClient.get(`/organizations/${orgId}/vaults`, {
+      params: { page, limit },
+    });
     return response.data;
   },
 

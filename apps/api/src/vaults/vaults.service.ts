@@ -34,14 +34,21 @@ export class VaultsService {
     return vault;
   }
 
-  async getVaults(orgId: string) {
-    return this.prisma.vault.findMany({
-      where: {
-        organizationId: orgId,
-        deletedAt: null,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+  async getVaults(orgId: string, page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const where = { organizationId: orgId, deletedAt: null };
+
+    const [items, total] = await Promise.all([
+      this.prisma.vault.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.vault.count({ where }),
+    ]);
+
+    return { items, total, page, limit };
   }
 
   async getVaultById(orgId: string, vaultId: string) {
