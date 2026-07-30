@@ -30,9 +30,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
           : (exceptionResponse as any)?.message || exception.message;
       code = exception.constructor.name.replace('Exception', '').toUpperCase();
     } else {
-      // Log unexpected errors without exposing internals
-      require('fs').writeFileSync('exception.log', exception instanceof Error ? exception.stack : String(exception));
-      console.error(exception);
+      // Log unexpected errors via the NestJS structured logger only.
+      // Never write to the filesystem — incompatible with Docker and read-only environments.
       this.logger.error(
         `Unhandled exception on [${request.method} ${request.url}]`,
         exception instanceof Error ? exception.stack : String(exception),
