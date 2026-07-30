@@ -64,10 +64,11 @@ model User {
 
   refreshTokens           RefreshToken[]
   organizationMemberships OrganizationMember[]
-  grantedSessions         DelegatedSession[]   @relation("SessionGrantor")
-  receivedSessions        DelegatedSession[]   @relation("SessionGrantee")
+  grantedSessions         DelegatedSession[]    @relation("SessionGrantor")
+  receivedSessions        DelegatedSession[]    @relation("SessionGrantee")
   approvalRequests        ApprovalRequest[]
   auditEvents             AuditEvent[]
+  passwordResetTokens     PasswordResetToken[]
 }
 
 model RefreshToken {
@@ -348,4 +349,17 @@ model AuditEvent {
   @@index([action])
   @@index([actorId])
   @@index([resourceType, resourceId])
+}
+
+model PasswordResetToken {
+  id         String   @id @default(uuid())
+  userId     String
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
