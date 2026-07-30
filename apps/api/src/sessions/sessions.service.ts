@@ -91,21 +91,7 @@ export class SessionsService {
         grantor: { select: { email: true, fullName: true } },
       },
     });
-
-    // Enrich with resource names
-    return Promise.all(
-      sessions.map(async (s) => {
-        let resourceName: string | null = null;
-        if (s.scope === 'SECRET') {
-          const secret = await this.prisma.secret.findUnique({ where: { id: s.resourceId }, select: { name: true } });
-          resourceName = secret?.name ?? null;
-        } else if (s.scope === 'VAULT') {
-          const vault = await this.prisma.vault.findUnique({ where: { id: s.resourceId }, select: { name: true } });
-          resourceName = vault?.name ?? null;
-        }
-        return { ...s, resourceName };
-      }),
-    );
+    return this.enrichSessionsWithResourceNames(sessions);
   }
 
   async getOutgoingSessions(organizationId: string, userId: string) {
@@ -116,20 +102,40 @@ export class SessionsService {
         grantee: { select: { email: true, fullName: true } },
       },
     });
+    return this.enrichSessionsWithResourceNames(sessions);
+  }
 
-    return Promise.all(
-      sessions.map(async (s) => {
-        let resourceName: string | null = null;
-        if (s.scope === 'SECRET') {
-          const secret = await this.prisma.secret.findUnique({ where: { id: s.resourceId }, select: { name: true } });
-          resourceName = secret?.name ?? null;
-        } else if (s.scope === 'VAULT') {
-          const vault = await this.prisma.vault.findUnique({ where: { id: s.resourceId }, select: { name: true } });
-          resourceName = vault?.name ?? null;
-        }
-        return { ...s, resourceName };
-      }),
-    );
+  /**
+   * Batch-enriches a list of sessions with their resource names.
+   * Executes exactly 2 queries total (one for secrets, one for vaults)
+   * regardless of how many sessions are in the list.
+   * Replaces the previous N+1 pattern of findUnique per session.
+   */
+  private async enrichSessionsWithResourceNames<T extends { scope: string; resourceId: string }>(sessions: T[]) {
+    const secretIds = sessions.filter(s => s.scope === 'SECRET').map(s => s.resourceId);
+    const vaultIds = sessions.filter(s => s.scope === 'VAULT').map(s => s.resourceId);
+
+    const [secrets, vaults] = await Promise.all([
+      secretIds.length > 0
+        ? this.prisma.secret.findMany({ where: { id: { in: secretIds } }, select: { id: true, name: true } })
+        : [],
+      vaultIds.length > 0
+        ? this.prisma.vault.findMany({ where: { id: { in: vaultIds } }, select: { id: true, name: true } })
+        : [],
+    ]);
+
+    const secretMap = new Map(secrets.map(s => [s.id, s.name]));
+    const vaultMap = new Map(vaults.map(v => [v.id, v.name]));
+
+    return sessions.map(s => ({
+      ...s,
+      resourceName:
+        s.scope === 'SECRET'
+          ? (secretMap.get(s.resourceId) ?? null)
+          : s.scope === 'VAULT'
+            ? (vaultMap.get(s.resourceId) ?? null)
+            : null,
+    }));
   }
 
   async revokeSession(
