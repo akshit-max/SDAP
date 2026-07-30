@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -19,12 +23,7 @@ body {
 body {
   color: var(--foreground);
   background: var(--background);
-}
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
 }
 
 a {
@@ -47,4 +46,9 @@ a {
   .imgDark {
     display: unset;
   }
+}
+
+@keyframes shrink {
+  from { width: 100%; }
+  to   { width: 0%; }
 }
