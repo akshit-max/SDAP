@@ -2,32 +2,93 @@
 
 import React, { useState } from 'react';
 import { useCreateSession } from '../../hooks/useSessions';
+import { useOrgMembers } from '../../hooks/useOrganization';
+import { useVaults, useSecretsByVault } from '../../hooks/useVaults';
 import { SessionScope, SessionPermission } from '@repo/types';
+import { Modal } from '../common/Modal';
+import { useToast } from '../common/Toast';
+import { Loader2, ChevronDown } from 'lucide-react';
 
 interface CreateSessionModalProps {
   orgId: string;
   isOpen: boolean;
   onClose: () => void;
+  /** Pre-select a grantee member ID (from Team page "Grant Access" shortcut) */
+  preselectedGranteeId?: string;
 }
 
-export function CreateSessionModal({ orgId, isOpen, onClose }: CreateSessionModalProps) {
+const selectClass =
+  'w-full px-3.5 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 dark:focus:ring-slate-100/10 dark:focus:border-slate-100 outline-none transition-all text-slate-950 dark:text-slate-50 text-sm appearance-none cursor-pointer';
+const labelClass = 'block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1';
+const hintClass = 'text-[10px] text-slate-400 mt-1';
+
+function SelectWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative">
+      {children}
+      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+    </div>
+  );
+}
+
+export function CreateSessionModal({
+  orgId,
+  isOpen,
+  onClose,
+  preselectedGranteeId,
+}: CreateSessionModalProps) {
   const { mutate: createSession, isPending } = useCreateSession(orgId);
+  const { toast } = useToast();
 
-  const [granteeId, setGranteeId] = useState('');
+  const { data: members = [] } = useOrgMembers(orgId);
+  const { data: vaults = [] } = useVaults(orgId);
+
+  const [granteeId, setGranteeId] = useState(preselectedGranteeId || '');
   const [scope, setScope] = useState<SessionScope>(SessionScope.SECRET);
-  const [resourceId, setResourceId] = useState('');
-  const [expiresInHours, setExpiresInHours] = useState(1);
+  const [selectedVaultId, setSelectedVaultId] = useState('');
+  const [selectedSecretId, setSelectedSecretId] = useState('');
+  const [expiresInHours, setExpiresInHours] = useState<number | ''>(1);
   const [maxReveals, setMaxReveals] = useState<number | ''>('');
-  const [error, setError] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+  // Fetch secrets only when a vault is selected and scope is SECRET
+  const { data: secrets = [], isLoading: isLoadingSecrets } = useSecretsByVault(
+    orgId,
+    scope === SessionScope.SECRET && selectedVaultId ? selectedVaultId : null,
+  );
+
+  const handleClose = () => {
+    setGranteeId(preselectedGranteeId || '');
+    setScope(SessionScope.SECRET);
+    setSelectedVaultId('');
+    setSelectedSecretId('');
+    setExpiresInHours(1);
+    setMaxReveals('');
+    onClose();
+  };
+
+  const handleVaultChange = (vaultId: string) => {
+    setSelectedVaultId(vaultId);
+    setSelectedSecretId(''); // reset secret when vault changes
+  };
+
+  const handleScopeChange = (newScope: SessionScope) => {
+    setScope(newScope);
+    setSelectedSecretId(''); // reset secret when scope changes
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
 
+    if (!granteeId) { toast('warning', 'Please select a team member to grant access to.'); return; }
+    if (!selectedVaultId) { toast('warning', 'Please select a vault.'); return; }
+    if (scope === SessionScope.SECRET && !selectedSecretId) {
+      toast('warning', 'Please select a secret from the vault.'); return;
+    }
+    if (expiresInHours === '' || expiresInHours < 1) { toast('warning', 'Session must expire in at least 1 hour.'); return; }
+
+    const resourceId = scope === SessionScope.SECRET ? selectedSecretId : selectedVaultId;
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + expiresInHours);
+    expiresAt.setHours(expiresAt.getHours() + Number(expiresInHours));
 
     createSession(
       {
@@ -41,115 +102,175 @@ export function CreateSessionModal({ orgId, isOpen, onClose }: CreateSessionModa
       {
         onSuccess: (data: { status?: string }) => {
           if (data?.status === 'PENDING_APPROVAL') {
-            alert('Your request requires approval. It has been submitted to the organization admins.');
+            toast('info', 'Session requires approval. Request submitted to admins.');
           } else {
-            alert('Session created successfully.');
+            toast('success', 'Access granted successfully.');
           }
-          onClose();
-          setGranteeId('');
-          setResourceId('');
-          setExpiresInHours(1);
-          setMaxReveals('');
+          handleClose();
         },
-        onError: (err: unknown) => {
-          const apiError = err as { response?: { data?: { message?: string } } };
-          setError(apiError.response?.data?.message || 'Failed to create session');
+        onError: (err: Error) => {
+          toast('error', err.message || 'Failed to grant access. Please try again.');
         },
-      }
+      },
     );
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-        <h2 className="text-xl font-semibold mb-4 text-gray-900">Create Delegated Session</h2>
-        
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md text-sm">
-            {error}
-          </div>
-        )}
+  // Filter out the current user from grantee options — you can't grant access to yourself
+  const granteeOptions = members.filter((m) => m.role !== 'OWNER' || members.length > 1);
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Grantee User ID</label>
-            <input
-              type="text"
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-              placeholder="UUID of the user"
+  return (
+    <Modal isOpen={isOpen} onClose={handleClose} title="Grant Access">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Step 1: Who */}
+        <div>
+          <label className={labelClass}>
+            Team Member <span className="text-red-500">*</span>
+          </label>
+          <SelectWrapper>
+            <select
+              className={selectClass}
               value={granteeId}
               onChange={(e) => setGranteeId(e.target.value)}
-            />
-          </div>
+              required
+            >
+              <option value="">Select a team member…</option>
+              {members.map((m) => (
+                <option key={m.userId} value={m.userId}>
+                  {m.user?.fullName || m.user?.email || m.userId} — {m.role}
+                </option>
+              ))}
+            </select>
+          </SelectWrapper>
+          <p className={hintClass}>The member who will receive temporary access.</p>
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Scope</label>
+        {/* Step 2: What kind of access */}
+        <div>
+          <label className={labelClass}>Access Scope</label>
+          <SelectWrapper>
             <select
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              className={selectClass}
               value={scope}
-              onChange={(e) => setScope(e.target.value as SessionScope)}
+              onChange={(e) => handleScopeChange(e.target.value as SessionScope)}
             >
               <option value={SessionScope.SECRET}>Specific Secret</option>
               <option value={SessionScope.VAULT}>Entire Vault</option>
             </select>
-          </div>
+          </SelectWrapper>
+        </div>
 
+        {/* Step 3: Which vault */}
+        <div>
+          <label className={labelClass}>
+            Vault <span className="text-red-500">*</span>
+          </label>
+          <SelectWrapper>
+            <select
+              className={selectClass}
+              value={selectedVaultId}
+              onChange={(e) => handleVaultChange(e.target.value)}
+              required
+            >
+              <option value="">Select a vault…</option>
+              {vaults.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
+                </option>
+              ))}
+            </select>
+          </SelectWrapper>
+        </div>
+
+        {/* Step 4: Which secret (only if scope = SECRET) */}
+        {scope === SessionScope.SECRET && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Resource ID</label>
+            <label className={labelClass}>
+              Secret <span className="text-red-500">*</span>
+            </label>
+            <SelectWrapper>
+              <select
+                className={selectClass}
+                value={selectedSecretId}
+                onChange={(e) => setSelectedSecretId(e.target.value)}
+                required
+                disabled={!selectedVaultId || isLoadingSecrets}
+              >
+                <option value="">
+                  {!selectedVaultId
+                    ? 'Select a vault first…'
+                    : isLoadingSecrets
+                    ? 'Loading secrets…'
+                    : secrets.length === 0
+                    ? 'No secrets in this vault'
+                    : 'Select a secret…'}
+                </option>
+                {secrets.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                    {s.description ? ` — ${s.description}` : ''}
+                  </option>
+                ))}
+              </select>
+            </SelectWrapper>
+          </div>
+        )}
+
+        {/* Step 5: Expiry + limits */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={labelClass}>Expires In (Hours)</label>
             <input
               type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-              placeholder={`UUID of the ${scope.toLowerCase()}`}
-              value={resourceId}
-              onChange={(e) => setResourceId(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Expires In (Hours)</label>
-            <input
-              type="number"
-              min="1"
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              className={selectClass}
               value={expiresInHours}
-              onChange={(e) => setExpiresInHours(Number(e.target.value))}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '');
+                setExpiresInHours(val === '' ? '' : Number(val));
+              }}
             />
           </div>
-
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Max Reveals (Optional)</label>
+            <label className={labelClass}>
+              Max Reveals{' '}
+              <span className="text-slate-400 font-normal">(optional)</span>
+            </label>
             <input
-              type="number"
-              min="1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              className={selectClass}
               placeholder="Unlimited"
               value={maxReveals}
-              onChange={(e) => setMaxReveals(e.target.value === '' ? '' : Number(e.target.value))}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '');
+                setMaxReveals(val === '' ? '' : Number(val));
+              }}
             />
           </div>
+        </div>
 
-          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isPending}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              {isPending ? 'Creating...' : 'Grant Access'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="flex gap-3 justify-end pt-2 border-t border-slate-100 dark:border-slate-800 mt-2">
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={isPending}
+            className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isPending}
+            className="flex items-center px-4 py-2 text-xs font-semibold bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg transition-colors disabled:opacity-50"
+          >
+            {isPending && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
+            Grant Access
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }
