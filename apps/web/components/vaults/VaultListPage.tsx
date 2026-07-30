@@ -1,17 +1,27 @@
 'use client';
 
-import React from 'react';
-import { useVaults } from '../../hooks/useVaults';
+import React, { useState } from 'react';
+import { useVaults, useDeleteVault } from '../../hooks/useVaults';
 import { VaultList } from './VaultList';
 import { Loading } from '../common/Loading';
 import { ErrorState } from '../common/ErrorState';
 import { EmptyState } from '../common/EmptyState';
-import { Shield } from 'lucide-react';
-
-const ORG_ID = 'org-1'; // Hardcoded for this UI foundation sprint
+import { CreateVaultModal } from './CreateVaultModal';
+import { Shield, Plus } from 'lucide-react';
+import { useAuth } from '../../lib/auth/AuthContext';
+import { useToast } from '../common/Toast';
 
 export function VaultListPage() {
-  const { data: vaults, isLoading, isError, refetch } = useVaults(ORG_ID);
+  const { organization } = useAuth();
+  const orgId = organization?.id || '';
+  const { data: vaults, isLoading, isError, refetch } = useVaults(orgId);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const { toast } = useToast();
+  const { mutate: deleteVault } = useDeleteVault(orgId);
+
+  if (!organization) {
+    return <Loading message="Loading your workspace..." />;
+  }
 
   if (isLoading) {
     return <Loading message="Loading your vaults..." />;
@@ -19,9 +29,9 @@ export function VaultListPage() {
 
   if (isError) {
     return (
-      <ErrorState 
-        title="Failed to load vaults" 
-        message="We encountered an error while communicating with the Vault service." 
+      <ErrorState
+        title="Failed to load vaults"
+        message="We encountered an error while communicating with the Vault service."
         onRetry={() => refetch()}
       />
     );
@@ -29,29 +39,39 @@ export function VaultListPage() {
 
   if (!vaults || vaults.length === 0) {
     return (
-      <EmptyState
-        title="No Vaults Found"
-        description="You don't have any secure vaults in this organization yet."
-        icon={<Shield className="w-6 h-6 text-blue-500" />}
-        actionLabel="Create Vault"
-        onAction={() => console.log('Create vault modal placeholder')}
-      />
+      <>
+        <EmptyState
+          title="No Vaults Found"
+          description="Create your first secure vault to start storing encrypted secrets."
+          icon={<Shield className="w-6 h-6 text-slate-400" />}
+          actionLabel="Create Vault"
+          onAction={() => setIsCreateOpen(true)}
+        />
+        <CreateVaultModal orgId={orgId} isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} />
+      </>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Secure Vaults</h2>
-          <p className="text-sm text-gray-500">Manage your encrypted containers and secrets.</p>
+    <>
+      <div className="space-y-5">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Secure Vaults</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Manage your encrypted containers and secrets.</p>
+          </div>
+          <button
+            onClick={() => setIsCreateOpen(true)}
+            className="flex items-center px-3 py-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-lg font-semibold text-xs transition-colors shadow-sm"
+          >
+            <Plus className="w-3.5 h-3.5 mr-1.5" />
+            Create Vault
+          </button>
         </div>
-        <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium text-sm transition-colors">
-          Create Vault
-        </button>
+        <VaultList vaults={vaults} />
       </div>
 
-      <VaultList vaults={vaults} />
-    </div>
+      <CreateVaultModal orgId={orgId} isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} />
+    </>
   );
 }

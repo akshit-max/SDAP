@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { use } from 'react';
 import Link from 'next/link';
 import { useVault } from '../../../../../hooks/useVaults';
 import { useSecret } from '../../../../../hooks/useSecrets';
@@ -9,12 +9,14 @@ import { Loading } from '../../../../../components/common/Loading';
 import { ErrorState } from '../../../../../components/common/ErrorState';
 import { RevealFlow } from '../../../../../components/secrets/RevealFlow';
 import { FileKey2, Clock, CheckCircle } from 'lucide-react';
+import { useAuth } from '../../../../../lib/auth/AuthContext';
 
-const ORG_ID = 'org-1'; // Hardcoded for this UI foundation sprint
-
-export default function SecretDetailsPage({ params }: { params: { id: string; secretId: string } }) {
-  const { data: vault, isLoading: vaultLoading } = useVault(ORG_ID, params.id);
-  const { data: secret, isLoading: secretLoading, isError, refetch } = useSecret(ORG_ID, params.id, params.secretId);
+export default function SecretDetailsPage({ params }: { params: Promise<{ id: string; secretId: string }> }) {
+  const { id, secretId } = use(params);
+  const { organization } = useAuth();
+  const orgId = organization?.id || '';
+  const { data: vault, isLoading: vaultLoading } = useVault(orgId, id);
+  const { data: secret, isLoading: secretLoading, isError, refetch } = useSecret(orgId, id, secretId);
 
   return (
     <DashboardShell>
@@ -27,60 +29,60 @@ export default function SecretDetailsPage({ params }: { params: { id: string; se
           onRetry={() => refetch()}
         />
       ) : (
-        <div className="space-y-6 max-w-4xl mx-auto">
+        <div className="space-y-5 max-w-4xl mx-auto">
           <div>
-            <div className="flex items-center text-sm text-blue-600 font-medium mb-2">
-              <Link href="/vaults" className="hover:underline">Vaults</Link>
-              <span className="mx-2 text-gray-400">/</span>
-              <Link href={`/vaults/${params.id}`} className="hover:underline">{vault?.name || 'Vault'}</Link>
-              <span className="mx-2 text-gray-400">/</span>
-              <span className="text-gray-900">{secret.name}</span>
+            <div className="flex items-center text-xs text-slate-500 font-medium mb-1.5">
+              <Link href="/vaults" className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">Vaults</Link>
+              <span className="mx-1.5 text-slate-300 dark:text-slate-750">/</span>
+              <Link href={`/vaults/${id}`} className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{vault?.name || 'Vault'}</Link>
+              <span className="mx-1.5 text-slate-300 dark:text-slate-750">/</span>
+              <span className="text-slate-900 dark:text-slate-100 font-semibold">{secret.name}</span>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-              <FileKey2 className="w-6 h-6 mr-3 text-blue-600" />
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center">
+              <FileKey2 className="w-5 h-5 mr-2 text-slate-850 dark:text-slate-150" />
               {secret.name}
             </h2>
-            <p className="text-sm text-gray-500 mt-2">{secret.description || 'No description provided.'}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{secret.description || 'No description provided.'}</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-900">Secret Information</h3>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm">
+            <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex justify-between items-center">
+              <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">Secret Information</h3>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide uppercase bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200/30 dark:border-emerald-900/30">
                 <CheckCircle className="w-3 h-3 mr-1" />
                 {secret.status}
               </span>
             </div>
             
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div>
-                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Type</h4>
-                  <p className="text-sm font-medium text-gray-900">{secret.type}</p>
+            <div className="p-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+                <div className="space-y-0.5">
+                  <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Type</h4>
+                  <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">{secret.type}</p>
                 </div>
-                <div>
-                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Created</h4>
-                  <p className="text-sm font-medium text-gray-900 flex items-center">
-                    <Clock className="w-4 h-4 mr-1.5 text-gray-400" />
+                <div className="space-y-0.5">
+                  <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Created</h4>
+                  <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 flex items-center">
+                    <Clock className="w-3.5 h-3.5 mr-1 text-slate-400 dark:text-slate-500" />
                     {new Date(secret.createdAt).toLocaleString()}
                   </p>
                 </div>
-                <div>
-                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Status</h4>
-                  <p className="text-sm font-medium text-gray-900">{secret.status}</p>
+                <div className="space-y-0.5">
+                  <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Status</h4>
+                  <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">{secret.status}</p>
                 </div>
-                <div>
-                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Last Updated</h4>
-                  <p className="text-sm font-medium text-gray-900 flex items-center">
-                    <Clock className="w-4 h-4 mr-1.5 text-gray-400" />
+                <div className="space-y-0.5">
+                  <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Last Updated</h4>
+                  <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 flex items-center">
+                    <Clock className="w-3.5 h-3.5 mr-1 text-slate-400 dark:text-slate-500" />
                     {new Date(secret.updatedAt).toLocaleString()}
                   </p>
                 </div>
               </div>
 
-              <div className="border-t border-gray-100 pt-8 mt-4">
-                <h4 className="text-sm font-medium text-gray-900 mb-4">Secret Value</h4>
-                <RevealFlow orgId={ORG_ID} vaultId={params.id} secretId={params.secretId} />
+              <div className="border-t border-slate-100 dark:border-slate-800 pt-5 mt-3">
+                <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider mb-3">Secret Value</h4>
+                <RevealFlow orgId={orgId} vaultId={id} secretId={secretId} />
               </div>
             </div>
           </div>
