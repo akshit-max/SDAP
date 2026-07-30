@@ -5,153 +5,218 @@ import { useIncomingSessions, useOutgoingSessions, useRevokeSession } from '../.
 import { sessionsApi } from '../../lib/api/sessions';
 import { DashboardShell } from '../../components/layout/DashboardShell';
 import { CreateSessionModal } from '../../components/sessions/CreateSessionModal';
-import { Plus, Trash2, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Trash2, Clock, CheckCircle, XCircle, Eye, Loader2 } from 'lucide-react';
 import { SessionStatus } from '@repo/types';
-
-const ORG_ID = 'org-1'; // Hardcoded for this UI foundation sprint
+import { useAuth } from '../../lib/auth/AuthContext';
+import { useToast } from '../../components/common/Toast';
 
 export default function SessionsPage() {
-  const orgId = ORG_ID;
+  const { organization } = useAuth();
+  const orgId = organization?.id || '';
+  const { toast } = useToast();
 
-  const { data: incomingSessions, isLoading: isLoadingIncoming } = useIncomingSessions(orgId);
+  const { data: incomingSessions, isLoading: isLoadingIncoming, refetch: refetchIncoming } = useIncomingSessions(orgId);
   const { data: outgoingSessions, isLoading: isLoadingOutgoing } = useOutgoingSessions(orgId);
   const { mutate: revokeSession, isPending: isRevoking } = useRevokeSession(orgId);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [revealingId, setRevealingId] = useState<string | null>(null);
+  const [revealModal, setRevealModal] = useState<{ value: string; sessionId: string } | null>(null);
 
-  if (!orgId) return null;
+  const canCreateSession = !!orgId;
+
+  const formatExpiry = (expiresAt: string | Date) => {
+    const d = new Date(expiresAt);
+    const now = new Date();
+    const diffMs = d.getTime() - now.getTime();
+    const diffMins = Math.round(diffMs / 60000);
+
+    if (diffMins <= 0) return `Expired`;
+    if (diffMins < 60) return `Expires in ${diffMins}m`;
+    const diffHours = Math.round(diffMins / 60);
+    if (diffHours < 24) return `Expires in ${diffHours}h`;
+    const diffDays = Math.round(diffHours / 24);
+    return `Expires in ${diffDays}d`;
+  };
 
   const getStatusBadge = (status: SessionStatus, expiresAt: string | Date) => {
     if (status === SessionStatus.REVOKED) {
-      return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"><XCircle className="w-3 h-3 mr-1" /> Revoked</span>;
-    }
-    
-    if (status === SessionStatus.EXPIRED || new Date(expiresAt) <= new Date()) {
-      return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"><Clock className="w-3 h-3 mr-1" /> Expired</span>;
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border border-red-200/30 dark:border-red-900/30 flex-shrink-0">
+          <XCircle className="w-3 h-3 mr-1" /> Revoked
+        </span>
+      );
     }
 
-    return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" /> Active</span>;
+    if (status === SessionStatus.EXPIRED || new Date(expiresAt) <= new Date()) {
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/30 flex-shrink-0">
+          <Clock className="w-3 h-3 mr-1" /> Expired
+        </span>
+      );
+    }
+
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200/20 dark:border-emerald-900/20 flex-shrink-0">
+        <CheckCircle className="w-3 h-3 mr-1" /> Active
+      </span>
+    );
+  };
+
+  const handleReveal = async (sessionId: string, sessionOrgId: string) => {
+    const reason = window.prompt('Why are you revealing this secret?\n(Required for audit log)');
+    if (reason === null) return; // user cancelled
+    if (!reason.trim()) {
+      toast('warning', 'A reason is required for audit purposes.');
+      return;
+    }
+
+    setRevealingId(sessionId);
+    try {
+      const plaintext = await sessionsApi.revealSecretViaSession(sessionOrgId, sessionId, reason.trim());
+      setRevealModal({ value: plaintext, sessionId });
+      refetchIncoming();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to reveal secret. Please try again.';
+      toast('error', msg);
+    } finally {
+      setRevealingId(null);
+    }
+  };
+
+  const handleRevoke = (sessionId: string) => {
+    if (!window.confirm('Are you sure you want to revoke this session?')) return;
+    revokeSession(sessionId, {
+      onSuccess: () => toast('success', 'Session revoked.'),
+      onError: () => toast('error', 'Failed to revoke session.'),
+    });
   };
 
   return (
     <DashboardShell>
-      <div className="max-w-6xl mx-auto space-y-8">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">Delegated Sessions</h1>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <Plus className="-ml-1 mr-2 h-5 w-5" />
-            Create Session
-          </button>
+      <div className="max-w-5xl mx-auto space-y-6">
+        <div className="flex justify-between items-center mb-1">
+          <div>
+            <h1 className="text-base font-bold text-slate-900 dark:text-slate-100">Delegated Sessions</h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Manage time-bound access delegations.</p>
+          </div>
+          {canCreateSession && (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="inline-flex items-center px-3 py-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-lg font-semibold text-xs transition-colors shadow-sm"
+            >
+              <Plus className="-ml-0.5 mr-1.5 h-3.5 w-3.5" />
+              Create Session
+            </button>
+          )}
         </div>
 
         {/* Incoming Sessions */}
-        <section>
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Granted to Me (Incoming)</h2>
-          <div className="bg-white shadow overflow-hidden sm:rounded-md border border-gray-200">
+        <section className="space-y-3">
+          <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Granted to Me (Incoming)</h2>
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm">
             {isLoadingIncoming ? (
-              <div className="p-4 text-center text-gray-500">Loading...</div>
-            ) : incomingSessions?.length === 0 ? (
-              <div className="p-8 text-center text-gray-500 bg-gray-50">
+              <div className="p-4 text-center text-xs text-slate-500">Loading...</div>
+            ) : !incomingSessions?.length ? (
+              <div className="p-6 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900">
                 You do not have any incoming delegated sessions.
               </div>
             ) : (
-              <ul className="divide-y divide-gray-200">
-                {incomingSessions?.map((session) => (
-                  <li key={session.id} className="p-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-blue-600 truncate">
-                          {session.scope} Access
-                        </p>
-                        <p className="mt-1 flex items-center text-sm text-gray-500">
-                          Resource ID: {session.resourceId}
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <div className="text-sm text-gray-500 flex flex-col items-end">
-                          <p>Expires: {new Date(session.expiresAt).toLocaleString()}</p>
-                          <p>Uses: {session.revealCount} / {session.maxReveals || '∞'}</p>
+              <ul className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                {incomingSessions.map((session) => {
+                  const isActive = session.status === SessionStatus.ACTIVE && new Date(session.expiresAt) > new Date();
+                  return (
+                    <li key={session.id} className="p-4 hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors">
+                      <div className="flex items-center justify-between gap-4 flex-wrap">
+                        {/* Left: scope + resource */}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                            {session.scope} Access
+                          </p>
+                          <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">
+                            {(session as unknown as { resourceName?: string }).resourceName || session.resourceId}
+                          </p>
                         </div>
-                        {getStatusBadge(session.status, session.expiresAt)}
-                        
-                        {session.status === SessionStatus.ACTIVE && new Date(session.expiresAt) > new Date() && session.scope === 'SECRET' && (
-                          <button
-                            onClick={() => {
-                              const reason = window.prompt('Enter reason for revealing this secret:');
-                              if (reason) {
-                                sessionsApi.revealSecretViaSession(orgId, session.id, reason)
-                                  .then((plaintext) => {
-                                    window.prompt('Secret Value (Copy and close):', plaintext);
-                                    // Normally we would have a better UI, but for Phase 5 scope, window.prompt handles the ephemeral requirement safely
-                                  })
-                                  .catch((err) => {
-                                    alert(err.response?.data?.message || 'Failed to reveal secret');
-                                  });
+
+                        {/* Right: meta + actions */}
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 flex flex-col items-end gap-0.5 font-medium whitespace-nowrap">
+                            <span>{formatExpiry(session.expiresAt)}</span>
+                            <span>Uses: {session.revealCount} / {session.maxReveals ?? '∞'}</span>
+                          </div>
+                          {getStatusBadge(session.status, session.expiresAt)}
+                          {isActive && session.scope === 'SECRET' && (
+                            <button
+                              onClick={() => handleReveal(session.id, session.organizationId)}
+                              disabled={revealingId === session.id}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-md font-semibold text-[11px] transition-colors shadow-sm disabled:opacity-60"
+                            >
+                              {revealingId === session.id
+                                ? <Loader2 className="w-3 h-3 animate-spin" />
+                                : <Eye className="w-3 h-3" />
                               }
-                            }}
-                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
-                          >
-                            Reveal Secret
-                          </button>
-                        )}
+                              Reveal
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </li>
-                ))}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
         </section>
 
         {/* Outgoing Sessions */}
-        <section>
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Granted by Me (Outgoing)</h2>
-          <div className="bg-white shadow overflow-hidden sm:rounded-md border border-gray-200">
+        <section className="space-y-3">
+          <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Granted by Me (Outgoing)</h2>
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm">
             {isLoadingOutgoing ? (
-              <div className="p-4 text-center text-gray-500">Loading...</div>
-            ) : outgoingSessions?.length === 0 ? (
-              <div className="p-8 text-center text-gray-500 bg-gray-50">
+              <div className="p-4 text-center text-xs text-slate-500">Loading...</div>
+            ) : !outgoingSessions?.length ? (
+              <div className="p-6 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900">
                 You have not created any delegated sessions.
               </div>
             ) : (
-              <ul className="divide-y divide-gray-200">
-                {outgoingSessions?.map((session) => (
-                  <li key={session.id} className="p-4 hover:bg-gray-50 transition-colors flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        Grantee: {session.granteeId}
-                      </p>
-                      <p className="mt-1 flex items-center text-sm text-gray-500">
-                        {session.scope}: {session.resourceId}
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-6">
-                       <div className="text-sm text-gray-500 flex flex-col items-end">
-                          <p>Expires: {new Date(session.expiresAt).toLocaleString()}</p>
-                          <p>Uses: {session.revealCount} / {session.maxReveals || '∞'}</p>
+              <ul className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                {outgoingSessions.map((session) => {
+                  const isActive = session.status === SessionStatus.ACTIVE && new Date(session.expiresAt) > new Date();
+                  return (
+                    <li key={session.id} className="p-4 hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors">
+                      <div className="flex items-center justify-between gap-4 flex-wrap">
+                        {/* Left: grantee + scope */}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                            {session.grantee?.fullName || session.grantee?.email || session.granteeId}
+                          </p>
+                          <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                            {session.scope} · {(session as unknown as { resourceName?: string }).resourceName || session.resourceId}
+                          </p>
                         </div>
-                      {getStatusBadge(session.status, session.expiresAt)}
-                      
-                      {session.status === SessionStatus.ACTIVE && new Date(session.expiresAt) > new Date() && (
-                        <button
-                          onClick={() => {
-                            if (window.confirm('Are you sure you want to revoke this session?')) {
-                              revokeSession(session.id);
-                            }
-                          }}
-                          disabled={isRevoking}
-                          className="text-red-600 hover:text-red-900 disabled:opacity-50"
-                          title="Revoke Session"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      )}
-                    </div>
-                  </li>
-                ))}
+
+                        {/* Right: meta + revoke */}
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 flex flex-col items-end gap-0.5 font-medium whitespace-nowrap">
+                            <span>{formatExpiry(session.expiresAt)}</span>
+                            <span>Uses: {session.revealCount} / {session.maxReveals ?? '∞'}</span>
+                          </div>
+                          {getStatusBadge(session.status, session.expiresAt)}
+                          {isActive && (
+                            <button
+                              onClick={() => handleRevoke(session.id)}
+                              disabled={isRevoking}
+                              className="p-1.5 text-slate-400 hover:text-red-500 dark:hover:text-red-400 rounded transition-colors disabled:opacity-50"
+                              title="Revoke Session"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
@@ -162,6 +227,35 @@ export default function SessionsPage() {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
         />
+
+        {/* Reveal Value Modal */}
+        {revealModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md border border-slate-200/80 dark:border-slate-800 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/30 flex items-center justify-center">
+                  <Eye className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Secret Revealed</h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">Copy the value and close immediately.</p>
+                </div>
+              </div>
+              <div className="bg-slate-950 dark:bg-slate-950 border border-slate-800 rounded-xl p-4 mb-4">
+                <p className="font-mono text-sm text-emerald-400 break-all select-all">{revealModal.value}</p>
+              </div>
+              <p className="text-[10px] text-amber-600 dark:text-amber-400 mb-4">
+                ⚠️ This value is shown once. It will not be shown again without another reveal.
+              </p>
+              <button
+                onClick={() => setRevealModal(null)}
+                className="w-full py-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-lg font-semibold text-xs transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardShell>
   );

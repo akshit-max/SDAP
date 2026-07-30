@@ -7,6 +7,12 @@ export const sessionsApi = {
     return response.data;
   },
 
+  // For grantees who may not have an org — uses global endpoint
+  getMyIncomingSessions: async (): Promise<DelegatedSessionDto[]> => {
+    const response = await apiClient.get('/sessions/incoming');
+    return response.data;
+  },
+
   getOutgoingSessions: async (orgId: string): Promise<DelegatedSessionDto[]> => {
     const response = await apiClient.get(`/organizations/${orgId}/sessions/outgoing`);
     return response.data;

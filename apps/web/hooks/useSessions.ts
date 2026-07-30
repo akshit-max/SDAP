@@ -4,9 +4,10 @@ import { CreateSessionDto } from '@repo/types';
 
 export function useIncomingSessions(orgId: string | null) {
   return useQuery({
-    queryKey: ['sessions', 'incoming', orgId],
-    queryFn: () => (orgId ? sessionsApi.getIncomingSessions(orgId) : Promise.resolve([])),
-    enabled: !!orgId,
+    queryKey: ['sessions', 'incoming'],
+    // Always use the global endpoint — grantees may not have an org
+    queryFn: () => sessionsApi.getMyIncomingSessions(),
+    enabled: true,
   });
 }
 
