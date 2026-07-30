@@ -49,6 +49,7 @@ enum KeyStatus {
 model User {
   id                     String    @id @default(uuid())
   email                  String    @unique
+  fullName               String    @default("")
   passwordHash           String
   emailVerifiedAt        DateTime?
   emailVerificationToken String?
