@@ -1,10 +1,10 @@
 import { DashboardShell } from '../../components/layout/DashboardShell';
-import { VaultListPage } from '../../components/vaults/VaultListPage';
+import { DashboardSummary } from '../../components/layout/DashboardSummary';
 
 export default function Dashboard() {
   return (
     <DashboardShell>
-      <VaultListPage />
+      <DashboardSummary />
     </DashboardShell>
   );
 }

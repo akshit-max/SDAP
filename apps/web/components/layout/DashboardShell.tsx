@@ -3,16 +3,35 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { clearToken } from '../../lib/auth/token';
-import { Shield, LayoutDashboard, Key, LogOut, Users, CheckSquare, FileText } from 'lucide-react';
+import { AuthSession } from '../../lib/auth/session';
+import { useAuth } from '../../lib/auth/AuthContext';
+import { Shield, LayoutDashboard, Key, LogOut, Users, CheckSquare, FileText, Settings } from 'lucide-react';
 import clsx from 'clsx';
+import { useState, useEffect } from 'react';
+import { Menu, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { refreshContext } = useAuth();
+  
+  // Persist sidebar state in localStorage if possible, or just default to false
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('sidebar_collapsed');
+    if (saved === 'true') setIsCollapsed(true);
+  }, []);
+
+  const toggleSidebar = () => {
+    const nextState = !isCollapsed;
+    setIsCollapsed(nextState);
+    localStorage.setItem('sidebar_collapsed', String(nextState));
+  };
 
   const handleLogout = () => {
-    clearToken();
+    AuthSession.clear();
+    refreshContext();
     router.push('/login');
   };
 
@@ -22,64 +41,112 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     { name: 'Sessions', href: '/sessions', icon: Users },
     { name: 'Approvals', href: '/approvals', icon: CheckSquare },
     { name: 'Audit Log', href: '/audit', icon: FileText },
+    { name: 'Team', href: '/settings/members', icon: Users },
+    { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-950">
       {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-        <div className="h-16 flex items-center px-6 border-b border-gray-200">
-          <Shield className="w-6 h-6 text-blue-600 mr-2" />
-          <span className="font-bold text-gray-900">SDAP Vault</span>
+      <div 
+        className={clsx(
+          "bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 flex flex-col transition-all duration-300",
+          isCollapsed ? "w-16" : "w-60"
+        )}
+      >
+        <div className={clsx(
+          "h-14 flex items-center border-b border-slate-200/80 dark:border-slate-800",
+          isCollapsed ? "justify-center px-0" : "px-5"
+        )}>
+          <Shield className={clsx("w-5 h-5 text-slate-900 dark:text-slate-100 flex-shrink-0", !isCollapsed && "mr-2")} />
+          {!isCollapsed && (
+            <span className="font-semibold text-sm tracking-tight text-slate-900 dark:text-slate-100 truncate">WITHUS Vault</span>
+          )}
         </div>
         
-        <div className="flex-1 overflow-y-auto py-4">
+        <div className="flex-1 overflow-y-auto py-4 overflow-x-hidden">
           <nav className="px-3 space-y-1">
             {navItems.map((item) => {
-              const isActive = pathname.startsWith(item.href);
+              // Exact match for /settings so it doesn't highlight when on /settings/members
+              const isActive = item.href === '/settings' ? pathname === '/settings' : pathname.startsWith(item.href);
+              
               return (
                 <Link
                   key={item.name}
                   href={item.href}
+                  title={isCollapsed ? item.name : undefined}
                   className={clsx(
-                    'flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
+                    'flex items-center py-2 text-xs font-semibold rounded-lg transition-all duration-150',
+                    isCollapsed ? 'justify-center px-0' : 'px-3',
                     isActive
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950 shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                   )}
                 >
                   <item.icon
                     className={clsx(
-                      'mr-3 w-5 h-5',
-                      isActive ? 'text-blue-700' : 'text-gray-400'
+                      'w-4 h-4 flex-shrink-0 transition-colors',
+                      !isCollapsed && 'mr-3',
+                      isActive ? 'text-white dark:text-slate-950' : 'text-slate-400 dark:text-slate-500'
                     )}
                   />
-                  {item.name}
+                  {!isCollapsed && <span className="truncate">{item.name}</span>}
                 </Link>
               );
             })}
           </nav>
         </div>
 
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-3 border-t border-slate-200/80 dark:border-slate-800 flex flex-col gap-1">
+          <button
+            onClick={toggleSidebar}
+            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className={clsx(
+              "flex items-center py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors",
+              isCollapsed ? "justify-center px-0" : "px-3"
+            )}
+          >
+            {isCollapsed ? (
+              <ChevronRight className="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0" />
+            ) : (
+              <>
+                <ChevronLeft className="w-4 h-4 mr-3 text-slate-400 dark:text-slate-500 flex-shrink-0" />
+                <span className="truncate">Collapse</span>
+              </>
+            )}
+          </button>
+          
           <button
             onClick={handleLogout}
-            className="flex items-center w-full px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100 transition-colors"
+            title={isCollapsed ? "Logout" : undefined}
+            className={clsx(
+              "flex items-center py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors",
+              isCollapsed ? "justify-center px-0" : "px-3"
+            )}
           >
-            <LogOut className="mr-3 w-5 h-5 text-gray-400" />
-            Logout
+            <LogOut className={clsx("w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0", !isCollapsed && "mr-3")} />
+            {!isCollapsed && <span className="truncate">Logout</span>}
           </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center px-8 shadow-sm">
-          <h1 className="text-xl font-semibold text-gray-900">
-            {navItems.find((item) => pathname.startsWith(item.href))?.name || 'Vaults'}
-          </h1>
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <header className="h-14 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between px-8 shadow-sm">
+          <div className="flex items-center gap-3">
+            {isCollapsed && (
+              <button onClick={toggleSidebar} className="lg:hidden p-1 -ml-3 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">
+                <Menu className="w-5 h-5" />
+              </button>
+            )}
+            <h1 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+              {navItems.find((item) => {
+                return item.href === '/settings' ? pathname === '/settings' : pathname.startsWith(item.href);
+              })?.name || 'Vaults'}
+            </h1>
+          </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-8 bg-gray-50">
+        <main className="flex-1 overflow-y-auto p-8 bg-slate-50/50 dark:bg-slate-950">
           {children}
         </main>
       </div>
