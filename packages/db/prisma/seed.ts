@@ -106,6 +106,19 @@ async function main() {
   });
 
   console.log('Created Pending Invitation for pending@sdap.local');
+
+  // 5. Seed KeyMetadata (required for secret encryption)
+  await prisma.keyMetadata.upsert({
+    where: { version: 1 },
+    update: {},
+    create: {
+      version: 1,
+      status: 'ACTIVE',
+      algorithm: 'AES-256-GCM',
+    },
+  });
+  console.log('Ensured active KeyMetadata (v1) exists.');
+
   console.log('Seeding finished.');
 }
 
