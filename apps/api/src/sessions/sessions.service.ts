@@ -84,29 +84,52 @@ export class SessionsService {
   }
 
   async getIncomingSessions(organizationId: string, userId: string) {
-    return this.prisma.delegatedSession.findMany({
-      where: {
-        organizationId,
-        granteeId: userId,
-      },
+    const sessions = await this.prisma.delegatedSession.findMany({
+      where: { granteeId: userId },
       orderBy: { createdAt: 'desc' },
       include: {
-        grantor: { select: { email: true } },
+        grantor: { select: { email: true, fullName: true } },
       },
     });
+
+    // Enrich with resource names
+    return Promise.all(
+      sessions.map(async (s) => {
+        let resourceName: string | null = null;
+        if (s.scope === 'SECRET') {
+          const secret = await this.prisma.secret.findUnique({ where: { id: s.resourceId }, select: { name: true } });
+          resourceName = secret?.name ?? null;
+        } else if (s.scope === 'VAULT') {
+          const vault = await this.prisma.vault.findUnique({ where: { id: s.resourceId }, select: { name: true } });
+          resourceName = vault?.name ?? null;
+        }
+        return { ...s, resourceName };
+      }),
+    );
   }
 
   async getOutgoingSessions(organizationId: string, userId: string) {
-    return this.prisma.delegatedSession.findMany({
-      where: {
-        organizationId,
-        grantorId: userId,
-      },
+    const sessions = await this.prisma.delegatedSession.findMany({
+      where: { organizationId, grantorId: userId },
       orderBy: { createdAt: 'desc' },
       include: {
-        grantee: { select: { email: true } },
+        grantee: { select: { email: true, fullName: true } },
       },
     });
+
+    return Promise.all(
+      sessions.map(async (s) => {
+        let resourceName: string | null = null;
+        if (s.scope === 'SECRET') {
+          const secret = await this.prisma.secret.findUnique({ where: { id: s.resourceId }, select: { name: true } });
+          resourceName = secret?.name ?? null;
+        } else if (s.scope === 'VAULT') {
+          const vault = await this.prisma.vault.findUnique({ where: { id: s.resourceId }, select: { name: true } });
+          resourceName = vault?.name ?? null;
+        }
+        return { ...s, resourceName };
+      }),
+    );
   }
 
   async revokeSession(

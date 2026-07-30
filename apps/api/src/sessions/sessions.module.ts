@@ -1,5 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { SessionsController } from './controllers/sessions.controller';
+import { GlobalSessionsController } from './controllers/global-sessions.controller';
 import { SessionsService } from './sessions.service';
 import { SessionValidationService } from './session-validation.service';
 import { VaultsModule } from '../vaults/vaults.module';
@@ -14,7 +15,7 @@ import { ApprovalsModule } from '../approvals/approvals.module';
     AuthorizationModule,
     forwardRef(() => ApprovalsModule),
   ],
-  controllers: [SessionsController],
+  controllers: [SessionsController, GlobalSessionsController],
   providers: [SessionsService, SessionValidationService],
   exports: [SessionsService, SessionValidationService],
 })
