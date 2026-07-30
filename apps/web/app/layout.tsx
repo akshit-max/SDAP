@@ -12,10 +12,12 @@ const geistMono = localFont({
 });
 
 import { QueryProvider } from "../providers/QueryProvider";
+import { AuthProvider } from "../lib/auth/AuthContext";
+import { ToastProvider } from "../components/common/Toast";
 
 export const metadata: Metadata = {
-  title: "Secure Delegated Access Platform",
-  description: "SDAP Enterprise Vault",
+  title: "WITHUS",
+  description: "WITHUS Enterprise Vault",
 };
 
 export default function RootLayout({
@@ -26,9 +28,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <QueryProvider>
-          {children}
-        </QueryProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <QueryProvider>
+              {children}
+            </QueryProvider>
+          </ToastProvider>
+        </AuthProvider>
       </body>
     </html>
   );

@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 import { getToken, clearToken } from '../auth/token';
 
 export const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -27,17 +27,22 @@ apiClient.interceptors.response.use(
       message = data?.message || data?.error || message;
 
       if (status === 401) {
-        clearToken();
-        if (typeof window !== 'undefined') {
+        const isAuthPage = typeof window !== 'undefined' &&
+          (window.location.pathname.startsWith('/login') || window.location.pathname.startsWith('/register'));
+
+        if (!isAuthPage) {
+          clearToken();
           window.location.href = '/login';
         }
-        message = 'Your session has expired. Please log in again.';
+        message = 'Invalid credentials. Please check your email and password.';
       } else if (status === 403) {
         message = 'You do not have permission to perform this action.';
       } else if (status === 404) {
         message = 'The requested resource could not be found.';
       } else if (status === 409) {
         message = message || 'A conflict occurred.';
+      } else if (status === 429) {
+        message = 'Too many attempts. Please wait 60 seconds before trying again.';
       } else if (status >= 500) {
         message = 'A server error occurred. Please try again later.';
       }

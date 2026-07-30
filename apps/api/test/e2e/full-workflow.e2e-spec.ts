@@ -2,9 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
+import { PrismaService } from '../../src/prisma/prisma.service';
+import { GlobalExceptionFilter } from '../../src/common/filters/global-exception.filter';
 
 describe('Full Workflow (e2e)', () => {
   let app: INestApplication;
+  let prisma: PrismaService;
 
   let adminToken: string;
   let memberToken: string;
@@ -24,7 +27,9 @@ describe('Full Workflow (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalFilters(new GlobalExceptionFilter());
     await app.init();
+    prisma = app.get<PrismaService>(PrismaService);
   });
 
   afterAll(async () => {
@@ -50,12 +55,12 @@ describe('Full Workflow (e2e)', () => {
 
     // Create Org
     const orgRes = await request(app.getHttpServer())
-      .post('/organizations')
+      .post('/api/v1/organizations')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ name: 'Acme Corp' })
       .expect(201);
 
-    orgId = orgRes.body.id;
+    orgId = orgRes.body.data.id;
   });
 
   it('should register a member and add to organization', async () => {
@@ -72,9 +77,14 @@ describe('Full Workflow (e2e)', () => {
 
     memberToken = loginRes.body.accessToken;
 
-    // Admin adds member to org (mocking role assignment logic via DB or invite)
-    // Note: Our current API might require admin to add member. For now, assuming org member routes exist.
-    // If not, we just rely on standard RBAC established in Phase 2.
+    const user = await prisma.user.findUnique({ where: { email: memberEmail } });
+    await prisma.organizationMember.create({
+      data: {
+        userId: user!.id,
+        organizationId: orgId,
+        role: 'MEMBER'
+      }
+    });
   });
 
   it('should allow admin to create a vault and secret', async () => {
@@ -84,7 +94,7 @@ describe('Full Workflow (e2e)', () => {
       .send({ name: 'Prod Vault', description: 'Production Secrets' })
       .expect(201);
 
-    vaultId = vaultRes.body.id;
+    vaultId = vaultRes.body.data.id;
 
     const secretRes = await request(app.getHttpServer())
       .post(`/organizations/${orgId}/vaults/${vaultId}/secrets`)
@@ -92,7 +102,7 @@ describe('Full Workflow (e2e)', () => {
       .send({ name: 'DB_PASSWORD', plaintext: 'supersecret' })
       .expect(201);
 
-    secretId = secretRes.body.id;
+    secretId = secretRes.body.data.id;
   });
 
   it('should require approval for member to request session', async () => {
@@ -102,13 +112,13 @@ describe('Full Workflow (e2e)', () => {
       .set('Authorization', `Bearer ${memberToken}`)
       .send({
         resourceId: secretId,
-        scope: 'READ',
+        scope: 'SECRET',
         expiresAt: new Date(Date.now() + 3600000).toISOString(),
       })
       .expect(201);
 
-    expect(sessionReqRes.body.status).toBe('PENDING_APPROVAL');
-    approvalId = sessionReqRes.body.approvalRequest.id;
+    expect(sessionReqRes.body.data.status).toBe('PENDING_APPROVAL');
+    approvalId = sessionReqRes.body.data.approvalRequest.id;
   });
 
   it('should allow admin to approve the request, creating the session', async () => {
@@ -118,7 +128,7 @@ describe('Full Workflow (e2e)', () => {
       .send({ reason: 'Approved for deployment' })
       .expect(201);
 
-    expect(approveRes.body.status).toBe('APPROVED');
+    expect(approveRes.body.data.status).toBe('APPROVED');
 
     // Member should now have the session
     const incomingRes = await request(app.getHttpServer())
@@ -126,8 +136,8 @@ describe('Full Workflow (e2e)', () => {
       .set('Authorization', `Bearer ${memberToken}`)
       .expect(200);
 
-    expect(incomingRes.body.length).toBeGreaterThan(0);
-    sessionId = incomingRes.body[0].id;
+    expect(incomingRes.body.data.length).toBeGreaterThan(0);
+    sessionId = incomingRes.body.data[0].id;
   });
 
   it('should allow member to reveal secret using the session', async () => {
@@ -137,7 +147,7 @@ describe('Full Workflow (e2e)', () => {
       .send({ reason: 'Investigating issue' })
       .expect(201);
 
-    expect(revealRes.text).toBe('supersecret');
+    expect(revealRes.body.data.plaintext).toBe('supersecret');
   });
 
   it('should record audit events for the entire flow', async () => {
@@ -171,11 +181,11 @@ describe('Full Workflow (e2e)', () => {
     const evilToken = evilLoginRes.body.accessToken;
 
     const evilOrgRes = await request(app.getHttpServer())
-      .post('/organizations')
+      .post('/api/v1/organizations')
       .set('Authorization', `Bearer ${evilToken}`)
       .send({ name: 'Evil Corp' })
       .expect(201);
-    const evilOrgId = evilOrgRes.body.id;
+    const evilOrgId = evilOrgRes.body.data.id;
 
     // 2. Attempt to create a session for Org A's secret using Org B's admin (IDOR)
     await request(app.getHttpServer())
