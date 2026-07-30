@@ -45,3 +45,15 @@ export function useDeleteVault(orgId: string) {
     },
   });
 }
+
+/** Fetches secrets for a specific vault — used in the session grant modal picker. */
+export function useSecretsByVault(orgId: string, vaultId: string | null) {
+  return useQuery({
+    queryKey: ['secrets', orgId, vaultId],
+    queryFn: async () => {
+      const { secretsApi } = await import('../lib/api/secrets');
+      return secretsApi.getSecrets(orgId, vaultId!);
+    },
+    enabled: !!orgId && !!vaultId,
+  });
+}

@@ -17,6 +17,11 @@ export const vaultsApi = {
     return response.data;
   },
 
+  updateVault: async (orgId: string, vaultId: string, data: Partial<CreateVaultDto>): Promise<VaultResponse> => {
+    const response = await apiClient.patch(`/organizations/${orgId}/vaults/${vaultId}`, data);
+    return response.data;
+  },
+
   deleteVault: async (orgId: string, vaultId: string): Promise<void> => {
     await apiClient.delete(`/organizations/${orgId}/vaults/${vaultId}`);
   },
