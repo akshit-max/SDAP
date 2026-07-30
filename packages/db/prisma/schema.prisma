@@ -95,6 +95,10 @@ model RefreshToken {
 
   @@index([userId])
   @@index([familyId])
+  // Composite: used by token validation (find active token for user)
+  @@index([userId, isRevoked])
+  // Composite: used by logout + password-reset (revoke all non-revoked tokens)
+  @@index([userId, isRevoked, expiresAt])
 }
 
 model Organization {
@@ -293,6 +297,12 @@ model DelegatedSession {
   @@index([granteeId])
   @@index([status])
   @@index([resourceId])
+  // Composite: used by expiry scheduler and session dashboard queries
+  @@index([organizationId, status])
+  // Composite: used by getIncomingSessions with status filter
+  @@index([granteeId, status])
+  // Composite: used by getOutgoingSessions
+  @@index([grantorId, organizationId])
 }
 
 enum ApprovalRequestStatus {
