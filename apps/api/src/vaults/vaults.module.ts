@@ -10,6 +10,6 @@ import { SecretsController } from './controllers/secrets.controller';
   imports: [PrismaModule],
   providers: [EncryptionService, SecretLifecycleService, VaultsService],
   controllers: [VaultsController, SecretsController],
-  exports: [VaultsService, SecretLifecycleService],
+  exports: [VaultsService, SecretLifecycleService, EncryptionService],
 })
 export class VaultsModule {}

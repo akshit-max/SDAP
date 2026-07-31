@@ -268,7 +268,7 @@ export default function AuditPage() {
                                     <p className="font-medium">v{event.eventVersion}</p>
                                   </div>
                                 </div>
-                                {event.metadata && Object.keys(event.metadata).length > 0 && (
+                                {Boolean(event.metadata) && Object.keys(event.metadata as object).length > 0 && (
                                   <>
                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Metadata</p>
                                     <pre className="bg-slate-950 text-emerald-400 p-3 rounded-lg overflow-x-auto text-[10px] leading-relaxed font-mono">
