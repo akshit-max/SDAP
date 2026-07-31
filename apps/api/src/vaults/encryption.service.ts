@@ -154,16 +154,40 @@ export class EncryptionService {
   }
 
   /**
-   * Future rotation implementation stub.
+   * Decrypts a DEK with an old MEK and re-encrypts it with a new MEK.
+   * Used during offline key rotation.
    */
-  rewrapDEK(): void {
-    throw new Error('NotImplementedException');
-  }
+  rewrapDEK(
+    encryptedDek: Buffer,
+    iv: Buffer,
+    authTag: Buffer,
+    oldMek: Buffer,
+    newMek: Buffer,
+  ): EncryptionResult {
+    let dek: Buffer;
+    try {
+      const decipher = crypto.createDecipheriv(this.ALGORITHM, oldMek, iv);
+      decipher.setAuthTag(authTag);
+      dek = Buffer.concat([decipher.update(encryptedDek), decipher.final()]);
+    } catch {
+      throw new Error('Failed to decrypt DEK with old MEK');
+    }
 
-  /**
-   * Future rotation implementation stub.
-   */
-  rotateMEK(): void {
-    throw new Error('NotImplementedException');
+    if (dek.length !== 32) {
+      throw new InternalServerErrorException('Invalid DEK length after decryption');
+    }
+
+    const newIv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv(this.ALGORITHM, newMek, newIv);
+
+    const ciphertext = Buffer.concat([cipher.update(dek), cipher.final()]);
+    const newAuthTag = cipher.getAuthTag();
+
+    return {
+      ciphertext,
+      iv: newIv,
+      authTag: newAuthTag,
+      fingerprint: this.computeFingerprint(dek),
+    };
   }
 }

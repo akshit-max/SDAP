@@ -12,7 +12,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "rotate-mek": "ts-node scripts/rotate-mek.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.28",
@@ -31,6 +32,7 @@
     "@repo/security": "*",
     "@repo/types": "*",
     "@types/nodemailer": "^8.0.1",
+    "cookie-parser": "^1.4.7",
     "helmet": "^8.3.0",
     "ioredis": "^5.11.1",
     "nodemailer": "^9.0.3",
@@ -48,6 +50,7 @@
     "@nestjs/testing": "^11.0.1",
     "@repo/eslint-config": "*",
     "@repo/typescript-config": "*",
+    "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.0",
