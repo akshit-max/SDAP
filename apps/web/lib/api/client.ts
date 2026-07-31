@@ -38,8 +38,25 @@ async function attemptSilentRefresh(): Promise<boolean> {
 
 function forceLogout() {
   clearAuthStorage();
+  
+  // We must hit the backend logout endpoint to clear the httpOnly cookies.
+  // Otherwise, Next.js middleware will see the old cookie and redirect us back to /dashboard,
+  // causing an infinite redirect loop when the API returns 401.
   if (typeof window !== 'undefined') {
-    window.location.href = '/login';
+    const csrfMatch = document.cookie.match(new RegExp('(^| )sdap_csrf=([^;]+)'));
+    const csrfToken = csrfMatch && csrfMatch[2] ? csrfMatch[2] : '';
+    
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken
+      },
+      body: JSON.stringify({})
+    }).finally(() => {
+      window.location.href = '/login';
+    });
   }
 }
 
