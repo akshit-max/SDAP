@@ -115,12 +115,15 @@ model Organization {
   updatedBy String?
   deletedBy String?
 
-  members           OrganizationMember[]
-  invitations       OrganizationInvitation[]
-  vaults            Vault[]
-  delegatedSessions DelegatedSession[]
-  approvalRequests  ApprovalRequest[]
-  auditEvents       AuditEvent[]
+  members              OrganizationMember[]
+  invitations          OrganizationInvitation[]
+  vaults               Vault[]
+  delegatedSessions    DelegatedSession[]
+  approvalRequests     ApprovalRequest[]
+  auditEvents          AuditEvent[]
+  integrationConnections IntegrationConnection[]
+  apiKeys              ApiKey[]
+  webhookSubscriptions WebhookSubscription[]
 }
 
 model OrganizationMember {
@@ -175,8 +178,9 @@ model KeyMetadata {
   createdAt DateTime  @default(now())
   rotatedAt DateTime?
 
-  secrets        Secret[]
-  secretVersions SecretVersion[]
+  secrets              Secret[]
+  secretVersions       SecretVersion[]
+  integrationConnections IntegrationConnection[]
 }
 
 model Vault {
@@ -372,4 +376,102 @@ model PasswordResetToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// ─── Release D: Integrations ────────────────────────────────────────────────
+
+enum IntegrationProvider {
+  VERCEL
+  GITHUB
+  GODADDY
+}
+
+enum IntegrationStatus {
+  ACTIVE
+  DISCONNECTED
+  ERROR
+}
+
+/// One row per (organization, provider) connection.
+/// The PAT/token is encrypted with the org's MEK before storage.
+model IntegrationConnection {
+  id             String              @id @default(uuid())
+  organizationId String
+  provider       IntegrationProvider
+  status         IntegrationStatus   @default(ACTIVE)
+
+  /// Encrypted PAT — AES-256-GCM envelope, same scheme as secrets.
+  encryptedToken  String
+  encryptedDek    String
+  keyMetadataId   String
+
+  /// Provider-specific metadata (team ID, org slug, account ID, etc.)
+  providerMeta Json?
+
+  /// Last time a health-check was performed against the provider API.
+  lastCheckedAt DateTime?
+  /// Human-readable error message from the last health-check failure.
+  lastError     String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  createdBy String?
+  updatedBy String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  keyMetadata  KeyMetadata  @relation(fields: [keyMetadataId], references: [id])
+
+  @@unique([organizationId, provider])
+  @@index([organizationId])
+}
+
+// ─── Release D: API Keys ─────────────────────────────────────────────────────
+
+enum ApiKeyStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+/// API Keys issued to external integrations / CI pipelines.
+/// The actual key is shown once on creation; only a SHA-256 hash is stored.
+model ApiKey {
+  id             String       @id @default(uuid())
+  organizationId String
+  name           String       // Human-readable label
+  keyHash        String       @unique // SHA-256 of the raw key
+  keyPrefix      String       // First 8 chars for display (e.g. "sdap_abc1")
+  status         ApiKeyStatus @default(ACTIVE)
+  expiresAt      DateTime?
+  lastUsedAt     DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  revokedAt DateTime?
+
+  createdBy String?
+  revokedBy String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([keyHash])
+  @@index([organizationId, status])
+}
+
+model WebhookSubscription {
+  id             String    @id @default(cuid())
+  organizationId String
+  url            String
+  events         String[]
+  secret         String
+  active         Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
 }

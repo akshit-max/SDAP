@@ -37,4 +37,9 @@ export enum Permission {
   // Sessions (Phase 6)
   SESSION_START = "session.start",
   SESSION_REVOKE = "session.revoke",
+
+  // Integrations (Release D)
+  INTEGRATION_READ = "integration.read",
+  INTEGRATION_CONNECT = "integration.connect",
+  INTEGRATION_DISCONNECT = "integration.disconnect",
 }

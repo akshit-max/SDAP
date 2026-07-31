@@ -4,7 +4,11 @@ export const RegisterSchema = z.object({
   fullName: z.string().min(2),
   email: z.string().email(),
   password: z.string().min(8),
-  companyName: z.string().min(2),
+  // Optional: only provided when the user is creating a new workspace.
+  // If absent, the user is signing up via an invitation.
+  companyName: z.string().min(2).optional(),
+  // Optional: raw invite token to atomically accept during registration.
+  inviteToken: z.string().optional(),
 });
 
 export type RegisterDto = z.infer<typeof RegisterSchema>;
