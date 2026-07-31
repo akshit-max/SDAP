@@ -13,7 +13,46 @@ async function bootstrap() {
   app.setGlobalPrefix('api/v1');
 
   // ─── Security Headers ──────────────────────────────────────────────────────
-  app.use(helmet());
+  const isProd = process.env.NODE_ENV === 'production';
+
+  app.use(
+    helmet({
+      // Content Security Policy — API only serves JSON, no HTML content.
+      // Blocks any accidental browser rendering of API responses.
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'none'"],
+          scriptSrc: ["'none'"],
+          styleSrc: ["'none'"],
+          imgSrc: ["'none'"],
+          connectSrc: ["'self'"],
+          frameSrc: ["'none'"],
+          objectSrc: ["'none'"],
+          baseUri: ["'none'"],
+          formAction: ["'none'"],
+        },
+      },
+      // HTTP Strict Transport Security — 1 year, include subdomains in production
+      hsts: isProd
+        ? { maxAge: 31536000, includeSubDomains: true, preload: true }
+        : false,
+      // Disable X-Powered-By (already off by default in NestJS, belt+suspenders)
+      hidePoweredBy: true,
+      // Prevent MIME type sniffing
+      noSniff: true,
+      // Prevent clickjacking
+      frameguard: { action: 'deny' },
+      // Cross-Origin Resource Policy
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      // Disable browser DNS prefetching
+      dnsPrefetchControl: { allow: false },
+      // Referrer leakage control
+      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+      // XSS filter (legacy browsers)
+      xssFilter: true,
+    }),
+  );
+
   app.use(cookieParser());
   app.use(csrfMiddleware);
 
