@@ -6,8 +6,7 @@
  * isStoredTokenExpired() is called by AuthContext on startup to detect
  * stale localStorage sessions.
  */
-import { setToken, clearToken, getToken } from './token';
-import { STORAGE_KEYS, clearAuthStorage, isStoredTokenExpired } from './auth-storage';
+import { STORAGE_KEYS, clearAuthStorage } from './auth-storage';
 
 export interface UserSession {
   id: string;
@@ -22,10 +21,6 @@ export interface OrganizationSession {
 }
 
 export class AuthSession {
-  static getAccessToken(): string | null {
-    return getToken();
-  }
-
   static getCurrentUser(): UserSession | null {
     if (typeof window === 'undefined') return null;
     const userStr = localStorage.getItem(STORAGE_KEYS.USER);
@@ -39,20 +34,16 @@ export class AuthSession {
   }
 
   /**
-   * Returns true if the stored token has passed its tracked expiry.
-   * Call on app startup to avoid hydrating a stale session.
+   * Token expiry is now handled by httpOnly cookies and 401 interceptors.
    */
   static isExpired(): boolean {
-    return isStoredTokenExpired();
+    return false;
   }
 
   static setSession(
-    accessToken: string,
     user: UserSession,
     organization: OrganizationSession | null,
-    expiresAt?: Date,
   ) {
-    setToken(accessToken, expiresAt);
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
       if (organization) {
@@ -64,7 +55,6 @@ export class AuthSession {
   }
 
   static clear() {
-    clearToken();
     clearAuthStorage();
   }
 }

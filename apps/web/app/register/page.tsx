@@ -36,9 +36,8 @@ export default function RegisterPage() {
         password,
       });
 
-      if (response.data?.accessToken) {
+      if (response.data?.user) {
         AuthSession.setSession(
-          response.data.accessToken,
           response.data.user,
           response.data.organization
         );

@@ -1,25 +1,114 @@
-import axios, { AxiosError } from 'axios';
-import { getToken } from '../auth/token';
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { clearAuthStorage } from '../auth/auth-storage';
+
+// Extend AxiosRequestConfig to carry our internal retry flag
+interface RetryableConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean;
+}
+
+let isRefreshing = false;
+let refreshSubscribers: Array<(success: boolean) => void> = [];
+
+function notifySubscribers(success: boolean) {
+  refreshSubscribers.forEach((cb) => cb(success));
+  refreshSubscribers = [];
+}
+
+function waitForRefresh(): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    refreshSubscribers.push((success) => {
+      if (success) resolve();
+      else reject(new Error('Session expired. Please log in again.'));
+    });
+  });
+}
+
+async function attemptSilentRefresh(): Promise<boolean> {
+  try {
+    await axios.post(
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/auth/refresh`,
+      {},
+      { withCredentials: true },
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function forceLogout() {
+  clearAuthStorage();
+  if (typeof window !== 'undefined') {
+    window.location.href = '/login';
+  }
+}
 
 export const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1',
+  withCredentials: true, // Send cookies with every request
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
 apiClient.interceptors.request.use((config) => {
-  const token = getToken();
-  if (token && config.headers) {
-    config.headers.Authorization = `Bearer ${token}`;
+  if (typeof document !== 'undefined') {
+    const match = document.cookie.match(new RegExp('(^| )sdap_csrf=([^;]+)'));
+    if (match && match[2]) {
+      config.headers['X-CSRF-Token'] = match[2];
+    }
   }
   return config;
 });
 
 apiClient.interceptors.response.use(
   (response) => response,
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
+    const originalConfig = error.config as RetryableConfig | undefined;
+
+    if (error.response?.status === 401 && originalConfig) {
+      const isAuthEndpoint =
+        originalConfig.url?.includes('/auth/login') ||
+        originalConfig.url?.includes('/auth/register') ||
+        originalConfig.url?.includes('/auth/refresh');
+
+      const isAuthPage =
+        typeof window !== 'undefined' &&
+        (window.location.pathname.startsWith('/login') ||
+          window.location.pathname.startsWith('/register'));
+
+      if (!isAuthEndpoint && !isAuthPage) {
+        if (originalConfig._retry) {
+          forceLogout();
+          return Promise.reject(new Error('Session expired. Please log in again.'));
+        }
+
+        originalConfig._retry = true;
+
+        if (isRefreshing) {
+          try {
+            await waitForRefresh();
+            return apiClient(originalConfig);
+          } catch (queueError) {
+            return Promise.reject(queueError);
+          }
+        }
+
+        isRefreshing = true;
+        const refreshed = await attemptSilentRefresh();
+        isRefreshing = false;
+
+        if (refreshed) {
+          notifySubscribers(true);
+          return apiClient(originalConfig);
+        } else {
+          notifySubscribers(false);
+          forceLogout();
+          return Promise.reject(new Error('Session expired. Please log in again.'));
+        }
+      }
+    }
+
     let message = 'An unexpected error occurred';
     
     if (error.response) {
@@ -28,14 +117,6 @@ apiClient.interceptors.response.use(
       message = data?.message || data?.error || message;
 
       if (status === 401) {
-        const isAuthPage = typeof window !== 'undefined' &&
-          (window.location.pathname.startsWith('/login') || window.location.pathname.startsWith('/register'));
-
-        if (!isAuthPage) {
-          // B-3: Clear full session (token + user + org) — not just the token
-          clearAuthStorage();
-          window.location.href = '/login';
-        }
         message = 'Invalid credentials. Please check your email and password.';
       } else if (status === 403) {
         message = 'You do not have permission to perform this action.';
@@ -56,3 +137,4 @@ apiClient.interceptors.response.use(
     return Promise.reject(new Error(message));
   }
 );
+

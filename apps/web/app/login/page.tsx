@@ -32,9 +32,8 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const response = await apiClient.post('/auth/login', { email, password });
-      if (response.data?.accessToken) {
+      if (response.data?.user) {
         AuthSession.setSession(
-          response.data.accessToken,
           response.data.user,
           response.data.organization
         );

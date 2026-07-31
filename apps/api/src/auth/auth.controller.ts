@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Req, Ip, UsePipes } from '@nestjs/common';
+import { Controller, Post, Body, Req, Res, Ip, UsePipes, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
   RegisterSchema,
@@ -15,7 +15,7 @@ import {
   ResetPasswordDto,
 } from './dto/auth.dto';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 
@@ -24,19 +24,48 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  private setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
+    const isProd = process.env.NODE_ENV === 'production';
+    
+    res.cookie('sdap_token', accessToken, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
+
+    res.cookie('sdap_refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: 'lax',
+      path: '/api/v1/auth/refresh', // only sent to refresh endpoint
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+  }
+
+  private clearAuthCookies(res: Response) {
+    res.clearCookie('sdap_token', { path: '/' });
+    res.clearCookie('sdap_refresh_token', { path: '/api/v1/auth/refresh' });
+  }
+
   @Post('register')
   @ApiOperation({ summary: 'Register a new user and organization' })
   @UsePipes(new ZodValidationPipe(RegisterSchema))
-  async register(@Body() dto: RegisterDto, @Req() req: Request, @Ip() ip: string) {
-    return this.authService.register(dto, ip, req.headers['user-agent']);
+  async register(@Body() dto: RegisterDto, @Req() req: Request, @Res({ passthrough: true }) res: Response, @Ip() ip: string) {
+    const result = await this.authService.register(dto, ip, req.headers['user-agent']);
+    this.setAuthCookies(res, result.accessToken, result.refreshToken);
+    return result;
   }
 
   @Post('login')
   @ApiOperation({ summary: 'Log in and obtain tokens' })
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @UsePipes(new ZodValidationPipe(LoginSchema))
-  async login(@Body() dto: LoginDto, @Req() req: Request, @Ip() ip: string) {
-    return this.authService.login(dto, ip, req.headers['user-agent']);
+  async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response, @Ip() ip: string) {
+    const result = await this.authService.login(dto, ip, req.headers['user-agent']);
+    this.setAuthCookies(res, result.accessToken, result.refreshToken);
+    return result;
   }
 
   @Post('refresh')
@@ -45,20 +74,32 @@ export class AuthController {
   async refresh(
     @Body() dto: RefreshDto,
     @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
     @Ip() ip: string,
   ) {
-    return this.authService.refresh(
-      dto.refreshToken,
+    const token = dto.refreshToken || req.cookies['sdap_refresh_token'];
+    if (!token) {
+      throw new UnauthorizedException('Refresh token missing');
+    }
+    const result = await this.authService.refresh(
+      token,
       ip,
       req.headers['user-agent'],
     );
+    this.setAuthCookies(res, result.accessToken, result.refreshToken);
+    return result;
   }
 
   @Post('logout')
   @ApiOperation({ summary: 'Revoke a refresh token and log out' })
   @UsePipes(new ZodValidationPipe(RefreshSchema))
-  async logout(@Body() dto: RefreshDto) {
-    return this.authService.logout(dto.refreshToken);
+  async logout(@Body() dto: RefreshDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const token = dto.refreshToken || req.cookies['sdap_refresh_token'];
+    if (token) {
+      await this.authService.logout(token);
+    }
+    this.clearAuthCookies(res);
+    return { success: true };
   }
 
   /**
