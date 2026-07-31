@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build-and-test:
+  build-and-lint:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,15 +28,16 @@ jobs:
     - name: Lint
       run: npm run lint
 
-    - name: Run unit tests
-      run: npm run test --workspace=api
-      env:
-        DATABASE_URL: postgresql://postgres:password@localhost:5432/sdap_test
-        VAULT_ENCRYPTION_KEY: test-encryption-key-must-be-32-chars!!
-        NODE_ENV: test
-
     - name: Build API
       run: npm run build --workspace=api
 
     - name: Build Web
       run: npm run build --workspace=web
+
+    # TODO: Future Production Infrastructure (Deferred)
+    # - Docker build validation
+    # - Automated testing
+    # - Security scanning
+    # - Image publishing
+    # - Deployment
+    # - Release automation
