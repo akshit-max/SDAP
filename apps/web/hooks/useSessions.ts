@@ -28,7 +28,8 @@ export function useCreateSession(orgId: string | null) {
       return sessionsApi.createSession(orgId, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sessions', 'outgoing', orgId] });
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['approvals'] });
     },
   });
 }
@@ -42,7 +43,7 @@ export function useRevokeSession(orgId: string | null) {
       return sessionsApi.revokeSession(orgId, sessionId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sessions', 'outgoing', orgId] });
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
     },
   });
 }

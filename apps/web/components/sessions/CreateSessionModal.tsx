@@ -45,25 +45,23 @@ export function CreateSessionModal({
   const vaults = vaultsData?.items || [];
 
   const [granteeId, setGranteeId] = useState(preselectedGranteeId || '');
-  const [scope, setScope] = useState<SessionScope>(SessionScope.SECRET);
   const [selectedVaultId, setSelectedVaultId] = useState('');
   const [selectedSecretId, setSelectedSecretId] = useState('');
   const [expiresInHours, setExpiresInHours] = useState<number | ''>(1);
-  const [maxReveals, setMaxReveals] = useState<number | ''>('');
+  const [maxReveals, setMaxReveals] = useState<number | ''>(10);
 
-  // Fetch secrets only when a vault is selected and scope is SECRET
+  // Fetch secrets whenever a vault is selected
   const { data: secrets = [], isLoading: isLoadingSecrets } = useSecretsByVault(
     orgId,
-    scope === SessionScope.SECRET && selectedVaultId ? selectedVaultId : null,
+    selectedVaultId || null,
   );
 
   const handleClose = () => {
     setGranteeId(preselectedGranteeId || '');
-    setScope(SessionScope.SECRET);
     setSelectedVaultId('');
     setSelectedSecretId('');
     setExpiresInHours(1);
-    setMaxReveals('');
+    setMaxReveals(10);
     onClose();
   };
 
@@ -77,20 +75,17 @@ export function CreateSessionModal({
 
     if (!granteeId) { toast('warning', 'Please select a team member to grant access to.'); return; }
     if (!selectedVaultId) { toast('warning', 'Please select a vault.'); return; }
-    if (scope === SessionScope.SECRET && !selectedSecretId) {
-      toast('warning', 'Please select a secret from the vault.'); return;
-    }
+    if (!selectedSecretId) { toast('warning', 'Please select a secret from the vault.'); return; }
     if (expiresInHours === '' || expiresInHours < 1) { toast('warning', 'Session must expire in at least 1 hour.'); return; }
 
-    const resourceId = scope === SessionScope.SECRET ? selectedSecretId : selectedVaultId;
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + Number(expiresInHours));
 
     createSession(
       {
         granteeId,
-        scope,
-        resourceId,
+        scope: SessionScope.SECRET,
+        resourceId: selectedSecretId,
         permission: SessionPermission.REVEAL,
         expiresAt,
         maxReveals: maxReveals === '' ? undefined : Number(maxReveals),
@@ -162,39 +157,37 @@ export function CreateSessionModal({
           </SelectWrapper>
         </div>
 
-        {/* Step 4: Which secret (only if scope = SECRET) */}
-        {scope === SessionScope.SECRET && (
-          <div>
-            <label className={labelClass}>
-              Secret <span className="text-red-500">*</span>
-            </label>
-            <SelectWrapper>
-              <select
-                className={selectClass}
-                value={selectedSecretId}
-                onChange={(e) => setSelectedSecretId(e.target.value)}
-                required
-                disabled={!selectedVaultId || isLoadingSecrets}
-              >
-                <option value="">
-                  {!selectedVaultId
-                    ? 'Select a vault first…'
-                    : isLoadingSecrets
-                    ? 'Loading secrets…'
-                    : secrets.length === 0
-                    ? 'No secrets in this vault'
-                    : 'Select a secret…'}
+        {/* Step 4: Which secret */}
+        <div>
+          <label className={labelClass}>
+            Secret <span className="text-red-500">*</span>
+          </label>
+          <SelectWrapper>
+            <select
+              className={selectClass}
+              value={selectedSecretId}
+              onChange={(e) => setSelectedSecretId(e.target.value)}
+              required
+              disabled={!selectedVaultId || isLoadingSecrets}
+            >
+              <option value="">
+                {!selectedVaultId
+                  ? 'Select a vault first…'
+                  : isLoadingSecrets
+                  ? 'Loading secrets…'
+                  : secrets.length === 0
+                  ? 'No secrets in this vault'
+                  : 'Select a secret…'}
+              </option>
+              {secrets.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                  {s.description ? ` — ${s.description}` : ''}
                 </option>
-                {secrets.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                    {s.description ? ` — ${s.description}` : ''}
-                  </option>
-                ))}
-              </select>
-            </SelectWrapper>
-          </div>
-        )}
+              ))}
+            </select>
+          </SelectWrapper>
+        </div>
 
         {/* Step 5: Expiry + limits */}
         <div className="grid grid-cols-2 gap-3">

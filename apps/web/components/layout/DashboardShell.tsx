@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { AuthSession } from '../../lib/auth/session';
 import { useAuth } from '../../lib/auth/AuthContext';
-import { Shield, LayoutDashboard, Key, LogOut, Users, CheckSquare, FileText, Settings } from 'lucide-react';
+import { Shield, LayoutDashboard, Key, LogOut, Users, CheckSquare, FileText, Settings, Plug2, KeyRound } from 'lucide-react';
 import clsx from 'clsx';
 import { useState, useEffect } from 'react';
 import { Menu, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -29,10 +29,17 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     localStorage.setItem('sidebar_collapsed', String(nextState));
   };
 
-  const handleLogout = () => {
-    AuthSession.clear();
-    refreshContext();
-    router.push('/login');
+  const handleLogout = async () => {
+    try {
+      const { apiClient } = await import('../../lib/api/client');
+      await apiClient.post('/auth/logout', {});
+    } catch {
+      // Ignore errors if backend fails or session is already dead
+    } finally {
+      AuthSession.clear();
+      refreshContext();
+      router.push('/login');
+    }
   };
 
   const navItems = [
@@ -40,6 +47,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     { name: 'Vaults', href: '/vaults', icon: Key },
     { name: 'Sessions', href: '/sessions', icon: Users },
     { name: 'Approvals', href: '/approvals', icon: CheckSquare },
+    { name: 'Integrations', href: '/settings/integrations', icon: Plug2 },
+    { name: 'API Keys', href: '/settings/api-keys', icon: KeyRound },
     { name: 'Audit Log', href: '/audit', icon: FileText },
     { name: 'Team', href: '/settings/members', icon: Users },
     { name: 'Settings', href: '/settings', icon: Settings },

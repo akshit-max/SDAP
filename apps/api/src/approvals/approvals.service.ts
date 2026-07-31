@@ -105,7 +105,7 @@ export class ApprovalsService {
           // For Phase 6, we'll just call it.
           await this.sessionsService.createSession(
             organizationId,
-            request.requesterId, // The grantor of the session is considered the original requester.
+            resolvedByUserId, // The grantor of the session is the user who approved it
             payload,
             tx,
           );

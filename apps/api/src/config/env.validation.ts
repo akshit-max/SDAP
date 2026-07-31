@@ -26,7 +26,6 @@ export function validate(config: Record<string, unknown>) {
 
   // Production overrides: ensure critical variables are strictly present
   if (data.NODE_ENV === 'production') {
-    if (!data.REDIS_URL) throw new Error('REDIS_URL is required in production');
     if (!data.SMTP_HOST) throw new Error('SMTP_HOST is required in production');
     if (!data.SMTP_PORT) throw new Error('SMTP_PORT is required in production');
     if (!data.SMTP_USER) throw new Error('SMTP_USER is required in production');

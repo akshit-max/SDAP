@@ -5,6 +5,8 @@ import { useIncomingSessions, useOutgoingSessions, useRevokeSession } from '../.
 import { sessionsApi } from '../../lib/api/sessions';
 import { DashboardShell } from '../../components/layout/DashboardShell';
 import { CreateSessionModal } from '../../components/sessions/CreateSessionModal';
+import { ConfirmModal } from '../../components/common/ConfirmModal';
+import { PromptModal } from '../../components/common/PromptModal';
 import { Plus, Trash2, Clock, CheckCircle, XCircle, Eye, Loader2 } from 'lucide-react';
 import { SessionStatus } from '@repo/types';
 import { useAuth } from '../../lib/auth/AuthContext';
@@ -22,6 +24,15 @@ export default function SessionsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [revealingId, setRevealingId] = useState<string | null>(null);
   const [revealModal, setRevealModal] = useState<{ value: string; sessionId: string } | null>(null);
+
+  // Prompt modal state (replaces window.prompt for reveal reason)
+  const [promptState, setPromptState] = useState<{
+    sessionId: string;
+    sessionOrgId: string;
+  } | null>(null);
+
+  // Confirm modal state (replaces window.confirm for revoke)
+  const [confirmRevokeId, setConfirmRevokeId] = useState<string | null>(null);
 
   const canCreateSession = !!orgId;
 
@@ -63,30 +74,30 @@ export default function SessionsPage() {
     );
   };
 
-  const handleReveal = async (sessionId: string, sessionOrgId: string) => {
-    const reason = window.prompt('Why are you revealing this secret?\n(Required for audit log)');
-    if (reason === null) return; // user cancelled
-    if (!reason.trim()) {
-      toast('warning', 'A reason is required for audit purposes.');
-      return;
-    }
-
+  // Called after the user submits the PromptModal with a reason
+  const handleRevealWithReason = async (reason: string) => {
+    if (!promptState) return;
+    const { sessionId, sessionOrgId } = promptState;
+    setPromptState(null);
     setRevealingId(sessionId);
     try {
-      const plaintext = await sessionsApi.revealSecretViaSession(sessionOrgId, sessionId, reason.trim());
+      const plaintext = await sessionsApi.revealSecretViaSession(sessionOrgId, sessionId, reason);
       setRevealModal({ value: plaintext, sessionId });
       refetchIncoming();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to reveal secret. Please try again.';
+      const msg = (err as { message?: string })?.message || 'Failed to reveal secret. Please try again.';
       toast('error', msg);
     } finally {
       setRevealingId(null);
     }
   };
 
-  const handleRevoke = (sessionId: string) => {
-    if (!window.confirm('Are you sure you want to revoke this session?')) return;
-    revokeSession(sessionId, {
+  // Called after the user confirms revocation
+  const handleRevokeConfirmed = () => {
+    if (!confirmRevokeId) return;
+    const id = confirmRevokeId;
+    setConfirmRevokeId(null);
+    revokeSession(id, {
       onSuccess: () => toast('success', 'Session revoked.'),
       onError: () => toast('error', 'Failed to revoke session.'),
     });
@@ -136,6 +147,9 @@ export default function SessionsPage() {
                           <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">
                             {session.resourceName || session.resourceId}
                           </p>
+                          <p className="mt-0.5 text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                            Granted By: {session.grantor?.fullName || session.grantor?.email || session.grantorId}
+                          </p>
                         </div>
 
                         {/* Right: meta + actions */}
@@ -147,8 +161,9 @@ export default function SessionsPage() {
                           {getStatusBadge(session.status, session.expiresAt)}
                           {isActive && session.scope === 'SECRET' && (
                             <button
-                              onClick={() => handleReveal(session.id, session.organizationId)}
+                              onClick={() => setPromptState({ sessionId: session.id, sessionOrgId: session.organizationId })}
                               disabled={revealingId === session.id}
+                              aria-label="Reveal secret"
                               className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-md font-semibold text-[11px] transition-colors shadow-sm disabled:opacity-60"
                             >
                               {revealingId === session.id
@@ -204,8 +219,9 @@ export default function SessionsPage() {
                           {getStatusBadge(session.status, session.expiresAt)}
                           {isActive && (
                             <button
-                              onClick={() => handleRevoke(session.id)}
+                              onClick={() => setConfirmRevokeId(session.id)}
                               disabled={isRevoking}
+                              aria-label="Revoke session"
                               className="p-1.5 text-slate-400 hover:text-red-500 dark:hover:text-red-400 rounded transition-colors disabled:opacity-50"
                               title="Revoke Session"
                             >
@@ -226,6 +242,32 @@ export default function SessionsPage() {
           orgId={orgId}
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
+        />
+
+        {/* Reveal Reason Prompt Modal */}
+        <PromptModal
+          isOpen={!!promptState}
+          title="Reveal Secret"
+          message="Provide a reason for this reveal. It will be recorded in the audit log."
+          label="Reason"
+          placeholder="e.g. Debugging production issue, deploying release…"
+          confirmLabel="Reveal"
+          required
+          isPending={!!revealingId}
+          onConfirm={handleRevealWithReason}
+          onCancel={() => setPromptState(null)}
+        />
+
+        {/* Revoke Confirm Modal */}
+        <ConfirmModal
+          isOpen={!!confirmRevokeId}
+          title="Revoke Session"
+          message="Are you sure you want to revoke this session? The grantee will immediately lose access."
+          confirmLabel="Revoke"
+          danger
+          isPending={isRevoking}
+          onConfirm={handleRevokeConfirmed}
+          onCancel={() => setConfirmRevokeId(null)}
         />
 
         {/* Reveal Value Modal */}

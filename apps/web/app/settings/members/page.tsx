@@ -13,6 +13,7 @@ import {
 } from '../../../hooks/useOrganization';
 import { Loading } from '../../../components/common/Loading';
 import { useToast } from '../../../components/common/Toast';
+import { ConfirmModal } from '../../../components/common/ConfirmModal';
 import { CreateSessionModal } from '../../../components/sessions/CreateSessionModal';
 import {
   UserPlus,
@@ -67,6 +68,8 @@ export default function MembersPage() {
   const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
   const [grantAccessMemberId, setGrantAccessMemberId] = useState<string | null>(null);
+  // Confirm modal state for member removal
+  const [confirmRemove, setConfirmRemove] = useState<{ memberId: string; email?: string } | null>(null);
 
   // Determine current user's role for permission gating
   const currentMember = members.find((m) => m.userId === currentUserId);
@@ -85,13 +88,36 @@ export default function MembersPage() {
     });
   };
 
-  const handleCopyInvite = (inviteId: string, token?: string) => {
-    const link = token
-      ? `${window.location.origin}/invite/${token}`
-      : `${window.location.origin}/invite/[token]`;
-    navigator.clipboard.writeText(link).then(() => {
-      setCopiedInviteId(inviteId);
-      setTimeout(() => setCopiedInviteId(null), 2000);
+  const handleCopyInvite = (inviteId: string, token?: string, email?: string) => {
+    if (token) {
+      const link = `${window.location.origin}/invite/${token}`;
+      navigator.clipboard.writeText(link).then(() => {
+        setCopiedInviteId(inviteId);
+        setTimeout(() => setCopiedInviteId(null), 2000);
+      });
+    } else if (email) {
+      // Because tokens are securely hashed, we cannot retrieve old links.
+      // Generate a new token by re-inviting (upsert) to get a fresh link to copy.
+      inviteMember(email, {
+        onSuccess: (data) => {
+          if (data?.data?.rawToken) {
+            const link = `${window.location.origin}/invite/${data.data.rawToken}`;
+            navigator.clipboard.writeText(link).then(() => {
+              setCopiedInviteId(inviteId);
+              toast('success', 'New invite link copied to clipboard.');
+              setTimeout(() => setCopiedInviteId(null), 2000);
+            });
+          }
+        },
+        onError: () => toast('error', 'Failed to generate a new invite link.'),
+      });
+    }
+  };
+
+  const handleResendInvite = (email: string) => {
+    inviteMember(email, {
+      onSuccess: () => toast('success', `Invitation resent to ${email}.`),
+      onError: (err) => toast('error', err.message || 'Failed to resend invitation.'),
     });
   };
 
@@ -113,7 +139,13 @@ export default function MembersPage() {
   };
 
   const handleRemoveMember = (memberId: string, memberEmail?: string) => {
-    if (!window.confirm(`Remove ${memberEmail || 'this member'} from the organization?`)) return;
+    setConfirmRemove({ memberId, email: memberEmail });
+  };
+
+  const handleRemoveConfirmed = () => {
+    if (!confirmRemove) return;
+    const { memberId } = confirmRemove;
+    setConfirmRemove(null);
     removeMember(memberId, {
       onSuccess: () => toast('success', 'Member removed.'),
       onError: (err) => toast('error', err.message || 'Failed to remove member.'),
@@ -197,14 +229,17 @@ export default function MembersPage() {
               </span>
             </div>
             <ul className="divide-y divide-slate-100 dark:divide-slate-800/50">
-              {pendingInvitations.map((inv: { id: string; email: string; createdAt: string }) => (
+              {pendingInvitations.map((inv: { id: string; email: string; createdAt: string; expiresAt: string }) => {
+                const isExpired = new Date() > new Date(inv.expiresAt);
+                const daysLeft = Math.ceil((new Date(inv.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                return (
                 <li
                   key={inv.id}
                   className="px-5 py-3.5 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-950/30 flex items-center justify-center flex-shrink-0">
-                      <Mail className="w-3.5 h-3.5 text-amber-500" />
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isExpired ? 'bg-red-100 dark:bg-red-950/30' : 'bg-amber-100 dark:bg-amber-950/30'}`}>
+                      <Mail className={`w-3.5 h-3.5 ${isExpired ? 'text-red-500' : 'text-amber-500'}`} />
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
@@ -212,12 +247,18 @@ export default function MembersPage() {
                       </p>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400">
                         Invited {new Date(inv.createdAt).toLocaleDateString()}
+                        <span className="mx-1.5">•</span>
+                        {isExpired ? (
+                          <span className="text-red-500 font-medium">Expired</span>
+                        ) : (
+                          <span className="text-amber-600 dark:text-amber-500 font-medium">Expires in {daysLeft} days</span>
+                        )}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => handleCopyInvite(inv.id)}
+                      onClick={() => handleCopyInvite(inv.id, undefined, inv.email)}
                       title="Copy invite link"
                       className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded transition-colors"
                     >
@@ -226,6 +267,13 @@ export default function MembersPage() {
                       ) : (
                         <Copy className="w-4 h-4" />
                       )}
+                    </button>
+                    <button
+                      onClick={() => handleResendInvite(inv.email)}
+                      title="Resend invitation"
+                      className="p-1.5 text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 rounded transition-colors"
+                    >
+                      <Mail className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleCancelInvitation(inv.id)}
@@ -237,7 +285,7 @@ export default function MembersPage() {
                     </button>
                   </div>
                 </li>
-              ))}
+              )})}
             </ul>
           </div>
         )}
@@ -353,6 +401,18 @@ export default function MembersPage() {
           preselectedGranteeId={grantAccessMemberId}
         />
       )}
+
+      {/* Member Removal Confirm Modal */}
+      <ConfirmModal
+        isOpen={!!confirmRemove}
+        title="Remove Member"
+        message={`Remove ${confirmRemove?.email || 'this member'} from the organization? They will lose all access immediately.`}
+        confirmLabel="Remove"
+        danger
+        isPending={isRemoving}
+        onConfirm={handleRemoveConfirmed}
+        onCancel={() => setConfirmRemove(null)}
+      />
     </DashboardShell>
   );
 }

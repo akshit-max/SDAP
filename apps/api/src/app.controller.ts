@@ -46,15 +46,18 @@ export class AppController {
 
     // 2. Redis Check
     try {
-      const redisUrl =
-        this.configService.get<string>('REDIS_URL') || 'redis://localhost:6379';
-      const redis = new Redis(redisUrl, {
-        maxRetriesPerRequest: 1,
-        connectTimeout: 2000,
-      });
-      await redis.ping();
-      redis.disconnect();
-      checks.redis = 'up';
+      const redisUrl = this.configService.get<string>('REDIS_URL');
+      if (redisUrl) {
+        const redis = new Redis(redisUrl, {
+          maxRetriesPerRequest: 1,
+          connectTimeout: 2000,
+        });
+        await redis.ping();
+        redis.disconnect();
+        checks.redis = 'up';
+      } else {
+        checks.redis = 'disabled';
+      }
     } catch (e) {
       this.logger.error('Redis readiness check failed', e);
       checks.redis = 'down';

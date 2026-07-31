@@ -82,7 +82,23 @@ export default function SecretDetailsPage({ params }: { params: Promise<{ id: st
 
               <div className="border-t border-slate-100 dark:border-slate-800 pt-5 mt-3">
                 <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider mb-3">Secret Value</h4>
-                <RevealFlow orgId={orgId} vaultId={id} secretId={secretId} />
+                {organization?.role === 'MEMBER' ? (
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-5 border border-slate-200 dark:border-slate-700/50 text-center">
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">
+                      You don't have permission to reveal this secret.
+                      <br />
+                      Request temporary access from an administrator.
+                    </p>
+                    <Link 
+                      href="/sessions" 
+                      className="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                    >
+                      Request Access
+                    </Link>
+                  </div>
+                ) : (
+                  <RevealFlow orgId={orgId} vaultId={id} secretId={secretId} />
+                )}
               </div>
             </div>
           </div>

@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -84,8 +85,14 @@ export class SessionsService {
   }
 
   async getIncomingSessions(organizationId: string, userId: string) {
+    const where: any = { granteeId: userId };
+    // When called from the org-scoped endpoint, restrict to that org.
+    // When called from the global endpoint (organizationId = ''), return all.
+    if (organizationId) {
+      where.organizationId = organizationId;
+    }
     const sessions = await this.prisma.delegatedSession.findMany({
-      where: { granteeId: userId },
+      where,
       orderBy: { createdAt: 'desc' },
       include: {
         grantor: { select: { email: true, fullName: true } },
@@ -151,10 +158,16 @@ export class SessionsService {
       throw new NotFoundException('Session not found.');
     }
 
-    if (session.grantorId !== userId) {
-      throw new BadRequestException(
-        'You can only revoke sessions you created.',
-      );
+    const membership = await this.prisma.organizationMember.findUnique({
+      where: { organizationId_userId: { organizationId, userId } }
+    });
+    const isAuthorizedAdmin = membership && (membership.role === 'ADMIN' || membership.role === 'OWNER');
+
+    if (session.grantorId !== userId && !isAuthorizedAdmin) {
+      if (session.granteeId === userId) {
+        throw new ForbiddenException('You cannot revoke a session granted to you.');
+      }
+      throw new ForbiddenException('You do not have permission to revoke this session.');
     }
 
     if (session.status !== 'ACTIVE') {

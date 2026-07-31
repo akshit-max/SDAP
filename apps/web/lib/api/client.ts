@@ -25,10 +25,23 @@ function waitForRefresh(): Promise<void> {
 
 async function attemptSilentRefresh(): Promise<boolean> {
   try {
+    let csrfToken = '';
+    if (typeof document !== 'undefined') {
+      const match = document.cookie.match(new RegExp('(^| )sdap_csrf=([^;]+)'));
+      if (match && match[2]) {
+        csrfToken = match[2];
+      }
+    }
+
     await axios.post(
       `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/auth/refresh`,
       {},
-      { withCredentials: true },
+      { 
+        withCredentials: true,
+        headers: {
+          'X-CSRF-Token': csrfToken
+        }
+      },
     );
     return true;
   } catch {

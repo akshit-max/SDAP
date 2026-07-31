@@ -2,7 +2,7 @@
 export const APP_NAME = "SDAP";
 
 export const AUTH_CONFIG = {
-  accessTTL: '24h',
+  accessTTL: '1h',
   refreshTTL: '7d',
   issuer: 'sdap-api',
   audience: 'sdap-clients',

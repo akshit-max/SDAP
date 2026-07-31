@@ -57,4 +57,9 @@ export const organizationsApi = {
     const response = await apiClient.post(`/organizations/invites/${token}/accept`);
     return response.data;
   },
+
+  getInvitationDetails: async (token: string) => {
+    const response = await apiClient.get(`/auth/invites/${token}`);
+    return response.data?.data;
+  },
 };

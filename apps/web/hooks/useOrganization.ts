@@ -48,6 +48,14 @@ export function useAcceptInvite() {
   });
 }
 
+export function useInvitationDetails(token: string) {
+  return useQuery({
+    queryKey: ['invitation', token],
+    queryFn: () => organizationsApi.getInvitationDetails(token),
+    enabled: !!token,
+  });
+}
+
 export function useOrgInvitations(orgId: string) {
   return useQuery({
     queryKey: ['organization', orgId, 'invitations'],

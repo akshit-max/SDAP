@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Shield, Loader2, Mail, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '../../lib/api/client';
@@ -9,13 +9,16 @@ import { AuthSession } from '../../lib/auth/session';
 import { useToast } from '../../components/common/Toast';
 import { useAuth } from '../../lib/auth/AuthContext';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { refreshContext } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const redirectParam = searchParams.get('redirect') || '';
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +42,8 @@ export default function LoginPage() {
         );
         refreshContext();
         toast('success', `Welcome back, ${response.data.user?.fullName?.split(' ')[0] || 'there'}!`);
-        router.push('/dashboard');
+        // Honour the redirect param (e.g. /invite/abc123) or fall back to dashboard
+        router.push(redirectParam || '/dashboard');
       } else {
         toast('error', 'Invalid response from server. Please try again.');
       }
@@ -60,7 +64,7 @@ export default function LoginPage() {
           <div className="mx-auto w-12 h-12 bg-slate-900 dark:bg-slate-100 rounded-xl flex items-center justify-center mb-5 shadow-md">
             <Shield className="w-6 h-6 text-white dark:text-slate-900" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">WITHUS Vault</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">WITHUS</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5">Sign in to your enterprise account</p>
         </div>
 
@@ -117,12 +121,20 @@ export default function LoginPage() {
 
           <div className="text-center text-sm text-slate-500 pt-1">
             Don't have an account?{' '}
-            <Link href="/register" className="text-slate-900 dark:text-slate-100 font-semibold hover:underline">
-              Create Workspace
+            <Link href={redirectParam ? `/register?redirect=${encodeURIComponent(redirectParam)}` : '/register'} className="text-slate-900 dark:text-slate-100 font-semibold hover:underline">
+              {redirectParam?.includes('/invite') ? 'Create Account' : 'Create Workspace'}
             </Link>
           </div>
         </form>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

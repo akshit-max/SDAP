@@ -19,6 +19,10 @@ import { ApprovalsModule } from './approvals/approvals.module';
 import { AuditModule } from './audit/audit.module';
 import { HealthModule } from './health/health.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { IntegrationsModule } from './integrations/integrations.module';
+import { ApiKeysModule } from './api-keys/api-keys.module';
+import { ProgrammaticModule } from './programmatic/programmatic.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
 
 import { validate } from './config/env.validation';
 
@@ -47,6 +51,10 @@ import { validate } from './config/env.validation';
     AuditModule,
     HealthModule,
     NotificationsModule,
+    IntegrationsModule,
+    ApiKeysModule,
+    ProgrammaticModule,
+    WebhooksModule,
   ],
   controllers: [AppController],
   providers: [

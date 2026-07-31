@@ -32,6 +32,9 @@ export class PermissionEvaluator {
       Permission.APPROVAL_REJECT,
       Permission.SESSION_START,
       Permission.SESSION_REVOKE,
+      Permission.INTEGRATION_READ,
+      Permission.INTEGRATION_CONNECT,
+      Permission.INTEGRATION_DISCONNECT,
     ],
     ADMIN: [
       Permission.ORGANIZATION_READ,
@@ -52,16 +55,19 @@ export class PermissionEvaluator {
       Permission.APPROVAL_APPROVE,
       Permission.SESSION_START,
       Permission.SESSION_REVOKE,
+      Permission.INTEGRATION_READ,
+      Permission.INTEGRATION_CONNECT,
+      Permission.INTEGRATION_DISCONNECT,
     ],
     MEMBER: [
       Permission.ORGANIZATION_READ,
       Permission.MEMBER_READ,
       Permission.VAULT_READ,
       Permission.SECRET_READ,
-      Permission.SECRET_REVEAL,
       Permission.APPLICATION_READ,
       Permission.APPROVAL_READ,
       Permission.SESSION_START,
+      Permission.INTEGRATION_READ,
     ],
   };
 

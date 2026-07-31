@@ -1,28 +1,41 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useMyRequests, usePendingApprovals, useResolveApproval } from '../../hooks/useApprovals';
 import { DashboardShell } from '../../components/layout/DashboardShell';
-import { Check, X, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { PromptModal } from '../../components/common/PromptModal';
+import { Check, X, Clock, CheckCircle, XCircle, Shield } from 'lucide-react';
 import { ApprovalRequestStatus } from '@repo/types';
 import { useAuth } from '../../lib/auth/AuthContext';
 
 export default function ApprovalsPage() {
-  const { organization } = useAuth();
+  const { organization, user } = useAuth();
   const orgId = organization?.id || '';
   const { data: myRequests, isLoading: isLoadingRequests } = useMyRequests(orgId);
   const { data: pendingApprovals, isLoading: isLoadingPending } = usePendingApprovals(orgId);
+  const pendingApprovalsToReview = pendingApprovals?.filter((r: any) => r.requesterId !== user?.id);
   const { mutate: resolveApproval, isPending: isResolving } = useResolveApproval(orgId);
 
-  const handleResolve = (approvalId: string, status: 'APPROVED' | 'REJECTED') => {
-    let reason = undefined;
-    if (status === 'REJECTED') {
-      const promptReason = window.prompt('Reason for rejection:');
-      if (promptReason === null) return; // Cancelled
-      reason = promptReason;
-    }
+  // State for the rejection reason prompt modal
+  const [rejectState, setRejectState] = useState<string | null>(null); // holds approvalId when open
 
-    resolveApproval({ approvalId, data: { status, reason } });
+  const handleApprove = (approvalId: string) => {
+    resolveApproval({ approvalId, data: { status: 'APPROVED' } });
+  };
+
+  const handleRejectWithReason = (reason: string) => {
+    if (!rejectState) return;
+    const id = rejectState;
+    setRejectState(null);
+    resolveApproval({ approvalId: id, data: { status: 'REJECTED', reason: reason || undefined } });
+  };
+
+  const handleResolve = (approvalId: string, status: 'APPROVED' | 'REJECTED') => {
+    if (status === 'APPROVED') {
+      handleApprove(approvalId);
+    } else {
+      setRejectState(approvalId);
+    }
   };
 
   const getStatusBadge = (status: ApprovalRequestStatus) => {
@@ -51,6 +64,7 @@ export default function ApprovalsPage() {
   };
 
   return (
+    <>
     <DashboardShell>
       <div className="max-w-5xl mx-auto space-y-6">
         <div>
@@ -58,22 +72,46 @@ export default function ApprovalsPage() {
           <p className="text-xs text-slate-500 dark:text-slate-400">Review and manage access requests.</p>
         </div>
 
+        {/* What are approvals — info banner */}
+        <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/40 rounded-xl p-4 flex gap-3">
+          <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+            <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-blue-800 dark:text-blue-200 mb-0.5">About Approval Workflows</p>
+            <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
+              When a team member requests a <span className="font-semibold">Delegated Session</span>{' '}
+              to access a vault or reveal secrets, it can be configured to require approval from an Owner or Admin.
+              This ensures sensitive access is always authorized before it is granted.
+            </p>
+          </div>
+        </div>
+
         {/* Pending Approvals (Admin view) */}
-        <section className="space-y-3">
-          <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Awaiting My Review</h2>
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm">
-            {isLoadingPending ? (
-              <div className="p-4 text-center text-xs text-slate-500">Loading...</div>
-            ) : pendingApprovals?.length === 0 ? (
-              <div className="p-6 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900">
-                No requests currently require your approval.
-              </div>
-            ) : (
-              <ul className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                {pendingApprovals?.map((request) => (
-                  <li key={request.id} className="p-4 hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex-1 min-w-0">
+        {organization?.role !== 'MEMBER' && (
+          <section className="space-y-3">
+            <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Awaiting My Review</h2>
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm">
+              {isLoadingPending ? (
+                <div className="p-4 text-center text-xs text-slate-500">Loading...</div>
+              ) : pendingApprovalsToReview?.length === 0 ? (
+                <div className="p-8 text-center">
+                  <div className="mx-auto w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center mb-3">
+                    <Check className="w-5 h-5 text-slate-400" />
+                  </div>
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">All clear — nothing to review</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
+                    Approval requests appear here when a team member requests a{' '}
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">Delegated Session</span>.
+                    As an Owner or Admin you can approve or reject these requests.
+                  </p>
+                </div>
+              ) : (
+                <ul className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                  {pendingApprovalsToReview?.map((request: any) => (
+                    <li key={request.id} className="p-4 hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
                         <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
                           Session Access Request
                         </p>
@@ -138,6 +176,7 @@ export default function ApprovalsPage() {
             )}
           </div>
         </section>
+        )}
 
         {/* My Requests */}
         <section className="space-y-3">
@@ -146,8 +185,15 @@ export default function ApprovalsPage() {
             {isLoadingRequests ? (
               <div className="p-4 text-center text-xs text-slate-500">Loading...</div>
             ) : myRequests?.length === 0 ? (
-              <div className="p-6 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900">
-                You have not submitted any approval requests.
+              <div className="p-8 text-center">
+                <div className="mx-auto w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center mb-3">
+                  <Clock className="w-5 h-5 text-slate-400" />
+                </div>
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">No requests submitted yet</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
+                  When you request a <span className="font-semibold text-slate-700 dark:text-slate-300">Delegated Session</span>{' '}
+                  that requires approval, it will appear here so you can track its status.
+                </p>
               </div>
             ) : (
               <ul className="divide-y divide-slate-100 dark:divide-slate-800/50">
@@ -185,5 +231,19 @@ export default function ApprovalsPage() {
         </section>
       </div>
     </DashboardShell>
+
+      {/* Rejection Reason Prompt Modal */}
+      <PromptModal
+        isOpen={!!rejectState}
+        title="Reject Request"
+        message="Provide an optional reason for the rejection. The requester will be able to see this."
+        label="Reason (optional)"
+        placeholder="e.g. Access not justified for this resource…"
+        confirmLabel="Reject"
+        isPending={isResolving}
+        onConfirm={handleRejectWithReason}
+        onCancel={() => setRejectState(null)}
+      />
+    </>
   );
 }

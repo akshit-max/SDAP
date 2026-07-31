@@ -12,6 +12,11 @@ import { RegisterDto, LoginDto } from '@repo/types';
 import { MailerService } from '../notifications/mailer.service';
 import * as crypto from 'crypto';
 import { randomUUID } from 'crypto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  OrganizationCreatedEvent,
+  InvitationAcceptedEvent,
+} from '../organizations/organizations.events';
 
 @Injectable()
 export class AuthService {
@@ -22,6 +27,7 @@ export class AuthService {
     private readonly tokenService: TokenService,
     private readonly prisma: PrismaService,
     private readonly mailer: MailerService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async register(dto: RegisterDto, ipAddress?: string, userAgent?: string) {
@@ -29,43 +35,130 @@ export class AuthService {
     if (existing) {
       throw new BadRequestException('Email already in use');
     }
-    const passwordHash = await HashService.hash(dto.password);
 
-    const baseSlug = dto.companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-    let slug = baseSlug;
-    
-    const existingOrg = await this.prisma.organization.findUnique({ where: { slug } });
-    if (existingOrg) {
-      slug = `${baseSlug}-${randomUUID().substring(0, 6)}`;
+    // Determine the onboarding mode
+    const isInviteFlow = !!dto.inviteToken;
+    const isNewOrgFlow = !!dto.companyName;
+
+    if (!isInviteFlow && !isNewOrgFlow) {
+      throw new BadRequestException(
+        'Either a company name or a valid invite token is required.',
+      );
     }
 
+    const passwordHash = await HashService.hash(dto.password);
+
+    // --- Invite flow: validate invitation before writing anything ---
+    let invitation: any = null;
+    if (isInviteFlow) {
+      const tokenHash = crypto
+        .createHash('sha256')
+        .update(dto.inviteToken!)
+        .digest('hex');
+      invitation = await this.prisma.organizationInvitation.findUnique({
+        where: { tokenHash },
+      });
+      if (!invitation) {
+        throw new BadRequestException('Invalid or expired invitation link.');
+      }
+      if (invitation.status !== 'PENDING') {
+        throw new BadRequestException(
+          `This invitation has already been ${invitation.status.toLowerCase()}.`,
+        );
+      }
+      if (new Date() > invitation.expiresAt) {
+        throw new BadRequestException(
+          'This invitation link has expired. Please ask the admin to resend it.',
+        );
+      }
+      // Verify the invited email matches the registering email
+      if (invitation.email.toLowerCase() !== dto.email.toLowerCase()) {
+        throw new BadRequestException(
+          'This invitation was sent to a different email address.',
+        );
+      }
+    }
+
+    // --- New org flow: generate unique slug ---
+    let slug: string | null = null;
+    if (isNewOrgFlow) {
+      const baseSlug = dto.companyName!
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)+/g, '');
+      slug = baseSlug;
+      const existingOrg = await this.prisma.organization.findUnique({ where: { slug } });
+      if (existingOrg) {
+        slug = `${baseSlug}-${randomUUID().substring(0, 6)}`;
+      }
+    }
+
+    // --- Atomic transaction ---
     const { user, organization } = await this.prisma.$transaction(async (tx) => {
       const createdUser = await tx.user.create({
         data: {
           email: dto.email,
           fullName: dto.fullName,
           passwordHash,
-        }
+        },
       });
 
-      const createdOrg = await tx.organization.create({
-        data: {
-          name: dto.companyName,
-          slug,
-          createdBy: createdUser.id,
-        }
-      });
+      let createdOrg: any = null;
 
-      await tx.organizationMember.create({
-        data: {
-          userId: createdUser.id,
-          organizationId: createdOrg.id,
-          role: 'OWNER',
-        }
-      });
+      if (isInviteFlow && invitation) {
+        // Mark invitation ACCEPTED and create member record
+        await tx.organizationInvitation.update({
+          where: { id: invitation.id },
+          data: { status: 'ACCEPTED', updatedBy: createdUser.id },
+        });
+        await tx.organizationMember.create({
+          data: {
+            organizationId: invitation.organizationId,
+            userId: createdUser.id,
+            role: 'MEMBER', // Default role — admin can promote later
+            invitedBy: invitation.invitedBy,
+            createdBy: createdUser.id,
+            updatedBy: createdUser.id,
+          },
+        });
+        createdOrg = await tx.organization.findUnique({
+          where: { id: invitation.organizationId },
+        });
+      } else {
+        // Create a brand-new organization with OWNER role
+        createdOrg = await tx.organization.create({
+          data: {
+            name: dto.companyName!,
+            slug: slug!,
+            createdBy: createdUser.id,
+          },
+        });
+        await tx.organizationMember.create({
+          data: {
+            userId: createdUser.id,
+            organizationId: createdOrg.id,
+            role: 'OWNER',
+          },
+        });
+      }
 
-      return { user: createdUser, organization: createdOrg };
+      return { 
+        user: createdUser, 
+        organization: createdOrg ? { ...createdOrg, role: isInviteFlow ? 'MEMBER' : 'OWNER' } : null 
+      };
     });
+
+    if (isInviteFlow && invitation) {
+      this.eventEmitter.emit(
+        'invitation.accepted',
+        new InvitationAcceptedEvent(invitation.organizationId, user.id),
+      );
+    } else if (organization) {
+      this.eventEmitter.emit(
+        'organization.created',
+        new OrganizationCreatedEvent(organization.id, organization.name, user.id),
+      );
+    }
 
     const accessToken = this.tokenService.generateAccessToken(user.id, user.email);
     const { refreshToken, rawToken } = this.generateRefreshToken();
@@ -81,17 +174,18 @@ export class AuthService {
       },
     });
 
-    return { 
-      accessToken, 
+    return {
+      accessToken,
       refreshToken: rawToken,
       user: {
         id: user.id,
         email: user.email,
         fullName: user.fullName,
       },
-      organization
+      organization,
     };
   }
+
 
   async login(dto: LoginDto, ipAddress?: string, userAgent?: string) {
     const user = await this.usersService.findByEmail(dto.email);
@@ -137,7 +231,9 @@ export class AuthService {
         email: user.email,
         fullName: user.fullName
       },
-      organization: firstMembership?.organization || null
+      organization: firstMembership 
+        ? { ...firstMembership.organization, role: firstMembership.role }
+        : null
     };
   }
 
@@ -219,7 +315,9 @@ export class AuthService {
         email: oldTokenRecord.user.email,
         fullName: oldTokenRecord.user.fullName
       },
-      organization: firstMembership?.organization || null
+      organization: firstMembership 
+        ? { ...firstMembership.organization, role: firstMembership.role }
+        : null
     };
   }
 
@@ -354,5 +452,41 @@ export class AuthService {
     const rawToken = crypto.randomBytes(32).toString('hex');
     const hash = crypto.createHash('sha256').update(rawToken).digest('hex');
     return { refreshToken: { hash }, rawToken };
+  }
+
+  async getInvitationDetails(token: string) {
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const invitation = await this.prisma.organizationInvitation.findUnique({
+      where: { tokenHash },
+      include: {
+        organization: true,
+      },
+    });
+
+    if (!invitation) {
+      return { status: 'INVALID' };
+    }
+
+    if (invitation.status !== 'PENDING') {
+      return { status: invitation.status }; // 'ACCEPTED' | 'REVOKED'
+    }
+
+    if (invitation.expiresAt < new Date()) {
+      return { status: 'EXPIRED' };
+    }
+
+    const inviter = await this.prisma.user.findUnique({
+      where: { id: invitation.invitedBy },
+      select: { fullName: true }
+    });
+
+    return {
+      status: 'PENDING',
+      organizationName: invitation.organization.name,
+      organizationLogo: null, // Placeholder for future feature
+      inviterName: inviter?.fullName || 'Unknown User',
+      invitedEmail: invitation.email,
+      expiresAt: invitation.expiresAt,
+    };
   }
 }

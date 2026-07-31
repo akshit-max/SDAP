@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class RegisterDto {
   @ApiProperty({ example: 'John Doe', description: 'Full name' })
@@ -10,8 +10,11 @@ export class RegisterDto {
   @ApiProperty({ example: 'password123', description: 'Password (min 8 chars)' })
   password!: string;
 
-  @ApiProperty({ example: 'Acme Corp', description: 'Company name' })
-  companyName!: string;
+  @ApiPropertyOptional({ example: 'Acme Corp', description: 'Company name (if creating a workspace)' })
+  companyName?: string;
+
+  @ApiPropertyOptional({ example: 'abc123xyz', description: 'Invite token (if joining via invitation)' })
+  inviteToken?: string;
 }
 
 export class LoginDto {

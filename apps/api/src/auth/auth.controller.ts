@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Req, Res, Ip, UsePipes, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body, Req, Res, Ip, UsePipes, UnauthorizedException, Get, Param } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
   RegisterSchema,
@@ -32,7 +32,7 @@ export class AuthController {
       secure: isProd,
       sameSite: 'lax',
       path: '/',
-      maxAge: 15 * 60 * 1000, // 15 minutes
+      maxAge: 60 * 60 * 1000, // 1 hour — matches AUTH_CONFIG.accessTTL
     });
 
     res.cookie('sdap_refresh_token', refreshToken, {
@@ -45,8 +45,21 @@ export class AuthController {
   }
 
   private clearAuthCookies(res: Response) {
-    res.clearCookie('sdap_token', { path: '/' });
-    res.clearCookie('sdap_refresh_token', { path: '/api/v1/auth/refresh' });
+    const isProd = process.env.NODE_ENV === 'production';
+    
+    res.clearCookie('sdap_token', {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: 'lax',
+      path: '/',
+    });
+    
+    res.clearCookie('sdap_refresh_token', {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: 'lax',
+      path: '/api/v1/auth/refresh',
+    });
   }
 
   @Post('register')
@@ -127,5 +140,12 @@ export class AuthController {
   @UsePipes(new ZodValidationPipe(ResetPasswordSchema))
   async resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto.token, dto.password);
+  }
+
+  @Get('invites/:token')
+  @ApiOperation({ summary: 'Get invitation details without authentication' })
+  async getInvitationDetails(@Param('token') token: string) {
+    const result = await this.authService.getInvitationDetails(token);
+    return { success: true, data: result };
   }
 }
