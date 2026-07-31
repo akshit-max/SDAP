@@ -27,7 +27,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       message =
         typeof exceptionResponse === 'string'
           ? exceptionResponse
-          : (exceptionResponse as any)?.message || exception.message;
+          : ((exceptionResponse as Record<string, unknown>)?.message as string) || exception.message;
       code = exception.constructor.name.replace('Exception', '').toUpperCase();
     } else {
       // Log unexpected errors via the NestJS structured logger only.

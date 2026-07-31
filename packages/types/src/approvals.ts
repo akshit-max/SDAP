@@ -1,15 +1,8 @@
 import { z } from 'zod';
-import { CreateSessionSchema } from './sessions';
+import { CreateSessionSchema, CreateSessionDto } from './sessions';
 
-export enum ApprovalRequestStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-}
-
-export enum ApprovalType {
-  DELEGATED_SESSION = 'DELEGATED_SESSION',
-}
+import { ApprovalRequestStatus, ApprovalType } from "@repo/db";
+export { ApprovalRequestStatus, ApprovalType };
 
 export const CreateApprovalRequestSchema = z.object({
   type: z.nativeEnum(ApprovalType),
@@ -29,8 +22,12 @@ export interface ApprovalRequestDto {
   id: string;
   organizationId: string;
   requesterId: string;
+  requester?: {
+    email: string;
+    fullName: string | null;
+  };
   type: ApprovalType;
-  requestPayload: unknown;
+  requestPayload: CreateSessionDto;
   status: ApprovalRequestStatus;
   createdAt: Date | string;
   updatedAt: Date | string;

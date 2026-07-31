@@ -41,7 +41,8 @@ export function CreateSessionModal({
   const { toast } = useToast();
 
   const { data: members = [] } = useOrgMembers(orgId);
-  const { data: vaults = [] } = useVaults(orgId);
+  const { data: vaultsData } = useVaults(orgId);
+  const vaults = vaultsData?.items || [];
 
   const [granteeId, setGranteeId] = useState(preselectedGranteeId || '');
   const [scope, setScope] = useState<SessionScope>(SessionScope.SECRET);
@@ -69,11 +70,6 @@ export function CreateSessionModal({
   const handleVaultChange = (vaultId: string) => {
     setSelectedVaultId(vaultId);
     setSelectedSecretId(''); // reset secret when vault changes
-  };
-
-  const handleScopeChange = (newScope: SessionScope) => {
-    setScope(newScope);
-    setSelectedSecretId(''); // reset secret when scope changes
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -142,21 +138,6 @@ export function CreateSessionModal({
             </select>
           </SelectWrapper>
           <p className={hintClass}>The member who will receive temporary access.</p>
-        </div>
-
-        {/* Step 2: What kind of access */}
-        <div>
-          <label className={labelClass}>Access Scope</label>
-          <SelectWrapper>
-            <select
-              className={selectClass}
-              value={scope}
-              onChange={(e) => handleScopeChange(e.target.value as SessionScope)}
-            >
-              <option value={SessionScope.SECRET}>Specific Secret</option>
-              <option value={SessionScope.VAULT}>Entire Vault</option>
-            </select>
-          </SelectWrapper>
         </div>
 
         {/* Step 3: Which vault */}

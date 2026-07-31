@@ -1,19 +1,6 @@
 import { z } from 'zod';
-
-export enum SessionStatus {
-  ACTIVE = 'ACTIVE',
-  REVOKED = 'REVOKED',
-  EXPIRED = 'EXPIRED',
-}
-
-export enum SessionScope {
-  VAULT = 'VAULT',
-  SECRET = 'SECRET',
-}
-
-export enum SessionPermission {
-  REVEAL = 'REVEAL',
-}
+import { SessionStatus, SessionScope, SessionPermission } from "@repo/db";
+export { SessionStatus, SessionScope, SessionPermission };
 
 export const CreateSessionSchema = z.object({
   granteeId: z.string().uuid(),
@@ -42,4 +29,7 @@ export interface DelegatedSessionDto {
   updatedAt: Date | string;
   revokedAt: Date | string | null;
   revokedBy: string | null;
+  grantee?: { email: string; fullName: string } | null;
+  grantor?: { email: string; fullName: string } | null;
+  resourceName?: string | null;
 }

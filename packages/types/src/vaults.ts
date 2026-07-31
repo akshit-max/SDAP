@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SecretType, SecretStatus } from "@prisma/client";
+import { SecretType, SecretStatus } from "@repo/db";
 
 // --- Vaults ---
 

@@ -6,7 +6,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SessionValidationService } from './session-validation.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, SessionScope, SessionPermission } from '@prisma/client';
 import { SecretLifecycleService } from '../vaults/secret-lifecycle.service';
 import { DelegatedSessionCreatedEvent } from './events/session-created.event';
 import { DelegatedSessionRevokedEvent } from './events/session-revoked.event';
@@ -59,9 +59,9 @@ export class SessionsService {
         organizationId,
         grantorId,
         granteeId: dto.granteeId,
-        scope: dto.scope as any, // Prisma mapping
+        scope: dto.scope as unknown as SessionScope,
         resourceId: dto.resourceId,
-        permission: dto.permission as any,
+        permission: dto.permission as unknown as SessionPermission,
         expiresAt: new Date(dto.expiresAt),
         maxReveals: dto.maxReveals,
         status: 'ACTIVE',

@@ -13,7 +13,7 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
   const { mutate: acceptInvite, isPending, isSuccess, isError, error } = useAcceptInvite();
 
   const { token } = use(params);
-  const isLoggedIn = !!AuthSession.getAccessToken();
+  const isLoggedIn = !!AuthSession.getCurrentUser();
 
   useEffect(() => {
     if (!isLoggedIn) return;

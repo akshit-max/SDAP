@@ -23,7 +23,7 @@ export function DashboardSummary() {
   const stats = [
     {
       label: 'Vaults',
-      value: vaults?.length ?? '—',
+      value: vaults?.items?.length ?? '—',
       icon: Key,
       href: '/vaults',
       color: 'text-blue-600 dark:text-blue-400',
@@ -105,7 +105,7 @@ export function DashboardSummary() {
           </Link>
         </div>
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm">
-          {!vaults || vaults.length === 0 ? (
+          {!vaults || vaults.items.length === 0 ? (
             <div className="p-8 text-center">
               <Key className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">No vaults yet.</p>
@@ -115,7 +115,7 @@ export function DashboardSummary() {
             </div>
           ) : (
             <ul className="divide-y divide-slate-100 dark:divide-slate-800/50">
-              {vaults.slice(0, 5).map((vault) => (
+              {vaults.items.slice(0, 5).map((vault) => (
                 <li key={vault.id}>
                   <Link
                     href={`/vaults/${vault.id}`}

@@ -57,7 +57,7 @@ export class ApprovalsService {
     organizationId: string,
     approvalId: string,
     resolvedByUserId: string,
-    status: ApprovalRequestStatus.APPROVED | ApprovalRequestStatus.REJECTED,
+    status: 'APPROVED' | 'REJECTED',
     reason?: string,
   ) {
     // 1. We must execute this inside a transaction to prevent race conditions on state machine
@@ -70,7 +70,7 @@ export class ApprovalsService {
         throw new NotFoundException('Approval request not found.');
       }
 
-      if (request.status !== ApprovalRequestStatus.PENDING) {
+      if (request.status !== 'PENDING') {
         throw new BadRequestException(
           `Approval request is already ${request.status.toLowerCase()}.`,
         );
@@ -87,7 +87,7 @@ export class ApprovalsService {
       const updatedRequest = await tx.approvalRequest.update({
         where: { id: approvalId },
         data: {
-          status,
+          status: status as any,
           resolvedAt: new Date(),
           resolvedBy: resolvedByUserId,
           reason,
@@ -95,8 +95,8 @@ export class ApprovalsService {
       });
 
       // 3. Side effects based on status
-      if (status === ApprovalRequestStatus.APPROVED) {
-        if (request.type === ApprovalType.DELEGATED_SESSION) {
+      if (status === 'APPROVED') {
+        if (request.type === 'DELEGATED_SESSION') {
           const payload = request.requestPayload as unknown as CreateSessionDto;
           // We call SessionsService. Note that in a true unit-of-work we might want SessionsService to accept the tx client,
           // but Prisma doesn't easily support cross-service transaction injection without custom patterns.
@@ -140,7 +140,7 @@ export class ApprovalsService {
     return this.prisma.approvalRequest.findMany({
       where: {
         organizationId,
-        status: ApprovalRequestStatus.PENDING,
+        status: 'PENDING',
       },
       orderBy: { createdAt: 'desc' },
       include: {

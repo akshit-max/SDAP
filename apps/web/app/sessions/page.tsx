@@ -134,7 +134,7 @@ export default function SessionsPage() {
                             {session.scope} Access
                           </p>
                           <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">
-                            {(session as unknown as { resourceName?: string }).resourceName || session.resourceId}
+                            {session.resourceName || session.resourceId}
                           </p>
                         </div>
 
@@ -191,7 +191,7 @@ export default function SessionsPage() {
                             {session.grantee?.fullName || session.grantee?.email || session.granteeId}
                           </p>
                           <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                            {session.scope} · {(session as unknown as { resourceName?: string }).resourceName || session.resourceId}
+                            {session.scope} · {session.resourceName || session.resourceId}
                           </p>
                         </div>
 

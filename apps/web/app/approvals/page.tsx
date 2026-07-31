@@ -14,9 +14,9 @@ export default function ApprovalsPage() {
   const { data: pendingApprovals, isLoading: isLoadingPending } = usePendingApprovals(orgId);
   const { mutate: resolveApproval, isPending: isResolving } = useResolveApproval(orgId);
 
-  const handleResolve = (approvalId: string, status: ApprovalRequestStatus.APPROVED | ApprovalRequestStatus.REJECTED) => {
+  const handleResolve = (approvalId: string, status: 'APPROVED' | 'REJECTED') => {
     let reason = undefined;
-    if (status === ApprovalRequestStatus.REJECTED) {
+    if (status === 'REJECTED') {
       const promptReason = window.prompt('Reason for rejection:');
       if (promptReason === null) return; // Cancelled
       reason = promptReason;
@@ -80,29 +80,29 @@ export default function ApprovalsPage() {
                         <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                           Requested by{' '}
                           <span className="font-semibold text-slate-900 dark:text-slate-100">
-                            {(request as any).requester?.fullName || (request as any).requester?.email || 'Unknown'}
+                            {request.requester?.fullName || request.requester?.email || 'Unknown'}
                           </span>
                         </p>
                         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-                          {(request.requestPayload as any)?.scope && (
+                          {request.requestPayload?.scope && (
                             <span className="text-[10px] text-slate-500 dark:text-slate-400">
                               <span className="font-medium text-slate-700 dark:text-slate-300">Scope:</span>{' '}
-                              {String((request.requestPayload as any).scope).replace('_', ' ')}
+                              {String(request.requestPayload.scope).replace('_', ' ')}
                             </span>
                           )}
-                          {(request.requestPayload as any)?.expiresAt && (
+                          {request.requestPayload?.expiresAt && (
                             <span className="text-[10px] text-slate-500 dark:text-slate-400">
                               <span className="font-medium text-slate-700 dark:text-slate-300">Expires:</span>{' '}
-                              {new Date((request.requestPayload as any).expiresAt).toLocaleString()}
+                              {new Date(request.requestPayload.expiresAt).toLocaleString()}
                             </span>
                           )}
-                          {(request.requestPayload as any)?.maxReveals && (
+                          {request.requestPayload?.maxReveals && (
                             <span className="text-[10px] text-slate-500 dark:text-slate-400">
                               <span className="font-medium text-slate-700 dark:text-slate-300">Max reveals:</span>{' '}
-                              {(request.requestPayload as any).maxReveals}
+                              {request.requestPayload.maxReveals}
                             </span>
                           )}
-                          {!(request.requestPayload as any)?.maxReveals && (
+                          {!request.requestPayload?.maxReveals && (
                             <span className="text-[10px] text-slate-500 dark:text-slate-400">
                               <span className="font-medium text-slate-700 dark:text-slate-300">Max reveals:</span> Unlimited
                             </span>
@@ -116,14 +116,14 @@ export default function ApprovalsPage() {
                         
                         <div className="flex space-x-2 border-l border-slate-200 dark:border-slate-800 pl-4">
                           <button
-                            onClick={() => handleResolve(request.id, ApprovalRequestStatus.APPROVED)}
+                            onClick={() => handleResolve(request.id, 'APPROVED')}
                             disabled={isResolving}
                             className="inline-flex items-center px-2.5 py-1 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-md font-semibold text-[11px] transition-colors shadow-sm disabled:opacity-50"
                           >
                             <Check className="mr-1 h-3.5 w-3.5" /> Approve
                           </button>
                           <button
-                            onClick={() => handleResolve(request.id, ApprovalRequestStatus.REJECTED)}
+                            onClick={() => handleResolve(request.id, 'REJECTED')}
                             disabled={isResolving}
                             className="inline-flex items-center px-2.5 py-1 text-slate-700 dark:text-slate-350 bg-white hover:bg-slate-50 dark:bg-slate-850 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-750 rounded-md font-semibold text-[11px] transition-colors shadow-sm disabled:opacity-50"
                           >
@@ -158,11 +158,11 @@ export default function ApprovalsPage() {
                         Session Access Request
                       </p>
                       <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">
-                        {(request.requestPayload as any)?.scope && (
-                          <span>Scope: {String((request.requestPayload as any).scope).replace('_', ' ')} &bull; </span>
+                        {request.requestPayload?.scope && (
+                          <span>Scope: {String(request.requestPayload.scope).replace('_', ' ')} &bull; </span>
                         )}
-                        {(request.requestPayload as any)?.expiresAt && (
-                          <span>Expires: {new Date((request.requestPayload as any).expiresAt).toLocaleString()}</span>
+                        {request.requestPayload?.expiresAt && (
+                          <span>Expires: {new Date(request.requestPayload.expiresAt).toLocaleString()}</span>
                         )}
                       </p>
                       {request.reason && (

@@ -14,6 +14,7 @@ import { RequirePermissions } from '../../authorization/decorators/require-permi
 import {
   Permission,
   ResolveApprovalRequestSchema,
+  ApprovalRequestStatus,
 } from '@repo/types';
 import { ResolveApprovalRequestDto } from '../dto/approvals.dto';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
@@ -60,7 +61,7 @@ export class ApprovalsController {
       orgId,
       approvalId,
       req.user.id,
-      dto.status as any,
+      dto.status as 'APPROVED' | 'REJECTED',
       dto.reason,
     );
   }
