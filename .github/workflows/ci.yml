@@ -25,11 +25,8 @@ jobs:
     - name: Generate Prisma Client
       run: npm run generate --workspace=@repo/db
 
-    - name: Build API
-      run: npm run build --workspace=api
-
-    - name: Build Web
-      run: npm run build --workspace=web
+    - name: Build Monorepo
+      run: npm run build
 
     # TODO: Future Production Infrastructure (Deferred)
     # - Docker build validation
