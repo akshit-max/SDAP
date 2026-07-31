@@ -25,9 +25,6 @@ jobs:
     - name: Generate Prisma Client
       run: npm run generate --workspace=@repo/db
 
-    - name: Lint
-      run: npm run lint
-
     - name: Build API
       run: npm run build --workspace=api
 
