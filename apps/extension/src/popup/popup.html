@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WITHUS Vault</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 340px;
+      min-height: 200px;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0f172a;
+      color: #f1f5f9;
+      font-size: 13px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .logo {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 800;
+      color: white;
+      flex-shrink: 0;
+    }
+    .header-text h1 { font-size: 13px; font-weight: 700; color: #f8fafc; }
+    .header-text p { font-size: 11px; color: #64748b; margin-top: 1px; }
+
+    .status-dot {
+      margin-left: auto;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #334155;
+    }
+    .status-dot.connected { background: #22c55e; }
+
+    /* Content */
+    .content { padding: 14px 16px; }
+
+    /* Login form */
+    #login-view label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-bottom: 4px;
+      margin-top: 10px;
+    }
+    #login-view label:first-child { margin-top: 0; }
+    #login-view input {
+      width: 100%;
+      padding: 8px 10px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: #f1f5f9;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    #login-view input:focus { border-color: #6366f1; }
+
+    .btn {
+      width: 100%;
+      padding: 9px;
+      margin-top: 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: #6366f1; color: white; }
+    .btn-primary:hover:not(:disabled) { background: #4f46e5; }
+    .btn-danger { background: #1e293b; color: #ef4444; border: 1px solid #7f1d1d; margin-top: 8px; }
+
+    /* Session list */
+    #sessions-view h2 {
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 10px;
+    }
+
+    .session-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+    }
+    .session-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+    .session-meta {
+      font-size: 10px;
+      color: #64748b;
+      margin-top: 3px;
+    }
+    .session-meta span { margin-right: 8px; }
+    .badge-active {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 99px;
+      background: rgba(34,197,94,0.12);
+      color: #22c55e;
+      font-size: 10px;
+      font-weight: 700;
+      border: 1px solid rgba(34,197,94,0.2);
+      margin-left: 6px;
+    }
+
+    .no-sessions {
+      text-align: center;
+      padding: 24px 0;
+      color: #475569;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .no-sessions strong { display: block; color: #94a3b8; margin-bottom: 4px; }
+
+    /* Error */
+    .error-msg {
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.2);
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: #f87171;
+      font-size: 11px;
+      margin-top: 10px;
+    }
+
+    /* Current site */
+    .current-site {
+      font-size: 11px;
+      color: #64748b;
+      margin-bottom: 12px;
+    }
+    .current-site span {
+      color: #94a3b8;
+      font-weight: 600;
+    }
+
+    /* Footer */
+    .footer {
+      padding: 8px 16px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    .footer-email { font-size: 11px; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+    .logout-btn {
+      font-size: 11px;
+      color: #64748b;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .logout-btn:hover { color: #ef4444; }
+
+    .hidden { display: none !important; }
+    .spinner { display: inline-block; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">W</div>
+    <div class="header-text">
+      <h1>WITHUS Vault</h1>
+      <p>Delegated Credential Access</p>
+    </div>
+    <div class="status-dot" id="status-dot"></div>
+  </div>
+
+  <!-- Login View -->
+  <div id="login-view" class="content hidden">
+    <label for="email">Email</label>
+    <input type="email" id="email" placeholder="you@company.com" autocomplete="email" />
+    <label for="password">Password</label>
+    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+    <div class="error-msg hidden" id="login-error"></div>
+    <button class="btn btn-primary" id="login-btn">Sign in to WITHUS</button>
+  </div>
+
+  <!-- Sessions View -->
+  <div id="sessions-view" class="content hidden">
+    <div class="current-site" id="current-site"></div>
+    <h2>Active Delegated Sessions</h2>
+    <div id="sessions-list"></div>
+  </div>
+
+  <!-- Footer (when logged in) -->
+  <div class="footer hidden" id="footer">
+    <span class="footer-email" id="user-email"></span>
+    <button class="logout-btn" id="logout-btn">Sign out</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
