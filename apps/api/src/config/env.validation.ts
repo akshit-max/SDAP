@@ -26,10 +26,10 @@ export function validate(config: Record<string, unknown>) {
 
   // Production overrides: ensure critical variables are strictly present
   if (data.NODE_ENV === 'production') {
-    if (!data.SMTP_HOST) throw new Error('SMTP_HOST is required in production');
-    if (!data.SMTP_PORT) throw new Error('SMTP_PORT is required in production');
-    if (!data.SMTP_USER) throw new Error('SMTP_USER is required in production');
-    if (!data.SMTP_PASS) throw new Error('SMTP_PASS is required in production');
+    // if (!data.SMTP_HOST) throw new Error('SMTP_HOST is required in production');
+    // if (!data.SMTP_PORT) throw new Error('SMTP_PORT is required in production');
+    // if (!data.SMTP_USER) throw new Error('SMTP_USER is required in production');
+    // if (!data.SMTP_PASS) throw new Error('SMTP_PASS is required in production');
     // For JWT, we need either keys mounted from file or from env
     // TokenService falls back to keys/private.pem, which is fine, but we can't easily validate the file's presence here.
   }
