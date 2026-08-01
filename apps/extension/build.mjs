@@ -24,6 +24,21 @@ async function build() {
     entryPoints,
     outdir: 'dist',
   });
+  
+  // Copy static assets
+  import('node:fs').then(fs => {
+    fs.copyFileSync('manifest.json', 'dist/manifest.json');
+    fs.copyFileSync('src/popup/popup.html', 'dist/popup/popup.html');
+    
+    // Copy icons if they exist
+    if (fs.existsSync('icons')) {
+      if (!fs.existsSync('dist/icons')) fs.mkdirSync('dist/icons');
+      for (const file of fs.readdirSync('icons')) {
+        fs.copyFileSync(`icons/${file}`, `dist/icons/${file}`);
+      }
+    }
+  });
+  
   console.log('[WITHUS Extension] Build complete');
 }
 

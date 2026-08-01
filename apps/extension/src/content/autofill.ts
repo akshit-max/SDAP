@@ -34,79 +34,92 @@ async function discoverSessions(): Promise<void> {
   if (!response.success || !response.data?.sessions.length) return;
   activeSessions = response.data.sessions;
   activeOrgId = response.data.orgId;
-  showBadge();
+  
+  // Magic GoDaddy flow: auto-fill immediately if session exists!
+  // BUT only if we actually detect a login form on this specific page
+  if (provider?.getCredentialFields()) {
+    handleAutofillRequest();
+  }
 }
 
-// ─── Autofill Badge ───────────────────────────────────────────────────────────
+// ─── Magic Toast ──────────────────────────────────────────────────────────────
 
-function showBadge(): void {
-  if (document.getElementById('withus-autofill-badge')) return;
+function showToast(message: string, isError = false): void {
+  let toast = document.getElementById('withus-magic-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'withus-magic-toast';
+    toast.style.cssText = [
+      'position:fixed',
+      'top:24px',
+      'right:24px',
+      'z-index:2147483647',
+      'background:#1e293b',
+      'color:#f8fafc',
+      'border-radius:12px',
+      'padding:12px 20px',
+      'font-family:system-ui,sans-serif',
+      'font-size:14px',
+      'font-weight:500',
+      'box-shadow:0 8px 30px rgba(0,0,0,0.4)',
+      'display:flex',
+      'align-items:center',
+      'gap:12px',
+      'user-select:none',
+      'border:1px solid rgba(255,255,255,0.1)',
+      'transition:opacity 0.3s ease, transform 0.3s ease',
+      'opacity:0',
+      'transform:translateY(-10px)',
+    ].join(';');
+    document.body.appendChild(toast);
+    
+    // Animate in
+    requestAnimationFrame(() => {
+      toast!.style.opacity = '1';
+      toast!.style.transform = 'translateY(0)';
+    });
+  }
 
-  const badge = document.createElement('div');
-  badge.id = 'withus-autofill-badge';
-  badge.setAttribute('role', 'button');
-  badge.setAttribute('aria-label', 'WITHUS: autofill with delegated credentials');
-  badge.style.cssText = [
-    'position:fixed',
-    'bottom:20px',
-    'right:20px',
-    'z-index:2147483647',
-    'background:#1e293b',
-    'color:#f8fafc',
-    'border-radius:12px',
-    'padding:10px 16px',
-    'font-family:system-ui,sans-serif',
-    'font-size:13px',
-    'font-weight:600',
-    'cursor:pointer',
-    'box-shadow:0 4px 20px rgba(0,0,0,0.3)',
-    'display:flex',
-    'align-items:center',
-    'gap:8px',
-    'user-select:none',
-    'border:1px solid rgba(255,255,255,0.08)',
-    'transition:background 0.15s',
-  ].join(';');
+  const icon = isError ? '❌' : '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e;flex-shrink:0"></span>';
+  toast.innerHTML = `${icon} ${message}`;
+  
+  if (isError) {
+    toast.style.background = '#7f1d1d';
+    setTimeout(() => {
+      toast?.style.setProperty('opacity', '0');
+      toast?.style.setProperty('transform', 'translateY(-10px)');
+      setTimeout(() => toast?.remove(), 300);
+    }, 4000);
+  }
+}
 
-  badge.innerHTML = `
-    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0"></span>
-    WITHUS – Fill with delegated access
-  `;
-
-  badge.addEventListener('mouseenter', () => {
-    badge.style.background = '#334155';
-  });
-  badge.addEventListener('mouseleave', () => {
-    badge.style.background = '#1e293b';
-  });
-  badge.addEventListener('click', handleAutofillRequest);
-
-  document.body.appendChild(badge);
+function removeToast(): void {
+  const toast = document.getElementById('withus-magic-toast');
+  if (toast) {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(-10px)';
+    setTimeout(() => toast.remove(), 300);
+  }
 }
 
 // ─── Autofill Handler ─────────────────────────────────────────────────────────
 
 async function handleAutofillRequest(): Promise<void> {
-  const badge = document.getElementById('withus-autofill-badge');
-  if (badge) {
-    badge.textContent = 'Fetching credentials…';
-    (badge as HTMLElement).style.pointerEvents = 'none';
-  }
-
-  // Use first matching session; if multiple, pick least-used
   const session = activeSessions.sort((a, b) => a.revealCount - b.revealCount)[0];
-  if (!session) {
-    showError('No active session found. Request access from WITHUS.');
-    return;
-  }
+  if (!session) return;
+
+  showToast('WITHUS session detected... Logging you in...');
+
+  // Introduce 1-second delay for premium UX
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 
   const response = await sendMessage<AutofillPayload>({
-    type: 'REVEAL_SECRET',
-    payload: { sessionId: session.id, orgId: activeOrgId },
+    type: 'LAUNCH_SESSION',
+    payload: { sessionId: session.id, orgId: (session as any).__orgId || activeOrgId },
   });
 
   if (!response.success || !response.data) {
-    showError(response.error || 'Failed to retrieve credentials.');
+    showToast(response.error || 'Failed to retrieve credentials.', true);
     return;
   }
 
@@ -114,13 +127,22 @@ async function handleAutofillRequest(): Promise<void> {
   const fields = provider?.getCredentialFields();
 
   if (!fields) {
-    showError('Could not detect login form on this page.');
+    showToast('Could not detect login form on this page.', true);
     return;
   }
 
   try {
-    fillField(fields.usernameSelector, username);
-    fillField(fields.passwordSelector, password);
+    if (fields.usernameSelector) {
+      fillField(fields.usernameSelector, username);
+    }
+    if (fields.passwordSelector && password) {
+      // Vercel and some others might not have a password field on the first page
+      try {
+        fillField(fields.passwordSelector, password);
+      } catch {
+        // Ignore missing password field if we successfully filled username
+      }
+    }
     provider?.afterFill?.();
 
     // Auto-submit — find the submit button and click it
@@ -131,10 +153,8 @@ async function handleAutofillRequest(): Promise<void> {
         setTimeout(() => submitBtn.click(), 120);
       }
     }
-
-    removeBadge();
   } catch {
-    showError('Autofill failed — please fill in manually.');
+    showToast('Autofill failed — please fill in manually.', true);
   } finally {
     // Explicit GC hint — nullify references
     (response.data as any) = null;
@@ -159,24 +179,27 @@ function fillField(selector: string, value: string): void {
   el.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
-function removeBadge(): void {
-  document.getElementById('withus-autofill-badge')?.remove();
-}
-
-function showError(message: string): void {
-  const badge = document.getElementById('withus-autofill-badge') as HTMLElement | null;
-  if (badge) {
-    badge.textContent = `⚠ ${message}`;
-    badge.style.background = '#7f1d1d';
-    badge.style.pointerEvents = 'auto';
-    setTimeout(() => badge.remove(), 5000);
-  }
-}
-
 // ─── Message Helper ───────────────────────────────────────────────────────────
 
 function sendMessage<T>(msg: ExtensionMessage): Promise<ExtensionResponse<T>> {
-  return chrome.runtime.sendMessage(msg) as Promise<ExtensionResponse<T>>;
+  try {
+    const promise = chrome.runtime.sendMessage(msg) as Promise<ExtensionResponse<T>>;
+    return promise.catch((error: any) => {
+      if (error?.message?.includes('Extension context invalidated')) {
+        alert('WITHUS Extension was updated. The page will now refresh to apply changes.');
+        window.location.reload();
+        return new Promise(() => {}); // Wait forever while page reloads
+      }
+      throw error;
+    });
+  } catch (error: any) {
+    if (error?.message?.includes('Extension context invalidated')) {
+      alert('WITHUS Extension was updated. The page will now refresh to apply changes.');
+      window.location.reload();
+      return new Promise(() => {});
+    }
+    throw error;
+  }
 }
 
 // ─── Popup-triggered Autofill ─────────────────────────────────────────────────
@@ -186,18 +209,20 @@ window.addEventListener('withus:autofill', async (e: Event) => {
   const { sessionId, orgId } = (e as CustomEvent<{ sessionId: string; orgId: string }>).detail;
 
   const response = await sendMessage<AutofillPayload>({
-    type: 'REVEAL_SECRET',
+    type: 'LAUNCH_SESSION',
     payload: { sessionId, orgId },
   });
 
   if (!response.success || !response.data) return;
 
   const { username, password } = response.data;
+  const session = activeSessions.find(s => s.id === sessionId);
+  const fallbackUsername = session?.resourceName || session?.secretName || '';
   const fields = provider?.getCredentialFields();
   if (!fields) return;
 
   try {
-    fillField(fields.usernameSelector, username);
+    fillField(fields.usernameSelector, username || fallbackUsername);
     fillField(fields.passwordSelector, password);
     provider?.afterFill?.();
 
@@ -205,8 +230,6 @@ window.addEventListener('withus:autofill', async (e: Event) => {
       const submitBtn = document.querySelector<HTMLElement>(fields.submitSelector);
       if (submitBtn) setTimeout(() => submitBtn.click(), 120);
     }
-
-    removeBadge();
   } finally {
     (response.data as any) = null;
   }

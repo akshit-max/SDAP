@@ -4,7 +4,7 @@ import { Storage } from './storage';
 // Injected at build time via esbuild define, or fallback for dev
 const BASE_URL: string =
   (typeof __WITHUS_API_URL__ !== 'undefined' ? __WITHUS_API_URL__ : null) ??
-  'http://localhost:3001/api/v1';
+  'http://localhost:4000/api/v1';
 
 declare const __WITHUS_API_URL__: string | undefined;
 
@@ -87,9 +87,9 @@ export const WithusApi = {
     return request('GET', `/organizations/${orgId}/sessions/incoming`, undefined, token);
   },
 
-  // ─── Reveal ───────────────────────────────────────────────────────────────
+  // ─── Launch Session (Extension) ───────────────────────────────────────────
 
-  async revealSecret(
+  async launchSession(
     orgId: string,
     sessionId: string,
     reason: string,

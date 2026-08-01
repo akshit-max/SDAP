@@ -13,12 +13,15 @@ export interface StoredAuth {
 export interface ExtensionSession {
   id: string;
   secretId: string;
-  secretName: string;
+  secretName?: string;
+  resourceName?: string;
   organizationId: string;
-  grantorEmail: string;
+  grantorEmail?: string;
+  grantor?: { email: string; fullName: string };
   expiresAt: string;
   revealCount: number;
   maxReveals: number | null;
+  status?: string;
 }
 
 // ─── Messages (content ↔ service worker) ─────────────────────────────────────
@@ -28,7 +31,8 @@ export type MessageType =
   | 'REVEAL_SECRET'
   | 'REQUEST_ACCESS'
   | 'CHECK_AUTH'
-  | 'LOGOUT';
+  | 'LOGOUT'
+  | 'LAUNCH_SESSION';
 
 export interface ExtensionMessage {
   type: MessageType;

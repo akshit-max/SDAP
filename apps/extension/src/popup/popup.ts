@@ -151,17 +151,17 @@ function renderSessions(sessions: ExtensionSession[], orgId: string, tabId: numb
 
     card.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between">
-        <span class="session-name">${escapeHtml(session.secretName)}</span>
+        <span class="session-name">${escapeHtml((session as any).resourceName || 'Unknown')}</span>
         <span class="badge-active">Active</span>
       </div>
       <div class="session-meta">
-        <span>Granted by ${escapeHtml(session.grantorEmail)}</span>
+        <span>Granted by ${escapeHtml((session as any).grantor?.email || 'Unknown')}</span>
         <span>${revealsLeft}</span>
       </div>
       <div class="session-meta">Expires ${expiresAt}</div>
       <button class="btn btn-primary" style="margin-top:10px" 
               data-session-id="${session.id}" 
-              data-org-id="${orgId}"
+              data-org-id="${(session as any).__orgId || orgId}"
               data-tab-id="${tabId}">
         Autofill this page
       </button>

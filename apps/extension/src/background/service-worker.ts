@@ -32,7 +32,16 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   }
 });
 
-// ─── Message Handler ─────────────────────────────────────────────────────────
+chrome.runtime.onInstalled.addListener(() => {
+  // Disable Chrome's built-in password manager to prevent saving delegated credentials
+  if (chrome.privacy && chrome.privacy.services && chrome.privacy.services.passwordSavingEnabled) {
+    chrome.privacy.services.passwordSavingEnabled.set({ value: false, scope: 'regular' }).catch(() => {
+      // Ignore if permission not fully granted or policy blocks it
+    });
+  }
+});
+
+// ─── Event Listeners ─────────────────────────────────────────────────────────
 
 chrome.runtime.onMessage.addListener(
   (
@@ -66,45 +75,69 @@ async function handleMessage(msg: ExtensionMessage): Promise<ExtensionResponse> 
       const auth = await Storage.getAuth();
       if (!auth) return { success: false, error: 'NOT_AUTHENTICATED' };
 
-      // Get user memberships to find org
+      // Get user memberships to find orgs
       const me = await WithusApi.getMe(auth.accessToken);
-      const orgId = me.organizationMemberships?.[0]?.organizationId;
-      if (!orgId) return { success: false, error: 'NO_ORGANIZATION' };
+      const memberships = me.organizationMemberships || [];
+      if (memberships.length === 0) return { success: false, error: 'NO_ORGANIZATION' };
 
-      const sessions = await WithusApi.getIncomingSessions(orgId, auth.accessToken);
-
-      // Filter: find sessions whose secret name contains the provider domain
-      // (Convention: secrets for godaddy.com should be named with "godaddy" in the name)
+      let allSessions: any[] = [];
       const hostname = domain.replace(/^www\./, '');
-      const matching = sessions.filter((s) => {
-        const name = s.secretName?.toLowerCase() || '';
-        // Match by provider name keywords in secret name
-        return hostname.split('.').some((part) => name.includes(part) && part.length > 3);
-      });
+
+      // Fetch sessions for all orgs in parallel
+      await Promise.all(
+        memberships.map(async (m) => {
+          try {
+            const sessions = await WithusApi.getIncomingSessions(m.organizationId, auth.accessToken);
+            // Attach orgId so the extension knows which org to launch the session against
+            const matching = sessions.filter((s) => {
+              if (s.status !== 'ACTIVE') return false;
+              if (s.expiresAt && new Date(s.expiresAt) < new Date()) return false;
+              
+              const name = s.resourceName?.toLowerCase() || '';
+              return hostname.split('.').some((part) => name.includes(part) && part.length > 3);
+            }).map(s => ({ ...s, __orgId: m.organizationId }));
+            
+            allSessions = allSessions.concat(matching);
+          } catch (e) {
+            // Ignore errors for individual orgs
+          }
+        })
+      );
 
       return {
         success: true,
-        data: { sessions: matching, orgId },
+        data: { sessions: allSessions, orgId: memberships[0].organizationId }, // orgId kept for backwards compat
       };
     }
 
-    // ─── REVEAL_SECRET ───────────────────────────────────────────────────────
-    case 'REVEAL_SECRET': {
+    // ─── LAUNCH_SESSION ───────────────────────────────────────────────────────
+    case 'LAUNCH_SESSION': {
       const { sessionId, orgId } = msg.payload as { sessionId: string; orgId: string };
       const auth = await Storage.getAuth();
       if (!auth) return { success: false, error: 'NOT_AUTHENTICATED' };
 
-      const result = await WithusApi.revealSecret(
+      const result = await WithusApi.launchSession(
         orgId,
         sessionId,
         'Browser extension autofill',
         auth.accessToken,
       );
 
-      // Parse username:password format
-      // Convention: secrets for autofill are stored as "username:password"
-      const [username, ...rest] = result.plaintext.split('\n');
-      const password = rest.join('\n');
+      // Parse username and password format. Supports both newline and colon separation.
+      let username = '';
+      let password = '';
+      if (result.plaintext.includes('\n')) {
+        const parts = result.plaintext.split('\n');
+        username = parts[0];
+        password = parts.slice(1).join('\n');
+      } else if (result.plaintext.includes(':')) {
+        const parts = result.plaintext.split(':');
+        username = parts[0];
+        password = parts.slice(1).join(':');
+      } else {
+        username = ''; // Leave blank instead of duplicating the password
+        password = result.plaintext;
+      }
 
       return { success: true, data: { username, password } };
     }

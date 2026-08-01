@@ -31,7 +31,7 @@ const GoDaddyProvider: ProviderAdapter = {
     return {
       usernameSelector: '#username, input[name="username"], input[type="email"]',
       passwordSelector: '#password, input[name="password"], input[type="password"]',
-      submitSelector: 'button[type="submit"], input[type="submit"]',
+      submitSelector: 'button#submitBtn, button[type="submit"], input[type="submit"]',
     };
   },
 };
@@ -82,6 +82,35 @@ const SiteGroundProvider: ProviderAdapter = {
   },
 };
 
+const GitHubProvider: ProviderAdapter = {
+  name: 'GitHub',
+  domains: ['github.com'],
+  getCredentialFields() {
+    const username = document.querySelector('input[name="login"], input#login_field');
+    const password = document.querySelector('input[name="password"], input#password');
+    if (!username || !password) return null;
+    return {
+      usernameSelector: 'input[name="login"], input#login_field',
+      passwordSelector: 'input[name="password"], input#password',
+      submitSelector: 'input[name="commit"], input[type="submit"], button[type="submit"]',
+    };
+  },
+};
+
+const VercelProvider: ProviderAdapter = {
+  name: 'Vercel',
+  domains: ['vercel.com'],
+  getCredentialFields() {
+    const username = document.querySelector('input[type="email"], input[name="email"]');
+    if (!username) return null;
+    return {
+      usernameSelector: 'input[type="email"], input[name="email"]',
+      passwordSelector: 'input[type="password"], input[name="password"]',
+      submitSelector: 'button[type="submit"]',
+    };
+  },
+};
+
 // ─── Registry ────────────────────────────────────────────────────────────────
 // Add new providers here. No other files need to change.
 
@@ -90,4 +119,6 @@ export const PROVIDER_REGISTRY: ProviderAdapter[] = [
   HostingerProvider,
   CPanelProvider,
   SiteGroundProvider,
+  GitHubProvider,
+  VercelProvider,
 ];
