@@ -10,6 +10,9 @@ const sharedConfig = {
   target: 'chrome114',
   format: 'iife',
   sourcemap: isWatch ? 'inline' : false,
+  define: {
+    'process.env.WITHUS_API_URL': JSON.stringify(process.env.WITHUS_API_URL || ''),
+  },
 };
 
 const entryPoints = [
