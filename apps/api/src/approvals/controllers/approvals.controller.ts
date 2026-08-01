@@ -18,7 +18,7 @@ import {
 } from '@repo/types';
 import { ResolveApprovalRequestDto } from '../dto/approvals.dto';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { RequestWithUser } from '../../common/interfaces/request-with-user.interface';
+import type { RequestWithUser } from '../../common/interfaces/request-with-user.interface';
 import { OrganizationContext } from '../../authorization/decorators/organization-context.decorator';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 

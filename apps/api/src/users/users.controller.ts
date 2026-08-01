@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import { RequestWithUser } from '../common/interfaces/request-with-user.interface';
+import type { RequestWithUser } from '../common/interfaces/request-with-user.interface';
 import { z } from 'zod';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { ApiTags, ApiOperation, ApiProperty, ApiPropertyOptional, ApiBearerAuth } from '@nestjs/swagger';

@@ -19,7 +19,7 @@ import {
 import { CreateSessionDto, RevealSessionDto } from '../dto/sessions.dto';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { RequestWithUser } from '../../common/interfaces/request-with-user.interface';
+import type { RequestWithUser } from '../../common/interfaces/request-with-user.interface';
 import { z } from 'zod';
 import { ApprovalPolicyService } from '../../approvals/approval-policy.service';
 import { ApprovalsService } from '../../approvals/approvals.service';

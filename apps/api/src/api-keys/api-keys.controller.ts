@@ -17,7 +17,7 @@ import { RequirePermissions } from '../authorization/decorators/require-permissi
 import { Permission } from '@repo/types';
 import { OrganizationContext } from '../authorization/decorators/organization-context.decorator';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
-import { RequestWithUser } from '../common/interfaces/request-with-user.interface';
+import type { RequestWithUser } from '../common/interfaces/request-with-user.interface';
 import { ApiKeysService } from './api-keys.service';
 import { CreateApiKeySchema, CreateApiKeyDto } from './api-keys.dto';
 
