@@ -1,4 +1,5 @@
-import { ApprovalType, CreateSessionDto } from '@repo/types';
+import { ApprovalType } from '@repo/types';
+import { CreateSessionDto } from '../../sessions/dto/sessions.dto';
 
 export class ApprovalRequestedEvent {
   constructor(

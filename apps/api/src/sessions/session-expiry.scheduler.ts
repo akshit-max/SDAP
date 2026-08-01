@@ -61,7 +61,7 @@ export class SessionExpiryScheduler {
         integrationResourceType: true,
         integrationResourceExternalId: true,
         integrationReferenceId: true,
-        grantee: { select: { email: true } },
+        grantee: { select: { email: true, providerProfiles: true } },
       },
     });
 
@@ -87,7 +87,7 @@ export class SessionExpiryScheduler {
         integrationResourceType: true,
         integrationResourceExternalId: true,
         integrationReferenceId: true,
-        grantee: { select: { email: true } },
+        grantee: { select: { email: true, providerProfiles: true } },
       },
     });
 
@@ -148,7 +148,7 @@ export class SessionExpiryScheduler {
       integrationResourceType: string | null;
       integrationResourceExternalId: string | null;
       integrationReferenceId: string | null;
-      grantee: { email: string } | null;
+      grantee: { email: string; providerProfiles?: any } | null;
     },
     auditReason: string,
   ) {
@@ -158,6 +158,16 @@ export class SessionExpiryScheduler {
       session.grantee?.email;
 
     if (isIntegrationBound) {
+      let principalId = session.grantee!.email;
+      if (session.integrationProvider === 'GITHUB') {
+        const githubUsername = (session.grantee!.providerProfiles as any)?.githubUsername;
+        if (githubUsername) {
+          principalId = githubUsername;
+        } else {
+          this.logger.warn(`[EXPIRY] Session ${session.id}: Grantee has no GitHub username. Falling back to email.`);
+        }
+      }
+
       try {
         await this.integrationsService.revokeAccess(
           session.organizationId,
@@ -165,7 +175,7 @@ export class SessionExpiryScheduler {
           {
             resourceId: session.integrationResourceExternalId!,
             resourceType: session.integrationResourceType ?? undefined,
-            principalEmail: session.grantee!.email,
+            principalEmail: principalId,
             referenceId: session.integrationReferenceId ?? undefined,
           },
         );
@@ -186,7 +196,7 @@ export class SessionExpiryScheduler {
             provider: session.integrationProvider,
             resourceType: session.integrationResourceType,
             externalId: session.integrationResourceExternalId,
-            username: session.grantee!.email,
+            username: principalId,
             reason: auditReason,
           },
         });
@@ -214,7 +224,7 @@ export class SessionExpiryScheduler {
             provider: session.integrationProvider,
             resourceType: session.integrationResourceType,
             externalId: session.integrationResourceExternalId,
-            username: session.grantee!.email,
+            username: principalId,
             reason: `Auto-revoke failed: ${(revokeErr as Error).message}. Will retry.`,
           },
         });

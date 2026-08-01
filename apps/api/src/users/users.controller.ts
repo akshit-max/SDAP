@@ -12,10 +12,11 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RequestWithUser } from '../common/interfaces/request-with-user.interface';
 import { z } from 'zod';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
-import { ApiTags, ApiOperation, ApiProperty, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiProperty, ApiPropertyOptional, ApiBearerAuth } from '@nestjs/swagger';
 
 const UpdateProfileSchema = z.object({
-  fullName: z.string().min(2, 'Full name must be at least 2 characters').max(100),
+  fullName: z.string().min(2, 'Full name must be at least 2 characters').max(100).optional(),
+  githubUsername: z.string().optional(),
 });
 
 const ChangePasswordSchema = z.object({
@@ -24,8 +25,11 @@ const ChangePasswordSchema = z.object({
 });
 
 export class UpdateProfileDto {
-  @ApiProperty({ example: 'John Doe', description: 'The user full name', minLength: 2, maxLength: 100 })
-  fullName!: string;
+  @ApiPropertyOptional({ example: 'John Doe', description: 'The user full name', minLength: 2, maxLength: 100 })
+  fullName?: string;
+
+  @ApiPropertyOptional({ example: 'octocat', description: 'GitHub username for integration' })
+  githubUsername?: string;
 }
 
 export class ChangePasswordDto {

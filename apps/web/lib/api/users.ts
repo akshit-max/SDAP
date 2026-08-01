@@ -4,6 +4,7 @@ export interface UserProfile {
   id: string;
   email: string;
   fullName: string;
+  providerProfiles?: Record<string, string>;
   createdAt: string;
 }
 
@@ -13,7 +14,7 @@ export const usersApi = {
     return res.data;
   },
 
-  updateProfile: async (data: { fullName: string }): Promise<UserProfile> => {
+  updateProfile: async (data: { fullName?: string; githubUsername?: string }): Promise<UserProfile> => {
     const res = await apiClient.patch('/users/me', data);
     return res.data;
   },

@@ -8,7 +8,7 @@ import { apiKeysApi, type ApiKey, type CreatedApiKey } from '../../../lib/api/ap
 import { useToast } from '../../../components/common/Toast';
 import { ConfirmModal } from '../../../components/common/ConfirmModal';
 import {
-  Plus, Key, Trash2, RefreshCw, Copy, Check, Clock, AlertCircle, Eye, EyeOff,
+  Plus, Key, Trash2, RefreshCw, Copy, Check, Clock, AlertCircle, Eye, EyeOff, Terminal, Code2, PlayCircle
 } from 'lucide-react';
 
 // ─── One-time Key Display ─────────────────────────────────────────────────────
@@ -57,6 +57,57 @@ function RevealedKeyBanner({ rawKey, onDismiss }: { rawKey: string; onDismiss: (
         >
           I've saved it
         </button>
+      </div>
+      <div className="mt-4 pt-4 border-t border-amber-200/50 dark:border-amber-800/30">
+        <p className="text-xs font-bold text-amber-800 dark:text-amber-200 mb-3">
+          Usage Examples
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {/* cURL */}
+          <div className="bg-white/60 dark:bg-black/20 rounded-lg p-3 border border-amber-200/40 dark:border-amber-800/20">
+            <div className="flex items-center gap-1.5 mb-2 text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase">
+              <Terminal className="w-3 h-3" /> cURL
+            </div>
+            <code className="block text-[10px] font-mono text-slate-700 dark:text-slate-300 whitespace-pre-wrap break-all">
+              curl -H "Authorization: Bearer {visible ? rawKey : 'YOUR_API_KEY'}" \<br />
+              &nbsp;&nbsp;https://api.withus.com/v1/sessions
+            </code>
+          </div>
+
+          {/* GitHub Actions */}
+          <div className="bg-white/60 dark:bg-black/20 rounded-lg p-3 border border-amber-200/40 dark:border-amber-800/20">
+            <div className="flex items-center gap-1.5 mb-2 text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase">
+              <Code2 className="w-3 h-3" /> GitHub Actions
+            </div>
+            <code className="block text-[10px] font-mono text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+              env:<br />
+              &nbsp;&nbsp;WITHUS_API_KEY: ${'{'} secrets.WITHUS_API_KEY {'}'}
+            </code>
+          </div>
+
+          {/* GitLab CI */}
+          <div className="bg-white/60 dark:bg-black/20 rounded-lg p-3 border border-amber-200/40 dark:border-amber-800/20">
+            <div className="flex items-center gap-1.5 mb-2 text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase">
+              <PlayCircle className="w-3 h-3" /> GitLab CI
+            </div>
+            <code className="block text-[10px] font-mono text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+              variables:<br />
+              &nbsp;&nbsp;WITHUS_API_KEY: $WITHUS_API_KEY
+            </code>
+          </div>
+
+          {/* Vercel */}
+          <div className="bg-white/60 dark:bg-black/20 rounded-lg p-3 border border-amber-200/40 dark:border-amber-800/20">
+            <div className="flex items-center gap-1.5 mb-2 text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase">
+              <span className="text-[10px]">▲</span> Vercel Deploy
+            </div>
+            <code className="block text-[10px] font-mono text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+              # Add to Environment Variables<br />
+              Key: WITHUS_API_KEY<br />
+              Value: {visible ? rawKey : 'YOUR_API_KEY'}
+            </code>
+          </div>
+        </div>
       </div>
     </div>
   );

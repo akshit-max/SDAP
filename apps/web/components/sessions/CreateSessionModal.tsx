@@ -4,10 +4,12 @@ import React, { useState } from 'react';
 import { useCreateSession } from '../../hooks/useSessions';
 import { useOrgMembers } from '../../hooks/useOrganization';
 import { useVaults, useSecretsByVault } from '../../hooks/useVaults';
+import { useIntegrations, useIntegrationResources } from '../../hooks/useIntegrations';
+import { IntegrationProvider } from '../../lib/api/integrations';
 import { SessionScope, SessionPermission } from '@repo/types';
 import { Modal } from '../common/Modal';
 import { useToast } from '../common/Toast';
-import { Loader2, ChevronDown } from 'lucide-react';
+import { X, Lock, Users, Calendar, AlertCircle, Loader2, GitBranch, Key, ChevronDown, Triangle, Globe } from 'lucide-react';
 
 interface CreateSessionModalProps {
   orgId: string;
@@ -45,10 +47,23 @@ export function CreateSessionModal({
   const vaults = vaultsData?.items || [];
 
   const [granteeId, setGranteeId] = useState(preselectedGranteeId || '');
+  const [selectedAccessType, setSelectedAccessType] = useState<'GITHUB' | 'VERCEL' | 'GODADDY' | 'VAULT' | ''>('');
+  
+  // Derived state to keep logic intact
+  const accessMode = selectedAccessType === 'VAULT' ? 'VAULT' : 'NATIVE';
+  const selectedProvider = selectedAccessType === 'VAULT' ? '' : (selectedAccessType as IntegrationProvider | '');
+
+  // Vault State
   const [selectedVaultId, setSelectedVaultId] = useState('');
   const [selectedSecretId, setSelectedSecretId] = useState('');
+  
+  // Integration State
+  const [selectedIntegrationResource, setSelectedIntegrationResource] = useState('');
+
   const [expiresInHours, setExpiresInHours] = useState<number | ''>(1);
-  const [maxReveals, setMaxReveals] = useState<number | ''>(10);
+  const [maxReveals, setMaxReveals] = useState<number | ''>('');
+
+  const [integrationRole, setIntegrationRole] = useState<string>('DEVELOPER');
 
   // Fetch secrets whenever a vault is selected
   const { data: secrets = [], isLoading: isLoadingSecrets } = useSecretsByVault(
@@ -56,8 +71,17 @@ export function CreateSessionModal({
     selectedVaultId || null,
   );
 
+  // Fetch Integrations
+  const { data: connections = [] } = useIntegrations(orgId);
+  const { data: providerResources = [], isLoading: isLoadingResources } = useIntegrationResources(orgId, selectedProvider || null);
+
+  // Filter repositories if GitHub
+  const repositories = providerResources.filter(r => r.type === 'REPOSITORY');
+
   const handleClose = () => {
     setGranteeId(preselectedGranteeId || '');
+    setSelectedAccessType('');
+    setSelectedIntegrationResource('');
     setSelectedVaultId('');
     setSelectedSecretId('');
     setExpiresInHours(1);
@@ -74,22 +98,56 @@ export function CreateSessionModal({
     e.preventDefault();
 
     if (!granteeId) { toast('warning', 'Please select a team member to grant access to.'); return; }
-    if (!selectedVaultId) { toast('warning', 'Please select a vault.'); return; }
-    if (!selectedSecretId) { toast('warning', 'Please select a secret from the vault.'); return; }
+    
+    // Validate Grantee for Integrations
+    const selectedMember = members.find(m => m.userId === granteeId);
+    if (accessMode === 'NATIVE' && selectedProvider === 'GITHUB') {
+      const githubUsername = (selectedMember?.user as any)?.providerProfiles?.githubUsername;
+      if (!githubUsername) {
+        toast('warning', 'This user has not configured their GitHub username in Settings. Cannot grant GitHub access.');
+        return;
+      }
+    }
+
+    if (accessMode === 'VAULT') {
+      if (!selectedVaultId) { toast('warning', 'Please select a vault.'); return; }
+      if (!selectedSecretId) { toast('warning', 'Please select a secret from the vault.'); return; }
+    } else {
+      if (!selectedProvider) { toast('warning', 'Please select an integration provider.'); return; }
+      if (!selectedIntegrationResource) { toast('warning', 'Please select a resource.'); return; }
+    }
+
     if (expiresInHours === '' || expiresInHours < 1) { toast('warning', 'Session must expire in at least 1 hour.'); return; }
 
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + Number(expiresInHours));
 
+    const payload: any = {
+      granteeId,
+      expiresAt,
+      maxReveals: maxReveals === '' ? undefined : Number(maxReveals),
+    };
+
+    if (accessMode === 'VAULT') {
+      payload.scope = SessionScope.SECRET;
+      payload.resourceId = selectedSecretId;
+      payload.permission = SessionPermission.REVEAL;
+    } else {
+      payload.scope = 'INTEGRATION'; // Bypass Vault Check
+      payload.resourceId = selectedIntegrationResource; 
+      payload.integrationProvider = selectedProvider;
+      
+      if (selectedProvider === 'GITHUB') payload.integrationResourceType = 'REPOSITORY';
+      else if (selectedProvider === 'VERCEL') payload.integrationResourceType = 'TEAM';
+      else if (selectedProvider === 'GODADDY') payload.integrationResourceType = 'ACCOUNT';
+      
+      payload.integrationResourceExternalId = selectedIntegrationResource;
+      
+      if (selectedProvider === 'VERCEL') payload.integrationRole = integrationRole;
+    }
+
     createSession(
-      {
-        granteeId,
-        scope: SessionScope.SECRET,
-        resourceId: selectedSecretId,
-        permission: SessionPermission.REVEAL,
-        expiresAt,
-        maxReveals: maxReveals === '' ? undefined : Number(maxReveals),
-      },
+      payload,
       {
         onSuccess: (data: { status?: string }) => {
           if (data?.status === 'PENDING_APPROVAL') {
@@ -135,59 +193,139 @@ export function CreateSessionModal({
           <p className={hintClass}>The member who will receive temporary access.</p>
         </div>
 
-        {/* Step 3: Which vault */}
+        {/* Step 2: What do you want to access? */}
         <div>
-          <label className={labelClass}>
-            Vault <span className="text-red-500">*</span>
-          </label>
-          <SelectWrapper>
-            <select
-              className={selectClass}
-              value={selectedVaultId}
-              onChange={(e) => handleVaultChange(e.target.value)}
-              required
-            >
-              <option value="">Select a vault…</option>
-              {vaults.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.name}
-                </option>
-              ))}
-            </select>
-          </SelectWrapper>
+          <label className={labelClass}>What do you want to access? <span className="text-red-500">*</span></label>
+          <div className="grid grid-cols-2 gap-3 mt-1.5">
+            {connections.some(c => c.provider === 'GITHUB') && (
+              <label className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all ${selectedAccessType === 'GITHUB' ? 'border-slate-900 bg-slate-50 dark:border-slate-300 dark:bg-slate-900' : 'border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600'}`}>
+                <input type="radio" name="accessType" className="hidden" checked={selectedAccessType === 'GITHUB'} onChange={() => { setSelectedAccessType('GITHUB'); setSelectedIntegrationResource(''); }} />
+                <GitBranch className={`w-4 h-4 ${selectedAccessType === 'GITHUB' ? 'text-slate-900 dark:text-slate-100' : 'text-slate-500'}`} />
+                <span className={`text-sm font-medium ${selectedAccessType === 'GITHUB' ? 'text-slate-900 dark:text-slate-100' : 'text-slate-500'}`}>GitHub Repository</span>
+              </label>
+            )}
+            {connections.some(c => c.provider === 'VERCEL') && (
+              <label className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all ${selectedAccessType === 'VERCEL' ? 'border-slate-900 bg-slate-50 dark:border-slate-300 dark:bg-slate-900' : 'border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600'}`}>
+                <input type="radio" name="accessType" className="hidden" checked={selectedAccessType === 'VERCEL'} onChange={() => { setSelectedAccessType('VERCEL'); setSelectedIntegrationResource(''); }} />
+                <Triangle className={`w-4 h-4 ${selectedAccessType === 'VERCEL' ? 'text-slate-900 dark:text-slate-100' : 'text-slate-500'}`} />
+                <span className={`text-sm font-medium ${selectedAccessType === 'VERCEL' ? 'text-slate-900 dark:text-slate-100' : 'text-slate-500'}`}>Vercel Project</span>
+              </label>
+            )}
+            {connections.some(c => c.provider === 'GODADDY') && (
+              <label className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all ${selectedAccessType === 'GODADDY' ? 'border-slate-900 bg-slate-50 dark:border-slate-300 dark:bg-slate-900' : 'border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600'}`}>
+                <input type="radio" name="accessType" className="hidden" checked={selectedAccessType === 'GODADDY'} onChange={() => { setSelectedAccessType('GODADDY'); setSelectedIntegrationResource(''); }} />
+                <Globe className={`w-4 h-4 ${selectedAccessType === 'GODADDY' ? 'text-slate-900 dark:text-slate-100' : 'text-slate-500'}`} />
+                <span className={`text-sm font-medium ${selectedAccessType === 'GODADDY' ? 'text-slate-900 dark:text-slate-100' : 'text-slate-500'}`}>GoDaddy Account</span>
+              </label>
+            )}
+            {/* Vault is always available */}
+              <label className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${selectedAccessType === 'VAULT' ? 'bg-slate-900 border-slate-900 dark:bg-slate-100 dark:border-slate-100' : 'bg-white border-slate-200 hover:border-slate-300 dark:bg-slate-900 dark:border-slate-800 dark:hover:border-slate-700'}`}>
+                <input type="radio" name="accessType" className="hidden" value="VAULT" checked={selectedAccessType === 'VAULT'} onChange={() => setSelectedAccessType('VAULT')} />
+                <Lock className={`w-4 h-4 ${selectedAccessType === 'VAULT' ? 'text-white dark:text-slate-900' : 'text-slate-500 dark:text-slate-400'}`} />
+                <span className={`text-sm font-medium ${selectedAccessType === 'VAULT' ? 'text-white dark:text-slate-900' : 'text-slate-700 dark:text-slate-300'}`}>
+                  Vault Secret
+                </span>
+              </label>
+          </div>
+          
+          {connections.length === 0 && (
+            <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 rounded-lg text-center">
+              <p className="text-xs text-blue-800 dark:text-blue-300">No integrations connected.</p>
+              <a href="/settings/integrations" className="text-[11px] text-blue-700 dark:text-blue-400 font-bold hover:underline mt-0.5 inline-block" onClick={handleClose}>
+                Connect GitHub, Vercel, or GoDaddy to grant external access
+              </a>
+            </div>
+          )}
         </div>
 
-        {/* Step 4: Which secret */}
-        <div>
-          <label className={labelClass}>
-            Secret <span className="text-red-500">*</span>
-          </label>
-          <SelectWrapper>
-            <select
-              className={selectClass}
-              value={selectedSecretId}
-              onChange={(e) => setSelectedSecretId(e.target.value)}
-              required
-              disabled={!selectedVaultId || isLoadingSecrets}
-            >
-              <option value="">
-                {!selectedVaultId
-                  ? 'Select a vault first…'
-                  : isLoadingSecrets
-                  ? 'Loading secrets…'
-                  : secrets.length === 0
-                  ? 'No secrets in this vault'
-                  : 'Select a secret…'}
-              </option>
-              {secrets.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                  {s.description ? ` — ${s.description}` : ''}
-                </option>
-              ))}
-            </select>
-          </SelectWrapper>
-        </div>
+        {accessMode === 'NATIVE' && selectedProvider !== '' ? (
+          <>
+            
+            {(selectedProvider === 'GITHUB' || selectedProvider === 'VERCEL' || selectedProvider === 'GODADDY') && (
+              <div>
+                <label className={labelClass}>
+                  {selectedProvider === 'GITHUB' && 'Repository '}
+                  {selectedProvider === 'VERCEL' && 'Team/Project '}
+                  {selectedProvider === 'GODADDY' && 'Domain '}
+                  <span className="text-red-500">*</span>
+                </label>
+                <SelectWrapper>
+                  <select
+                    className={selectClass}
+                    value={selectedIntegrationResource}
+                    onChange={(e) => setSelectedIntegrationResource(e.target.value)}
+                    required
+                    disabled={isLoadingResources}
+                  >
+                    <option value="">{isLoadingResources ? 'Loading resources...' : 'Select a resource…'}</option>
+                    {providerResources.map(r => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                </SelectWrapper>
+              </div>
+            )}
+
+            {selectedProvider === 'VERCEL' && (
+              <div>
+                <label className={labelClass}>Role <span className="text-red-500">*</span></label>
+                <SelectWrapper>
+                  <select
+                    className={selectClass}
+                    value={integrationRole}
+                    onChange={(e) => setIntegrationRole(e.target.value)}
+                    required
+                  >
+                    <option value="VIEWER">Viewer (Read-only)</option>
+                    <option value="DEVELOPER">Developer (Push/Deploy)</option>
+                    <option value="PROJECT_DEVELOPER">Project Developer</option>
+                  </select>
+                </SelectWrapper>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <div>
+              <label className={labelClass}>Vault <span className="text-red-500">*</span></label>
+              <SelectWrapper>
+                <select
+                  className={selectClass}
+                  value={selectedVaultId}
+                  onChange={(e) => handleVaultChange(e.target.value)}
+                  required
+                >
+                  <option value="">Select a vault…</option>
+                  {vaults.map((v) => (
+                    <option key={v.id} value={v.id}>{v.name}</option>
+                  ))}
+                </select>
+              </SelectWrapper>
+            </div>
+
+            <div>
+              <label className={labelClass}>Secret <span className="text-red-500">*</span></label>
+              <SelectWrapper>
+                <select
+                  className={selectClass}
+                  value={selectedSecretId}
+                  onChange={(e) => setSelectedSecretId(e.target.value)}
+                  required
+                  disabled={!selectedVaultId || isLoadingSecrets}
+                >
+                  <option value="">
+                    {!selectedVaultId ? 'Select a vault first…' : isLoadingSecrets ? 'Loading secrets…' : secrets.length === 0 ? 'No secrets in this vault' : 'Select a secret…'}
+                  </option>
+                  {secrets.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} {s.description ? ` — ${s.description}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </SelectWrapper>
+            </div>
+          </>
+        )}
 
         {/* Step 5: Expiry + limits */}
         <div className="grid grid-cols-2 gap-3">

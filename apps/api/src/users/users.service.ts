@@ -12,7 +12,10 @@ export class UsersService {
   }
 
   async findById(id: string): Promise<User | null> {
-    return this.prisma.user.findUnique({ where: { id } });
+    return this.prisma.user.findUnique({ 
+      where: { id },
+      include: { organizationMemberships: true }
+    });
   }
 
   async create(data: { email: string; passwordHash: string }): Promise<User> {
@@ -24,14 +27,25 @@ export class UsersService {
    * Currently supports: fullName only.
    * Email change is a separate flow (requires verification) — out of scope for B-2.
    */
-  async updateProfile(userId: string, dto: { fullName: string }) {
+  async updateProfile(userId: string, dto: { fullName?: string; githubUsername?: string }) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found.');
 
+    const data: any = {};
+    if (dto.fullName !== undefined) data.fullName = dto.fullName.trim();
+    
+    if (dto.githubUsername !== undefined) {
+      const currentProfiles = (user.providerProfiles as Record<string, any>) || {};
+      data.providerProfiles = {
+        ...currentProfiles,
+        githubUsername: dto.githubUsername.trim(),
+      };
+    }
+
     return this.prisma.user.update({
       where: { id: userId },
-      data: { fullName: dto.fullName.trim() },
-      select: { id: true, email: true, fullName: true, createdAt: true },
+      data,
+      select: { id: true, email: true, fullName: true, providerProfiles: true, createdAt: true },
     });
   }
 

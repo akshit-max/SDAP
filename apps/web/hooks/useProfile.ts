@@ -16,7 +16,7 @@ export function useProfile() {
 export function useUpdateProfile() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { fullName: string }) => usersApi.updateProfile(data),
+    mutationFn: (data: { fullName?: string; githubUsername?: string }) => usersApi.updateProfile(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: userKeys.profile() });
     },

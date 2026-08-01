@@ -104,7 +104,7 @@ export class OrganizationsService {
   async getMembers(orgId: string) {
     const members = await this.prisma.organizationMember.findMany({
       where: { organizationId: orgId, removedAt: null },
-      include: { user: { select: { id: true, email: true, fullName: true, isActive: true } } },
+      include: { user: { select: { id: true, email: true, fullName: true, isActive: true, providerProfiles: true } } },
       orderBy: { joinedAt: 'asc' },
     });
     return members;

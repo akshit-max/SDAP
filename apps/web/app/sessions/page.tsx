@@ -159,10 +159,16 @@ export default function SessionsPage() {
                         <tr key={session.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors">
                           <td className="px-5 py-3 whitespace-nowrap">
                             <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                              {session.scope} Access
+                              {(session.scope as string) === 'INTEGRATION' ? (
+                                `${(session as any).integrationProvider} Access`
+                              ) : `${session.scope} Access`}
                             </p>
                             <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">
-                              {session.resourceName || session.resourceId}
+                              {(session.scope as string) === 'INTEGRATION' ? (
+                                (session as any).integrationProvider === 'GODADDY' ? `Domain: ${(session as any).integrationResourceExternalId}` : 
+                                (session as any).integrationProvider === 'VERCEL' ? `Project: ${(session as any).integrationResourceExternalId}` : 
+                                `Repository: ${(session as any).integrationResourceExternalId}`
+                              ) : (session.resourceName || session.resourceId)}
                             </p>
                           </td>
                           <td className="px-5 py-3 whitespace-nowrap">
@@ -175,7 +181,9 @@ export default function SessionsPage() {
                               {getStatusBadge(session.status, session.expiresAt)}
                               <div className="text-[10px] text-slate-500 dark:text-slate-400 flex flex-col font-medium">
                                 <span>{formatExpiry(session.expiresAt)}</span>
-                                <span>Uses: {session.revealCount} / {session.maxReveals ?? '∞'}</span>
+                                {(session.scope as string) !== 'INTEGRATION' && (
+                                  <span>Uses: {session.revealCount} / {session.maxReveals ?? '∞'}</span>
+                                )}
                               </div>
                             </div>
                           </td>
@@ -193,6 +201,26 @@ export default function SessionsPage() {
                                 }
                                 Reveal
                               </button>
+                            )}
+                            {isActive && (session.scope as string) === 'INTEGRATION' && (
+                              (session as any).integrationProvider === 'GODADDY' || 
+                              (session as any).integrationProvider === 'HOSTINGER' || 
+                              (session as any).integrationProvider === 'CPANEL' ? (
+                                <a
+                                  href={(session as any).integrationProvider === 'GODADDY' ? 'https://sso.godaddy.com/' : 
+                                        (session as any).integrationProvider === 'HOSTINGER' ? 'https://hpanel.hostinger.com/' : 
+                                        'https://cpanel.net/'}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-bold text-[10px] uppercase tracking-wide transition-colors shadow-sm"
+                                >
+                                  Launch Session
+                                </a>
+                              ) : (
+                                <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                  Managed by WITHUS
+                                </span>
+                              )
                             )}
                           </td>
                         </tr>
@@ -249,7 +277,11 @@ export default function SessionsPage() {
                           </td>
                           <td className="px-5 py-3 whitespace-nowrap">
                             <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                              {session.scope} · {session.resourceName || session.resourceId}
+                              {(session.scope as string) === 'INTEGRATION' ? (
+                                (session as any).integrationProvider === 'GODADDY' ? 'Browser Extension' : 
+                                (session as any).integrationProvider === 'VERCEL' ? `Vercel · ${(session as any).integrationResourceExternalId}` :
+                                `GitHub · ${(session as any).integrationResourceExternalId}`
+                              ) : `${session.scope} · ${session.resourceName || session.resourceId}`}
                             </p>
                           </td>
                           <td className="px-5 py-3 whitespace-nowrap">
@@ -257,7 +289,9 @@ export default function SessionsPage() {
                               {getStatusBadge(session.status, session.expiresAt)}
                               <div className="text-[10px] text-slate-500 dark:text-slate-400 flex flex-col font-medium">
                                 <span>{formatExpiry(session.expiresAt)}</span>
-                                <span>Uses: {session.revealCount} / {session.maxReveals ?? '∞'}</span>
+                                {(session.scope as string) !== 'INTEGRATION' && (
+                                  <span>Uses: {session.revealCount} / {session.maxReveals ?? '∞'}</span>
+                                )}
                               </div>
                             </div>
                           </td>

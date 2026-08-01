@@ -37,7 +37,6 @@ const PROVIDERS: {
   patUrl: string;
   patHint: string;
   icon: React.ReactNode;
-  capabilities: string[];
 }[] = [
   {
     id: 'VERCEL',
@@ -47,7 +46,6 @@ const PROVIDERS: {
     patUrl: 'https://vercel.com/account/tokens',
     patHint: 'Create a token at vercel.com/account/tokens. Requires "Full Account" scope.',
     icon: <span className="text-lg font-bold">▲</span>,
-    capabilities: ['List teams', 'Invite member', 'Remove member', 'Health check'],
   },
   {
     id: 'GITHUB',
@@ -57,7 +55,6 @@ const PROVIDERS: {
     patUrl: 'https://github.com/settings/tokens',
     patHint: 'Create a PAT (classic) with: read:org, admin:org, repo. Or a Fine-grained token with org access.',
     icon: <Code2 className="w-5 h-5" />,
-    capabilities: ['List organizations', 'Invite member', 'Remove member', 'Health check'],
   },
   {
     id: 'GODADDY',
@@ -69,7 +66,6 @@ const PROVIDERS: {
     patHint:
       'Create an API key at developer.godaddy.com/keys. Format: "key:secret". Dashboard delegation requires the Browser Extension.',
     icon: <Globe className="w-5 h-5" />,
-    capabilities: ['List domains', 'Validate API key', 'Health check', 'Browser Extension for dashboard'],
   },
 ];
 
@@ -145,22 +141,11 @@ function IntegrationCard({
         {provider.description}
       </p>
 
-      {/* Capabilities */}
-      <div className="flex flex-wrap gap-1 mb-4">
-        {provider.capabilities.map((cap) => (
-          <span
-            key={cap}
-            className="text-[10px] px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-full"
-          >
-            {cap}
-          </span>
-        ))}
-      </div>
-
       {/* Last checked */}
       {connection?.lastCheckedAt && (
         <p className="text-[10px] text-slate-400 dark:text-slate-500 mb-3">
           Last checked: {new Date(connection.lastCheckedAt).toLocaleString()}
+          {(connection.providerMeta as any)?.identity && ` · ${(connection.providerMeta as any).identity}`}
         </p>
       )}
 
@@ -176,19 +161,6 @@ function IntegrationCard({
         <div className="flex items-center gap-2 border-t border-slate-100 dark:border-slate-800 pt-3">
           {isConnected ? (
             <>
-              <button
-                onClick={() => onHealthCheck(provider.id)}
-                disabled={isCheckingHealth}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-50"
-                title="Test connection"
-              >
-                {isCheckingHealth ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-3.5 h-3.5" />
-                )}
-                Test
-              </button>
               <button
                 onClick={() => onDisconnect(provider.id)}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-950/40 rounded-lg transition-colors"
@@ -352,7 +324,7 @@ export default function IntegrationsPage() {
                   connection={connection}
                   onConnect={(id) => setConnectingProvider(PROVIDERS.find((p) => p.id === id) || null)}
                   onDisconnect={(id) => setDisconnectingProvider(id)}
-                  onHealthCheck={handleHealthCheck}
+                  onHealthCheck={(id) => runHealthCheck(id)}
                   isCheckingHealth={isCheckingHealth}
                   canManage={canManage}
                 />

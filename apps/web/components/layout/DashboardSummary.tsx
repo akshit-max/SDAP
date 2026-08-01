@@ -67,13 +67,22 @@ export function DashboardSummary() {
             Here's an overview of your workspace.
           </p>
         </div>
-        <Link
-          href="/vaults"
-          className="flex items-center px-3 py-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-lg font-semibold text-xs transition-colors shadow-sm"
-        >
-          <Plus className="w-3.5 h-3.5 mr-1.5" />
-          New Vault
-        </Link>
+        <div className="flex gap-2">
+          <a
+            href="/downloads/WITHUS-Extension.zip"
+            download
+            className="flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-xs transition-colors shadow-sm"
+          >
+            Download Extension
+          </a>
+          <Link
+            href="/vaults"
+            className="flex items-center px-3 py-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-lg font-semibold text-xs transition-colors shadow-sm"
+          >
+            <Plus className="w-3.5 h-3.5 mr-1.5" />
+            New Vault
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}

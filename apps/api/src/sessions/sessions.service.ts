@@ -15,7 +15,7 @@ import { Prisma, SessionScope, SessionPermission } from '@prisma/client';
 import { SecretLifecycleService } from '../vaults/secret-lifecycle.service';
 import { DelegatedSessionCreatedEvent } from './events/session-created.event';
 import { DelegatedSessionRevokedEvent } from './events/session-revoked.event';
-import { CreateSessionDto } from '@repo/types';
+import { CreateSessionDto } from './dto/sessions.dto';
 
 export const INTEGRATIONS_SERVICE_TOKEN = 'INTEGRATIONS_SERVICE';
 
@@ -49,7 +49,7 @@ export class SessionsService {
     }
 
     // Verify resource ownership
-    if (dto.scope === 'SECRET') {
+    if (dto.scope === 'SECRET' && dto.resourceId) {
       const secret = await db.secret.findUnique({
         where: { id: dto.resourceId },
         include: { vault: true },
@@ -57,13 +57,15 @@ export class SessionsService {
       if (!secret || secret.vault.organizationId !== organizationId) {
         throw new NotFoundException('Secret not found in your organization.');
       }
-    } else if (dto.scope === 'VAULT') {
+    } else if (dto.scope === 'VAULT' && dto.resourceId) {
       const vault = await db.vault.findUnique({
         where: { id: dto.resourceId },
       });
       if (!vault || vault.organizationId !== organizationId) {
         throw new NotFoundException('Vault not found in your organization.');
       }
+    } else if (dto.scope === 'INTEGRATION') {
+      // Integration access bypasses vault verification
     }
 
     // ── Integration binding from DTO ────────────────────────────────────────
@@ -94,8 +96,8 @@ export class SessionsService {
         organizationId,
         grantorId,
         granteeId: dto.granteeId,
-        scope: dto.scope as unknown as SessionScope,
-        resourceId: dto.resourceId,
+        scope: (dto.scope || 'SECRET') as unknown as SessionScope,
+        resourceId: dto.resourceId || 'integration',
         permission: dto.permission as unknown as SessionPermission,
         expiresAt: new Date(dto.expiresAt),
         maxReveals: dto.maxReveals,
@@ -113,23 +115,39 @@ export class SessionsService {
       try {
         const grantee = await this.prisma.user.findUnique({
           where: { id: dto.granteeId },
-          select: { email: true },
+          select: { email: true, providerProfiles: true },
         });
 
         if (!grantee?.email) {
           throw new Error('Grantee user not found or has no email address.');
         }
 
-        const result = await this.integrationsService.grantAccess(
-          organizationId,
-          integrationProvider,
-          {
-            resourceId: integrationResourceExternalId,
-            resourceType: integrationResourceType,
-            principalEmail: grantee.email,
-            role: (dto as any).integrationRole,
-          },
-        );
+        let principalId = grantee.email;
+
+        if (integrationProvider === 'GITHUB') {
+          const githubUsername = (grantee.providerProfiles as any)?.githubUsername;
+          if (!githubUsername) {
+            throw new BadRequestException('Grantee has not configured their GitHub username.');
+          }
+          principalId = githubUsername;
+        }
+
+        let result;
+        if (integrationProvider === 'GODADDY') {
+          // GoDaddy uses extension-based delegation, so there is no programmatic grant.
+          result = { referenceId: `ext_${Date.now()}`, status: 'ACTIVE' as const };
+        } else {
+          result = await this.integrationsService.grantAccess(
+            organizationId,
+            integrationProvider,
+            {
+              resourceId: integrationResourceExternalId,
+              resourceType: integrationResourceType,
+              principalEmail: principalId, // Passing the resolved principalId
+              role: (dto as any).integrationRole,
+            },
+          );
+        }
 
         // Provider confirmed — promote to ACTIVE and store reference ID
         const activeSession = await this.prisma.delegatedSession.update({
@@ -167,8 +185,8 @@ export class SessionsService {
             organizationId,
             grantorId,
             dto.granteeId,
-            dto.scope,
-            dto.resourceId,
+            dto.scope || 'SECRET',
+            dto.resourceId || 'integration',
           ),
         );
 
@@ -213,8 +231,8 @@ export class SessionsService {
         organizationId,
         grantorId,
         dto.granteeId,
-        dto.scope,
-        dto.resourceId,
+        dto.scope || 'SECRET',
+        dto.resourceId || 'integration',
       ),
     );
 
@@ -285,7 +303,7 @@ export class SessionsService {
   ) {
     const session = await this.prisma.delegatedSession.findUnique({
       where: { id: sessionId },
-      include: { grantee: { select: { email: true } } },
+      include: { grantee: { select: { email: true, providerProfiles: true } } },
     });
 
     if (!session || session.organizationId !== organizationId) {
@@ -322,17 +340,28 @@ export class SessionsService {
       session.grantee?.email &&
       this.integrationsService
     ) {
+      let principalId = session.grantee.email;
+      if (session.integrationProvider === 'GITHUB') {
+        const githubUsername = (session.grantee.providerProfiles as any)?.githubUsername;
+        if (!githubUsername) {
+          throw new BadGatewayException('Cannot revoke GitHub access: Grantee has no GitHub username configured.');
+        }
+        principalId = githubUsername;
+      }
+
       try {
-        await this.integrationsService.revokeAccess(
-          organizationId,
-          session.integrationProvider,
-          {
-            resourceId: session.integrationResourceExternalId,
-            resourceType: session.integrationResourceType,
-            principalEmail: session.grantee.email,
-            referenceId: session.integrationReferenceId ?? undefined,
-          },
-        );
+        if (session.integrationProvider !== 'GODADDY') {
+          await this.integrationsService.revokeAccess(
+            organizationId,
+            session.integrationProvider,
+            {
+              resourceId: session.integrationResourceExternalId,
+              resourceType: session.integrationResourceType,
+              principalEmail: principalId,
+              referenceId: session.integrationReferenceId ?? undefined,
+            },
+          );
+        }
 
         this.eventEmitter.emit('audit.log', {
           organizationId,
@@ -344,7 +373,7 @@ export class SessionsService {
             provider: session.integrationProvider,
             resourceType: session.integrationResourceType,
             externalId: session.integrationResourceExternalId,
-            username: session.grantee.email,
+            username: principalId,
             reason: 'Manual revocation by grantor/admin',
           },
         });

@@ -4,8 +4,12 @@ export { SessionStatus, SessionScope, SessionPermission };
 
 export const CreateSessionSchema = z.object({
   granteeId: z.string().uuid(),
-  scope: z.nativeEnum(SessionScope),
-  resourceId: z.string().uuid(),
+  scope: z.union([z.nativeEnum(SessionScope), z.literal('INTEGRATION')]).optional(),
+  resourceId: z.string().optional(),
+  integrationProvider: z.string().optional(),
+  integrationResourceType: z.string().optional(),
+  integrationResourceExternalId: z.string().optional(),
+  integrationRole: z.string().optional(),
   permission: z.nativeEnum(SessionPermission).default(SessionPermission.REVEAL),
   expiresAt: z.coerce.date(),
   maxReveals: z.number().int().min(1).optional(),
@@ -18,7 +22,7 @@ export interface DelegatedSessionDto {
   organizationId: string;
   grantorId: string;
   granteeId: string;
-  scope: SessionScope;
+  scope: SessionScope | string;
   resourceId: string;
   permission: SessionPermission;
   status: SessionStatus;

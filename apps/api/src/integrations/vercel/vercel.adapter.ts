@@ -84,8 +84,10 @@ export class VercelAdapter implements IIntegrationAdapter {
       token,
       { email: input.principalEmail, role },
     ).catch((err: Error) => {
-      // Vercel returns 400/409 if already a member — treat as success
       const msg = err.message;
+      if (msg.includes('403') || msg.toLowerCase().includes('hobby') || msg.toLowerCase().includes('pro plan')) {
+        throw new Error('Vercel Team collaboration requires a Pro plan. Your connected account is on the Hobby plan.');
+      }
       if (msg.includes('409') || msg.includes('400') || msg.includes('already')) {
         this.logger.warn(`[VERCEL] ${input.principalEmail} already in team — skipping invite`);
         return { uid: input.principalEmail, confirmed: true };

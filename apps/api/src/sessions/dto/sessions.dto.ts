@@ -5,11 +5,23 @@ export class CreateSessionDto {
   @ApiProperty({ example: 'user-id', description: 'User ID of the grantee' })
   granteeId!: string;
 
-  @ApiProperty({ example: 'SECRET', description: 'Scope of the session' })
-  scope!: SessionScope;
+  @ApiPropertyOptional({ example: 'SECRET', description: 'Scope of the session' })
+  scope?: SessionScope | 'INTEGRATION';
 
-  @ApiProperty({ example: 'resource-id', description: 'ID of the vault or secret' })
-  resourceId!: string;
+  @ApiPropertyOptional({ example: 'resource-id', description: 'ID of the vault or secret' })
+  resourceId?: string;
+
+  @ApiPropertyOptional({ example: 'GITHUB', description: 'Integration Provider' })
+  integrationProvider?: string;
+
+  @ApiPropertyOptional({ example: 'REPOSITORY', description: 'Integration Resource Type' })
+  integrationResourceType?: string;
+
+  @ApiPropertyOptional({ example: 'owner/repo', description: 'Integration Resource ID' })
+  integrationResourceExternalId?: string;
+
+  @ApiPropertyOptional({ example: 'DEVELOPER', description: 'Integration Role' })
+  integrationRole?: string;
 
   @ApiProperty({ example: 'REVEAL', description: 'Permission level granted' })
   permission!: SessionPermission;

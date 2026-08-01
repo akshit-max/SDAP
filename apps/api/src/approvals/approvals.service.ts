@@ -9,8 +9,8 @@ import { SessionsService } from '../sessions/sessions.service';
 import {
   ApprovalRequestStatus,
   ApprovalType,
-  CreateSessionDto,
 } from '@repo/types';
+import { CreateSessionDto } from '../sessions/dto/sessions.dto';
 import { ApprovalRequestedEvent } from './events/approval-requested.event';
 import { ApprovalApprovedEvent } from './events/approval-approved.event';
 import { ApprovalRejectedEvent } from './events/approval-rejected.event';

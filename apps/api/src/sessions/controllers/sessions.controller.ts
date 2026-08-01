@@ -121,11 +121,12 @@ export class SessionsController {
     @Request() req: RequestWithUser,
     @Body(new ZodValidationPipe(RevealSessionSchema)) dto: RevealSessionDto,
   ) {
-    return this.sessionsService.revealSecretViaSession(
+    const plaintext = await this.sessionsService.revealSecretViaSession(
       orgId,
       sessionId,
       req.user.id,
       dto.reason,
     );
+    return { plaintext };
   }
 }

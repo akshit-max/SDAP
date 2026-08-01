@@ -16,9 +16,9 @@ export function csrfMiddleware(req: Request, res: Response, next: NextFunction) 
     });
   }
 
-  // 2. Skip verification for safe methods
+  // 2. Skip verification for safe methods or browser extension
   const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
-  if (safeMethods.includes(req.method)) {
+  if (safeMethods.includes(req.method) || req.header('X-Extension-Client') === 'withus-mv3') {
     return next();
   }
 

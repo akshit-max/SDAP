@@ -6,7 +6,7 @@ import { useAuth } from '../../lib/auth/AuthContext';
 import { useUpdateOrganization } from '../../hooks/useOrganization';
 import { useUpdateProfile, useChangePassword, useProfile } from '../../hooks/useProfile';
 import { useToast } from '../../components/common/Toast';
-import { Loader2, Building2, User, Lock, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Building2, User, Lock, Eye, EyeOff, GitBranch } from 'lucide-react';
 
 export default function SettingsPage() {
   const { organization, refreshContext } = useAuth();
@@ -35,17 +35,19 @@ export default function SettingsPage() {
   // ── Profile ────────────────────────────────────────────────
   const { data: profile } = useProfile();
   const [fullName, setFullName] = useState('');
+  const [githubUsername, setGithubUsername] = useState('');
   const { mutate: updateProfile, isPending: profilePending } = useUpdateProfile();
 
   useEffect(() => {
     if (profile?.fullName) setFullName(profile.fullName);
+    if (profile?.providerProfiles?.githubUsername) setGithubUsername(profile.providerProfiles.githubUsername);
   }, [profile]);
 
   const handleProfileSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName.trim()) return;
     updateProfile(
-      { fullName: fullName.trim() },
+      { fullName: fullName.trim(), githubUsername: githubUsername.trim() },
       {
         onSuccess: () => { toast('success', 'Profile updated.'); refreshContext(); },
         onError: (err: any) => toast('error', err.message || 'Failed to update profile.'),
@@ -125,8 +127,25 @@ export default function SettingsPage() {
               />
               <p className="text-[10px] text-slate-400 mt-1">Email changes require email verification — coming soon.</p>
             </div>
-            <div className="flex justify-end">
-              <button type="submit" disabled={profilePending || !fullName.trim() || fullName === profile?.fullName} className={saveBtn}>
+            
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+              <label className={`${labelClass} flex items-center gap-1.5`}>
+                <GitBranch className="w-3.5 h-3.5" />
+                GitHub Username
+              </label>
+              <input
+                id="profile-github"
+                type="text"
+                value={githubUsername}
+                onChange={e => setGithubUsername(e.target.value)}
+                className={inputClass}
+                placeholder="e.g. octocat"
+              />
+              <p className="text-[10px] text-slate-400 mt-1">Required to receive delegated access to GitHub repositories.</p>
+            </div>
+            
+            <div className="flex justify-end pt-2">
+              <button type="submit" disabled={profilePending || (!fullName.trim() && !githubUsername.trim())} className={saveBtn}>
                 {profilePending && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
                 Save Profile
               </button>

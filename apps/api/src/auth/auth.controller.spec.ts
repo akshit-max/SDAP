@@ -40,7 +40,8 @@ describe('AuthController', () => {
   it('register() should call authService.register', async () => {
     const dto = { email: 'test@test.com', password: 'password123', fullName: 'Test', companyName: 'Corp' };
     const mockReq = { headers: { 'user-agent': 'jest' } } as any;
-    const result = await controller.register(dto, mockReq, '127.0.0.1');
+    const mockRes = { cookie: jest.fn() } as any;
+    const result = await controller.register(dto, mockReq, mockRes, '127.0.0.1');
     expect(mockAuthService.register).toHaveBeenCalledWith(dto, '127.0.0.1', 'jest');
     expect(result.accessToken).toBe('access');
   });
@@ -48,7 +49,8 @@ describe('AuthController', () => {
   it('login() should call authService.login', async () => {
     const dto = { email: 'test@test.com', password: 'password123' };
     const mockReq = { headers: { 'user-agent': 'jest' } } as any;
-    const result = await controller.login(dto, mockReq, '127.0.0.1');
+    const mockRes = { cookie: jest.fn() } as any;
+    const result = await controller.login(dto, mockReq, mockRes, '127.0.0.1');
     expect(mockAuthService.login).toHaveBeenCalledWith(
       dto,
       '127.0.0.1',
@@ -59,7 +61,8 @@ describe('AuthController', () => {
 
   it('logout() should call authService.logout', async () => {
     const dto = { refreshToken: 'my-token' };
-    const result = await controller.logout(dto);
+    const mockRes = { clearCookie: jest.fn() } as any;
+    const result = await controller.logout(dto, { cookies: {} } as any, mockRes);
     expect(mockAuthService.logout).toHaveBeenCalledWith('my-token');
     expect(result.success).toBe(true);
   });
