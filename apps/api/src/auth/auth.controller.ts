@@ -15,7 +15,7 @@ import {
   ResetPasswordDto,
 } from './dto/auth.dto';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 
