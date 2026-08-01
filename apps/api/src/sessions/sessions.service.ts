@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  BadGatewayException,
   ForbiddenException,
   Logger,
   Optional,
@@ -66,61 +67,120 @@ export class SessionsService {
     }
 
     // ── Integration binding from DTO ────────────────────────────────────────
-    // The session DTO may carry integration context when the request was
-    // submitted via the integrations flow (e.g. "grant Vercel team access").
     const integrationProvider: string | undefined = (dto as any).integrationProvider;
     const integrationResourceType: string | undefined = (dto as any).integrationResourceType;
     const integrationResourceExternalId: string | undefined = (dto as any).integrationResourceExternalId;
+    const isIntegrationBound = !!(
+      integrationProvider &&
+      integrationResourceExternalId &&
+      this.integrationsService
+    );
 
-    // ── Grant provider access if integration is bound ───────────────────────
-    let integrationReferenceId: string | undefined;
+    // ── Fix 1 & 3: Write DB record FIRST, then call provider ────────────────
+    //
+    // For integration-bound sessions, we always write with PENDING_GRANT status
+    // using this.prisma (NOT the tx) so the row is committed to the DB
+    // before any external API call. This guarantees:
+    //   - If the provider call succeeds and the DB update fails → scheduler
+    //     will see PENDING_GRANT and can clean up stale records.
+    //   - If the provider call fails → we delete the row and throw, preventing
+    //     an ACTIVE session from existing without real provider access.
+    //
+    // For non-integration sessions: use the tx client as before (atomic with parent).
+    const sessionDb: any = isIntegrationBound ? this.prisma : db;
 
-    if (integrationProvider && integrationResourceExternalId && this.integrationsService) {
+    const session = await sessionDb.delegatedSession.create({
+      data: {
+        organizationId,
+        grantorId,
+        granteeId: dto.granteeId,
+        scope: dto.scope as unknown as SessionScope,
+        resourceId: dto.resourceId,
+        permission: dto.permission as unknown as SessionPermission,
+        expiresAt: new Date(dto.expiresAt),
+        maxReveals: dto.maxReveals,
+        // PENDING_GRANT for integration-backed, ACTIVE for plain vault/secret sessions
+        status: isIntegrationBound ? 'PENDING_GRANT' : 'ACTIVE',
+        integrationProvider: integrationProvider ?? null,
+        integrationResourceType: integrationResourceType ?? null,
+        integrationResourceExternalId: integrationResourceExternalId ?? null,
+        integrationReferenceId: null,
+      },
+    });
+
+    // ── Grant provider access (integration-bound only) ──────────────────────
+    if (isIntegrationBound) {
       try {
-        // Look up the grantee's email to pass to the provider
-        const grantee = await db.user.findUnique({
+        const grantee = await this.prisma.user.findUnique({
           where: { id: dto.granteeId },
           select: { email: true },
         });
 
-        if (grantee?.email) {
-          const result = await this.integrationsService.grantAccess(
-            organizationId,
-            integrationProvider,
-            {
-              resourceId: integrationResourceExternalId,
-              resourceType: integrationResourceType,
-              principalEmail: grantee.email,
-              role: (dto as any).integrationRole,
-            },
-          );
-
-          integrationReferenceId = result.referenceId;
-
-          this.eventEmitter.emit('audit.log', {
-            organizationId,
-            actorId: grantorId,
-            action: 'integration.access_granted',
-            resourceType: 'SESSION',
-            metadata: {
-              provider: integrationProvider,
-              resourceType: integrationResourceType,
-              externalId: integrationResourceExternalId,
-              username: grantee.email,
-              referenceId: integrationReferenceId,
-              status: result.status,
-            },
-          });
-
-          this.logger.log(
-            `[SESSION] ${integrationProvider} access granted: ${grantee.email} → ${integrationResourceExternalId} (ref: ${integrationReferenceId})`,
-          );
+        if (!grantee?.email) {
+          throw new Error('Grantee user not found or has no email address.');
         }
-      } catch (err: unknown) {
-        // Emit a failure audit event but don't block session creation
-        this.logger.error(
-          `[SESSION] Failed to grant ${integrationProvider} access: ${(err as Error).message}`,
+
+        const result = await this.integrationsService.grantAccess(
+          organizationId,
+          integrationProvider,
+          {
+            resourceId: integrationResourceExternalId,
+            resourceType: integrationResourceType,
+            principalEmail: grantee.email,
+            role: (dto as any).integrationRole,
+          },
         );
+
+        // Provider confirmed — promote to ACTIVE and store reference ID
+        const activeSession = await this.prisma.delegatedSession.update({
+          where: { id: session.id },
+          data: {
+            status: 'ACTIVE',
+            integrationReferenceId: result.referenceId,
+          },
+        });
+
+        this.eventEmitter.emit('audit.log', {
+          organizationId,
+          actorId: grantorId,
+          action: 'integration.access_granted',
+          resourceType: 'SESSION',
+          resourceId: session.id,
+          metadata: {
+            provider: integrationProvider,
+            resourceType: integrationResourceType,
+            externalId: integrationResourceExternalId,
+            username: grantee.email,
+            referenceId: result.referenceId,
+            status: result.status,
+          },
+        });
+
+        this.logger.log(
+          `[SESSION] ${integrationProvider} access granted: ${grantee.email} → ${integrationResourceExternalId} (ref: ${result.referenceId})`,
+        );
+
+        this.eventEmitter.emit(
+          'session.created',
+          new DelegatedSessionCreatedEvent(
+            session.id,
+            organizationId,
+            grantorId,
+            dto.granteeId,
+            dto.scope,
+            dto.resourceId,
+          ),
+        );
+
+        return activeSession;
+
+      } catch (err: unknown) {
+        // Provider call failed — delete the PENDING_GRANT row so no orphan exists
+        await this.prisma.delegatedSession
+          .delete({ where: { id: session.id } })
+          .catch((deleteErr) =>
+            this.logger.error(`[SESSION] Failed to clean up PENDING_GRANT row ${session.id}: ${(deleteErr as Error).message}`),
+          );
 
         this.eventEmitter.emit('audit.log', {
           organizationId,
@@ -133,28 +193,19 @@ export class SessionsService {
             reason: (err as Error).message,
           },
         });
+
+        this.logger.error(
+          `[SESSION] ${integrationProvider} grantAccess failed for ${integrationResourceExternalId}: ${(err as Error).message}`,
+        );
+
+        // Throw so the approval tx (if any) also rolls back
+        throw new BadGatewayException(
+          `${integrationProvider} access could not be granted: ${(err as Error).message}. Session not created.`,
+        );
       }
     }
 
-    const session = await db.delegatedSession.create({
-      data: {
-        organizationId,
-        grantorId,
-        granteeId: dto.granteeId,
-        scope: dto.scope as unknown as SessionScope,
-        resourceId: dto.resourceId,
-        permission: dto.permission as unknown as SessionPermission,
-        expiresAt: new Date(dto.expiresAt),
-        maxReveals: dto.maxReveals,
-        status: 'ACTIVE',
-        // Integration binding — stored for deterministic revocation
-        integrationProvider: integrationProvider ?? null,
-        integrationResourceType: integrationResourceType ?? null,
-        integrationResourceExternalId: integrationResourceExternalId ?? null,
-        integrationReferenceId: integrationReferenceId ?? null,
-      },
-    });
-
+    // ── Non-integration session: already ACTIVE ─────────────────────────────
     this.eventEmitter.emit(
       'session.created',
       new DelegatedSessionCreatedEvent(
@@ -198,6 +249,7 @@ export class SessionsService {
 
   /**
    * Batch-enriches a list of sessions with their resource names.
+   * Executes exactly 2 queries total regardless of list size.
    */
   private async enrichSessionsWithResourceNames<T extends { scope: string; resourceId: string }>(sessions: T[]) {
     const secretIds = sessions.filter(s => s.scope === 'SECRET').map(s => s.resourceId);
@@ -252,13 +304,18 @@ export class SessionsService {
       throw new ForbiddenException('You do not have permission to revoke this session.');
     }
 
-    if (session.status !== 'ACTIVE') {
+    if (session.status !== 'ACTIVE' && session.status !== 'REVOKE_FAILED') {
       throw new BadRequestException(
         `Cannot revoke a session that is ${session.status.toLowerCase()}.`,
       );
     }
 
-    // ── Revoke provider access if integration-bound ───────────────────────
+    // ── Fix 2 & 4: Revoke provider access first; follow the state machine ──
+    //
+    // Success path: provider removal confirmed → REVOKED
+    // Failure path: provider unreachable → REVOKE_FAILED (scheduler retries)
+    //
+    // We never mark REVOKED if the provider still has the collaborator.
     if (
       session.integrationProvider &&
       session.integrationResourceExternalId &&
@@ -291,11 +348,20 @@ export class SessionsService {
             reason: 'Manual revocation by grantor/admin',
           },
         });
+
+        this.logger.log(`[SESSION] ${session.integrationProvider} access revoked for session ${sessionId}`);
+
       } catch (err: unknown) {
+        // Provider call failed — record REVOKE_FAILED so scheduler retries
         this.logger.error(
-          `[REVOKE] Failed to remove ${session.integrationProvider} access for session ${sessionId}: ${(err as Error).message}`,
+          `[REVOKE] ${session.integrationProvider} revokeAccess failed for session ${sessionId}: ${(err as Error).message}`,
         );
-        // Don't block the revocation — mark the session revoked anyway
+
+        await this.prisma.delegatedSession.update({
+          where: { id: sessionId },
+          data: { status: 'REVOKE_FAILED' },
+        });
+
         this.eventEmitter.emit('audit.log', {
           organizationId,
           actorId: userId,
@@ -304,12 +370,16 @@ export class SessionsService {
           resourceId: sessionId,
           metadata: {
             provider: session.integrationProvider,
-            reason: `Manual revoke failed: ${(err as Error).message}`,
+            reason: `Manual revoke failed: ${(err as Error).message}. Will retry automatically.`,
           },
         });
+
+        // Return the pending state so the caller knows revocation was recorded
+        return { ...session, status: 'REVOKE_FAILED' };
       }
     }
 
+    // Provider confirmed (or no provider) — mark session definitively REVOKED
     const updated = await this.prisma.delegatedSession.update({
       where: { id: sessionId },
       data: {

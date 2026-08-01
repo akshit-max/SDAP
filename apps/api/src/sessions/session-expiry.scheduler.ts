@@ -7,18 +7,25 @@ import { IntegrationsService } from '../integrations/integrations.service';
 /**
  * SessionExpiryScheduler
  *
- * Runs every 5 minutes and sweeps the DelegatedSession table for rows
- * that have passed their expiresAt timestamp but are still ACTIVE.
+ * Runs every 5 minutes and handles three sweep types:
  *
- * For sessions bound to a native integration (Vercel, GitHub, etc.):
- *   1. Calls adapter.revokeAccess() to remove the user from the provider.
- *   2. Emits integration.access_revoked audit event.
- *   3. Marks session as EXPIRED.
+ * Sweep 1 — Expire stale ACTIVE sessions
+ *   For integration-bound sessions: call adapter.revokeAccess() first.
+ *     Success → EXPIRED
+ *     Failure → REVOKE_FAILED (scheduler retries next sweep)
+ *   For plain sessions: mark EXPIRED immediately.
  *
- * For plain secret/vault sessions:
- *   1. Marks session as EXPIRED directly.
+ * Sweep 2 — Retry REVOKE_FAILED sessions
+ *   Retry revokeAccess() for sessions that previously failed.
+ *     Success → EXPIRED + audit
+ *     Still failing → stays REVOKE_FAILED for next sweep
  *
- * The sweep is idempotent — adapters handle already-removed gracefully.
+ * Sweep 3 — Clean up stale PENDING_GRANT sessions
+ *   If a session has been PENDING_GRANT for more than 10 minutes,
+ *   it means the process crashed between the DB write and the provider call.
+ *   Delete the orphaned row so it never becomes visible.
+ *
+ * All adapter calls are idempotent. A 404 (already removed) is treated as success.
  */
 @Injectable()
 export class SessionExpiryScheduler {
@@ -30,23 +37,26 @@ export class SessionExpiryScheduler {
     private readonly integrationsService: IntegrationsService,
   ) {}
 
-  /**
-   * Runs every 5 minutes.
-   */
   @Cron(CronExpression.EVERY_5_MINUTES)
-  async expireStaleActiveSessions() {
+  async runExpirySweep() {
+    await Promise.allSettled([
+      this.expireStaleActiveSessions(),
+      this.retryRevokeFailed(),
+      this.cleanupStalePendingGrant(),
+    ]);
+  }
+
+  // ─── Sweep 1: Expire stale ACTIVE sessions ─────────────────────────────────
+
+  private async expireStaleActiveSessions() {
     const now = new Date();
 
-    // Fetch all ACTIVE sessions that have expired
     const staleSessions = await this.prisma.delegatedSession.findMany({
-      where: {
-        status: 'ACTIVE',
-        expiresAt: { lt: now },
-      },
+      where: { status: 'ACTIVE', expiresAt: { lt: now } },
+      take: 50, // process in batches — remainder handled next sweep
       select: {
         id: true,
         organizationId: true,
-        granteeId: true,
         integrationProvider: true,
         integrationResourceType: true,
         integrationResourceExternalId: true,
@@ -57,87 +67,169 @@ export class SessionExpiryScheduler {
 
     if (staleSessions.length === 0) return;
 
-    this.logger.log(`Session expiry sweep: found ${staleSessions.length} stale session(s)`);
-
-    let expiredCount = 0;
-    let revokedCount = 0;
+    this.logger.log(`[EXPIRY] Sweep 1: ${staleSessions.length} stale ACTIVE session(s)`);
 
     for (const session of staleSessions) {
+      await this.revokeAndExpire(session, 'Session expired — automatic revocation');
+    }
+  }
+
+  // ─── Sweep 2: Retry REVOKE_FAILED sessions ─────────────────────────────────
+
+  private async retryRevokeFailed() {
+    const failedSessions = await this.prisma.delegatedSession.findMany({
+      where: { status: 'REVOKE_FAILED' },
+      take: 50,
+      select: {
+        id: true,
+        organizationId: true,
+        integrationProvider: true,
+        integrationResourceType: true,
+        integrationResourceExternalId: true,
+        integrationReferenceId: true,
+        grantee: { select: { email: true } },
+      },
+    });
+
+    if (failedSessions.length === 0) return;
+
+    this.logger.log(`[EXPIRY] Sweep 2: retrying ${failedSessions.length} REVOKE_FAILED session(s)`);
+
+    for (const session of failedSessions) {
+      await this.revokeAndExpire(session, 'Retry: revocation from previous failed attempt');
+    }
+  }
+
+  // ─── Sweep 3: Clean up stale PENDING_GRANT rows ────────────────────────────
+
+  private async cleanupStalePendingGrant() {
+    const staleThreshold = new Date(Date.now() - 10 * 60 * 1000); // 10 minutes ago
+
+    const stale = await this.prisma.delegatedSession.findMany({
+      where: { status: 'PENDING_GRANT', createdAt: { lt: staleThreshold } },
+      take: 50,
+      select: { id: true, organizationId: true, integrationProvider: true },
+    });
+
+    if (stale.length === 0) return;
+
+    this.logger.warn(
+      `[EXPIRY] Sweep 3: deleting ${stale.length} stale PENDING_GRANT row(s) (process likely crashed during grant)`,
+    );
+
+    for (const session of stale) {
       try {
-        // ── Native Integration: revoke provider access first ──
-        if (
-          session.integrationProvider &&
-          session.integrationResourceExternalId &&
-          session.grantee?.email
-        ) {
-          try {
-            await this.integrationsService.revokeAccess(
-              session.organizationId,
-              session.integrationProvider as any,
-              {
-                resourceId: session.integrationResourceExternalId,
-                resourceType: session.integrationResourceType as any,
-                principalEmail: session.grantee.email,
-                referenceId: session.integrationReferenceId ?? undefined,
-              },
-            );
+        await this.prisma.delegatedSession.delete({ where: { id: session.id } });
 
-            // Emit a rich integration audit event
-            this.eventEmitter.emit('audit.log', {
-              organizationId: session.organizationId,
-              actorId: null, // system action
-              action: 'integration.access_revoked',
-              resourceType: 'SESSION',
-              resourceId: session.id,
-              metadata: {
-                provider: session.integrationProvider,
-                resourceType: session.integrationResourceType,
-                externalId: session.integrationResourceExternalId,
-                username: session.grantee.email,
-                reason: 'Session expired — automatic revocation',
-              },
-            });
+        this.eventEmitter.emit('audit.log', {
+          organizationId: session.organizationId,
+          actorId: null,
+          action: 'session.grant_abandoned',
+          resourceType: 'SESSION',
+          resourceId: session.id,
+          metadata: {
+            provider: session.integrationProvider,
+            reason: 'PENDING_GRANT row older than 10 minutes — process likely crashed',
+          },
+        });
+      } catch (err: unknown) {
+        this.logger.error(`[EXPIRY] Failed to delete stale PENDING_GRANT row ${session.id}: ${(err as Error).message}`);
+      }
+    }
+  }
 
-            revokedCount++;
-          } catch (revokeErr: unknown) {
-            // Log failure but still mark session expired — don't block DB update
-            this.logger.error(
-              `[EXPIRY] Failed to revoke ${session.integrationProvider} access for session ${session.id}: ${(revokeErr as Error).message}`,
-            );
+  // ─── Shared revoke + expire logic ──────────────────────────────────────────
 
-            this.eventEmitter.emit('audit.log', {
-              organizationId: session.organizationId,
-              actorId: null,
-              action: 'integration.access_failed',
-              resourceType: 'SESSION',
-              resourceId: session.id,
-              metadata: {
-                provider: session.integrationProvider,
-                resourceType: session.integrationResourceType,
-                externalId: session.integrationResourceExternalId,
-                username: session.grantee.email,
-                reason: `Auto-revoke failed: ${(revokeErr as Error).message}`,
-              },
-            });
-          }
-        }
+  private async revokeAndExpire(
+    session: {
+      id: string;
+      organizationId: string;
+      integrationProvider: string | null;
+      integrationResourceType: string | null;
+      integrationResourceExternalId: string | null;
+      integrationReferenceId: string | null;
+      grantee: { email: string } | null;
+    },
+    auditReason: string,
+  ) {
+    const isIntegrationBound =
+      session.integrationProvider &&
+      session.integrationResourceExternalId &&
+      session.grantee?.email;
 
-        // ── Mark session EXPIRED in DB ──
+    if (isIntegrationBound) {
+      try {
+        await this.integrationsService.revokeAccess(
+          session.organizationId,
+          session.integrationProvider as any,
+          {
+            resourceId: session.integrationResourceExternalId!,
+            resourceType: session.integrationResourceType ?? undefined,
+            principalEmail: session.grantee!.email,
+            referenceId: session.integrationReferenceId ?? undefined,
+          },
+        );
+
+        // Provider confirmed removal — now safe to mark EXPIRED
         await this.prisma.delegatedSession.update({
           where: { id: session.id },
           data: { status: 'EXPIRED' },
         });
 
-        expiredCount++;
-      } catch (err: unknown) {
+        this.eventEmitter.emit('audit.log', {
+          organizationId: session.organizationId,
+          actorId: null,
+          action: 'integration.access_revoked',
+          resourceType: 'SESSION',
+          resourceId: session.id,
+          metadata: {
+            provider: session.integrationProvider,
+            resourceType: session.integrationResourceType,
+            externalId: session.integrationResourceExternalId,
+            username: session.grantee!.email,
+            reason: auditReason,
+          },
+        });
+
+        this.logger.log(`[EXPIRY] Session ${session.id} revoked on ${session.integrationProvider} → EXPIRED`);
+
+      } catch (revokeErr: unknown) {
+        // Provider unreachable — do NOT mark EXPIRED. Set REVOKE_FAILED so next sweep retries.
         this.logger.error(
-          `[EXPIRY] Error processing session ${session.id}: ${(err as Error).message}`,
+          `[EXPIRY] revokeAccess failed for session ${session.id} on ${session.integrationProvider}: ${(revokeErr as Error).message} → REVOKE_FAILED`,
         );
+
+        await this.prisma.delegatedSession.update({
+          where: { id: session.id },
+          data: { status: 'REVOKE_FAILED' },
+        });
+
+        this.eventEmitter.emit('audit.log', {
+          organizationId: session.organizationId,
+          actorId: null,
+          action: 'integration.access_failed',
+          resourceType: 'SESSION',
+          resourceId: session.id,
+          metadata: {
+            provider: session.integrationProvider,
+            resourceType: session.integrationResourceType,
+            externalId: session.integrationResourceExternalId,
+            username: session.grantee!.email,
+            reason: `Auto-revoke failed: ${(revokeErr as Error).message}. Will retry.`,
+          },
+        });
+      }
+
+    } else {
+      // Plain vault/secret session — no provider to call, expire directly
+      try {
+        await this.prisma.delegatedSession.update({
+          where: { id: session.id },
+          data: { status: 'EXPIRED' },
+        });
+      } catch (err: unknown) {
+        this.logger.error(`[EXPIRY] Failed to expire session ${session.id}: ${(err as Error).message}`);
       }
     }
-
-    this.logger.log(
-      `Session expiry sweep complete: ${expiredCount} expired, ${revokedCount} provider access(es) revoked`,
-    );
   }
 }

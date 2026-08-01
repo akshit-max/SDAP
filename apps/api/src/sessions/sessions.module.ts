@@ -25,6 +25,8 @@ import { IntegrationsService } from '../integrations/integrations.service';
     SessionValidationService,
     SessionExpiryScheduler,
     {
+      // Alias so SessionsService can inject IntegrationsService via @Optional()
+      // without a direct circular-dep import at the class level.
       provide: INTEGRATIONS_SERVICE_TOKEN,
       useExisting: IntegrationsService,
     },

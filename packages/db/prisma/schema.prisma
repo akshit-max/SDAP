@@ -259,10 +259,13 @@ model SecretVersion {
 }
 
 enum SessionStatus {
+  PENDING_GRANT   // Integration-bound: DB row written, grantAccess() not yet confirmed
   ACTIVE
+  REVOKE_FAILED   // revokeAccess() failed; scheduler will retry
   REVOKED
   EXPIRED
 }
+
 
 enum SessionScope {
   VAULT
