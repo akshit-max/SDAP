@@ -8,6 +8,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
     "test": "turbo run test",
+    "release": "turbo run lint && turbo run test && turbo run build && powershell -Command \"New-Item -ItemType Directory -Force -Path apps/web/public/downloads; Compress-Archive -Path apps/extension/dist/* -DestinationPath apps/web/public/downloads/WITHUS-Extension.zip -Force\"",
     "prepare": "husky"
   },
   "devDependencies": {
