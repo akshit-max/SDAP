@@ -22,4 +22,8 @@ export const CreateWebhookSchema = z.object({
   events: z.array(z.enum(WEBHOOK_EVENTS)).min(1, 'Select at least one event'),
   description: z.string().max(200).optional(),
 });
-export type CreateWebhookDto = z.infer<typeof CreateWebhookSchema>;
+export class CreateWebhookDto {
+  url!: string;
+  events!: WebhookEvent[];
+  description?: string;
+}

@@ -17,7 +17,9 @@ import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 const RevealSecretSchema = z.object({
   reason: z.string().min(1, 'Reason is required for audit purposes'),
 });
-type RevealSecretDto = z.infer<typeof RevealSecretSchema>;
+class RevealSecretDto {
+  reason!: string;
+}
 
 /**
  * Programmatic Secret API — for CI/CD pipelines and integrations.
