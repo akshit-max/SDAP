@@ -92,9 +92,9 @@ export class AuditService {
       secretIds.size > 0 ? this.prisma.secret.findMany({ where: { id: { in: Array.from(secretIds) } }, select: { id: true, name: true } }) : [],
     ]);
 
-    const userMap = new Map(users.map(u => [u.id, u.fullName || u.email || u.id]));
-    const vaultMap = new Map(vaults.map(v => [v.id, v.name]));
-    const secretMap = new Map(secrets.map(s => [s.id, s.name]));
+    const userMap = new Map<string, string>(users.map(u => [u.id, u.fullName || u.email || u.id] as [string, string]));
+    const vaultMap = new Map<string, string>(vaults.map(v => [v.id, v.name] as [string, string]));
+    const secretMap = new Map<string, string>(secrets.map(s => [s.id, s.name] as [string, string]));
 
     // Replace in metadata
     return events.map(event => {
