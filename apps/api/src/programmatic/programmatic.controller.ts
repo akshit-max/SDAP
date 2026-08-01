@@ -9,7 +9,7 @@ import {
 import { ApiTags, ApiOperation, ApiSecurity } from '@nestjs/swagger';
 import { ApiKeyGuard } from '../common/guards/api-key.guard';
 import { SecretLifecycleService } from '../vaults/secret-lifecycle.service';
-import { Request as Req } from 'express';
+import type { Request as Req } from 'express';
 import { Request } from '@nestjs/common';
 import { z } from 'zod';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
