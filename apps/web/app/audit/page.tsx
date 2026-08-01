@@ -105,7 +105,7 @@ export default function AuditPage() {
   const { data, isLoading } = useAuditEvents(orgId, {
     action: actionFilter || undefined,
     page: String(page),
-    limit: '20',
+    limit: '10',
   });
 
   const toggleRow = (id: string) => {

@@ -25,6 +25,17 @@ export default function SessionsPage() {
   const [revealingId, setRevealingId] = useState<string | null>(null);
   const [revealModal, setRevealModal] = useState<{ value: string; sessionId: string } | null>(null);
 
+  // Pagination states
+  const [incPage, setIncPage] = useState(1);
+  const [outPage, setOutPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
+
+  const paginatedIncoming = incomingSessions?.slice((incPage - 1) * ITEMS_PER_PAGE, incPage * ITEMS_PER_PAGE);
+  const totalIncPages = incomingSessions ? Math.ceil(incomingSessions.length / ITEMS_PER_PAGE) : 0;
+
+  const paginatedOutgoing = outgoingSessions?.slice((outPage - 1) * ITEMS_PER_PAGE, outPage * ITEMS_PER_PAGE);
+  const totalOutPages = outgoingSessions ? Math.ceil(outgoingSessions.length / ITEMS_PER_PAGE) : 0;
+
   // Prompt modal state (replaces window.prompt for reveal reason)
   const [promptState, setPromptState] = useState<{
     sessionId: string;
@@ -74,7 +85,6 @@ export default function SessionsPage() {
     );
   };
 
-  // Called after the user submits the PromptModal with a reason
   const handleRevealWithReason = async (reason: string) => {
     if (!promptState) return;
     const { sessionId, sessionOrgId } = promptState;
@@ -92,7 +102,6 @@ export default function SessionsPage() {
     }
   };
 
-  // Called after the user confirms revocation
   const handleRevokeConfirmed = () => {
     if (!confirmRevokeId) return;
     const id = confirmRevokeId;
@@ -133,52 +142,76 @@ export default function SessionsPage() {
                 You do not have any incoming delegated sessions.
               </div>
             ) : (
-              <ul className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                {incomingSessions.map((session) => {
-                  const isActive = session.status === SessionStatus.ACTIVE && new Date(session.expiresAt) > new Date();
-                  return (
-                    <li key={session.id} className="p-4 hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors">
-                      <div className="flex items-center justify-between gap-4 flex-wrap">
-                        {/* Left: scope + resource */}
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                            {session.scope} Access
-                          </p>
-                          <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">
-                            {session.resourceName || session.resourceId}
-                          </p>
-                          <p className="mt-0.5 text-[10px] text-slate-400 dark:text-slate-500 font-medium">
-                            Granted By: {session.grantor?.fullName || session.grantor?.email || session.grantorId}
-                          </p>
-                        </div>
-
-                        {/* Right: meta + actions */}
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                          <div className="text-[11px] text-slate-500 dark:text-slate-400 flex flex-col items-end gap-0.5 font-medium whitespace-nowrap">
-                            <span>{formatExpiry(session.expiresAt)}</span>
-                            <span>Uses: {session.revealCount} / {session.maxReveals ?? '∞'}</span>
-                          </div>
-                          {getStatusBadge(session.status, session.expiresAt)}
-                          {isActive && session.scope === 'SECRET' && (
-                            <button
-                              onClick={() => setPromptState({ sessionId: session.id, sessionOrgId: session.organizationId })}
-                              disabled={revealingId === session.id}
-                              aria-label="Reveal secret"
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-md font-semibold text-[11px] transition-colors shadow-sm disabled:opacity-60"
-                            >
-                              {revealingId === session.id
-                                ? <Loader2 className="w-3 h-3 animate-spin" />
-                                : <Eye className="w-3 h-3" />
-                              }
-                              Reveal
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800/50">
+                  <thead className="bg-slate-50/50 dark:bg-slate-900/50">
+                    <tr>
+                      <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Resource</th>
+                      <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Granted By</th>
+                      <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status / Uses</th>
+                      <th scope="col" className="px-5 py-2.5 text-right text-[10px] font-bold text-slate-400 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-100 dark:divide-slate-800/50">
+                    {paginatedIncoming?.map((session) => {
+                      const isActive = session.status === SessionStatus.ACTIVE && new Date(session.expiresAt) > new Date();
+                      return (
+                        <tr key={session.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors">
+                          <td className="px-5 py-3 whitespace-nowrap">
+                            <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                              {session.scope} Access
+                            </p>
+                            <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">
+                              {session.resourceName || session.resourceId}
+                            </p>
+                          </td>
+                          <td className="px-5 py-3 whitespace-nowrap">
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                              {session.grantor?.fullName || session.grantor?.email || session.grantorId}
+                            </p>
+                          </td>
+                          <td className="px-5 py-3 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              {getStatusBadge(session.status, session.expiresAt)}
+                              <div className="text-[10px] text-slate-500 dark:text-slate-400 flex flex-col font-medium">
+                                <span>{formatExpiry(session.expiresAt)}</span>
+                                <span>Uses: {session.revealCount} / {session.maxReveals ?? '∞'}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-5 py-3 whitespace-nowrap text-right">
+                            {isActive && session.scope === 'SECRET' && (
+                              <button
+                                onClick={() => setPromptState({ sessionId: session.id, sessionOrgId: session.organizationId })}
+                                disabled={revealingId === session.id}
+                                aria-label="Reveal secret"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-md font-semibold text-[11px] transition-colors shadow-sm disabled:opacity-60"
+                              >
+                                {revealingId === session.id
+                                  ? <Loader2 className="w-3 h-3 animate-spin" />
+                                  : <Eye className="w-3 h-3" />
+                                }
+                                Reveal
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {totalIncPages > 1 && (
+                  <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-between">
+                    <p className="text-xs text-slate-400 font-medium">
+                      Page <span className="font-bold text-slate-700 dark:text-slate-200">{incPage}</span> of <span className="font-bold text-slate-700 dark:text-slate-200">{totalIncPages}</span>
+                    </p>
+                    <div className="flex gap-2">
+                      <button onClick={() => setIncPage(p => Math.max(1, p - 1))} disabled={incPage === 1} className="px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg transition-colors hover:bg-slate-50 disabled:opacity-40">Prev</button>
+                      <button onClick={() => setIncPage(p => Math.min(totalIncPages, p + 1))} disabled={incPage === totalIncPages} className="px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg transition-colors hover:bg-slate-50 disabled:opacity-40">Next</button>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </section>
@@ -194,46 +227,70 @@ export default function SessionsPage() {
                 You have not created any delegated sessions.
               </div>
             ) : (
-              <ul className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                {outgoingSessions.map((session) => {
-                  const isActive = session.status === SessionStatus.ACTIVE && new Date(session.expiresAt) > new Date();
-                  return (
-                    <li key={session.id} className="p-4 hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors">
-                      <div className="flex items-center justify-between gap-4 flex-wrap">
-                        {/* Left: grantee + scope */}
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                            {session.grantee?.fullName || session.grantee?.email || session.granteeId}
-                          </p>
-                          <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                            {session.scope} · {session.resourceName || session.resourceId}
-                          </p>
-                        </div>
-
-                        {/* Right: meta + revoke */}
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                          <div className="text-[11px] text-slate-500 dark:text-slate-400 flex flex-col items-end gap-0.5 font-medium whitespace-nowrap">
-                            <span>{formatExpiry(session.expiresAt)}</span>
-                            <span>Uses: {session.revealCount} / {session.maxReveals ?? '∞'}</span>
-                          </div>
-                          {getStatusBadge(session.status, session.expiresAt)}
-                          {isActive && (
-                            <button
-                              onClick={() => setConfirmRevokeId(session.id)}
-                              disabled={isRevoking}
-                              aria-label="Revoke session"
-                              className="p-1.5 text-slate-400 hover:text-red-500 dark:hover:text-red-400 rounded transition-colors disabled:opacity-50"
-                              title="Revoke Session"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800/50">
+                  <thead className="bg-slate-50/50 dark:bg-slate-900/50">
+                    <tr>
+                      <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Grantee</th>
+                      <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Scope / Resource</th>
+                      <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status / Uses</th>
+                      <th scope="col" className="px-5 py-2.5 text-right text-[10px] font-bold text-slate-400 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-100 dark:divide-slate-800/50">
+                    {paginatedOutgoing?.map((session) => {
+                      const isActive = session.status === SessionStatus.ACTIVE && new Date(session.expiresAt) > new Date();
+                      return (
+                        <tr key={session.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors">
+                          <td className="px-5 py-3 whitespace-nowrap">
+                            <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                              {session.grantee?.fullName || session.grantee?.email || session.granteeId}
+                            </p>
+                          </td>
+                          <td className="px-5 py-3 whitespace-nowrap">
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                              {session.scope} · {session.resourceName || session.resourceId}
+                            </p>
+                          </td>
+                          <td className="px-5 py-3 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              {getStatusBadge(session.status, session.expiresAt)}
+                              <div className="text-[10px] text-slate-500 dark:text-slate-400 flex flex-col font-medium">
+                                <span>{formatExpiry(session.expiresAt)}</span>
+                                <span>Uses: {session.revealCount} / {session.maxReveals ?? '∞'}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-5 py-3 whitespace-nowrap text-right">
+                            {isActive && (
+                              <button
+                                onClick={() => setConfirmRevokeId(session.id)}
+                                disabled={isRevoking}
+                                aria-label="Revoke session"
+                                className="p-1.5 text-slate-400 hover:text-red-500 dark:hover:text-red-400 rounded transition-colors disabled:opacity-50 inline-flex"
+                                title="Revoke Session"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {totalOutPages > 1 && (
+                  <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-between">
+                    <p className="text-xs text-slate-400 font-medium">
+                      Page <span className="font-bold text-slate-700 dark:text-slate-200">{outPage}</span> of <span className="font-bold text-slate-700 dark:text-slate-200">{totalOutPages}</span>
+                    </p>
+                    <div className="flex gap-2">
+                      <button onClick={() => setOutPage(p => Math.max(1, p - 1))} disabled={outPage === 1} className="px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg transition-colors hover:bg-slate-50 disabled:opacity-40">Prev</button>
+                      <button onClick={() => setOutPage(p => Math.min(totalOutPages, p + 1))} disabled={outPage === totalOutPages} className="px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg transition-colors hover:bg-slate-50 disabled:opacity-40">Next</button>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </section>

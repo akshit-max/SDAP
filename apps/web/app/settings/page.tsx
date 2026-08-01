@@ -16,6 +16,10 @@ export default function SettingsPage() {
   const [orgName, setOrgName] = useState(organization?.name || '');
   const { mutate: updateOrg, isPending: orgPending } = useUpdateOrganization(organization?.id || '');
 
+  useEffect(() => {
+    if (organization?.name) setOrgName(organization.name);
+  }, [organization?.name]);
+
   const handleOrgSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!orgName.trim()) return;

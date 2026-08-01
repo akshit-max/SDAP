@@ -288,6 +288,14 @@ model DelegatedSession {
   maxReveals  Int? // Optional limit on reveals
   revealCount Int           @default(0)
 
+  // ─── Integration binding ─────────────────────────────────────────────────
+  // Populated when a native provider integration is used (e.g. Vercel, GitHub).
+  // Gives the revocation worker all context it needs — no guessing.
+  integrationProvider            String? // e.g. "VERCEL" | "GITHUB"
+  integrationResourceType        String? // e.g. "TEAM" | "ORGANIZATION" | "REPOSITORY"
+  integrationResourceExternalId  String? // e.g. teamId, orgLogin, "owner/repo"
+  integrationReferenceId         String? // Provider-issued ID returned by grantAccess (uid, username, etc.)
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   revokedAt DateTime?

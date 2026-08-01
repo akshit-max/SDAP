@@ -58,8 +58,11 @@ export interface IntegrationResource {
   type: 'TEAM' | 'ORGANIZATION' | 'REPOSITORY' | 'PROJECT' | 'ACCOUNT';
 }
 
+export type IntegrationResourceType = 'TEAM' | 'ORGANIZATION' | 'REPOSITORY' | 'PROJECT' | 'ACCOUNT';
+
 export interface GrantAccessInput {
   resourceId: string;
+  resourceType?: IntegrationResourceType;
   principalEmail: string;
   role?: string;
 }
@@ -72,6 +75,7 @@ export interface GrantAccessResult {
 
 export interface RevokeAccessInput {
   resourceId: string;
+  resourceType?: IntegrationResourceType;
   principalEmail: string;
   referenceId?: string;
 }

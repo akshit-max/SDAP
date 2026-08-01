@@ -15,6 +15,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { refreshContext } = useAuth();
   
+  const LogoSVG = ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+      <rect x="40" y="10" width="20" height="80" rx="10" transform="rotate(0 50 50)" fill="currentColor" opacity="0.8" />
+      <rect x="40" y="10" width="20" height="80" rx="10" transform="rotate(60 50 50)" fill="currentColor" opacity="0.9" />
+      <rect x="40" y="10" width="20" height="80" rx="10" transform="rotate(120 50 50)" fill="currentColor" />
+    </svg>
+  );
+  
   // Persist sidebar state in localStorage if possible, or just default to false
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -67,9 +75,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           "h-14 flex items-center border-b border-slate-200/80 dark:border-slate-800",
           isCollapsed ? "justify-center px-0" : "px-5"
         )}>
-          <Shield className={clsx("w-5 h-5 text-slate-900 dark:text-slate-100 flex-shrink-0", !isCollapsed && "mr-2")} />
+          <LogoSVG className={clsx("w-5 h-5 text-slate-900 dark:text-slate-100 flex-shrink-0", !isCollapsed && "mr-2")} />
           {!isCollapsed && (
-            <span className="font-semibold text-sm tracking-tight text-slate-900 dark:text-slate-100 truncate">WITHUS Vault</span>
+            <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-slate-100 truncate">WithUs</span>
           )}
         </div>
         

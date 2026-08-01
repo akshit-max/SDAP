@@ -83,9 +83,16 @@ export class VercelAdapter implements IIntegrationAdapter {
       `/v1/teams/${input.resourceId}/members`,
       token,
       { email: input.principalEmail, role },
-    );
+    ).catch((err: Error) => {
+      // Vercel returns 400/409 if already a member — treat as success
+      const msg = err.message;
+      if (msg.includes('409') || msg.includes('400') || msg.includes('already')) {
+        this.logger.warn(`[VERCEL] ${input.principalEmail} already in team — skipping invite`);
+        return { uid: input.principalEmail, confirmed: true };
+      }
+      throw err;
+    });
 
-    // Vercel returns { uid, role } on direct add, or invitation data for pending invites
     const referenceId = res?.uid || res?.id || input.principalEmail;
     const status = res?.confirmed === false ? 'PENDING_INVITE' : 'ACTIVE';
 
@@ -135,7 +142,8 @@ export class VercelAdapter implements IIntegrationAdapter {
       method: 'DELETE',
       headers: this.headers(token),
     });
-    if (!res.ok) {
+    // 404 = already removed — idempotent success
+    if (!res.ok && res.status !== 404) {
       const text = await res.text();
       throw new Error(`Vercel API error ${res.status}: ${text}`);
     }

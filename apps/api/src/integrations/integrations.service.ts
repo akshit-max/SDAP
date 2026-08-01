@@ -174,7 +174,7 @@ export class IntegrationsService {
   async revokeAccess(
     organizationId: string,
     provider: IntegrationProvider,
-    input: { resourceId: string; principalEmail: string; referenceId?: string },
+    input: { resourceId: string; resourceType?: string; principalEmail: string; referenceId?: string },
   ) {
     const conn = await this.findConnection(organizationId, provider);
     const adapter = this.registry.getAdapter(provider);
@@ -184,8 +184,9 @@ export class IntegrationsService {
       organizationId,
       provider,
     );
-    return adapter.revokeAccess(token, input);
+    return adapter.revokeAccess(token, input as any);
   }
+
 
   // ─── List Connections ────────────────────────────────────────────────────────
 

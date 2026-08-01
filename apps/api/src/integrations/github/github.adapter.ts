@@ -18,6 +18,11 @@ const GITHUB_API = 'https://api.github.com';
  * Requires: read:org, admin:org (for org member management)
  *           repo (for repository collaborator management)
  *
+ * Supports a generic resource model:
+ *   - resourceType = "ORGANIZATION" → manage org membership
+ *   - resourceType = "REPOSITORY"   → manage repo collaborators (owner/repo)
+ *   - resourceType = "TEAM"         → manage team membership (orgSlug/teamSlug)
+ *
  * GitHub API docs: https://docs.github.com/en/rest
  */
 @Injectable()
@@ -52,59 +57,138 @@ export class GitHubAdapter implements IIntegrationAdapter {
   // ─── List Resources ─────────────────────────────────────────────────────────
 
   /**
-   * Returns the authenticated user's GitHub organizations.
-   * Each org login can be used as a resourceId in grantAccess / revokeAccess.
+   * Returns the authenticated user's GitHub organizations AND their repositories.
+   * Callers can filter by resourceType to select which they want.
    */
   async listResources(token: string): Promise<IntegrationResource[]> {
-    const orgs: any[] = await this.get('/user/orgs?per_page=100', token);
-    return (orgs || []).map((o) => ({
+    const [orgs, repos] = await Promise.all([
+      this.get('/user/orgs?per_page=100', token).catch(() => []),
+      this.get('/user/repos?per_page=100&affiliation=owner,organization_member', token).catch(() => []),
+    ]);
+
+    const orgResources: IntegrationResource[] = (orgs as any[]).map((o) => ({
       id: o.login,
       name: o.login,
-      url: o.url,
+      url: `https://github.com/${o.login}`,
       type: 'ORGANIZATION' as const,
     }));
+
+    const repoResources: IntegrationResource[] = (repos as any[]).map((r) => ({
+      id: r.full_name, // "owner/repo"
+      name: r.full_name,
+      url: r.html_url,
+      type: 'REPOSITORY' as const,
+    }));
+
+    return [...orgResources, ...repoResources];
   }
 
   // ─── Grant Access ───────────────────────────────────────────────────────────
 
   /**
-   * Invite a user to a GitHub Organization (or add as outside collaborator).
-   * resourceId = org login (e.g. "acme-corp")
-   * principalEmail = GitHub username OR email (GitHub invites by username for orgs)
-   * role = "member" | "admin" (defaults to "member")
+   * Grant access to a GitHub resource.
+   * Routes to the correct API endpoint based on resourceType:
+   *   - ORGANIZATION: PUT /orgs/{org}/memberships/{username}
+   *   - REPOSITORY:   PUT /repos/{owner}/{repo}/collaborators/{username}
+   *   - TEAM:         PUT /orgs/{org}/teams/{team_slug}/memberships/{username}
    *
-   * Note: GitHub org invitations are async — the user must accept the invite.
+   * Idempotent: if the user already has the requested access, returns success without error.
    */
   async grantAccess(token: string, input: GrantAccessInput): Promise<GrantAccessResult> {
+    const resourceType = input.resourceType ?? 'ORGANIZATION';
     const role = input.role || 'member';
-    this.logger.log(`[GITHUB] Inviting ${input.principalEmail} to org ${input.resourceId} as ${role}`);
 
-    // GitHub org membership endpoint: PUT /orgs/{org}/memberships/{username}
-    const res = await this.put(
-      `/orgs/${input.resourceId}/memberships/${input.principalEmail}`,
-      token,
-      { role },
+    this.logger.log(
+      `[GITHUB] grantAccess type=${resourceType} resource=${input.resourceId} principal=${input.principalEmail} role=${role}`,
     );
 
-    const status = res?.state === 'active' ? 'ACTIVE' : 'PENDING_INVITE';
-    return {
-      referenceId: input.principalEmail, // GitHub uses username as stable ref
-      status,
-      meta: res,
-    };
+    switch (resourceType) {
+      case 'REPOSITORY': {
+        // resourceId = "owner/repo"
+        const permission = role === 'admin' ? 'admin' : role === 'write' ? 'push' : 'pull';
+        const res = await this.put(
+          `/repos/${input.resourceId}/collaborators/${input.principalEmail}`,
+          token,
+          { permission },
+        ).catch((err) => {
+          // 422 = already a collaborator — treat as success
+          if (String(err.message).includes('422')) return { referenceId: input.principalEmail };
+          throw err;
+        });
+        return {
+          referenceId: input.principalEmail,
+          status: (res as any)?.id ? 'PENDING_INVITE' : 'ACTIVE',
+          meta: res as any,
+        };
+      }
+
+      case 'TEAM': {
+        // resourceId = "orgSlug/team-slug"
+        const [org, teamSlug] = input.resourceId.split('/');
+        const teamRole = role === 'maintainer' ? 'maintainer' : 'member';
+        const res = await this.put(
+          `/orgs/${org}/teams/${teamSlug}/memberships/${input.principalEmail}`,
+          token,
+          { role: teamRole },
+        );
+        const status = (res as any)?.state === 'active' ? 'ACTIVE' : 'PENDING_INVITE';
+        return { referenceId: input.principalEmail, status, meta: res as any };
+      }
+
+      case 'ORGANIZATION':
+      default: {
+        // resourceId = orgLogin
+        const orgRole = role === 'admin' ? 'admin' : 'member';
+        const res = await this.put(
+          `/orgs/${input.resourceId}/memberships/${input.principalEmail}`,
+          token,
+          { role: orgRole },
+        ).catch((err) => {
+          // 422 = already a member — treat as success
+          if (String(err.message).includes('422')) return { state: 'active' };
+          throw err;
+        });
+        const status = (res as any)?.state === 'active' ? 'ACTIVE' : 'PENDING_INVITE';
+        return { referenceId: input.principalEmail, status, meta: res as any };
+      }
+    }
   }
 
   // ─── Revoke Access ──────────────────────────────────────────────────────────
 
   /**
-   * Remove a user from a GitHub Organization.
-   * resourceId = org login, principalEmail = GitHub username.
+   * Revoke access from a GitHub resource.
+   * Routes based on resourceType. Idempotent: 404 (already removed) is treated as success.
    */
   async revokeAccess(token: string, input: RevokeAccessInput): Promise<void> {
+    const resourceType = input.resourceType ?? 'ORGANIZATION';
     const username = input.referenceId || input.principalEmail;
-    this.logger.log(`[GITHUB] Removing ${username} from org ${input.resourceId}`);
-    // DELETE /orgs/{org}/members/{username}
-    await this.delete(`/orgs/${input.resourceId}/members/${username}`, token);
+
+    this.logger.log(
+      `[GITHUB] revokeAccess type=${resourceType} resource=${input.resourceId} principal=${username}`,
+    );
+
+    switch (resourceType) {
+      case 'REPOSITORY': {
+        // DELETE /repos/{owner}/{repo}/collaborators/{username}
+        await this.delete(`/repos/${input.resourceId}/collaborators/${username}`, token);
+        break;
+      }
+
+      case 'TEAM': {
+        // DELETE /orgs/{org}/teams/{team_slug}/memberships/{username}
+        const [org, teamSlug] = input.resourceId.split('/');
+        await this.delete(`/orgs/${org}/teams/${teamSlug}/memberships/${username}`, token);
+        break;
+      }
+
+      case 'ORGANIZATION':
+      default: {
+        // DELETE /orgs/{org}/members/{username}
+        await this.delete(`/orgs/${input.resourceId}/members/${username}`, token);
+        break;
+      }
+    }
   }
 
   // ─── HTTP Helpers ───────────────────────────────────────────────────────────
@@ -130,6 +214,8 @@ export class GitHubAdapter implements IIntegrationAdapter {
       const text = await res.text();
       throw new Error(`GitHub API error ${res.status}: ${text}`);
     }
+    // 204 No Content is a valid success response
+    if (res.status === 204) return {};
     return res.json();
   }
 
@@ -138,6 +224,7 @@ export class GitHubAdapter implements IIntegrationAdapter {
       method: 'DELETE',
       headers: this.headers(token),
     });
+    // 404 = already removed — idempotent success
     if (!res.ok && res.status !== 404) {
       const text = await res.text();
       throw new Error(`GitHub API error ${res.status}: ${text}`);

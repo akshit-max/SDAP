@@ -145,4 +145,48 @@ export class AuditListenerService {
       { reason: event.reason },
     );
   }
+
+  // ─── Integration Events ───────────────────────────────────────────────────
+
+  /**
+   * Generic passthrough handler: services emit 'audit.log' with a fully-formed
+   * payload. This lets the sessions service and expiry scheduler emit rich events
+   * without knowing about the audit module internals.
+   */
+  @OnEvent('audit.log')
+  async handleGenericAuditLog(event: any) {
+    await this.persistEvent(
+      event.organizationId,
+      event.action,
+      event.actorId ?? null,
+      event.resourceType ?? null,
+      event.resourceId ?? null,
+      event.metadata ?? {},
+    );
+  }
+
+  @OnEvent('integration.connected')
+  async handleIntegrationConnected(event: any) {
+    await this.persistEvent(
+      event.organizationId,
+      'integration.connected',
+      event.actorId,
+      'INTEGRATION',
+      null,
+      { provider: event.provider },
+    );
+  }
+
+  @OnEvent('integration.disconnected')
+  async handleIntegrationDisconnected(event: any) {
+    await this.persistEvent(
+      event.organizationId,
+      'integration.disconnected',
+      event.actorId,
+      'INTEGRATION',
+      null,
+      { provider: event.provider },
+    );
+  }
 }
+

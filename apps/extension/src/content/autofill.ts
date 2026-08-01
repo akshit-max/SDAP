@@ -122,6 +122,16 @@ async function handleAutofillRequest(): Promise<void> {
     fillField(fields.usernameSelector, username);
     fillField(fields.passwordSelector, password);
     provider?.afterFill?.();
+
+    // Auto-submit — find the submit button and click it
+    if (fields.submitSelector) {
+      const submitBtn = document.querySelector<HTMLElement>(fields.submitSelector);
+      if (submitBtn) {
+        // Small delay so React/Vue state can settle after the input events
+        setTimeout(() => submitBtn.click(), 120);
+      }
+    }
+
     removeBadge();
   } catch {
     showError('Autofill failed — please fill in manually.');
@@ -190,6 +200,12 @@ window.addEventListener('withus:autofill', async (e: Event) => {
     fillField(fields.usernameSelector, username);
     fillField(fields.passwordSelector, password);
     provider?.afterFill?.();
+
+    if (fields.submitSelector) {
+      const submitBtn = document.querySelector<HTMLElement>(fields.submitSelector);
+      if (submitBtn) setTimeout(() => submitBtn.click(), 120);
+    }
+
     removeBadge();
   } finally {
     (response.data as any) = null;

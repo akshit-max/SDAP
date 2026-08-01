@@ -3,6 +3,9 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  Logger,
+  Optional,
+  Inject,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -13,13 +16,20 @@ import { DelegatedSessionCreatedEvent } from './events/session-created.event';
 import { DelegatedSessionRevokedEvent } from './events/session-revoked.event';
 import { CreateSessionDto } from '@repo/types';
 
+export const INTEGRATIONS_SERVICE_TOKEN = 'INTEGRATIONS_SERVICE';
+
 @Injectable()
 export class SessionsService {
+  private readonly logger = new Logger(SessionsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
     private readonly validationService: SessionValidationService,
     private readonly secretLifecycleService: SecretLifecycleService,
+    // Injected optionally to avoid circular dependency at startup.
+    // The IntegrationsModule exports IntegrationsService; SessionsModule imports it via forwardRef.
+    @Optional() @Inject(INTEGRATIONS_SERVICE_TOKEN) private readonly integrationsService: any,
   ) {}
 
   async createSession(
@@ -55,6 +65,77 @@ export class SessionsService {
       }
     }
 
+    // ── Integration binding from DTO ────────────────────────────────────────
+    // The session DTO may carry integration context when the request was
+    // submitted via the integrations flow (e.g. "grant Vercel team access").
+    const integrationProvider: string | undefined = (dto as any).integrationProvider;
+    const integrationResourceType: string | undefined = (dto as any).integrationResourceType;
+    const integrationResourceExternalId: string | undefined = (dto as any).integrationResourceExternalId;
+
+    // ── Grant provider access if integration is bound ───────────────────────
+    let integrationReferenceId: string | undefined;
+
+    if (integrationProvider && integrationResourceExternalId && this.integrationsService) {
+      try {
+        // Look up the grantee's email to pass to the provider
+        const grantee = await db.user.findUnique({
+          where: { id: dto.granteeId },
+          select: { email: true },
+        });
+
+        if (grantee?.email) {
+          const result = await this.integrationsService.grantAccess(
+            organizationId,
+            integrationProvider,
+            {
+              resourceId: integrationResourceExternalId,
+              resourceType: integrationResourceType,
+              principalEmail: grantee.email,
+              role: (dto as any).integrationRole,
+            },
+          );
+
+          integrationReferenceId = result.referenceId;
+
+          this.eventEmitter.emit('audit.log', {
+            organizationId,
+            actorId: grantorId,
+            action: 'integration.access_granted',
+            resourceType: 'SESSION',
+            metadata: {
+              provider: integrationProvider,
+              resourceType: integrationResourceType,
+              externalId: integrationResourceExternalId,
+              username: grantee.email,
+              referenceId: integrationReferenceId,
+              status: result.status,
+            },
+          });
+
+          this.logger.log(
+            `[SESSION] ${integrationProvider} access granted: ${grantee.email} → ${integrationResourceExternalId} (ref: ${integrationReferenceId})`,
+          );
+        }
+      } catch (err: unknown) {
+        // Emit a failure audit event but don't block session creation
+        this.logger.error(
+          `[SESSION] Failed to grant ${integrationProvider} access: ${(err as Error).message}`,
+        );
+
+        this.eventEmitter.emit('audit.log', {
+          organizationId,
+          actorId: grantorId,
+          action: 'integration.access_failed',
+          resourceType: 'SESSION',
+          metadata: {
+            provider: integrationProvider,
+            externalId: integrationResourceExternalId,
+            reason: (err as Error).message,
+          },
+        });
+      }
+    }
+
     const session = await db.delegatedSession.create({
       data: {
         organizationId,
@@ -66,6 +147,11 @@ export class SessionsService {
         expiresAt: new Date(dto.expiresAt),
         maxReveals: dto.maxReveals,
         status: 'ACTIVE',
+        // Integration binding — stored for deterministic revocation
+        integrationProvider: integrationProvider ?? null,
+        integrationResourceType: integrationResourceType ?? null,
+        integrationResourceExternalId: integrationResourceExternalId ?? null,
+        integrationReferenceId: integrationReferenceId ?? null,
       },
     });
 
@@ -86,8 +172,6 @@ export class SessionsService {
 
   async getIncomingSessions(organizationId: string, userId: string) {
     const where: any = { granteeId: userId };
-    // When called from the org-scoped endpoint, restrict to that org.
-    // When called from the global endpoint (organizationId = ''), return all.
     if (organizationId) {
       where.organizationId = organizationId;
     }
@@ -114,9 +198,6 @@ export class SessionsService {
 
   /**
    * Batch-enriches a list of sessions with their resource names.
-   * Executes exactly 2 queries total (one for secrets, one for vaults)
-   * regardless of how many sessions are in the list.
-   * Replaces the previous N+1 pattern of findUnique per session.
    */
   private async enrichSessionsWithResourceNames<T extends { scope: string; resourceId: string }>(sessions: T[]) {
     const secretIds = sessions.filter(s => s.scope === 'SECRET').map(s => s.resourceId);
@@ -152,6 +233,7 @@ export class SessionsService {
   ) {
     const session = await this.prisma.delegatedSession.findUnique({
       where: { id: sessionId },
+      include: { grantee: { select: { email: true } } },
     });
 
     if (!session || session.organizationId !== organizationId) {
@@ -174,6 +256,58 @@ export class SessionsService {
       throw new BadRequestException(
         `Cannot revoke a session that is ${session.status.toLowerCase()}.`,
       );
+    }
+
+    // ── Revoke provider access if integration-bound ───────────────────────
+    if (
+      session.integrationProvider &&
+      session.integrationResourceExternalId &&
+      session.grantee?.email &&
+      this.integrationsService
+    ) {
+      try {
+        await this.integrationsService.revokeAccess(
+          organizationId,
+          session.integrationProvider,
+          {
+            resourceId: session.integrationResourceExternalId,
+            resourceType: session.integrationResourceType,
+            principalEmail: session.grantee.email,
+            referenceId: session.integrationReferenceId ?? undefined,
+          },
+        );
+
+        this.eventEmitter.emit('audit.log', {
+          organizationId,
+          actorId: userId,
+          action: 'integration.access_revoked',
+          resourceType: 'SESSION',
+          resourceId: sessionId,
+          metadata: {
+            provider: session.integrationProvider,
+            resourceType: session.integrationResourceType,
+            externalId: session.integrationResourceExternalId,
+            username: session.grantee.email,
+            reason: 'Manual revocation by grantor/admin',
+          },
+        });
+      } catch (err: unknown) {
+        this.logger.error(
+          `[REVOKE] Failed to remove ${session.integrationProvider} access for session ${sessionId}: ${(err as Error).message}`,
+        );
+        // Don't block the revocation — mark the session revoked anyway
+        this.eventEmitter.emit('audit.log', {
+          organizationId,
+          actorId: userId,
+          action: 'integration.access_failed',
+          resourceType: 'SESSION',
+          resourceId: sessionId,
+          metadata: {
+            provider: session.integrationProvider,
+            reason: `Manual revoke failed: ${(err as Error).message}`,
+          },
+        });
+      }
     }
 
     const updated = await this.prisma.delegatedSession.update({
@@ -199,7 +333,6 @@ export class SessionsService {
     granteeId: string,
     reason: string,
   ) {
-    // 1. Fetch Session
     const session = await this.prisma.delegatedSession.findUnique({
       where: { id: sessionId },
     });
@@ -208,33 +341,25 @@ export class SessionsService {
       throw new NotFoundException('Session not found.');
     }
 
-    // 2. Validate Session
     this.validationService.validateSessionForUse(session, granteeId);
 
-    // Ensure it targets a secret specifically. If it targets a vault, we would need the secretId passed in.
-    // To keep it simple, Phase 5 reveals require the session to strictly target a SECRET.
     if (session.scope !== 'SECRET') {
       throw new BadRequestException(
         'Session must be scoped to a SECRET to reveal it directly. Vault scoped sessions require secret ID.',
       );
     }
 
-    // 3. Delegate to SecretLifecycleService using Prisma transaction to atomically increment reveal count
     return this.prisma.$transaction(async (tx) => {
-      // Re-fetch with lock
       const lockedSession = await tx.delegatedSession.findUniqueOrThrow({
         where: { id: sessionId },
       });
 
       this.validationService.validateSessionForUse(lockedSession, granteeId);
 
-      // 4. Increment Reveal Count via Optimistic Concurrency (or direct increment if possible)
-      // Prisma's `increment` is atomic in the database, meaning `UPDATE ... SET revealCount = revealCount + 1`
-      // However, to strictly prevent TOCTOU against `maxReveals`, we should use a WHERE clause with the current count.
       const updateResult = await tx.delegatedSession.updateMany({
         where: {
           id: sessionId,
-          revealCount: lockedSession.revealCount, // Optimistic Concurrency Check
+          revealCount: lockedSession.revealCount,
         },
         data: {
           revealCount: { increment: 1 },
@@ -247,7 +372,6 @@ export class SessionsService {
         );
       }
 
-      // Call SecretLifecycleService, passing the transaction to guarantee atomicity
       const plaintext = await this.secretLifecycleService.revealSecret(
         {
           organizationId,
@@ -259,7 +383,6 @@ export class SessionsService {
         tx,
       );
 
-      // 5. Auto-expire if max reached
       if (
         lockedSession.maxReveals !== null &&
         lockedSession.revealCount + 1 >= lockedSession.maxReveals
