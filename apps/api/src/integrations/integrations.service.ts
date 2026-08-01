@@ -9,12 +9,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { IntegrationProvider, IntegrationStatus } from './core/integration-types';
 import { IntegrationRegistry } from './core/integration-registry.service';
 import { IntegrationEncryptionService } from './core/integration-encryption.service';
-
-export interface ConnectIntegrationDto {
-  provider: IntegrationProvider;
-  /** The PAT to store — will be encrypted before persisting */
-  token: string;
-}
+import { ConnectIntegrationDto, GrantIntegrationAccessDto, RevokeIntegrationAccessDto } from './integrations.dto';
 
 @Injectable()
 export class IntegrationsService {
@@ -156,7 +151,7 @@ export class IntegrationsService {
   async grantAccess(
     organizationId: string,
     provider: IntegrationProvider,
-    input: { resourceId: string; principalEmail: string; role?: string },
+    dto: GrantIntegrationAccessDto,
   ) {
     const conn = await this.findConnection(organizationId, provider);
     const adapter = this.registry.getAdapter(provider);
@@ -166,7 +161,7 @@ export class IntegrationsService {
       organizationId,
       provider,
     );
-    return adapter.grantAccess(token, input);
+    return adapter.grantAccess(token, dto);
   }
 
   // ─── Revoke Access ───────────────────────────────────────────────────────────
@@ -174,7 +169,7 @@ export class IntegrationsService {
   async revokeAccess(
     organizationId: string,
     provider: IntegrationProvider,
-    input: { resourceId: string; resourceType?: string; principalEmail: string; referenceId?: string },
+    dto: RevokeIntegrationAccessDto,
   ) {
     const conn = await this.findConnection(organizationId, provider);
     const adapter = this.registry.getAdapter(provider);
@@ -184,7 +179,7 @@ export class IntegrationsService {
       organizationId,
       provider,
     );
-    return adapter.revokeAccess(token, input as any);
+    return adapter.revokeAccess(token, dto);
   }
 
 
