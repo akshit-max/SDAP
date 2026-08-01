@@ -282,8 +282,8 @@ export class SessionsService {
         : [],
     ]);
 
-    const secretMap = new Map<string, string>(secrets.map(s => [s.id, s.name]));
-    const vaultMap = new Map<string, string>(vaults.map(v => [v.id, v.name]));
+    const secretMap = new Map<string, string>(secrets.map(s => [s.id, s.name] as [string, string]));
+    const vaultMap = new Map<string, string>(vaults.map(v => [v.id, v.name] as [string, string]));
 
     return sessions.map(s => ({
       ...s,
