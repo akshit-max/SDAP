@@ -52,15 +52,10 @@ export class AuthSession {
       } else {
         localStorage.removeItem(STORAGE_KEYS.ORG);
       }
-      // Set shadow cookie for Next.js Edge Middleware (because API cookies are on a different domain)
-      document.cookie = `sdap_token=true; path=/; max-age=3600; SameSite=Lax`;
     }
   }
 
   static clear() {
     clearAuthStorage();
-    if (typeof document !== 'undefined') {
-      document.cookie = `sdap_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-    }
   }
 }

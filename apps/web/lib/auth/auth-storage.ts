@@ -32,6 +32,5 @@ export const AUTH_COOKIE_NAME = 'sdap_token';
 export function clearAuthStorage(): void {
   if (typeof window === 'undefined') return;
   Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
-  document.cookie = 'sdap_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
 }
 

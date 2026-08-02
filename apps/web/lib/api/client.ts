@@ -34,7 +34,7 @@ async function attemptSilentRefresh(): Promise<boolean> {
     }
 
     await axios.post(
-      `/api/proxy/auth/refresh`,
+      `/api/v1/auth/refresh`,
       {},
       { 
         withCredentials: true,
@@ -59,7 +59,7 @@ function forceLogout() {
     const csrfMatch = document.cookie.match(new RegExp('(^| )sdap_csrf=([^;]+)'));
     const csrfToken = csrfMatch && csrfMatch[2] ? csrfMatch[2] : '';
     
-    fetch(`/api/proxy/auth/logout`, {
+    fetch(`/api/v1/auth/logout`, {
       method: 'POST',
       credentials: 'include',
       headers: { 
@@ -74,7 +74,7 @@ function forceLogout() {
 }
 
 export const apiClient = axios.create({
-  baseURL: '/api/proxy',
+  baseURL: '/api/v1',
   withCredentials: true, // Send cookies with every request
   headers: {
     'Content-Type': 'application/json',
