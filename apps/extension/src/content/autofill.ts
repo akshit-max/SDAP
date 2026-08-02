@@ -54,19 +54,19 @@ function showToast(message: string, isError = false): void {
       'top:24px',
       'right:24px',
       'z-index:2147483647',
-      'background:#1e293b',
-      'color:#f8fafc',
-      'border-radius:12px',
+      'background:#030303',
+      'color:#ffffff',
+      'border-radius:8px',
       'padding:12px 20px',
       'font-family:system-ui,sans-serif',
-      'font-size:14px',
-      'font-weight:500',
-      'box-shadow:0 8px 30px rgba(0,0,0,0.4)',
+      'font-size:13px',
+      'font-weight:600',
+      'box-shadow:0 10px 40px rgba(0,0,0,0.5)',
       'display:flex',
       'align-items:center',
-      'gap:12px',
+      'gap:10px',
       'user-select:none',
-      'border:1px solid rgba(255,255,255,0.1)',
+      'border:1px solid rgba(255,255,255,0.15)',
       'transition:opacity 0.3s ease, transform 0.3s ease',
       'opacity:0',
       'transform:translateY(-10px)',
@@ -84,7 +84,9 @@ function showToast(message: string, isError = false): void {
   toast.innerHTML = `${icon} ${message}`;
   
   if (isError) {
-    toast.style.background = '#7f1d1d';
+    toast.style.background = '#030303';
+    toast.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+    toast.style.color = '#ef4444';
     setTimeout(() => {
       toast?.style.setProperty('opacity', '0');
       toast?.style.setProperty('transform', 'translateY(-10px)');
