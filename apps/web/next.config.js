@@ -13,8 +13,8 @@ const isDev = process.env.NODE_ENV === 'development';
 
 const CSP = [
   "default-src 'self'",
-  // Scripts: self only. 'unsafe-inline' only for dev HMR.
-  isDev ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'" : "script-src 'self'",
+  // Scripts: self + inline needed for Next.js App Router hydration
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
   // Styles: self + inline needed for Tailwind/CSS-in-JS
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   // Fonts: Google Fonts
