@@ -63,10 +63,10 @@ export function PromptModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-zinc-900/60 dark:bg-black/80 backdrop-blur-sm"
         onClick={onCancel}
       />
-      <div className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200/60 dark:border-slate-800 overflow-hidden">
+      <div className="relative w-full max-w-sm bg-white dark:bg-zinc-950 rounded-2xl shadow-2xl border border-premium overflow-hidden">
         <div className="p-6">
           <div className="flex items-start gap-4 mb-5">
             <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">

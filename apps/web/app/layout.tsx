@@ -16,8 +16,8 @@ import { AuthProvider } from "../lib/auth/AuthContext";
 import { ToastProvider } from "../components/common/Toast";
 
 export const metadata: Metadata = {
-  title: "WITHUS",
-  description: "WITHUS Enterprise Vault",
+  title: "WithUs",
+  description: "WithUs Enterprise Vault",
 };
 
 export default function RootLayout({

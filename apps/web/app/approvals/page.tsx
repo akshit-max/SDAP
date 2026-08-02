@@ -75,19 +75,19 @@ export default function ApprovalsPage() {
     <>
     <DashboardShell>
       <div className="max-w-5xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-base font-bold text-slate-900 dark:text-slate-100">Approval Workflows</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Review and manage access requests.</p>
+        <div className="pb-2 border-b border-premium">
+          <h1 className="text-lg font-bold tracking-tight text-premium-main">Approval Workflows</h1>
+          <p className="text-xs text-premium-muted mt-0.5">Review and manage access requests.</p>
         </div>
 
         {/* What are approvals — info banner */}
-        <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/40 rounded-xl p-4 flex gap-3">
-          <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
-            <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+        <div className="border border-premium bg-slate-50/20 dark:bg-zinc-900/10 rounded-lg p-4 flex gap-3">
+          <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 flex items-center justify-center">
+            <Shield className="w-4 h-4 text-premium-muted" />
           </div>
           <div>
-            <p className="text-xs font-bold text-blue-800 dark:text-blue-200 mb-0.5">About Approval Workflows</p>
-            <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
+            <p className="text-xs font-bold text-premium-main mb-0.5">About Approval Workflows</p>
+            <p className="text-xs text-premium-muted leading-relaxed">
               When a team member requests a <span className="font-semibold">Delegated Session</span>{' '}
               to access a vault or reveal secrets, it can be configured to require approval from an Owner or Admin.
               This ensures sensitive access is always authorized before it is granted.
@@ -98,80 +98,79 @@ export default function ApprovalsPage() {
         {/* Pending Approvals (Admin view) */}
         {organization?.role !== 'MEMBER' && (
           <section className="space-y-3">
-            <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Access Requests</h2>
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm">
+            <h2 className="text-[10px] font-bold text-premium-muted uppercase tracking-wider">Access Requests</h2>
+            <div className="premium-card overflow-hidden shadow-none">
               {isLoadingPending ? (
                 <div className="p-4 text-center text-xs text-slate-500">Loading...</div>
               ) : pendingApprovalsToReview?.length === 0 ? (
-                <div className="p-8 text-center">
-                  <div className="mx-auto w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center mb-3">
-                    <Check className="w-5 h-5 text-slate-400" />
+                <div className="p-8 text-center bg-premium-surface">
+                  <div className="mx-auto w-8 h-8 bg-slate-100 dark:bg-zinc-800 rounded-lg flex items-center justify-center mb-3">
+                    <Check className="w-4 h-4 text-premium-muted" />
                   </div>
-                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">All clear — nothing to review</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
+                  <p className="text-xs font-bold text-premium-main mb-1">All clear — nothing to review</p>
+                  <p className="text-xs text-premium-muted max-w-sm mx-auto leading-relaxed">
                     Approval requests appear here when a team member requests a{' '}
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">Delegated Session</span>.
-                    As an Owner or Admin you can approve or reject these requests.
+                    <span className="font-semibold">Delegated Session</span>.
                   </p>
                 </div>
               ) : (
-                <ul className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                <ul className="divide-y divide-premium">
                   {pendingApprovalsToReview?.map((request: any) => (
-                    <li key={request.id} className="p-4 hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors">
+                    <li key={request.id} className="p-4 hover:bg-slate-50/30 dark:hover:bg-zinc-900/10 transition-colors border-b border-premium/65 last:border-b-0 bg-premium-surface">
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                        <p className="text-xs font-bold text-premium-main">
                           Session Access Request
                         </p>
-                        <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                        <p className="mt-0.5 text-[10px] text-premium-muted font-semibold">
                           Requested by{' '}
-                          <span className="font-semibold text-slate-900 dark:text-slate-100">
+                          <span className="font-bold text-premium-main">
                             {request.requester?.fullName || request.requester?.email || 'Unknown'}
                           </span>
                         </p>
                         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
                           {request.requestPayload?.scope && (
-                            <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                              <span className="font-medium text-slate-700 dark:text-slate-300">Scope:</span>{' '}
+                            <span className="text-[10px] text-premium-muted font-semibold">
+                              <span className="font-bold text-premium-main">Scope:</span>{' '}
                               {String(request.requestPayload.scope).replace('_', ' ')}
                             </span>
                           )}
                           {request.requestPayload?.expiresAt && (
-                            <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                              <span className="font-medium text-slate-700 dark:text-slate-300">Expires:</span>{' '}
+                            <span className="text-[10px] text-premium-muted font-semibold">
+                              <span className="font-bold text-premium-main">Expires:</span>{' '}
                               {new Date(request.requestPayload.expiresAt).toLocaleString()}
                             </span>
                           )}
                           {request.requestPayload?.maxReveals && (
-                            <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                              <span className="font-medium text-slate-700 dark:text-slate-300">Max reveals:</span>{' '}
+                            <span className="text-[10px] text-premium-muted font-semibold">
+                              <span className="font-bold text-premium-main">Max reveals:</span>{' '}
                               {request.requestPayload.maxReveals}
                             </span>
                           )}
                           {!request.requestPayload?.maxReveals && (
-                            <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                              <span className="font-medium text-slate-700 dark:text-slate-300">Max reveals:</span> Unlimited
+                            <span className="text-[10px] text-premium-muted font-semibold">
+                              <span className="font-bold text-premium-main">Max reveals:</span> Unlimited
                             </span>
                           )}
                         </div>
                       </div>
                       <div className="flex items-center space-x-4">
-                        <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                        <span className="text-[10px] text-premium-muted font-bold">
                           {new Date(request.createdAt).toLocaleDateString()}
                         </span>
                         
-                        <div className="flex space-x-2 border-l border-slate-200 dark:border-slate-800 pl-4">
+                        <div className="flex space-x-2 border-l border-premium pl-4">
                           <button
                             onClick={() => handleResolve(request.id, 'APPROVED')}
                             disabled={isResolving}
-                            className="inline-flex items-center px-2.5 py-1 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-md font-semibold text-[11px] transition-colors shadow-sm disabled:opacity-50"
+                            className="premium-button-primary py-1 px-2.5 text-[10px]"
                           >
                             <Check className="mr-1 h-3.5 w-3.5" /> Approve
                           </button>
                           <button
                             onClick={() => handleResolve(request.id, 'REJECTED')}
                             disabled={isResolving}
-                            className="inline-flex items-center px-2.5 py-1 text-slate-700 dark:text-slate-350 bg-white hover:bg-slate-50 dark:bg-slate-850 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-750 rounded-md font-semibold text-[11px] transition-colors shadow-sm disabled:opacity-50"
+                            className="py-1 px-2.5 text-[10px] font-semibold rounded bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 hover:border-red-500/30 transition-all duration-150 inline-flex items-center justify-center"
                           >
                             <X className="mr-1 h-3.5 w-3.5" /> Reject
                           </button>
@@ -187,31 +186,30 @@ export default function ApprovalsPage() {
         )}
 
         {/* My Requests (Member view) */}
-        <section className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-          <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Pending Requests</h2>
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm">
+        <section className="space-y-3 pt-4 border-t border-premium">
+          <h2 className="text-[10px] font-bold text-premium-muted uppercase tracking-wider">Pending Requests</h2>
+          <div className="premium-card overflow-hidden shadow-none">
             {isLoadingRequests ? (
               <div className="p-4 text-center text-xs text-slate-500">Loading...</div>
             ) : myRequests?.length === 0 ? (
-              <div className="p-8 text-center">
-                <div className="mx-auto w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center mb-3">
-                  <Clock className="w-5 h-5 text-slate-400" />
+              <div className="p-8 text-center bg-premium-surface">
+                <div className="mx-auto w-8 h-8 bg-slate-100 dark:bg-zinc-800 rounded-lg flex items-center justify-center mb-3">
+                  <Clock className="w-4 h-4 text-premium-muted" />
                 </div>
-                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">No requests submitted yet</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
-                  When you request a <span className="font-semibold text-slate-700 dark:text-slate-300">Delegated Session</span>{' '}
-                  that requires approval, it will appear here so you can track its status.
+                <p className="text-xs font-bold text-premium-main mb-1">No requests submitted yet</p>
+                <p className="text-xs text-premium-muted max-w-sm mx-auto leading-relaxed">
+                  When you request a <span className="font-semibold">Delegated Session</span> that requires approval, it will appear here.
                 </p>
               </div>
             ) : (
-              <ul className="divide-y divide-slate-100 dark:divide-slate-800/50">
+              <ul className="divide-y divide-premium bg-premium-surface">
                 {myRequests?.map((request) => (
-                  <li key={request.id} className="p-4 hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors flex items-center justify-between">
+                  <li key={request.id} className="p-4 hover:bg-slate-50/30 dark:hover:bg-zinc-900/10 transition-colors flex items-center justify-between border-b border-premium/65 last:border-b-0">
                     <div>
-                      <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                      <p className="text-xs font-bold text-premium-main">
                         Session Access Request
                       </p>
-                      <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">
+                      <p className="mt-0.5 text-[10px] text-premium-muted font-semibold">
                         {request.requestPayload?.scope && (
                           <span>Scope: {String(request.requestPayload.scope).replace('_', ' ')} &bull; </span>
                         )}
@@ -226,7 +224,7 @@ export default function ApprovalsPage() {
                       )}
                     </div>
                     <div className="flex items-center space-x-6">
-                       <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                       <span className="text-[10px] text-premium-muted font-bold">
                           {new Date(request.createdAt).toLocaleDateString()}
                        </span>
                        {getStatusBadge(request.status)}

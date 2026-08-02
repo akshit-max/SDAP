@@ -35,7 +35,7 @@ interface ActionConfig {
 
 const ACTION_MAP: Record<string, ActionConfig> = {
   'secret.created':     { label: 'Secret Created',      icon: <Plus className="w-3.5 h-3.5" />,      color: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200/50 dark:border-emerald-900/30' },
-  'secret.updated':     { label: 'Secret Updated',      icon: <Pencil className="w-3.5 h-3.5" />,    color: 'text-blue-700 dark:text-blue-400',     bg: 'bg-blue-50 dark:bg-blue-950/30 border-blue-200/50 dark:border-blue-900/30' },
+  'secret.updated':     { label: 'Secret Updated',      icon: <Pencil className="w-3.5 h-3.5" />,    color: 'text-indigo-700 dark:text-indigo-400',     bg: 'bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200/50 dark:border-indigo-900/30' },
   'secret.deleted':     { label: 'Secret Deleted',      icon: <Trash2 className="w-3.5 h-3.5" />,    color: 'text-red-700 dark:text-red-400',       bg: 'bg-red-50 dark:bg-red-950/30 border-red-200/50 dark:border-red-900/30' },
   'secret.revealed':    { label: 'Secret Revealed',     icon: <Eye className="w-3.5 h-3.5" />,       color: 'text-violet-700 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-950/30 border-violet-200/50 dark:border-violet-900/30' },
   'session.created':    { label: 'Session Granted',     icon: <Key className="w-3.5 h-3.5" />,       color: 'text-amber-700 dark:text-amber-400',   bg: 'bg-amber-50 dark:bg-amber-950/30 border-amber-200/50 dark:border-amber-900/30' },
@@ -43,7 +43,7 @@ const ACTION_MAP: Record<string, ActionConfig> = {
   'approval.requested': { label: 'Approval Requested',  icon: <Shield className="w-3.5 h-3.5" />,    color: 'text-amber-700 dark:text-amber-400',   bg: 'bg-amber-50 dark:bg-amber-950/30 border-amber-200/50 dark:border-amber-900/30' },
   'approval.approved':  { label: 'Approval Granted',    icon: <Check className="w-3.5 h-3.5" />,     color: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200/50 dark:border-emerald-900/30' },
   'approval.rejected':  { label: 'Approval Rejected',   icon: <X className="w-3.5 h-3.5" />,         color: 'text-red-700 dark:text-red-400',       bg: 'bg-red-50 dark:bg-red-950/30 border-red-200/50 dark:border-red-900/30' },
-  'member.invited':     { label: 'Invitation Sent',     icon: <Mail className="w-3.5 h-3.5" />,      color: 'text-blue-700 dark:text-blue-400',     bg: 'bg-blue-50 dark:bg-blue-950/30 border-blue-200/50 dark:border-blue-900/30' },
+  'member.invited':     { label: 'Invitation Sent',     icon: <Mail className="w-3.5 h-3.5" />,      color: 'text-indigo-700 dark:text-indigo-400',     bg: 'bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200/50 dark:border-indigo-900/30' },
   'member.joined':      { label: 'Member Joined',       icon: <UserPlus className="w-3.5 h-3.5" />,  color: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200/50 dark:border-emerald-900/30' },
   'user.login':         { label: 'Login',               icon: <LogIn className="w-3.5 h-3.5" />,     color: 'text-slate-700 dark:text-slate-300',   bg: 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700' },
   'user.logout':        { label: 'Logout',              icon: <LogOut className="w-3.5 h-3.5" />,    color: 'text-slate-700 dark:text-slate-300',   bg: 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700' },
@@ -116,19 +116,19 @@ export default function AuditPage() {
     <DashboardShell>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-base font-bold text-slate-900 dark:text-slate-100">Audit Log</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+        <div className="pb-2 border-b border-premium">
+          <h1 className="text-lg font-bold tracking-tight text-premium-main">Audit Log</h1>
+          <p className="text-xs text-premium-muted mt-0.5">
             Security and operational events across <span className="font-semibold">{organization?.name}</span>.
           </p>
         </div>
 
         {/* Filter */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row gap-3 items-end shadow-sm">
+        <div className="premium-card p-4 flex flex-col sm:flex-row gap-3 items-end shadow-none">
           <div className="flex-1 space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Event Type</label>
+            <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wide">Event Type</label>
             <select
-              className="w-full px-3.5 py-1.5 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-slate-900/10 outline-none transition-all text-slate-800 dark:text-slate-200 text-xs"
+              className="w-full premium-input text-xs"
               value={actionFilter}
               onChange={(e) => { setActionFilter(e.target.value); setPage(1); }}
             >
@@ -139,26 +139,26 @@ export default function AuditPage() {
           </div>
           <button
             onClick={() => { setActionFilter(''); setPage(1); }}
-            className="px-3 py-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 rounded-lg font-semibold text-xs transition-colors"
+            className="premium-button-secondary py-1.5 px-4"
           >
             Clear
           </button>
         </div>
 
         {/* Table */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800/50">
-              <thead className="bg-slate-50/50 dark:bg-slate-900/50">
+        <div className="premium-card overflow-hidden shadow-none">
+          <div className="overflow-x-auto w-full">
+            <table className="min-w-full divide-y divide-premium">
+              <thead className="bg-slate-50/20 dark:bg-zinc-900/10">
                 <tr>
-                  <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Event</th>
-                  <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Actor</th>
-                  <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden sm:table-cell">Resource</th>
-                  <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">When</th>
-                  <th scope="col" className="px-5 py-2.5 text-right text-[10px] font-bold text-slate-400 uppercase tracking-wider">Details</th>
+                  <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">Event</th>
+                  <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">Actor</th>
+                  <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium hidden sm:table-cell">Resource</th>
+                  <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">When</th>
+                  <th scope="col" className="px-5 py-2.5 text-right text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">Details</th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-100 dark:divide-slate-800/50">
+              <tbody className="divide-y divide-premium bg-premium-surface">
                 {isLoading ? (
                   <tr>
                     <td colSpan={5} className="px-5 py-10 text-center text-xs text-slate-400">
@@ -171,8 +171,8 @@ export default function AuditPage() {
                     <td colSpan={5} className="px-5 py-12 text-center">
                       <Shield className="w-8 h-8 mx-auto mb-3 text-slate-200 dark:text-slate-700" />
                       <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">No events found</p>
-                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                        Events will appear here as your team uses WITHUS.
+                      <p className="text-xs text-premium-muted mt-1 font-semibold">
+                        Events will appear here as your team uses WithUs.
                       </p>
                     </td>
                   </tr>
@@ -192,7 +192,7 @@ export default function AuditPage() {
 
                     return (
                       <React.Fragment key={event.id}>
-                        <tr className="hover:bg-slate-50/30 dark:hover:bg-slate-900/30 transition-colors">
+                        <tr className="hover:bg-slate-50/30 dark:hover:bg-zinc-900/10 transition-colors border-b border-premium/65 last:border-b-0">
                           {/* Event */}
                           <td className="px-5 py-3.5 whitespace-nowrap">
                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${cfg.bg} ${cfg.color}`}>
@@ -204,14 +204,14 @@ export default function AuditPage() {
                           {/* Actor */}
                           <td className="px-5 py-3.5 whitespace-nowrap">
                             <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center flex-shrink-0">
-                                <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300">
+                              <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                                <span className="text-[10px] font-bold text-premium-muted">
                                   {actorName[0]?.toUpperCase() || '?'}
                                 </span>
                               </div>
                               <div>
-                                <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">{actorName}</p>
-                                {actorEmail && <p className="text-[10px] text-slate-400">{actorEmail}</p>}
+                                <p className="text-xs font-bold text-premium-main">{actorName}</p>
+                                {actorEmail && <p className="text-[10px] text-premium-muted font-semibold">{actorEmail}</p>}
                               </div>
                             </div>
                           </td>
@@ -219,18 +219,18 @@ export default function AuditPage() {
                           {/* Resource */}
                           <td className="px-5 py-3.5 whitespace-nowrap hidden sm:table-cell">
                             {resourceLabel ? (
-                              <span className="text-xs text-slate-500 dark:text-slate-400">
+                              <span className="text-xs font-semibold text-premium-muted">
                                 {resourceLabel}
                               </span>
                             ) : (
-                              <span className="text-xs text-slate-300 dark:text-slate-600">—</span>
+                              <span className="text-xs text-slate-300 dark:text-zinc-800">—</span>
                             )}
                           </td>
 
                           {/* When */}
                           <td className="px-5 py-3.5 whitespace-nowrap">
                             <span
-                              className="text-xs text-slate-500 dark:text-slate-400 font-medium"
+                              className="text-xs text-premium-muted font-bold"
                               title={new Date(event.createdAt).toLocaleString()}
                             >
                               {relativeTime(event.createdAt)}
@@ -241,7 +241,7 @@ export default function AuditPage() {
                           <td className="px-5 py-3.5 whitespace-nowrap text-right">
                             <button
                               onClick={() => toggleRow(event.id)}
-                              className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                              className="text-premium-muted hover:text-premium-main transition-colors"
                               title="View details"
                             >
                               {expandedRow === event.id ? <ChevronUp className="h-4 w-4 ml-auto" /> : <ChevronDown className="h-4 w-4 ml-auto" />}
@@ -251,27 +251,27 @@ export default function AuditPage() {
 
                         {/* Expanded details */}
                         {expandedRow === event.id && (
-                          <tr className="bg-slate-50/80 dark:bg-slate-900/80">
+                          <tr className="bg-slate-50/10 dark:bg-zinc-900/5">
                             <td colSpan={5} className="px-5 py-4">
-                              <div className="text-xs text-slate-700 dark:text-slate-300">
+                              <div className="text-xs text-premium-muted">
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-3">
                                   <div>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Event Time</p>
-                                    <p className="font-medium">{new Date(event.createdAt).toLocaleString()}</p>
+                                    <p className="text-[10px] font-bold text-premium-muted uppercase tracking-wider mb-0.5">Event Time</p>
+                                    <p className="font-bold text-premium-main">{new Date(event.createdAt).toLocaleString()}</p>
                                   </div>
                                   <div>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Resource Type</p>
-                                    <p className="font-medium">{event.resourceType || '—'}</p>
+                                    <p className="text-[10px] font-bold text-premium-muted uppercase tracking-wider mb-0.5">Resource Type</p>
+                                    <p className="font-bold text-premium-main">{event.resourceType || '—'}</p>
                                   </div>
                                   <div>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Event Version</p>
-                                    <p className="font-medium">v{event.eventVersion}</p>
+                                    <p className="text-[10px] font-bold text-premium-muted uppercase tracking-wider mb-0.5">Event Version</p>
+                                    <p className="font-bold text-premium-main">v{event.eventVersion}</p>
                                   </div>
                                 </div>
                                 {Boolean(event.metadata) && Object.keys(event.metadata as object).length > 0 && (
                                   <>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Metadata</p>
-                                    <pre className="bg-slate-950 text-emerald-400 p-3 rounded-lg overflow-x-auto text-[10px] leading-relaxed font-mono">
+                                    <p className="text-[10px] font-bold text-premium-muted uppercase tracking-wider mb-1.5">Metadata</p>
+                                    <pre className="bg-slate-950 border border-premium/50 text-emerald-450 p-3 rounded-lg overflow-x-auto text-[10px] leading-relaxed font-mono">
                                       {JSON.stringify(event.metadata, null, 2)}
                                     </pre>
                                   </>
@@ -290,24 +290,24 @@ export default function AuditPage() {
 
           {/* Pagination */}
           {data && data.totalPages > 1 && (
-            <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-between">
-              <p className="text-xs text-slate-400 font-medium">
-                Page <span className="font-bold text-slate-700 dark:text-slate-200">{page}</span> of{' '}
-                <span className="font-bold text-slate-700 dark:text-slate-200">{data.totalPages}</span>
-                {' '}· <span className="font-bold text-slate-700 dark:text-slate-200">{data.total}</span> total events
+            <div className="px-5 py-3 border-t border-premium flex items-center justify-between bg-premium-surface/50">
+              <p className="text-xs text-premium-muted font-bold">
+                Page <span className="text-premium-main">{page}</span> of{' '}
+                <span className="text-premium-main">{data.totalPages}</span>
+                {' '}· <span className="text-premium-main">{data.total}</span> total events
               </p>
               <div className="flex gap-2">
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg transition-colors hover:bg-slate-50 disabled:opacity-40"
+                  className="premium-button-secondary py-1 px-2.5 text-[10px]"
                 >
                   Previous
                 </button>
                 <button
                   onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))}
                   disabled={page === data.totalPages}
-                  className="px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg transition-colors hover:bg-slate-50 disabled:opacity-40"
+                  className="premium-button-secondary py-1 px-2.5 text-[10px]"
                 >
                   Next
                 </button>

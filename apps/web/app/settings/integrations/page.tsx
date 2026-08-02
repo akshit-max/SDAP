@@ -63,18 +63,18 @@ const PROVIDERS: {
 function StatusBadge({ status }: { status: string }) {
   if (status === 'ACTIVE')
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
         <CheckCircle className="w-3 h-3" /> Connected
       </span>
     );
   if (status === 'ERROR')
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border border-red-200/50">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/10 text-red-650 dark:text-red-400 border border-red-500/20">
         <AlertCircle className="w-3 h-3" /> Error
       </span>
     );
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-zinc-800 text-premium-muted border border-premium">
       <XCircle className="w-3 h-3" /> Not connected
     </span>
   );
@@ -102,37 +102,37 @@ function IntegrationCard({
   const isConnected = connection?.status === 'ACTIVE' || connection?.status === 'ERROR';
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-sm hover:shadow-md transition-shadow">
+    <div className="premium-card p-5 shadow-none transition-all duration-150">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300 flex-shrink-0">
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-premium-main flex-shrink-0">
             {provider.icon}
           </div>
-          <div>
-            <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{provider.name}</p>
-            <StatusBadge status={connection?.status || 'DISCONNECTED'} />
-          </div>
+          <p className="text-sm font-bold text-premium-main truncate">{provider.name}</p>
         </div>
-        <a
-          href={provider.docsUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-          title="Documentation"
-        >
-          <ExternalLink className="w-4 h-4" />
-        </a>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <StatusBadge status={connection?.status || 'DISCONNECTED'} />
+          <a
+            href={provider.docsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-slate-450 hover:text-slate-700 dark:hover:text-slate-200 transition-colors p-1"
+            title="Documentation"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        </div>
       </div>
 
       {/* Description */}
-      <p className="text-xs text-slate-500 dark:text-slate-400 mb-3 leading-relaxed">
+      <p className="text-xs text-premium-muted mb-3 leading-relaxed">
         {provider.description}
       </p>
 
       {/* Last checked */}
       {connection?.lastCheckedAt && (
-        <p className="text-[10px] text-slate-400 dark:text-slate-500 mb-3">
+        <p className="text-[10px] text-premium-muted mb-3 font-semibold">
           Last checked: {new Date(connection.lastCheckedAt).toLocaleString()}
           {(connection.providerMeta as any)?.identity && ` · ${(connection.providerMeta as any).identity}`}
         </p>
@@ -140,30 +140,30 @@ function IntegrationCard({
 
       {/* Error */}
       {connection?.lastError && (
-        <p className="text-[10px] text-red-500 dark:text-red-400 mb-3 bg-red-50 dark:bg-red-950/20 border border-red-200/50 dark:border-red-900/30 rounded-lg px-2 py-1">
+        <p className="text-[10px] text-red-500 dark:text-red-400 mb-3 bg-red-500/10 border border-red-500/20 rounded-lg px-2 py-1 font-semibold">
           {connection.lastError}
         </p>
       )}
 
       {/* Actions */}
       {canManage && (
-        <div className="flex items-center gap-2 border-t border-slate-100 dark:border-slate-800 pt-3">
+        <div className="flex items-center gap-2 border-t border-premium pt-3">
           {isConnected ? (
             <>
               <button
                 onClick={() => onDisconnect(provider.id)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-950/40 rounded-lg transition-colors"
+                className="py-1 px-2.5 text-[10px] font-semibold rounded bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 hover:border-red-500/30 transition-all duration-150 inline-flex items-center justify-center"
               >
-                <Link2Off className="w-3.5 h-3.5" />
+                <Link2Off className="w-3 h-3 mr-1" />
                 Disconnect
               </button>
             </>
           ) : (
             <button
               onClick={() => onConnect(provider.id)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-slate-900 dark:bg-slate-100 dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200 rounded-lg transition-colors shadow-sm"
+              className="premium-button-primary"
             >
-              <Link2 className="w-3.5 h-3.5" />
+              <Link2 className="w-3.5 h-3.5 mr-1" />
               Connect
             </button>
           )}
@@ -268,24 +268,24 @@ export default function IntegrationsPage() {
     <DashboardShell>
       <div className="flex flex-col space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-base font-bold text-slate-900 dark:text-slate-100">Integrations</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Connect external platforms to delegate access securely through WITHUS.
+        <div className="pb-2 border-b border-premium">
+          <h1 className="text-lg font-bold tracking-tight text-premium-main">Integrations</h1>
+          <p className="text-xs text-premium-muted mt-0.5">
+            Connect external platforms to delegate access securely through WithUs.
           </p>
         </div>
 
         {/* Info Banner */}
-        <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/40 rounded-xl p-4 flex gap-3">
-          <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
-            <Zap className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+        <div className="border border-premium bg-slate-50/20 dark:bg-zinc-900/10 rounded-lg p-4 flex gap-3">
+          <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 flex items-center justify-center">
+            <Zap className="w-4 h-4 text-premium-muted" />
           </div>
           <div>
-            <p className="text-xs font-bold text-blue-800 dark:text-blue-200 mb-0.5">
+            <p className="text-xs font-bold text-premium-main mb-0.5">
               Platform-Agnostic Integrations
             </p>
-            <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
-              Connect your developer platforms and delegate access securely. WITHUS stores credentials
+            <p className="text-xs text-premium-muted leading-relaxed">
+              Connect your developer platforms and delegate access securely. WithUs stores credentials
               encrypted and handles approval workflows — your team never shares passwords or tokens
               directly.
             </p>
@@ -294,16 +294,16 @@ export default function IntegrationsPage() {
 
         {/* Provider Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
             {PROVIDERS.map((p) => (
               <div
                 key={p.id}
-                className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 p-5 h-52 animate-pulse"
+                className="premium-card p-5 h-52 animate-pulse"
               />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
             {PROVIDERS.map((provider) => {
               const connection = connections.find((c) => c.provider === provider.id);
               return (
@@ -319,33 +319,6 @@ export default function IntegrationsPage() {
                 />
               );
             })}
-            
-            {/* Static Card for Password-Based Platforms */}
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 p-5 flex flex-col relative group transition-all duration-200 hover:shadow-md dark:hover:shadow-slate-900/50 hover:border-slate-300 dark:hover:border-slate-700">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2.5 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-300 ring-1 ring-slate-100 dark:ring-slate-700/50">
-                    <Globe className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Password-Based Platforms</h3>
-                  </div>
-                </div>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50">
-                  <CheckCircle className="w-3 h-3" /> Browser Extension
-                </span>
-              </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mb-5 leading-relaxed">
-                Secure browser-assisted access for platforms that do not provide native delegation APIs.
-                <br /><br />
-                <strong>Supported:</strong>
-                <br />• GoDaddy
-                <br />• Hostinger
-                <br />• cPanel
-                <br />• Plesk (future)
-              </p>
-            </div>
-
           </div>
         )}
       </div>

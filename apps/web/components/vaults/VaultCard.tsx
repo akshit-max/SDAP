@@ -9,23 +9,23 @@ export function VaultCard({ vault }: { vault: VaultResponse }) {
   return (
     <Link 
       href={`/vaults/${vault.id}`}
-      className="block group bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl overflow-hidden hover:border-slate-400 dark:hover:border-slate-600 hover:shadow-sm transition-all duration-150"
+      className="block group premium-card overflow-hidden transition-all duration-150 shadow-none"
     >
-      <div className="p-4 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/50 group-hover:bg-slate-100/50 dark:group-hover:bg-slate-800/50 transition-colors">
+      <div className="p-4 border-b border-premium bg-slate-50/20 dark:bg-zinc-900/10 group-hover:bg-slate-50/50 dark:group-hover:bg-zinc-900/30 transition-colors">
         <div className="flex items-center space-x-2.5">
-          <div className="p-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg">
+          <div className="p-1.5 bg-slate-100 dark:bg-zinc-800 text-premium-muted rounded-lg">
             <KeyRound className="w-4 h-4" />
           </div>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+          <h3 className="text-sm font-semibold text-premium-main truncate">
             {vault.name}
           </h3>
         </div>
       </div>
       <div className="p-4 space-y-3">
-        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 min-h-[32px]">
+        <p className="text-xs text-premium-muted line-clamp-2 min-h-[32px]">
           {vault.description || 'No description provided.'}
         </p>
-        <div className="flex items-center text-[10px] font-medium text-slate-400 dark:text-slate-500">
+        <div className="flex items-center text-[10px] font-bold text-premium-muted uppercase tracking-wider">
           <Clock className="w-3 h-3 mr-1" />
           Created on {createdDate}
         </div>

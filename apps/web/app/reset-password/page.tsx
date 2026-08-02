@@ -158,11 +158,9 @@ export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 px-4">
       <div className="w-full max-w-sm">
-        <div className="flex justify-center mb-8">
-          <div className="flex items-center gap-2 bg-slate-800/80 backdrop-blur border border-slate-700/50 px-4 py-2 rounded-xl">
-            <span className="text-lg">🔐</span>
-            <span className="text-sm font-bold text-white tracking-wide">WITHUS</span>
-          </div>
+        <div className="flex flex-col items-center mb-8">
+          <img src="/logo.png" alt="WithUs Logo" className="w-12 h-12 mb-4 object-contain" />
+          <span className="text-lg font-bold text-premium-main tracking-tight">WithUs</span>
         </div>
         <div className="bg-slate-900/90 backdrop-blur border border-slate-800/60 rounded-2xl p-8 shadow-2xl">
           <Suspense fallback={<div className="text-slate-400 text-sm text-center">Loading…</div>}>

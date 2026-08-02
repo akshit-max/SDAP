@@ -41,13 +41,15 @@ export function VaultListPage() {
   if (vaults.length === 0 && page === 1) {
     return (
       <>
-        <EmptyState
-          title="No Vaults Found"
-          description="Create your first secure vault to start storing encrypted secrets."
-          icon={<Shield className="w-6 h-6 text-slate-400" />}
-          actionLabel="Create Vault"
-          onAction={() => setIsCreateOpen(true)}
-        />
+        <div className="max-w-md mx-auto pt-10">
+          <EmptyState
+            title="No Vaults Found"
+            description="Create your first secure vault to start storing encrypted secrets."
+            icon={<Shield className="w-5 h-5 text-premium-muted" />}
+            actionLabel="Create Vault"
+            onAction={() => setIsCreateOpen(true)}
+          />
+        </div>
         <CreateVaultModal orgId={orgId} isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} />
       </>
     );
@@ -55,17 +57,17 @@ export function VaultListPage() {
 
   return (
     <>
-      <div className="space-y-5">
-        <div className="flex justify-between items-center">
+      <div className="space-y-6">
+        <div className="flex justify-between items-center pb-2 border-b border-premium">
           <div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Secure Vaults</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <h2 className="text-lg font-bold text-premium-main tracking-tight">Secure Vaults</h2>
+            <p className="text-xs text-premium-muted mt-0.5">
               {total} vault{total !== 1 ? 's' : ''} · Page {page} of {totalPages}
             </p>
           </div>
           <button
             onClick={() => setIsCreateOpen(true)}
-            className="flex items-center px-3 py-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-lg font-semibold text-xs transition-colors shadow-sm"
+            className="premium-button-primary"
           >
             <Plus className="w-3.5 h-3.5 mr-1.5" />
             Create Vault
@@ -75,23 +77,23 @@ export function VaultListPage() {
         <VaultList vaults={vaults} />
 
         {totalPages > 1 && (
-          <div className="flex items-center justify-end gap-2 pt-2">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-premium">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="premium-button-secondary"
             >
-              <ChevronLeft className="w-3.5 h-3.5" /> Previous
+              <ChevronLeft className="w-3.5 h-3.5 mr-1" /> Previous
             </button>
-            <span className="text-xs text-slate-500 dark:text-slate-400 min-w-[60px] text-center">
+            <span className="text-xs text-premium-muted font-semibold min-w-[50px] text-center">
               {page} / {totalPages}
             </span>
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
-              className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="premium-button-secondary"
             >
-              Next <ChevronRight className="w-3.5 h-3.5" />
+              Next <ChevronRight className="w-3.5 h-3.5 ml-1" />
             </button>
           </div>
         )}

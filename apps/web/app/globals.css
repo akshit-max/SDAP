@@ -52,3 +52,119 @@ a {
   from { width: 100%; }
   to   { width: 0%; }
 }
+
+/* UI Refactor Utility Classes */
+
+:root {
+  --bg-primary: #fafafa;
+  --bg-surface: #ffffff;
+  --border-subtle: #e4e4e7; /* zinc-200 */
+  --text-main: #09090b; /* zinc-950 */
+  --text-muted: #71717a; /* zinc-500 */
+  --primary-accent: #09090b;
+  --primary-accent-text: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #030303; /* pure dark background */
+    --bg-surface: #09090b; /* zinc-950 surface */
+    --border-subtle: #1f1f23; /* zinc-800/900 level */
+    --text-main: #f4f4f5; /* zinc-100 */
+    --text-muted: #a1a1aa; /* zinc-400 */
+    --primary-accent: #ffffff;
+    --primary-accent-text: #09090b;
+  }
+}
+
+.bg-premium-bg {
+  background-color: var(--bg-primary);
+}
+.bg-premium-surface {
+  background-color: var(--bg-surface);
+}
+.border-premium {
+  border-color: var(--border-subtle);
+}
+.text-premium-main {
+  color: var(--text-main);
+}
+.text-premium-muted {
+  color: var(--text-muted);
+}
+
+.premium-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.premium-input {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.premium-input:focus {
+  outline: none;
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 0 2px rgba(9, 9, 11, 0.05);
+}
+
+.premium-button-primary {
+  background-color: var(--primary-accent);
+  color: var(--primary-accent-text);
+  font-weight: 600;
+  font-size: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+.premium-button-primary:hover {
+  opacity: 0.9;
+}
+.premium-button-primary:active {
+  transform: scale(0.98);
+}
+
+.premium-button-secondary {
+  background-color: var(--bg-surface);
+  color: var(--text-main);
+  border: 1px solid var(--border-subtle);
+  font-weight: 600;
+  font-size: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+.premium-button-secondary:hover {
+  background-color: var(--border-subtle);
+}
+.premium-button-secondary:active {
+  transform: scale(0.98);
+}
+
+/* Ensure tailwind utility paddings override shorthand padding of premium-input */
+.pl-9 {
+  padding-left: 2.25rem !important;
+}
+.pl-10 {
+  padding-left: 2.5rem !important;
+}
+.pr-4 {
+  padding-right: 1rem !important;
+}
+
+

@@ -29,11 +29,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }
   
   const LogoSVG = ({ className }: { className?: string }) => (
-    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-      <rect x="40" y="10" width="20" height="80" rx="10" transform="rotate(0 50 50)" fill="currentColor" opacity="0.8" />
-      <rect x="40" y="10" width="20" height="80" rx="10" transform="rotate(60 50 50)" fill="currentColor" opacity="0.9" />
-      <rect x="40" y="10" width="20" height="80" rx="10" transform="rotate(120 50 50)" fill="currentColor" />
-    </svg>
+    <img src="/logo.png" alt="WithUs Logo" className={className} />
   );
   
   // Persist sidebar state in localStorage if possible, or just default to false
@@ -75,21 +71,21 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   ];
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="flex h-screen bg-premium-bg font-premium">
       {/* Sidebar */}
       <div 
         className={clsx(
-          "bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 flex flex-col transition-all duration-300",
+          "bg-premium-surface border-r border-premium flex flex-col transition-all duration-150",
           isCollapsed ? "w-16" : "w-60"
         )}
       >
         <div className={clsx(
-          "h-14 flex items-center border-b border-slate-200/80 dark:border-slate-800",
+          "h-14 flex items-center border-b border-premium",
           isCollapsed ? "justify-center px-0" : "px-5"
         )}>
-          <LogoSVG className={clsx("w-5 h-5 text-slate-900 dark:text-slate-100 flex-shrink-0", !isCollapsed && "mr-2")} />
+          <LogoSVG className={clsx("w-5 h-5 text-premium-main flex-shrink-0", !isCollapsed && "mr-2")} />
           {!isCollapsed && (
-            <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-slate-100 truncate">WithUs</span>
+            <span className="font-bold text-sm tracking-tight text-premium-main">WithUs</span>
           )}
         </div>
         
@@ -108,15 +104,15 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                     'relative flex items-center py-2 text-xs font-semibold rounded-lg transition-all duration-150',
                     isCollapsed ? 'justify-center px-0' : 'px-3',
                     isActive
-                      ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950 shadow-sm'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      ? 'bg-slate-100 text-slate-950 dark:bg-zinc-800/60 dark:text-zinc-50'
+                      : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-zinc-900/30 hover:text-slate-900 dark:hover:text-zinc-100'
                   )}
                 >
                   <item.icon
                     className={clsx(
                       'w-4 h-4 flex-shrink-0 transition-colors',
                       !isCollapsed && 'mr-3',
-                      isActive ? 'text-white dark:text-slate-950' : 'text-slate-400 dark:text-slate-500'
+                      isActive ? 'text-slate-950 dark:text-zinc-50' : 'text-slate-450 dark:text-slate-500'
                     )}
                   />
                   {!isCollapsed && <span className="truncate">{item.name}</span>}
@@ -135,34 +131,16 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </nav>
         </div>
 
-        <div className="p-3 border-t border-slate-200/80 dark:border-slate-800 flex flex-col gap-1">
-          <button
-            onClick={toggleSidebar}
-            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className={clsx(
-              "flex items-center py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors",
-              isCollapsed ? "justify-center px-0" : "px-3"
-            )}
-          >
-            {isCollapsed ? (
-              <ChevronRight className="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0" />
-            ) : (
-              <>
-                <ChevronLeft className="w-4 h-4 mr-3 text-slate-400 dark:text-slate-500 flex-shrink-0" />
-                <span className="truncate">Collapse</span>
-              </>
-            )}
-          </button>
-          
+        <div className="p-3 border-t border-premium flex flex-col gap-1">
           <button
             onClick={handleLogout}
             title={isCollapsed ? "Logout" : undefined}
             className={clsx(
-              "flex items-center py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors",
-              isCollapsed ? "justify-center px-0" : "px-3"
+              "flex items-center justify-center py-2 text-xs font-semibold rounded-lg transition-all duration-150 border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 text-red-500 hover:border-red-500/30",
+              isCollapsed ? "w-10 h-10 mx-auto" : "px-3 w-full"
             )}
           >
-            <LogOut className={clsx("w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0", !isCollapsed && "mr-3")} />
+            <LogOut className={clsx("w-3.5 h-3.5 flex-shrink-0", !isCollapsed && "mr-2")} />
             {!isCollapsed && <span className="truncate">Logout</span>}
           </button>
         </div>
@@ -170,21 +148,21 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-14 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between px-8 shadow-sm">
-          <div className="flex items-center gap-3">
-            {isCollapsed && (
-              <button onClick={toggleSidebar} className="lg:hidden p-1 -ml-3 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">
-                <Menu className="w-5 h-5" />
-              </button>
-            )}
-            <h1 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              {navItems.find((item) => {
-                return item.href === '/settings' ? pathname === '/settings' : pathname.startsWith(item.href);
-              })?.name || 'Vaults'}
-            </h1>
-          </div>
+        <header className="h-14 bg-premium-surface border-b border-premium flex items-center px-8 shadow-none gap-4">
+          <button 
+            onClick={toggleSidebar} 
+            className="p-1.5 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <Menu className="w-4 h-4" />
+          </button>
+          <h1 className="text-sm font-semibold text-premium-main">
+            {navItems.find((item) => {
+              return item.href === '/settings' ? pathname === '/settings' : pathname.startsWith(item.href);
+            })?.name || 'Vaults'}
+          </h1>
         </header>
-        <main className="flex-1 overflow-y-auto p-8 bg-slate-50/50 dark:bg-slate-950">
+        <main className="flex-1 overflow-y-auto p-8 bg-premium-bg">
           {children}
         </main>
       </div>

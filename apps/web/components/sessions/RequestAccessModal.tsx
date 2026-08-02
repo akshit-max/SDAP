@@ -8,9 +8,11 @@ import { useIntegrations, useIntegrationResources } from '../../hooks/useIntegra
 import { IntegrationProvider } from '../../lib/api/integrations';
 import { SessionScope, SessionPermission } from '@repo/types';
 import { Modal } from '../common/Modal';
+import { CustomSelect } from '../common/Select';
 import { useToast } from '../common/Toast';
 import { X, Lock, Users, Calendar, AlertCircle, Loader2, GitBranch, Key, ChevronDown, Triangle, Globe } from 'lucide-react';
 import { useAuth } from '../../lib/auth/AuthContext';
+import clsx from 'clsx';
 
 interface RequestAccessModalProps {
   orgId: string;
@@ -227,38 +229,31 @@ export function RequestAccessModal({
                   {selectedProvider === 'GODADDY' && 'Domain '}
                   <span className="text-red-500">*</span>
                 </label>
-                <SelectWrapper>
-                  <select
-                    className={selectClass}
-                    value={selectedIntegrationResource}
-                    onChange={(e) => setSelectedIntegrationResource(e.target.value)}
-                    required
-                    disabled={isLoadingResources}
-                  >
-                    <option value="">{isLoadingResources ? 'Loading resources...' : 'Select a resource…'}</option>
-                    {providerResources.map(r => (
-                      <option key={r.id} value={r.id}>{r.name}</option>
-                    ))}
-                  </select>
-                </SelectWrapper>
+                <CustomSelect
+                  value={selectedIntegrationResource}
+                  onChange={setSelectedIntegrationResource}
+                  options={providerResources.map((r) => ({
+                    value: r.id,
+                    label: r.name,
+                  }))}
+                  disabled={isLoadingResources}
+                  placeholder={isLoadingResources ? 'Loading resources...' : 'Select a resource…'}
+                />
               </div>
             )}
 
             {selectedProvider === 'VERCEL' && (
               <div>
                 <label className={labelClass}>Role <span className="text-red-500">*</span></label>
-                <SelectWrapper>
-                  <select
-                    className={selectClass}
-                    value={integrationRole}
-                    onChange={(e) => setIntegrationRole(e.target.value)}
-                    required
-                  >
-                    <option value="VIEWER">Viewer (Read-only)</option>
-                    <option value="DEVELOPER">Developer (Push/Deploy)</option>
-                    <option value="PROJECT_DEVELOPER">Project Developer</option>
-                  </select>
-                </SelectWrapper>
+                <CustomSelect
+                  value={integrationRole}
+                  onChange={setIntegrationRole}
+                  options={[
+                    { value: 'VIEWER', label: 'Viewer (Read-only)' },
+                    { value: 'DEVELOPER', label: 'Developer (Push/Deploy)' },
+                    { value: 'PROJECT_DEVELOPER', label: 'Project Developer' },
+                  ]}
+                />
               </div>
             )}
           </>
@@ -266,41 +261,37 @@ export function RequestAccessModal({
           <>
             <div>
               <label className={labelClass}>Vault <span className="text-red-500">*</span></label>
-              <SelectWrapper>
-                <select
-                  className={selectClass}
-                  value={selectedVaultId}
-                  onChange={(e) => handleVaultChange(e.target.value)}
-                  required
-                >
-                  <option value="">Select a vault…</option>
-                  {vaults.map((v) => (
-                    <option key={v.id} value={v.id}>{v.name}</option>
-                  ))}
-                </select>
-              </SelectWrapper>
+              <CustomSelect
+                value={selectedVaultId}
+                onChange={handleVaultChange}
+                options={vaults.map((v) => ({
+                  value: v.id,
+                  label: v.name,
+                }))}
+                placeholder="Select a vault…"
+              />
             </div>
 
             <div>
               <label className={labelClass}>Secret <span className="text-red-500">*</span></label>
-              <SelectWrapper>
-                <select
-                  className={selectClass}
-                  value={selectedSecretId}
-                  onChange={(e) => setSelectedSecretId(e.target.value)}
-                  required
-                  disabled={!selectedVaultId || isLoadingSecrets}
-                >
-                  <option value="">
-                    {!selectedVaultId ? 'Select a vault first…' : isLoadingSecrets ? 'Loading secrets…' : secrets.length === 0 ? 'No secrets in this vault' : 'Select a secret…'}
-                  </option>
-                  {secrets.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} {s.description ? ` — ${s.description}` : ''}
-                    </option>
-                  ))}
-                </select>
-              </SelectWrapper>
+              <CustomSelect
+                value={selectedSecretId}
+                onChange={setSelectedSecretId}
+                options={secrets.map((s) => ({
+                  value: s.id,
+                  label: `${s.name}${s.description ? ` — ${s.description}` : ''}`,
+                }))}
+                disabled={!selectedVaultId || isLoadingSecrets}
+                placeholder={
+                  !selectedVaultId
+                    ? 'Select a vault first…'
+                    : isLoadingSecrets
+                      ? 'Loading secrets…'
+                      : secrets.length === 0
+                        ? 'No secrets in this vault'
+                        : 'Select a secret…'
+                }
+              />
             </div>
           </>
         )}

@@ -38,6 +38,7 @@ export function useInviteMember(orgId: string) {
     mutationFn: (email: string) => organizationsApi.inviteMember(orgId, email),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: orgKeys.members(orgId) });
+      queryClient.invalidateQueries({ queryKey: ['organization', orgId, 'invitations'] });
     },
   });
 }

@@ -91,15 +91,15 @@ export default function SessionsPage() {
   return (
     <DashboardShell>
       <div className="max-w-5xl mx-auto space-y-6">
-        <div className="flex justify-between items-center mb-1">
+        <div className="flex justify-between items-center pb-2 border-b border-premium">
           <div>
-            <h1 className="text-base font-bold text-slate-900 dark:text-slate-100">Delegated Sessions</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Manage time-bound access delegations.</p>
+            <h1 className="text-lg font-bold tracking-tight text-premium-main">Delegated Sessions</h1>
+            <p className="text-xs text-premium-muted mt-0.5">Manage time-bound access delegations.</p>
           </div>
           {canCreateSession && (
             <button
               onClick={() => setIsModalOpen(true)}
-              className="inline-flex items-center px-3 py-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-lg font-semibold text-xs transition-colors shadow-sm"
+              className="premium-button-primary"
             >
               <Plus className="w-3.5 h-3.5 mr-1" />
               {canGrantAccess ? 'Create Delegated Session' : 'Request Temporary Access'}
@@ -107,144 +107,143 @@ export default function SessionsPage() {
           )}
         </div>
 
-        {/* Incoming Sessions */}
-        <section className="space-y-3">
-          <div className="flex justify-between items-end">
-            <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">My Access</h2>
-          </div>
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm">
-            {isLoadingIncoming ? (
-              <div className="p-4 text-center text-xs text-slate-500">Loading...</div>
-            ) : !incomingSessions?.length ? (
-              <div className="p-6 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900">
-                No Active Sessions. Request temporary access from this page, or approve pending requests to create delegated sessions.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800/50">
-                  <thead className="bg-slate-50/50 dark:bg-slate-900/50">
-                    <tr>
-                      <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Resource</th>
-                      <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Granted By</th>
-                      <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status / Uses</th>
-                      <th scope="col" className="px-5 py-2.5 text-right text-[10px] font-bold text-slate-400 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-100 dark:divide-slate-800/50">
-                    {paginatedIncoming?.map((session) => {
-                      const isActive = session.status === SessionStatus.ACTIVE && new Date(session.expiresAt) > new Date();
-                      return (
-                        <tr key={session.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors">
-                          <td className="px-5 py-3 whitespace-nowrap">
-                            <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                              {(session.scope as string) === 'INTEGRATION' ? (
-                                `${(session as any).integrationProvider} Access`
-                              ) : `${session.scope} Access`}
-                            </p>
-                            <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">
-                              {(session.scope as string) === 'INTEGRATION' ? (
-                                (session as any).integrationProvider === 'GODADDY' ? `Domain: ${(session as any).integrationResourceExternalId}` : 
-                                (session as any).integrationProvider === 'VERCEL' ? `Project: ${(session as any).integrationResourceExternalId}` : 
-                                `Repository: ${(session as any).integrationResourceExternalId}`
-                              ) : (session.resourceName || session.resourceId)}
-                            </p>
-                          </td>
-                          <td className="px-5 py-3 whitespace-nowrap">
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                              {session.grantor?.fullName || session.grantor?.email || session.grantorId}
-                            </p>
-                          </td>
-                          <td className="px-5 py-3 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                              {getStatusBadge(session.status, session.expiresAt)}
-                              <div className="text-[10px] text-slate-500 dark:text-slate-400 flex flex-col font-medium">
-                                <span>{formatExpiry(session.expiresAt)}</span>
-                                {(session.scope as string) !== 'INTEGRATION' && (
-                                  <span>Uses: {session.revealCount} / {session.maxReveals ?? '∞'}</span>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-5 py-3 whitespace-nowrap text-right">
-
-                            {isActive && (session.scope as string) === 'INTEGRATION' && (
-                              (session as any).integrationProvider === 'GODADDY' || 
-                              (session as any).integrationProvider === 'HOSTINGER' || 
-                              (session as any).integrationProvider === 'CPANEL' ? (
-                                <a
-                                  href={(session as any).integrationProvider === 'GODADDY' ? 'https://sso.godaddy.com/' : 
-                                        (session as any).integrationProvider === 'HOSTINGER' ? 'https://hpanel.hostinger.com/' : 
-                                        'https://cpanel.net/'}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-bold text-[10px] uppercase tracking-wide transition-colors shadow-sm"
-                                >
-                                  Launch Session
-                                </a>
-                              ) : (
-                                <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-                                  Managed by WITHUS
-                                </span>
-                              )
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                {totalIncPages > 1 && (
-                  <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-between">
-                    <p className="text-xs text-slate-400 font-medium">
-                      Page <span className="font-bold text-slate-700 dark:text-slate-200">{incPage}</span> of <span className="font-bold text-slate-700 dark:text-slate-200">{totalIncPages}</span>
-                    </p>
-                    <div className="flex gap-2">
-                      <button onClick={() => setIncPage(p => Math.max(1, p - 1))} disabled={incPage === 1} className="px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg transition-colors hover:bg-slate-50 disabled:opacity-40">Prev</button>
-                      <button onClick={() => setIncPage(p => Math.min(totalIncPages, p + 1))} disabled={incPage === totalIncPages} className="px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg transition-colors hover:bg-slate-50 disabled:opacity-40">Next</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Outgoing Sessions (Only for admins/owners) */}
-        {canGrantAccess && (
-          <section className="space-y-3 pt-6 border-t border-slate-100 dark:border-slate-800">
+        <div className="flex flex-col gap-8">
+          {/* Incoming Sessions */}
+          <section className="space-y-3">
             <div className="flex justify-between items-end">
-              <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Access I've Granted</h2>
+              <h2 className="text-[10px] font-bold text-premium-muted uppercase tracking-wider">My Access</h2>
             </div>
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm">
+            <div className="premium-card overflow-hidden shadow-none">
+              {isLoadingIncoming ? (
+                <div className="p-4 text-center text-xs text-slate-500">Loading...</div>
+              ) : !incomingSessions?.length ? (
+                <div className="p-6 text-center text-xs font-semibold text-slate-550 dark:text-slate-400 bg-premium-surface">
+                  No Active Sessions. Request temporary access from this page, or approve pending requests to create delegated sessions.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-premium">
+                    <thead className="bg-slate-50/20 dark:bg-zinc-900/10">
+                      <tr>
+                        <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">Resource</th>
+                        <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">Granted By</th>
+                        <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">Status / Uses</th>
+                        <th scope="col" className="px-5 py-2.5 text-right text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-premium bg-premium-surface">
+                      {paginatedIncoming?.map((session) => {
+                        const isActive = session.status === SessionStatus.ACTIVE && new Date(session.expiresAt) > new Date();
+                        return (
+                          <tr key={session.id} className="hover:bg-slate-50/30 dark:hover:bg-zinc-900/10 transition-colors border-b border-premium/65 last:border-b-0">
+                            <td className="px-5 py-3 whitespace-nowrap">
+                              <p className="text-xs font-bold text-premium-main">
+                                {(session.scope as string) === 'INTEGRATION' ? (
+                                  `${(session as any).integrationProvider} Access`
+                                ) : `${session.scope} Access`}
+                              </p>
+                              <p className="mt-0.5 text-[10px] text-premium-muted font-semibold truncate">
+                                {(session.scope as string) === 'INTEGRATION' ? (
+                                  (session as any).integrationProvider === 'GODADDY' ? `Domain: ${(session as any).integrationResourceExternalId}` : 
+                                  (session as any).integrationProvider === 'VERCEL' ? `Project: ${(session as any).integrationResourceExternalId}` : 
+                                  `Repository: ${(session as any).integrationResourceExternalId}`
+                                ) : (session.resourceName || session.resourceId)}
+                              </p>
+                            </td>
+                            <td className="px-5 py-3 whitespace-nowrap">
+                              <p className="text-[10px] text-premium-muted font-bold">
+                                {session.grantor?.fullName || session.grantor?.email || session.grantorId}
+                              </p>
+                            </td>
+                            <td className="px-5 py-3 whitespace-nowrap">
+                              <div className="flex items-center gap-2">
+                                {getStatusBadge(session.status, session.expiresAt)}
+                                <div className="text-[10px] text-premium-muted flex flex-col font-bold">
+                                  <span>{formatExpiry(session.expiresAt)}</span>
+                                  {(session.scope as string) !== 'INTEGRATION' && (
+                                    <span>Uses: {session.revealCount} / {session.maxReveals ?? '∞'}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-5 py-3 whitespace-nowrap text-right">
+                              {isActive && (session.scope as string) === 'INTEGRATION' && (
+                                (session as any).integrationProvider === 'GODADDY' || 
+                                (session as any).integrationProvider === 'HOSTINGER' || 
+                                (session as any).integrationProvider === 'CPANEL' ? (
+                                  <a
+                                    href={(session as any).integrationProvider === 'GODADDY' ? 'https://sso.godaddy.com/' : 
+                                          (session as any).integrationProvider === 'HOSTINGER' ? 'https://hpanel.hostinger.com/' : 
+                                          'https://cpanel.net/'}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="premium-button-primary py-1 px-2.5 text-[10px]"
+                                  >
+                                    Launch Session
+                                  </a>
+                                ) : (
+                                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                                    Managed by WithUs
+                                  </span>
+                                )
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {totalIncPages > 1 && (
+                    <div className="px-5 py-3 border-t border-premium flex items-center justify-between bg-premium-surface/50">
+                      <p className="text-xs text-premium-muted font-bold">
+                        Page <span className="text-premium-main">{incPage}</span> of <span className="text-premium-main">{totalIncPages}</span>
+                      </p>
+                      <div className="flex gap-2">
+                        <button onClick={() => setIncPage(p => Math.max(1, p - 1))} disabled={incPage === 1} className="premium-button-secondary py-1 px-2.5 text-[10px]">Prev</button>
+                        <button onClick={() => setIncPage(p => Math.min(totalIncPages, p + 1))} disabled={incPage === totalIncPages} className="premium-button-secondary py-1 px-2.5 text-[10px]">Next</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </section>
+  
+          {canGrantAccess && (
+            <section className="space-y-3">
+              <div className="flex justify-between items-end">
+                <h2 className="text-[10px] font-bold text-premium-muted uppercase tracking-wider">Access I've Granted</h2>
+              </div>
+            <div className="premium-card overflow-hidden shadow-none">
             {isLoadingOutgoing ? (
               <div className="p-4 text-center text-xs text-slate-500">Loading...</div>
             ) : !outgoingSessions?.length ? (
-              <div className="p-6 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900">
+              <div className="p-6 text-center text-xs font-semibold text-slate-550 dark:text-slate-400 bg-premium-surface">
                 No Active Sessions. Request temporary access from this page, or approve pending requests to create delegated sessions.
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800/50">
-                  <thead className="bg-slate-50/50 dark:bg-slate-900/50">
+                <table className="min-w-full divide-y divide-premium">
+                  <thead className="bg-slate-50/20 dark:bg-zinc-900/10">
                     <tr>
-                      <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Grantee</th>
-                      <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Scope / Resource</th>
-                      <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status / Uses</th>
-                      <th scope="col" className="px-5 py-2.5 text-right text-[10px] font-bold text-slate-400 uppercase tracking-wider">Actions</th>
+                      <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">Grantee</th>
+                      <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">Scope / Resource</th>
+                      <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">Status / Uses</th>
+                      <th scope="col" className="px-5 py-2.5 text-right text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-100 dark:divide-slate-800/50">
+                  <tbody className="divide-y divide-premium bg-premium-surface">
                     {paginatedOutgoing?.map((session) => {
                       const isActive = session.status === SessionStatus.ACTIVE && new Date(session.expiresAt) > new Date();
                       return (
-                        <tr key={session.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors">
+                        <tr key={session.id} className="hover:bg-slate-50/30 dark:hover:bg-zinc-900/10 transition-colors border-b border-premium/65 last:border-b-0">
                           <td className="px-5 py-3 whitespace-nowrap">
-                            <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                            <p className="text-xs font-bold text-premium-main">
                               {session.grantee?.fullName || session.grantee?.email || session.granteeId}
                             </p>
                           </td>
                           <td className="px-5 py-3 whitespace-nowrap">
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                            <p className="text-[10px] text-premium-muted font-semibold">
                               {(session.scope as string) === 'INTEGRATION' ? (
                                 (session as any).integrationProvider === 'GODADDY' ? 'Browser Extension' : 
                                 (session as any).integrationProvider === 'VERCEL' ? `Vercel · ${(session as any).integrationResourceExternalId}` :
@@ -255,7 +254,7 @@ export default function SessionsPage() {
                           <td className="px-5 py-3 whitespace-nowrap">
                             <div className="flex items-center gap-2">
                               {getStatusBadge(session.status, session.expiresAt)}
-                              <div className="text-[10px] text-slate-500 dark:text-slate-400 flex flex-col font-medium">
+                              <div className="text-[10px] text-premium-muted flex flex-col font-bold">
                                 <span>{formatExpiry(session.expiresAt)}</span>
                                 {(session.scope as string) !== 'INTEGRATION' && (
                                   <span>Uses: {session.revealCount} / {session.maxReveals ?? '∞'}</span>
@@ -269,7 +268,7 @@ export default function SessionsPage() {
                                 onClick={() => setConfirmRevokeId(session.id)}
                                 disabled={isRevoking}
                                 aria-label="Revoke session"
-                                className="p-1.5 text-slate-400 hover:text-red-500 dark:hover:text-red-400 rounded transition-colors disabled:opacity-50 inline-flex"
+                                className="p-1.5 text-premium-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/10 rounded-md transition-colors disabled:opacity-50 inline-flex"
                                 title="Revoke Session"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -282,13 +281,13 @@ export default function SessionsPage() {
                   </tbody>
                 </table>
                 {totalOutPages > 1 && (
-                  <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-between">
-                    <p className="text-xs text-slate-400 font-medium">
-                      Page <span className="font-bold text-slate-700 dark:text-slate-200">{outPage}</span> of <span className="font-bold text-slate-700 dark:text-slate-200">{totalOutPages}</span>
+                  <div className="px-5 py-3 border-t border-premium flex items-center justify-between bg-premium-surface/50">
+                    <p className="text-xs text-premium-muted font-bold">
+                      Page <span className="text-premium-main">{outPage}</span> of <span className="text-premium-main">{totalOutPages}</span>
                     </p>
                     <div className="flex gap-2">
-                      <button onClick={() => setOutPage(p => Math.max(1, p - 1))} disabled={outPage === 1} className="px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg transition-colors hover:bg-slate-50 disabled:opacity-40">Prev</button>
-                      <button onClick={() => setOutPage(p => Math.min(totalOutPages, p + 1))} disabled={outPage === totalOutPages} className="px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg transition-colors hover:bg-slate-50 disabled:opacity-40">Next</button>
+                      <button onClick={() => setOutPage(p => Math.max(1, p - 1))} disabled={outPage === 1} className="premium-button-secondary py-1 px-2.5 text-[10px]">Prev</button>
+                      <button onClick={() => setOutPage(p => Math.min(totalOutPages, p + 1))} disabled={outPage === totalOutPages} className="premium-button-secondary py-1 px-2.5 text-[10px]">Next</button>
                     </div>
                   </div>
                 )}
@@ -297,6 +296,7 @@ export default function SessionsPage() {
           </div>
         </section>
         )}
+        </div>
 
         {canGrantAccess ? (
           <CreateSessionModal

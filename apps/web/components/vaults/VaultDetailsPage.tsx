@@ -78,37 +78,37 @@ export function VaultDetailsPage({ vaultId }: { vaultId: string }) {
     <>
       <div className="space-y-5">
         {/* Header */}
-        <div className="flex justify-between items-start">
+        <div className="flex justify-between items-start pb-2 border-b border-premium">
           <div>
-            <div className="flex items-center text-xs text-slate-500 font-medium mb-1.5">
-              <Link href="/vaults" className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">Vaults</Link>
+            <div className="flex items-center text-[10px] text-premium-muted font-bold uppercase tracking-wider mb-1.5">
+              <Link href="/vaults" className="hover:text-premium-main transition-colors">Vaults</Link>
               <span className="mx-1.5 text-slate-300 dark:text-slate-700">/</span>
-              <span className="text-slate-900 dark:text-slate-100 font-semibold">{vault.name}</span>
+              <span className="text-premium-main font-bold">{vault.name}</span>
             </div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center">
-              <KeyRound className="w-5 h-5 mr-2 text-slate-500 dark:text-slate-400" />
+            <h2 className="text-lg font-bold text-premium-main tracking-tight flex items-center">
+              <KeyRound className="w-5 h-5 mr-2 text-premium-muted" />
               {vault.name}
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{vault.description || 'No description provided.'}</p>
+            <p className="text-xs text-premium-muted mt-1">{vault.description || 'No description provided.'}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <button
               onClick={() => setIsEditVaultOpen(true)}
-              className="flex items-center px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg font-semibold text-xs transition-colors"
+              className="premium-button-secondary"
             >
               <Pencil className="w-3.5 h-3.5 mr-1.5" />
               Edit
             </button>
             <button
               onClick={() => setIsDeleteVaultOpen(true)}
-              className="flex items-center px-3 py-1.5 bg-white dark:bg-slate-800 border border-red-300 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-950/20 text-red-600 dark:text-red-400 rounded-lg font-semibold text-xs transition-colors"
+              className="px-3.5 py-2 text-xs font-semibold rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 hover:border-red-500/30 transition-all duration-150 inline-flex items-center justify-center"
             >
               <Trash2 className="w-3.5 h-3.5 mr-1.5" />
               Delete
             </button>
             <button
               onClick={() => setIsCreateSecretOpen(true)}
-              className="flex items-center px-3 py-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-lg font-semibold text-xs transition-colors shadow-sm"
+              className="premium-button-primary"
             >
               <Plus className="w-3.5 h-3.5 mr-1.5" />
               Add Secret
@@ -117,10 +117,10 @@ export function VaultDetailsPage({ vaultId }: { vaultId: string }) {
         </div>
 
         {/* Secrets List */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm">
-          <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
-            <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">Secrets</h3>
-            <span className="text-[10px] text-slate-400 font-medium">{secrets?.length || 0} secret{(secrets?.length || 0) !== 1 ? 's' : ''}</span>
+        <div className="premium-card overflow-hidden shadow-none">
+          <div className="px-5 py-3 border-b border-premium bg-slate-50/20 dark:bg-zinc-900/10 flex items-center justify-between">
+            <h3 className="text-xs font-bold text-premium-main uppercase tracking-wider">Secrets</h3>
+            <span className="text-[10px] text-premium-muted font-semibold uppercase tracking-wider">{secrets?.length || 0} secret{(secrets?.length || 0) !== 1 ? 's' : ''}</span>
           </div>
 
           <div className="p-5">
@@ -137,30 +137,30 @@ export function VaultDetailsPage({ vaultId }: { vaultId: string }) {
                 onAction={() => setIsCreateSecretOpen(true)}
               />
             ) : (
-              <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
+              <div className="divide-y divide-slate-100 dark:divide-zinc-800/60">
                 {secrets.map((secret) => (
-                  <div key={secret.id} className="py-3 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-900/50 px-3 -mx-3 rounded-lg transition-colors">
+                  <div key={secret.id} className="py-3 flex items-center justify-between hover:bg-slate-50/30 dark:hover:bg-zinc-900/10 px-3 -mx-3 rounded-lg transition-colors">
                     <div>
-                      <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 font-mono">{secret.name}</h4>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{secret.description || 'No description'}</p>
+                      <h4 className="text-xs font-bold text-premium-main font-mono">{secret.name}</h4>
+                      <p className="text-[10px] text-premium-muted mt-0.5">{secret.description || 'No description'}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <Link
                         href={`/vaults/${vaultId}/secrets/${secret.id}`}
-                        className="px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200/80 dark:hover:bg-slate-700 rounded-md transition-colors"
+                        className="premium-button-secondary px-2.5 py-1 text-[10px]"
                       >
                         View
                       </Link>
                       <button
                         onClick={() => setEditSecret(secret)}
-                        className="p-1.5 text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 rounded-md transition-colors"
+                        className="p-1.5 text-premium-muted hover:text-premium-main hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
                         title="Edit secret"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => setDeleteSecretId(secret.id)}
-                        className="p-1.5 text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-md transition-colors"
+                        className="p-1.5 text-premium-muted hover:text-red-500 hover:bg-red-500/10 rounded-md border border-transparent hover:border-red-500/20 transition-all"
                         title="Delete secret"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
