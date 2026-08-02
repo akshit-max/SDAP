@@ -24,7 +24,7 @@ const CSP = [
   // API + Sentry + WebSocket (dev HMR)
   isDev
     ? "connect-src 'self' http://localhost:4000 ws://localhost:3000 https://sentry.io https://*.sentry.io"
-    : `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL ?? ''} https://sentry.io https://*.sentry.io`,
+    : `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL ? new URL(process.env.NEXT_PUBLIC_API_URL.startsWith('http') ? process.env.NEXT_PUBLIC_API_URL : `https://${process.env.NEXT_PUBLIC_API_URL}`).origin : 'https://withus-yy5i.onrender.com'} https://sentry.io https://*.sentry.io`,
   // No iframes
   "frame-src 'none'",
   // No plugins
