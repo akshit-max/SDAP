@@ -9,7 +9,7 @@ import { DashboardShell } from '../../../../../components/layout/DashboardShell'
 import { Loading } from '../../../../../components/common/Loading';
 import { ErrorState } from '../../../../../components/common/ErrorState';
 import { RevealFlow } from '../../../../../components/secrets/RevealFlow';
-import { FileKey2, Clock, CheckCircle } from 'lucide-react';
+import { FileKey2, Clock, CheckCircle, Shield, Play } from 'lucide-react';
 import { useAuth } from '../../../../../lib/auth/AuthContext';
 
 export default function SecretDetailsPage({ params }: { params: Promise<{ id: string; secretId: string }> }) {
@@ -21,8 +21,19 @@ export default function SecretDetailsPage({ params }: { params: Promise<{ id: st
   
   const { data: incomingSessions = [] } = useIncomingSessions(orgId);
   const activeSessionForSecret = incomingSessions.find(
-    (s) => s.scope === 'SECRET' && s.resourceId === secretId && s.status === 'ACTIVE'
+    (s: any) => s.scope === 'SECRET' && s.resourceId === secretId && s.status === 'ACTIVE'
   );
+
+  // TODO(v1.1): Do not derive deliveryMethod from secret.type. The secret type and delivery method are different concepts.
+  // The UI should read the actual session delivery method (or whatever source of truth the backend exposes) 
+  // instead of inferring it. Replace this mapping with the backend deliveryMethod once exposed.
+  const getDeliveryMethod = (type: string): 'REVEAL' | 'EXTENSION' | 'NATIVE' => {
+    if (type === 'COOKIE' || type === 'OAUTH') return 'EXTENSION';
+    if (type === 'API_KEY' || type === 'TOKEN') return 'NATIVE';
+    return 'REVEAL';
+  };
+
+  const deliveryMethod = secret ? getDeliveryMethod(secret.type) : 'REVEAL';
 
   return (
     <DashboardShell>
@@ -103,7 +114,53 @@ export default function SecretDetailsPage({ params }: { params: Promise<{ id: st
                     </Link>
                   </div>
                 ) : (
-                  <RevealFlow orgId={orgId} vaultId={id} secretId={secretId} sessionId={activeSessionForSecret?.id} />
+                  <>
+                    {deliveryMethod === 'EXTENSION' && (
+                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-5 border border-slate-200 dark:border-slate-700/50 flex flex-col items-center justify-center space-y-4">
+                        <div className="text-center">
+                          <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                            This secret is securely delivered via the WITHUS Browser Extension.
+                          </p>
+                          {activeSessionForSecret && (
+                            <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
+                              Session Active
+                            </p>
+                          )}
+                        </div>
+                        <button className="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors">
+                          <Play className="w-4 h-4 mr-2" />
+                          Launch Session
+                        </button>
+                      </div>
+                    )}
+                    
+                    {deliveryMethod === 'NATIVE' && (
+                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-5 border border-slate-200 dark:border-slate-700/50 flex flex-col items-center justify-center">
+                        <Shield className="w-8 h-8 text-blue-500 mb-2" />
+                        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          Managed by WITHUS
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          This secret is automatically injected into connected workflows. Reveal is disabled for security.
+                        </p>
+                      </div>
+                    )}
+
+                    {deliveryMethod === 'REVEAL' && (
+                      <div className="space-y-4">
+                        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 rounded-lg p-4 flex gap-3">
+                          <span className="text-amber-500 mt-0.5">⚠</span>
+                          <div>
+                            <p className="text-xs font-bold text-amber-800 dark:text-amber-200 mb-0.5">Emergency Reveal</p>
+                            <p className="text-xs text-amber-700 dark:text-amber-300">
+                              This action exposes the secret. Only use when automated access cannot be used.
+                            </p>
+                          </div>
+                        </div>
+                        <RevealFlow orgId={orgId} vaultId={id} secretId={secretId} sessionId={activeSessionForSecret?.id} />
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>

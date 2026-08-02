@@ -7,10 +7,12 @@ import { PromptModal } from '../../components/common/PromptModal';
 import { Check, X, Clock, CheckCircle, XCircle, Shield } from 'lucide-react';
 import { ApprovalRequestStatus } from '@repo/types';
 import { useAuth } from '../../lib/auth/AuthContext';
+import { useToast } from '../../components/common/Toast';
 
 export default function ApprovalsPage() {
   const { organization, user } = useAuth();
   const orgId = organization?.id || '';
+  const { toast } = useToast();
   const { data: myRequests, isLoading: isLoadingRequests } = useMyRequests(orgId);
   const { data: pendingApprovals, isLoading: isLoadingPending } = usePendingApprovals(orgId);
   const pendingApprovalsToReview = pendingApprovals?.filter((r: any) => r.requesterId !== user?.id);
@@ -20,7 +22,13 @@ export default function ApprovalsPage() {
   const [rejectState, setRejectState] = useState<string | null>(null); // holds approvalId when open
 
   const handleApprove = (approvalId: string) => {
-    resolveApproval({ approvalId, data: { status: 'APPROVED' } });
+    resolveApproval(
+      { approvalId, data: { status: 'APPROVED' } },
+      {
+        onSuccess: () => toast('success', 'Access Granted. A delegated session has been created automatically.'),
+        onError: (err: any) => toast('error', err.message || 'Failed to approve request.'),
+      }
+    );
   };
 
   const handleRejectWithReason = (reason: string) => {
@@ -90,7 +98,7 @@ export default function ApprovalsPage() {
         {/* Pending Approvals (Admin view) */}
         {organization?.role !== 'MEMBER' && (
           <section className="space-y-3">
-            <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Awaiting My Review</h2>
+            <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Access Requests</h2>
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm">
               {isLoadingPending ? (
                 <div className="p-4 text-center text-xs text-slate-500">Loading...</div>
@@ -178,9 +186,9 @@ export default function ApprovalsPage() {
         </section>
         )}
 
-        {/* My Requests */}
-        <section className="space-y-3">
-          <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">My Requests</h2>
+        {/* My Requests (Member view) */}
+        <section className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+          <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Pending Requests</h2>
           <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm">
             {isLoadingRequests ? (
               <div className="p-4 text-center text-xs text-slate-500">Loading...</div>

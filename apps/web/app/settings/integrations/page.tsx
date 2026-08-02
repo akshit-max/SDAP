@@ -41,7 +41,7 @@ const PROVIDERS: {
   {
     id: 'VERCEL',
     name: 'Vercel',
-    description: 'Grant and revoke team membership on Vercel. Delegate deployment access securely.',
+    description: 'Native Vercel Integration. Requires Vercel Pro Team. Hobby plans do not support team invitations.',
     docsUrl: 'https://vercel.com/docs/rest-api',
     patUrl: 'https://vercel.com/account/tokens',
     patHint: 'Create a token at vercel.com/account/tokens. Requires "Full Account" scope.',
@@ -50,22 +50,11 @@ const PROVIDERS: {
   {
     id: 'GITHUB',
     name: 'GitHub',
-    description: 'Manage GitHub Organization membership. Grant collaborator access to repositories.',
+    description: 'Native GitHub Integration. Manage repository access automatically.',
     docsUrl: 'https://docs.github.com/en/rest',
     patUrl: 'https://github.com/settings/tokens',
     patHint: 'Create a PAT (classic) with: read:org, admin:org, repo. Or a Fine-grained token with org access.',
     icon: <Code2 className="w-5 h-5" />,
-  },
-  {
-    id: 'GODADDY',
-    name: 'GoDaddy',
-    description:
-      'Validate GoDaddy API keys and list domains. Dashboard access requires the WITHUS Browser Extension.',
-    docsUrl: 'https://developer.godaddy.com/doc',
-    patUrl: 'https://developer.godaddy.com/keys',
-    patHint:
-      'Create an API key at developer.godaddy.com/keys. Format: "key:secret". Dashboard delegation requires the Browser Extension.',
-    icon: <Globe className="w-5 h-5" />,
   },
 ];
 
@@ -277,7 +266,7 @@ export default function IntegrationsPage() {
 
   return (
     <DashboardShell>
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="flex flex-col space-y-6">
         {/* Header */}
         <div>
           <h1 className="text-base font-bold text-slate-900 dark:text-slate-100">Integrations</h1>
@@ -330,6 +319,33 @@ export default function IntegrationsPage() {
                 />
               );
             })}
+            
+            {/* Static Card for Password-Based Platforms */}
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 p-5 flex flex-col relative group transition-all duration-200 hover:shadow-md dark:hover:shadow-slate-900/50 hover:border-slate-300 dark:hover:border-slate-700">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2.5 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-300 ring-1 ring-slate-100 dark:ring-slate-700/50">
+                    <Globe className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Password-Based Platforms</h3>
+                  </div>
+                </div>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50">
+                  <CheckCircle className="w-3 h-3" /> Browser Extension
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mb-5 leading-relaxed">
+                Secure browser-assisted access for platforms that do not provide native delegation APIs.
+                <br /><br />
+                <strong>Supported:</strong>
+                <br />• GoDaddy
+                <br />• Hostinger
+                <br />• cPanel
+                <br />• Plesk (future)
+              </p>
+            </div>
+
           </div>
         )}
       </div>

@@ -10,13 +10,12 @@ import { SessionScope, SessionPermission } from '@repo/types';
 import { Modal } from '../common/Modal';
 import { useToast } from '../common/Toast';
 import { X, Lock, Users, Calendar, AlertCircle, Loader2, GitBranch, Key, ChevronDown, Triangle, Globe } from 'lucide-react';
+import { useAuth } from '../../lib/auth/AuthContext';
 
-interface CreateSessionModalProps {
+interface RequestAccessModalProps {
   orgId: string;
   isOpen: boolean;
   onClose: () => void;
-  /** Pre-select a grantee member ID (from Team page "Grant Access" shortcut) */
-  preselectedGranteeId?: string;
 }
 
 const selectClass =
@@ -36,12 +35,12 @@ function SelectWrapper({ children }: { children: React.ReactNode }) {
 // TODO(v1.1): Replace duplicated modal logic with a shared form component.
 // RequestAccessModal -> SharedSessionForm <- GrantAccessModal
 // This extraction should be done post-v1.0.1 release to minimize risk.
-export function CreateSessionModal({
+export function RequestAccessModal({
   orgId,
   isOpen,
   onClose,
-  preselectedGranteeId,
-}: CreateSessionModalProps) {
+}: RequestAccessModalProps) {
+  const { user } = useAuth();
   const { mutate: createSession, isPending } = useCreateSession(orgId);
   const { toast } = useToast();
 
@@ -49,7 +48,8 @@ export function CreateSessionModal({
   const { data: vaultsData } = useVaults(orgId);
   const vaults = vaultsData?.items || [];
 
-  const [granteeId, setGranteeId] = useState(preselectedGranteeId || '');
+  const granteeId = user?.id || '';
+
   const [selectedAccessType, setSelectedAccessType] = useState<'GITHUB' | 'VERCEL' | 'GODADDY' | 'VAULT' | ''>('');
   
   // Derived state to keep logic intact
@@ -82,7 +82,6 @@ export function CreateSessionModal({
   const repositories = providerResources.filter(r => r.type === 'REPOSITORY');
 
   const handleClose = () => {
-    setGranteeId(preselectedGranteeId || '');
     setSelectedAccessType('');
     setSelectedIntegrationResource('');
     setSelectedVaultId('');
@@ -100,7 +99,7 @@ export function CreateSessionModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!granteeId) { toast('warning', 'Please select a team member to grant access to.'); return; }
+    if (!granteeId) { toast('error', 'User ID not found.'); return; }
     
     // Validate Grantee for Integrations
     const selectedMember = members.find(m => m.userId === granteeId);
@@ -154,48 +153,24 @@ export function CreateSessionModal({
       {
         onSuccess: (data: { status?: string }) => {
           if (data?.status === 'PENDING_APPROVAL') {
-            toast('info', 'Session requires approval. Request submitted to admins.');
+            toast('success', 'Request Submitted. Waiting for administrator approval.');
           } else {
+            // Technically it might just create a session if they bypass approval, but UX should just be request
             toast('success', 'Access granted successfully.');
           }
           handleClose();
         },
         onError: (err: Error) => {
-          toast('error', err.message || 'Failed to grant access. Please try again.');
+          toast('error', err.message || 'Failed to request access. Please try again.');
         },
       },
     );
   };
 
-  // Filter out the current user from grantee options — you can't grant access to yourself
-  const granteeOptions = members.filter((m) => m.role !== 'OWNER' || members.length > 1);
-
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Grant Access">
+    <Modal isOpen={isOpen} onClose={handleClose} title="Request Access">
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Step 1: Who */}
-        <div>
-          <label className={labelClass}>
-            Team Member <span className="text-red-500">*</span>
-          </label>
-          <SelectWrapper>
-            <select
-              className={selectClass}
-              value={granteeId}
-              onChange={(e) => setGranteeId(e.target.value)}
-              required
-            >
-              <option value="">Select a team member…</option>
-              {members.map((m) => (
-                <option key={m.userId} value={m.userId}>
-                  {m.user?.fullName || m.user?.email || m.userId} — {m.role}
-                </option>
-              ))}
-            </select>
-          </SelectWrapper>
-          <p className={hintClass}>The member who will receive temporary access.</p>
-        </div>
-
+        {/* Step 1: Who is requesting (implicit) */}
         {/* Step 2: What do you want to access? */}
         <div>
           <label className={labelClass}>What do you want to access? <span className="text-red-500">*</span></label>
@@ -382,7 +357,7 @@ export function CreateSessionModal({
             className="flex items-center px-4 py-2 text-xs font-semibold bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg transition-colors disabled:opacity-50"
           >
             {isPending && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
-            Grant Access
+            Submit Request
           </button>
         </div>
       </form>

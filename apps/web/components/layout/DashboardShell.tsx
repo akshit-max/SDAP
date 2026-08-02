@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { AuthSession } from '../../lib/auth/session';
 import { useAuth } from '../../lib/auth/AuthContext';
+import { usePendingApprovals, useMyRequests } from '../../hooks/useApprovals';
 import { Shield, LayoutDashboard, Key, LogOut, Users, CheckSquare, FileText, Settings, Plug2, KeyRound } from 'lucide-react';
 import clsx from 'clsx';
 import { useState, useEffect } from 'react';
@@ -13,7 +14,19 @@ import { Menu, ChevronLeft, ChevronRight } from 'lucide-react';
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { refreshContext } = useAuth();
+  const { refreshContext, organization, user } = useAuth();
+  
+  const orgId = organization?.id || '';
+  const { data: pendingApprovals } = usePendingApprovals(orgId);
+  const { data: myRequests } = useMyRequests(orgId);
+
+  const isAdmin = organization?.role === 'ADMIN' || organization?.role === 'OWNER';
+  let approvalBadgeCount = 0;
+  if (isAdmin) {
+    approvalBadgeCount = pendingApprovals?.filter((r: any) => r.requesterId !== user?.id)?.length || 0;
+  } else {
+    approvalBadgeCount = myRequests?.filter((r: any) => r.status === 'PENDING')?.length || 0;
+  }
   
   const LogoSVG = ({ className }: { className?: string }) => (
     <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
@@ -56,7 +69,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     { name: 'Sessions', href: '/sessions', icon: Users },
     { name: 'Approvals', href: '/approvals', icon: CheckSquare },
     { name: 'Integrations', href: '/settings/integrations', icon: Plug2 },
-    { name: 'API Keys', href: '/settings/api-keys', icon: KeyRound },
     { name: 'Audit Log', href: '/audit', icon: FileText },
     { name: 'Team', href: '/settings/members', icon: Users },
     { name: 'Settings', href: '/settings', icon: Settings },
@@ -93,7 +105,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                   href={item.href}
                   title={isCollapsed ? item.name : undefined}
                   className={clsx(
-                    'flex items-center py-2 text-xs font-semibold rounded-lg transition-all duration-150',
+                    'relative flex items-center py-2 text-xs font-semibold rounded-lg transition-all duration-150',
                     isCollapsed ? 'justify-center px-0' : 'px-3',
                     isActive
                       ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950 shadow-sm'
@@ -108,6 +120,15 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                     )}
                   />
                   {!isCollapsed && <span className="truncate">{item.name}</span>}
+                  
+                  {item.name === 'Approvals' && approvalBadgeCount > 0 && (
+                    <span className={clsx(
+                      "inline-flex items-center justify-center font-bold text-white bg-red-500 rounded-full",
+                      isCollapsed ? "absolute top-1 right-1.5 w-2 h-2" : "ml-auto px-1.5 min-w-[1.25rem] h-4 text-[9px]"
+                    )}>
+                      {isCollapsed ? '' : approvalBadgeCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}

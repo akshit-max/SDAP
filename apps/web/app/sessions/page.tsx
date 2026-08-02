@@ -5,6 +5,7 @@ import { useIncomingSessions, useOutgoingSessions, useRevokeSession } from '../.
 import { sessionsApi } from '../../lib/api/sessions';
 import { DashboardShell } from '../../components/layout/DashboardShell';
 import { CreateSessionModal } from '../../components/sessions/CreateSessionModal';
+import { RequestAccessModal } from '../../components/sessions/RequestAccessModal';
 import { ConfirmModal } from '../../components/common/ConfirmModal';
 import { PromptModal } from '../../components/common/PromptModal';
 import { Plus, Trash2, Clock, CheckCircle, XCircle, Eye, Loader2 } from 'lucide-react';
@@ -36,6 +37,7 @@ export default function SessionsPage() {
   // Confirm modal state (replaces window.confirm for revoke)
   const [confirmRevokeId, setConfirmRevokeId] = useState<string | null>(null);
 
+  const canGrantAccess = organization?.role === 'OWNER' || organization?.role === 'ADMIN';
   const canCreateSession = !!orgId;
 
   const formatExpiry = (expiresAt: string | Date) => {
@@ -99,21 +101,23 @@ export default function SessionsPage() {
               onClick={() => setIsModalOpen(true)}
               className="inline-flex items-center px-3 py-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-lg font-semibold text-xs transition-colors shadow-sm"
             >
-              <Plus className="-ml-0.5 mr-1.5 h-3.5 w-3.5" />
-              Create Session
+              <Plus className="w-3.5 h-3.5 mr-1" />
+              {canGrantAccess ? 'Create Delegated Session' : 'Request Temporary Access'}
             </button>
           )}
         </div>
 
         {/* Incoming Sessions */}
         <section className="space-y-3">
-          <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Granted to Me (Incoming)</h2>
+          <div className="flex justify-between items-end">
+            <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">My Access</h2>
+          </div>
           <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm">
             {isLoadingIncoming ? (
               <div className="p-4 text-center text-xs text-slate-500">Loading...</div>
             ) : !incomingSessions?.length ? (
               <div className="p-6 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900">
-                You do not have any incoming delegated sessions.
+                No Active Sessions. Request temporary access from this page, or approve pending requests to create delegated sessions.
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -205,15 +209,18 @@ export default function SessionsPage() {
           </div>
         </section>
 
-        {/* Outgoing Sessions */}
-        <section className="space-y-3">
-          <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Granted by Me (Outgoing)</h2>
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm">
+        {/* Outgoing Sessions (Only for admins/owners) */}
+        {canGrantAccess && (
+          <section className="space-y-3 pt-6 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex justify-between items-end">
+              <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Access I've Granted</h2>
+            </div>
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm">
             {isLoadingOutgoing ? (
               <div className="p-4 text-center text-xs text-slate-500">Loading...</div>
             ) : !outgoingSessions?.length ? (
               <div className="p-6 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900">
-                You have not created any delegated sessions.
+                No Active Sessions. Request temporary access from this page, or approve pending requests to create delegated sessions.
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -289,12 +296,21 @@ export default function SessionsPage() {
             )}
           </div>
         </section>
+        )}
 
-        <CreateSessionModal
-          orgId={orgId}
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-        />
+        {canGrantAccess ? (
+          <CreateSessionModal
+            orgId={orgId}
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+          />
+        ) : (
+          <RequestAccessModal
+            orgId={orgId}
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+          />
+        )}
 
         {/* Revoke Confirm Modal */}
         <ConfirmModal
