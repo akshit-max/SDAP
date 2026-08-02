@@ -3,7 +3,7 @@ import { Storage } from './storage';
 
 // Injected at build time via esbuild define, or fallback for dev
 const BASE_URL: string =
-  (typeof __WITHUS_API_URL__ !== 'undefined' ? __WITHUS_API_URL__ : null) ??
+  (typeof __WITHUS_API_URL__ !== 'undefined' && __WITHUS_API_URL__ ? __WITHUS_API_URL__ : null) ??
   'http://localhost:4000/api/v1';
 
 declare const __WITHUS_API_URL__: string | undefined;

@@ -2,21 +2,28 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRevealSecret } from '../../hooks/useRevealSecret';
+import { useRevealSessionSecret } from '../../hooks/useSessions';
 import { Eye, EyeOff, AlertTriangle, Loader2, Copy, Check } from 'lucide-react';
 
 interface RevealFlowProps {
   orgId: string;
   vaultId: string;
   secretId: string;
+  sessionId?: string;
 }
 
-export function RevealFlow({ orgId, vaultId, secretId }: RevealFlowProps) {
+export function RevealFlow({ orgId, vaultId, secretId, sessionId }: RevealFlowProps) {
   const [reason, setReason] = useState('');
   const [plaintext, setPlaintext] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const { mutate, isPending, error, reset } = useRevealSecret();
+  // We can't conditionally call hooks, so we call both but only use one's mutate
+  const nativeReveal = useRevealSecret();
+  const sessionReveal = useRevealSessionSecret(orgId);
+  const isPending = sessionId ? sessionReveal.isPending : nativeReveal.isPending;
+  const error = sessionId ? sessionReveal.error : nativeReveal.error;
+  const reset = sessionId ? sessionReveal.reset : nativeReveal.reset;
 
   const handleClear = useCallback(() => {
     setPlaintext(null);
@@ -42,16 +49,29 @@ export function RevealFlow({ orgId, vaultId, secretId }: RevealFlowProps) {
     e.preventDefault();
     if (!reason.trim()) return;
 
-    mutate(
-      { orgId, vaultId, secretId, reason },
-      {
-        onSuccess: (data) => {
-          setPlaintext(data.plaintext);
-          setShowForm(false);
-          setReason('');
-        },
-      }
-    );
+    if (sessionId) {
+      sessionReveal.mutate(
+        { sessionId, reason },
+        {
+          onSuccess: (plaintextFromData) => {
+            setPlaintext(plaintextFromData);
+            setShowForm(false);
+            setReason('');
+          },
+        }
+      );
+    } else {
+      nativeReveal.mutate(
+        { orgId, vaultId, secretId, reason },
+        {
+          onSuccess: (data) => {
+            setPlaintext(data.plaintext);
+            setShowForm(false);
+            setReason('');
+          },
+        }
+      );
+    }
   };
 
 

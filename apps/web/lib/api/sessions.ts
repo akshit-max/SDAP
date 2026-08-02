@@ -30,6 +30,6 @@ export const sessionsApi = {
 
   revealSecretViaSession: async (orgId: string, sessionId: string, reason: string): Promise<string> => {
     const response = await apiClient.post(`/organizations/${orgId}/sessions/${sessionId}/reveal`, { reason });
-    return response.data;
+    return response.data.plaintext;
   },
 };

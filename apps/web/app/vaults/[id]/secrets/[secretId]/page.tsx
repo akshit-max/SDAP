@@ -4,6 +4,7 @@ import React, { use } from 'react';
 import Link from 'next/link';
 import { useVault } from '../../../../../hooks/useVaults';
 import { useSecret } from '../../../../../hooks/useSecrets';
+import { useIncomingSessions } from '../../../../../hooks/useSessions';
 import { DashboardShell } from '../../../../../components/layout/DashboardShell';
 import { Loading } from '../../../../../components/common/Loading';
 import { ErrorState } from '../../../../../components/common/ErrorState';
@@ -17,6 +18,11 @@ export default function SecretDetailsPage({ params }: { params: Promise<{ id: st
   const orgId = organization?.id || '';
   const { data: vault, isLoading: vaultLoading } = useVault(orgId, id);
   const { data: secret, isLoading: secretLoading, isError, refetch } = useSecret(orgId, id, secretId);
+  
+  const { data: incomingSessions = [] } = useIncomingSessions(orgId);
+  const activeSessionForSecret = incomingSessions.find(
+    (s) => s.scope === 'SECRET' && s.resourceId === secretId && s.status === 'ACTIVE'
+  );
 
   return (
     <DashboardShell>
@@ -82,7 +88,7 @@ export default function SecretDetailsPage({ params }: { params: Promise<{ id: st
 
               <div className="border-t border-slate-100 dark:border-slate-800 pt-5 mt-3">
                 <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider mb-3">Secret Value</h4>
-                {organization?.role === 'MEMBER' ? (
+                {organization?.role === 'MEMBER' && !activeSessionForSecret ? (
                   <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-5 border border-slate-200 dark:border-slate-700/50 text-center">
                     <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">
                       You don't have permission to reveal this secret.
@@ -97,7 +103,7 @@ export default function SecretDetailsPage({ params }: { params: Promise<{ id: st
                     </Link>
                   </div>
                 ) : (
-                  <RevealFlow orgId={orgId} vaultId={id} secretId={secretId} />
+                  <RevealFlow orgId={orgId} vaultId={id} secretId={secretId} sessionId={activeSessionForSecret?.id} />
                 )}
               </div>
             </div>
