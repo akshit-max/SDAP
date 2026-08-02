@@ -22,9 +22,6 @@ export default function SessionsPage() {
   const { mutate: revokeSession, isPending: isRevoking } = useRevokeSession(orgId);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [revealingId, setRevealingId] = useState<string | null>(null);
-  const [revealModal, setRevealModal] = useState<{ value: string; sessionId: string } | null>(null);
-
   // Pagination states
   const [incPage, setIncPage] = useState(1);
   const [outPage, setOutPage] = useState(1);
@@ -35,12 +32,6 @@ export default function SessionsPage() {
 
   const paginatedOutgoing = outgoingSessions?.slice((outPage - 1) * ITEMS_PER_PAGE, outPage * ITEMS_PER_PAGE);
   const totalOutPages = outgoingSessions ? Math.ceil(outgoingSessions.length / ITEMS_PER_PAGE) : 0;
-
-  // Prompt modal state (replaces window.prompt for reveal reason)
-  const [promptState, setPromptState] = useState<{
-    sessionId: string;
-    sessionOrgId: string;
-  } | null>(null);
 
   // Confirm modal state (replaces window.confirm for revoke)
   const [confirmRevokeId, setConfirmRevokeId] = useState<string | null>(null);
@@ -83,23 +74,6 @@ export default function SessionsPage() {
         <CheckCircle className="w-3 h-3 mr-1" /> Active
       </span>
     );
-  };
-
-  const handleRevealWithReason = async (reason: string) => {
-    if (!promptState) return;
-    const { sessionId, sessionOrgId } = promptState;
-    setPromptState(null);
-    setRevealingId(sessionId);
-    try {
-      const plaintext = await sessionsApi.revealSecretViaSession(sessionOrgId, sessionId, reason);
-      setRevealModal({ value: plaintext, sessionId });
-      refetchIncoming();
-    } catch (err: unknown) {
-      const msg = (err as { message?: string })?.message || 'Failed to reveal secret. Please try again.';
-      toast('error', msg);
-    } finally {
-      setRevealingId(null);
-    }
   };
 
   const handleRevokeConfirmed = () => {
@@ -188,20 +162,7 @@ export default function SessionsPage() {
                             </div>
                           </td>
                           <td className="px-5 py-3 whitespace-nowrap text-right">
-                            {isActive && session.scope === 'SECRET' && (
-                              <button
-                                onClick={() => setPromptState({ sessionId: session.id, sessionOrgId: session.organizationId })}
-                                disabled={revealingId === session.id}
-                                aria-label="Reveal secret"
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-md font-semibold text-[11px] transition-colors shadow-sm disabled:opacity-60"
-                              >
-                                {revealingId === session.id
-                                  ? <Loader2 className="w-3 h-3 animate-spin" />
-                                  : <Eye className="w-3 h-3" />
-                                }
-                                Reveal
-                              </button>
-                            )}
+
                             {isActive && (session.scope as string) === 'INTEGRATION' && (
                               (session as any).integrationProvider === 'GODADDY' || 
                               (session as any).integrationProvider === 'HOSTINGER' || 
@@ -335,60 +296,17 @@ export default function SessionsPage() {
           onClose={() => setIsModalOpen(false)}
         />
 
-        {/* Reveal Reason Prompt Modal */}
-        <PromptModal
-          isOpen={!!promptState}
-          title="Reveal Secret"
-          message="Provide a reason for this reveal. It will be recorded in the audit log."
-          label="Reason"
-          placeholder="e.g. Debugging production issue, deploying release…"
-          confirmLabel="Reveal"
-          required
-          isPending={!!revealingId}
-          onConfirm={handleRevealWithReason}
-          onCancel={() => setPromptState(null)}
-        />
-
         {/* Revoke Confirm Modal */}
         <ConfirmModal
           isOpen={!!confirmRevokeId}
           title="Revoke Session"
-          message="Are you sure you want to revoke this session? The grantee will immediately lose access."
+          message="Are you sure you want to revoke this session? The user will immediately lose access."
           confirmLabel="Revoke"
           danger
           isPending={isRevoking}
           onConfirm={handleRevokeConfirmed}
           onCancel={() => setConfirmRevokeId(null)}
         />
-
-        {/* Reveal Value Modal */}
-        {revealModal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md border border-slate-200/80 dark:border-slate-800 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/30 flex items-center justify-center">
-                  <Eye className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Secret Revealed</h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">Copy the value and close immediately.</p>
-                </div>
-              </div>
-              <div className="bg-slate-950 dark:bg-slate-950 border border-slate-800 rounded-xl p-4 mb-4">
-                <p className="font-mono text-sm text-emerald-400 break-all select-all">{revealModal.value}</p>
-              </div>
-              <p className="text-[10px] text-amber-600 dark:text-amber-400 mb-4">
-                ⚠️ This value is shown once. It will not be shown again without another reveal.
-              </p>
-              <button
-                onClick={() => setRevealModal(null)}
-                className="w-full py-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-lg font-semibold text-xs transition-colors"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </DashboardShell>
   );
