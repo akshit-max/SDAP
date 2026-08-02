@@ -11,14 +11,14 @@ export function csrfMiddleware(req: Request, res: Response, next: NextFunction) 
     res.cookie('sdap_csrf', csrfCookie, {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       path: '/',
     });
   }
 
-  // 2. Skip verification for safe methods or browser extension
+  // 2. Skip verification for safe methods, extension, or auth endpoints (which don't have a session yet)
   const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
-  if (safeMethods.includes(req.method) || req.header('X-Extension-Client') === 'withus-mv3') {
+  if (safeMethods.includes(req.method) || req.header('X-Extension-Client') === 'withus-mv3' || req.path.includes('/auth/login') || req.path.includes('/auth/register') || req.path.includes('/auth/forgot-password') || req.path.includes('/auth/reset-password')) {
     return next();
   }
 

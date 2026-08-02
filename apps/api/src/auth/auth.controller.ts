@@ -30,7 +30,7 @@ export class AuthController {
     res.cookie('sdap_token', accessToken, {
       httpOnly: true,
       secure: isProd,
-      sameSite: 'lax',
+      sameSite: isProd ? 'none' : 'lax',
       path: '/',
       maxAge: 60 * 60 * 1000, // 1 hour — matches AUTH_CONFIG.accessTTL
     });
@@ -38,7 +38,7 @@ export class AuthController {
     res.cookie('sdap_refresh_token', refreshToken, {
       httpOnly: true,
       secure: isProd,
-      sameSite: 'lax',
+      sameSite: isProd ? 'none' : 'lax',
       path: '/api/v1/auth/refresh', // only sent to refresh endpoint
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
@@ -50,14 +50,14 @@ export class AuthController {
     res.clearCookie('sdap_token', {
       httpOnly: true,
       secure: isProd,
-      sameSite: 'lax',
+      sameSite: isProd ? 'none' : 'lax',
       path: '/',
     });
     
     res.clearCookie('sdap_refresh_token', {
       httpOnly: true,
       secure: isProd,
-      sameSite: 'lax',
+      sameSite: isProd ? 'none' : 'lax',
       path: '/api/v1/auth/refresh',
     });
   }
