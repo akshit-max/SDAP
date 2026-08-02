@@ -77,7 +77,7 @@ loginBtn.addEventListener('click', async () => {
     showLoginError((err as Error).message || 'Login failed. Check your credentials.');
   } finally {
     loginBtn.disabled = false;
-    loginBtn.textContent = 'Sign in to WITHUS';
+    loginBtn.textContent = 'Sign in to WithUs';
   }
 });
 
@@ -116,7 +116,7 @@ async function showSessions(email: string) {
     sessionsList.innerHTML = `
       <div class="no-sessions">
         <strong>Not authenticated</strong>
-        Please sign in to WITHUS to view delegated sessions.
+        Please sign in to WithUs to view delegated sessions.
       </div>`;
     showLogin();
     return;

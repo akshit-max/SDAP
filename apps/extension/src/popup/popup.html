@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WITHUS Vault</title>
+  <title>WithUs Vault</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -11,8 +11,8 @@
       width: 340px;
       min-height: 200px;
       font-family: system-ui, -apple-system, sans-serif;
-      background: #0f172a;
-      color: #f1f5f9;
+      background: #030303;
+      color: #f4f4f5;
       font-size: 13px;
     }
 
@@ -22,30 +22,30 @@
       align-items: center;
       gap: 10px;
       padding: 14px 16px 12px;
-      border-bottom: 1px solid rgba(255,255,255,0.07);
+      border-bottom: 1px solid #1f1f23;
     }
     .logo {
       width: 28px;
       height: 28px;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      background: #ffffff;
       border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 14px;
       font-weight: 800;
-      color: white;
+      color: #030303;
       flex-shrink: 0;
     }
-    .header-text h1 { font-size: 13px; font-weight: 700; color: #f8fafc; }
-    .header-text p { font-size: 11px; color: #64748b; margin-top: 1px; }
+    .header-text h1 { font-size: 13px; font-weight: 700; color: #f4f4f5; }
+    .header-text p { font-size: 11px; color: #a1a1aa; margin-top: 1px; }
 
     .status-dot {
       margin-left: auto;
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: #334155;
+      background: #27272a;
     }
     .status-dot.connected { background: #22c55e; }
 
@@ -57,7 +57,7 @@
       display: block;
       font-size: 11px;
       font-weight: 600;
-      color: #94a3b8;
+      color: #a1a1aa;
       margin-bottom: 4px;
       margin-top: 10px;
     }
@@ -65,15 +65,15 @@
     #login-view input {
       width: 100%;
       padding: 8px 10px;
-      background: #1e293b;
-      border: 1px solid #334155;
+      background: #09090b;
+      border: 1px solid #1f1f23;
       border-radius: 8px;
-      color: #f1f5f9;
+      color: #f4f4f5;
       font-size: 13px;
       outline: none;
       transition: border-color 0.15s;
     }
-    #login-view input:focus { border-color: #6366f1; }
+    #login-view input:focus { border-color: #ffffff; }
 
     .btn {
       width: 100%;
@@ -87,23 +87,23 @@
       transition: opacity 0.15s;
     }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-primary { background: #6366f1; color: white; }
-    .btn-primary:hover:not(:disabled) { background: #4f46e5; }
-    .btn-danger { background: #1e293b; color: #ef4444; border: 1px solid #7f1d1d; margin-top: 8px; }
+    .btn-primary { background: #ffffff; color: #030303; }
+    .btn-primary:hover:not(:disabled) { background: #e4e4e7; }
+    .btn-danger { background: #09090b; color: #ef4444; border: 1px solid #3f0f0f; margin-top: 8px; }
 
     /* Session list */
     #sessions-view h2 {
       font-size: 11px;
       font-weight: 700;
-      color: #64748b;
+      color: #a1a1aa;
       text-transform: uppercase;
       letter-spacing: 0.06em;
       margin-bottom: 10px;
     }
 
     .session-card {
-      background: #1e293b;
-      border: 1px solid #334155;
+      background: #09090b;
+      border: 1px solid #1f1f23;
       border-radius: 10px;
       padding: 10px 12px;
       margin-bottom: 8px;
@@ -111,11 +111,11 @@
     .session-name {
       font-size: 12px;
       font-weight: 600;
-      color: #f1f5f9;
+      color: #f4f4f5;
     }
     .session-meta {
       font-size: 10px;
-      color: #64748b;
+      color: #a1a1aa;
       margin-top: 3px;
     }
     .session-meta span { margin-right: 8px; }
@@ -123,27 +123,27 @@
       display: inline-block;
       padding: 1px 6px;
       border-radius: 99px;
-      background: rgba(34,197,94,0.12);
-      color: #22c55e;
+      background: rgba(34,197,94,0.1);
+      color: #4ade80;
       font-size: 10px;
       font-weight: 700;
-      border: 1px solid rgba(34,197,94,0.2);
+      border: 1px solid rgba(34,197,94,0.15);
       margin-left: 6px;
     }
 
     .no-sessions {
       text-align: center;
       padding: 24px 0;
-      color: #475569;
+      color: #71717a;
       font-size: 12px;
       line-height: 1.6;
     }
-    .no-sessions strong { display: block; color: #94a3b8; margin-bottom: 4px; }
+    .no-sessions strong { display: block; color: #a1a1aa; margin-bottom: 4px; }
 
     /* Error */
     .error-msg {
-      background: rgba(239,68,68,0.1);
-      border: 1px solid rgba(239,68,68,0.2);
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.15);
       border-radius: 8px;
       padding: 8px 10px;
       color: #f87171;
@@ -154,11 +154,11 @@
     /* Current site */
     .current-site {
       font-size: 11px;
-      color: #64748b;
+      color: #a1a1aa;
       margin-bottom: 12px;
     }
     .current-site span {
-      color: #94a3b8;
+      color: #f4f4f5;
       font-weight: 600;
     }
 
@@ -168,12 +168,12 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-top: 1px solid rgba(255,255,255,0.07);
+      border-top: 1px solid #1f1f23;
     }
-    .footer-email { font-size: 11px; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+    .footer-email { font-size: 11px; color: #71717a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
     .logout-btn {
       font-size: 11px;
-      color: #64748b;
+      color: #a1a1aa;
       background: none;
       border: none;
       cursor: pointer;
@@ -192,7 +192,7 @@
   <div class="header">
     <div class="logo">W</div>
     <div class="header-text">
-      <h1>WITHUS Vault</h1>
+      <h1>WithUs Vault</h1>
       <p>Delegated Credential Access</p>
     </div>
     <div class="status-dot" id="status-dot"></div>
@@ -205,7 +205,7 @@
     <label for="password">Password</label>
     <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
     <div class="error-msg hidden" id="login-error"></div>
-    <button class="btn btn-primary" id="login-btn">Sign in to WITHUS</button>
+    <button class="btn btn-primary" id="login-btn">Sign in to WithUs</button>
   </div>
 
   <!-- Sessions View -->

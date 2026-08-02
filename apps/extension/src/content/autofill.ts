@@ -108,7 +108,7 @@ async function handleAutofillRequest(): Promise<void> {
   const session = activeSessions.sort((a, b) => a.revealCount - b.revealCount)[0];
   if (!session) return;
 
-  showToast('WITHUS session detected... Logging you in...');
+  showToast('WithUs session detected... Logging you in...');
 
   // Introduce 1-second delay for premium UX
   await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -186,7 +186,7 @@ function sendMessage<T>(msg: ExtensionMessage): Promise<ExtensionResponse<T>> {
     const promise = chrome.runtime.sendMessage(msg) as Promise<ExtensionResponse<T>>;
     return promise.catch((error: any) => {
       if (error?.message?.includes('Extension context invalidated')) {
-        alert('WITHUS Extension was updated. The page will now refresh to apply changes.');
+        alert('WithUs Extension was updated. The page will now refresh to apply changes.');
         window.location.reload();
         return new Promise(() => {}); // Wait forever while page reloads
       }
@@ -194,7 +194,7 @@ function sendMessage<T>(msg: ExtensionMessage): Promise<ExtensionResponse<T>> {
     });
   } catch (error: any) {
     if (error?.message?.includes('Extension context invalidated')) {
-      alert('WITHUS Extension was updated. The page will now refresh to apply changes.');
+      alert('WithUs Extension was updated. The page will now refresh to apply changes.');
       window.location.reload();
       return new Promise(() => {});
     }

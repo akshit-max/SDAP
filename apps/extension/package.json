@@ -1,7 +1,7 @@
 {
   "name": "withus-extension",
   "version": "1.0.0",
-  "description": "WITHUS Browser Extension — securely autofill credentials for delegated sessions",
+  "description": "WithUs Browser Extension — securely autofill credentials for delegated sessions",
   "scripts": {
     "build": "node build.mjs && node zip.js",
     "dev": "node build.mjs --watch"
