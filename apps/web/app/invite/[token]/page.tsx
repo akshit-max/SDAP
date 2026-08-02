@@ -31,139 +31,153 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
   }, [token, isLoggedIn, inviteDetails, acceptInvite, toast, router]);
 
   // Loading state for fetching invite details
+  // Reusable wrappers for consistency
+  const Wrapper = ({ children }: { children: React.ReactNode }) => (
+    <div className="min-h-screen flex items-center justify-center bg-premium-background p-4">
+      {children}
+    </div>
+  );
+
+  const Card = ({ children }: { children: React.ReactNode }) => (
+    <div className="max-w-sm w-full premium-card p-8 text-center shadow-2xl">
+      {children}
+    </div>
+  );
+
+  // Loading state for fetching invite details
   if (isDetailsLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
-        <div className="max-w-sm w-full bg-white dark:bg-slate-900 rounded-2xl shadow-md border border-slate-200/60 dark:border-slate-800 p-8 text-center">
-          <Loader2 className="w-10 h-10 text-slate-400 mx-auto mb-4 animate-spin" />
-          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Loading invitation...</p>
-        </div>
-      </div>
+      <Wrapper>
+        <Card>
+          <Loader2 className="w-10 h-10 text-premium-muted mx-auto mb-4 animate-spin" />
+          <p className="text-sm font-bold text-premium-main">Loading invitation...</p>
+        </Card>
+      </Wrapper>
     );
   }
 
   // Graceful Error Screens based on invite status
   if (!inviteDetails || inviteDetails.status === 'INVALID') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
-        <div className="max-w-sm w-full bg-white dark:bg-slate-900 rounded-2xl shadow-md border border-slate-200/60 dark:border-slate-800 p-8 text-center">
+      <Wrapper>
+        <Card>
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-2">Invalid Invitation</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">This invitation link does not exist or is malformed.</p>
-          <button onClick={() => router.push('/')} className="w-full px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg font-semibold text-sm">
+          <h2 className="text-base font-bold text-premium-main mb-2">Invalid Invitation</h2>
+          <p className="text-sm text-premium-muted mb-6 font-semibold">This invitation link does not exist or is malformed.</p>
+          <button onClick={() => router.push('/')} className="w-full premium-button-primary">
             Go to Homepage
           </button>
-        </div>
-      </div>
+        </Card>
+      </Wrapper>
     );
   }
 
   if (inviteDetails.status === 'EXPIRED') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
-        <div className="max-w-sm w-full bg-white dark:bg-slate-900 rounded-2xl shadow-md border border-slate-200/60 dark:border-slate-800 p-8 text-center">
+      <Wrapper>
+        <Card>
           <CalendarX className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-          <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-2">Invitation Expired</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">This invitation has expired. Please ask the administrator to send a new one.</p>
-          <button onClick={() => router.push('/')} className="w-full px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg font-semibold text-sm">
+          <h2 className="text-base font-bold text-premium-main mb-2">Invitation Expired</h2>
+          <p className="text-sm text-premium-muted mb-6 font-semibold">This invitation has expired. Please ask the administrator to send a new one.</p>
+          <button onClick={() => router.push('/')} className="w-full premium-button-primary">
             Go to Homepage
           </button>
-        </div>
-      </div>
+        </Card>
+      </Wrapper>
     );
   }
 
   if (inviteDetails.status === 'ACCEPTED') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
-        <div className="max-w-sm w-full bg-white dark:bg-slate-900 rounded-2xl shadow-md border border-slate-200/60 dark:border-slate-800 p-8 text-center">
+      <Wrapper>
+        <Card>
           <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
-          <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-2">Already Accepted</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">This invitation has already been accepted.</p>
-          <button onClick={() => router.push('/login')} className="w-full px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg font-semibold text-sm">
+          <h2 className="text-base font-bold text-premium-main mb-2">Already Accepted</h2>
+          <p className="text-sm text-premium-muted mb-6 font-semibold">This invitation has already been accepted.</p>
+          <button onClick={() => router.push('/login')} className="w-full premium-button-primary">
             Log In
           </button>
-        </div>
-      </div>
+        </Card>
+      </Wrapper>
     );
   }
 
   if (inviteDetails.status === 'REVOKED') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
-        <div className="max-w-sm w-full bg-white dark:bg-slate-900 rounded-2xl shadow-md border border-slate-200/60 dark:border-slate-800 p-8 text-center">
+      <Wrapper>
+        <Card>
           <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-2">Invitation Revoked</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">This invitation was revoked by the administrator.</p>
-          <button onClick={() => router.push('/')} className="w-full px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg font-semibold text-sm">
+          <h2 className="text-base font-bold text-premium-main mb-2">Invitation Revoked</h2>
+          <p className="text-sm text-premium-muted mb-6 font-semibold">This invitation was revoked by the administrator.</p>
+          <button onClick={() => router.push('/')} className="w-full premium-button-primary">
             Go to Homepage
           </button>
-        </div>
-      </div>
+        </Card>
+      </Wrapper>
     );
   }
 
   // Not logged in -> Show rich invite UI
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
-        <div className="max-w-sm w-full bg-white dark:bg-slate-900 rounded-2xl shadow-md border border-slate-200/60 dark:border-slate-800 p-8 text-center">
-          <div className="mx-auto w-12 h-12 bg-slate-900 dark:bg-slate-100 rounded-xl flex items-center justify-center mb-4">
-            <Shield className="w-6 h-6 text-white dark:text-slate-900" />
+      <Wrapper>
+        <Card>
+          <div className="mx-auto w-12 h-12 bg-premium-main rounded-xl flex items-center justify-center mb-5">
+            <Shield className="w-6 h-6 text-premium-surface" />
           </div>
-          <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-2">
+          <h2 className="text-base font-bold text-premium-main mb-2">
             You've been invited to join {inviteDetails.organizationName}
           </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">
-            Invited by <span className="font-semibold text-slate-700 dark:text-slate-300">{inviteDetails.inviterName}</span>
+          <p className="text-xs text-premium-muted font-semibold mb-6">
+            Invited by <span className="font-bold text-premium-main">{inviteDetails.inviterName}</span>
           </p>
-          <div className="bg-slate-50 dark:bg-slate-950 rounded border border-slate-100 dark:border-slate-800 py-2 px-3 mb-6 inline-block">
-            <p className="text-xs text-slate-500 dark:text-slate-400">Invited email: <span className="font-mono text-slate-800 dark:text-slate-200">{inviteDetails.invitedEmail}</span></p>
+          <div className="bg-slate-50/50 dark:bg-zinc-900/50 rounded-lg border border-premium py-2 px-3 mb-6 inline-block">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-premium-muted">Invited Email: <span className="font-mono text-premium-main lowercase">{inviteDetails.invitedEmail}</span></p>
           </div>
           
           <div className="space-y-3">
             <button onClick={() => router.push(`/login?redirect=/invite/${token}`)}
-              className="w-full px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg font-semibold text-sm transition-colors hover:bg-slate-800">
+              className="w-full premium-button-primary">
               Sign In
             </button>
             <button onClick={() => router.push(`/register?redirect=/invite/${token}`)}
-              className="w-full px-4 py-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 rounded-lg font-semibold text-sm transition-colors hover:bg-slate-50">
+              className="w-full premium-button-secondary">
               Create Account
             </button>
           </div>
-        </div>
-      </div>
+        </Card>
+      </Wrapper>
     );
   }
 
   // Logged in & PENDING -> Show accepting state
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
-      <div className="max-w-sm w-full bg-white dark:bg-slate-900 rounded-2xl shadow-md border border-slate-200/60 dark:border-slate-800 p-8 text-center">
+    <Wrapper>
+      <Card>
         {isAccepting && (
           <>
-            <Loader2 className="w-10 h-10 text-slate-400 mx-auto mb-4 animate-spin" />
-            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Joining {inviteDetails.organizationName}...</p>
+            <Loader2 className="w-10 h-10 text-premium-muted mx-auto mb-4 animate-spin" />
+            <p className="text-sm font-bold text-premium-main">Joining {inviteDetails.organizationName}...</p>
           </>
         )}
         {isSuccess && (
           <>
             <CheckCircle className="w-10 h-10 text-emerald-500 mx-auto mb-4" />
-            <p className="text-sm font-bold text-slate-900 dark:text-slate-100">Welcome to the team!</p>
-            <p className="text-xs text-slate-500 mt-1">Redirecting to your dashboard...</p>
+            <p className="text-base font-bold text-premium-main">Welcome to the team!</p>
+            <p className="text-xs text-premium-muted font-semibold mt-1">Redirecting to your dashboard...</p>
           </>
         )}
         {isError && (
           <>
             <XCircle className="w-10 h-10 text-red-500 mx-auto mb-4" />
-            <p className="text-sm font-bold text-slate-900 dark:text-slate-100">Invitation Failed</p>
-            <p className="text-xs text-slate-500 mt-1">{(error as Error)?.message || 'There was a problem joining the organization.'}</p>
-            <button onClick={() => router.push('/dashboard')} className="mt-4 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:underline">
+            <p className="text-base font-bold text-premium-main">Invitation Failed</p>
+            <p className="text-xs text-premium-muted font-semibold mt-1">{(error as Error)?.message || 'There was a problem joining the organization.'}</p>
+            <button onClick={() => router.push('/dashboard')} className="mt-6 text-xs font-bold text-premium-main hover:underline">
               Go to Dashboard
             </button>
           </>
         )}
-      </div>
-    </div>
+      </Card>
+    </Wrapper>
   );
 }
