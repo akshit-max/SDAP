@@ -102,6 +102,18 @@ const nextConfig = {
 
   // Disable powered-by header
   poweredByHeader: false,
+
+  async rewrites() {
+    // If we are in production, we proxy requests through Next.js so cookies become 1st-party.
+    // This bypasses Safari/Chrome strict 3rd-party cookie blocking!
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://withus-yy5i.onrender.com/api/v1';
+    return [
+      {
+        source: '/api/proxy/:path*',
+        destination: `${backendUrl}/:path*`,
+      },
+    ];
+  },
 };
 
 export default withSentryConfig(nextConfig, {
