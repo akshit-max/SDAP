@@ -87,7 +87,7 @@ const securityHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['@repo/ui', '@repo/types'],
+  transpilePackages: ['@repo/ui', '@repo/types', '@repo/db'],
   output: 'standalone',
 
   async headers() {
