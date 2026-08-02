@@ -9,8 +9,11 @@ import { csrfMiddleware } from './common/middleware/csrf.middleware';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<import('@nestjs/platform-express').NestExpressApplication>(AppModule);
   app.setGlobalPrefix('api/v1');
+  
+  // Trust proxy is required for express-rate-limit when hosted on platforms like Render/Vercel
+  app.set('trust proxy', 1);
 
   // ─── Security Headers ──────────────────────────────────────────────────────
   const isProd = process.env.NODE_ENV === 'production';
@@ -56,8 +59,9 @@ async function bootstrap() {
   // ─── CORS ──────────────────────────────────────────────────────────────────
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      const allowedOrigins = process.env.CORS_ORIGIN?.split(',') ?? ['http://localhost:3000'];
-      if (!origin || origin.startsWith('chrome-extension://') || allowedOrigins.includes(origin)) {
+      const allowedOrigins = (process.env.CORS_ORIGIN?.split(',') ?? ['http://localhost:3000']).map(o => o.trim().replace(/\/$/, ''));
+      const cleanOrigin = origin ? origin.trim().replace(/\/$/, '') : '';
+      if (!origin || origin.startsWith('chrome-extension://') || allowedOrigins.includes(cleanOrigin)) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
