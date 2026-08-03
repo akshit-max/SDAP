@@ -39,7 +39,7 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
   );
 
   const Card = ({ children }: { children: React.ReactNode }) => (
-    <div className="max-w-sm w-full premium-card p-8 text-center shadow-2xl">
+    <div className="max-w-md w-full premium-card p-10 text-center shadow-2xl">
       {children}
     </div>
   );
@@ -122,8 +122,8 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
     return (
       <Wrapper>
         <Card>
-          <div className="mx-auto w-12 h-12 bg-premium-main rounded-xl flex items-center justify-center mb-5">
-            <Shield className="w-6 h-6 text-premium-surface" />
+          <div className="mx-auto w-12 h-12 mb-6">
+            <img src="/logo.png" alt="WithUs Logo" className="w-full h-full object-contain" />
           </div>
           <h2 className="text-base font-bold text-premium-main mb-2">
             You've been invited to join {inviteDetails.organizationName}
@@ -131,16 +131,16 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
           <p className="text-xs text-premium-muted font-semibold mb-6">
             Invited by <span className="font-bold text-premium-main">{inviteDetails.inviterName}</span>
           </p>
-          <div className="bg-slate-50/50 dark:bg-zinc-900/50 rounded-lg border border-premium py-2 px-3 mb-4 inline-block">
+          <div className="bg-slate-50/50 dark:bg-zinc-900/50 rounded-lg border border-premium py-2 px-3 mb-6 inline-block">
             <p className="text-[10px] font-bold uppercase tracking-wider text-premium-muted">Invited Email: <span className="font-mono text-premium-main lowercase">{inviteDetails.invitedEmail}</span></p>
           </div>
 
-          <div className="mb-6 p-4 bg-slate-50/50 dark:bg-zinc-900/30 border border-premium/50 rounded-lg text-center text-xs font-semibold leading-relaxed">
+          <div className="mb-6 p-4.5 bg-slate-50/30 dark:bg-zinc-900/20 border border-premium/40 rounded-lg text-center text-xs font-semibold leading-relaxed">
             <p className="text-premium-main font-bold mb-1">First time joining WithUs?</p>
-            <p className="text-premium-muted text-[11px]">
+            <p className="text-premium-muted text-[11px] font-medium">
               Click <span className="text-premium-main font-bold">Create Account</span> using your invited email address.
             </p>
-            <p className="text-premium-muted text-[11px] mt-0.5">
+            <p className="text-premium-muted text-[11px] font-medium mt-0.5">
               Already have an account? Simply <span className="text-premium-main font-bold">Sign In</span>.
             </p>
           </div>
