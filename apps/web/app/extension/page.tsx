@@ -163,7 +163,7 @@ export default function ExtensionPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px] text-premium-muted font-semibold">
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
-              Blue extension badge appears in your browser bar
+              WithUs extension badge appears in your browser bar
             </div>
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
