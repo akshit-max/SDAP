@@ -186,28 +186,24 @@ export default function ExtensionPage() {
             <Info className="w-4 h-4 text-amber-500" />
             Troubleshooting
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4.5 bg-slate-50/20 dark:bg-zinc-900/10 border border-premium/50 rounded-lg flex flex-col justify-between">
-              <div>
-                <h3 className="text-xs font-bold text-premium-main flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
-                  Extension icon not showing in toolbar?
-                </h3>
-                <p className="text-[11px] text-premium-muted mt-2.5 leading-relaxed font-semibold pl-3.5">
-                  Click the Extensions icon (puzzle piece) in your browser's toolbar and select the pin icon next to <span className="font-bold text-premium-main">WithUs Vault</span> to keep it visible.
-                </p>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-1.5">
+              <h3 className="text-xs font-bold text-premium-main flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
+                Extension icon not showing in toolbar?
+              </h3>
+              <p className="text-[11px] text-premium-muted leading-relaxed font-semibold pl-3.5">
+                Click the Extensions icon (puzzle piece) in your browser's toolbar and select the pin icon next to <span className="font-bold text-premium-main">WithUs Vault</span> to keep it visible.
+              </p>
             </div>
-            <div className="p-4.5 bg-slate-50/20 dark:bg-zinc-900/10 border border-premium/50 rounded-lg flex flex-col justify-between">
-              <div>
-                <h3 className="text-xs font-bold text-premium-main flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
-                  Autofill prompts not triggering?
-                </h3>
-                <p className="text-[11px] text-premium-muted mt-2.5 leading-relaxed font-semibold pl-3.5">
-                  Open the extension pop-up and confirm that the status dot in the top right is green (logged in). If it's grey, click <span className="font-bold text-premium-main">Sign In</span> first.
-                </p>
-              </div>
+            <div className="space-y-1.5">
+              <h3 className="text-xs font-bold text-premium-main flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
+                Autofill prompts not triggering?
+              </h3>
+              <p className="text-[11px] text-premium-muted leading-relaxed font-semibold pl-3.5">
+                Open the extension pop-up and confirm that the status dot in the top right is green (logged in). If it's grey, click <span className="font-bold text-premium-main">Sign In</span> first.
+              </p>
             </div>
           </div>
         </div>
