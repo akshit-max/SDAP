@@ -77,7 +77,7 @@ export default function ExtensionPage() {
           <div className="flex-shrink-0">
             <a
               href="/downloads/WITHUS-Extension.zip"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-premium-main hover:bg-premium-main/90 text-premium-surface text-xs font-bold rounded-lg shadow-sm transition-colors"
+              className="premium-button-primary inline-flex items-center gap-2 px-5 py-2.5 shadow-sm text-xs font-bold rounded-lg transition-colors"
             >
               <Download className="w-4 h-4" />
               Download Extension (ZIP)
@@ -186,14 +186,28 @@ export default function ExtensionPage() {
             <Info className="w-4 h-4 text-amber-500" />
             Troubleshooting
           </h2>
-          <div className="space-y-4 text-[11px] text-premium-muted leading-relaxed font-semibold">
-            <div>
-              <p className="text-premium-main font-bold">Extension icon not showing in toolbar?</p>
-              <p className="mt-0.5 font-medium">Click the Extensions icon (puzzle piece) in the browser toolbar and pin "WithUs Vault".</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4.5 bg-slate-50/20 dark:bg-zinc-900/10 border border-premium/50 rounded-lg flex flex-col justify-between">
+              <div>
+                <h3 className="text-xs font-bold text-premium-main flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
+                  Extension icon not showing in toolbar?
+                </h3>
+                <p className="text-[11px] text-premium-muted mt-2.5 leading-relaxed font-semibold pl-3.5">
+                  Click the Extensions icon (puzzle piece) in your browser's toolbar and select the pin icon next to <span className="font-bold text-premium-main">WithUs Vault</span> to keep it visible.
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-premium-main font-bold">Autofill prompts not triggering?</p>
-              <p className="mt-0.5 font-medium">Confirm that the status dot in the extension pop-up is green, indicating you are successfully logged in. If not, click "Sign In" inside the extension.</p>
+            <div className="p-4.5 bg-slate-50/20 dark:bg-zinc-900/10 border border-premium/50 rounded-lg flex flex-col justify-between">
+              <div>
+                <h3 className="text-xs font-bold text-premium-main flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
+                  Autofill prompts not triggering?
+                </h3>
+                <p className="text-[11px] text-premium-muted mt-2.5 leading-relaxed font-semibold pl-3.5">
+                  Open the extension pop-up and confirm that the status dot in the top right is green (logged in). If it's grey, click <span className="font-bold text-premium-main">Sign In</span> first.
+                </p>
+              </div>
             </div>
           </div>
         </div>
