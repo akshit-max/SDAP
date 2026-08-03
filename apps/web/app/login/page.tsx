@@ -65,8 +65,23 @@ function LoginForm() {
             <img src="/logo.png" alt="WithUs Logo" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-xl font-bold tracking-tight text-premium-main">WithUs</h1>
-          <p className="text-xs text-premium-muted mt-1.5 font-medium">Secure Delegated Access Platform</p>
         </div>
+
+        {redirectParam?.includes('/invite') && (
+          <div className="mb-6 p-4 bg-slate-50/50 dark:bg-zinc-900/30 border border-premium/50 rounded-lg text-center text-xs font-semibold leading-relaxed">
+            <p className="text-premium-main font-bold mb-1">First time joining WithUs?</p>
+            <p className="text-premium-muted text-[11px]">
+              If you don't have an account, click{' '}
+              <Link href={`/register?redirect=${encodeURIComponent(redirectParam)}`} className="text-premium-main font-bold underline">
+                Create Account
+              </Link>{' '}
+              using your invited email.
+            </p>
+            <p className="text-premium-muted text-[11px] mt-0.5">
+              Already have an account? Simply sign in below.
+            </p>
+          </div>
+        )}
 
         {/* Form */}
         <form onSubmit={handleLogin} className="space-y-6">

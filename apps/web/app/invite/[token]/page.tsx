@@ -131,8 +131,18 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
           <p className="text-xs text-premium-muted font-semibold mb-6">
             Invited by <span className="font-bold text-premium-main">{inviteDetails.inviterName}</span>
           </p>
-          <div className="bg-slate-50/50 dark:bg-zinc-900/50 rounded-lg border border-premium py-2 px-3 mb-6 inline-block">
+          <div className="bg-slate-50/50 dark:bg-zinc-900/50 rounded-lg border border-premium py-2 px-3 mb-4 inline-block">
             <p className="text-[10px] font-bold uppercase tracking-wider text-premium-muted">Invited Email: <span className="font-mono text-premium-main lowercase">{inviteDetails.invitedEmail}</span></p>
+          </div>
+
+          <div className="mb-6 p-4 bg-slate-50/50 dark:bg-zinc-900/30 border border-premium/50 rounded-lg text-center text-xs font-semibold leading-relaxed">
+            <p className="text-premium-main font-bold mb-1">First time joining WithUs?</p>
+            <p className="text-premium-muted text-[11px]">
+              Click <span className="text-premium-main font-bold">Create Account</span> using your invited email address.
+            </p>
+            <p className="text-premium-muted text-[11px] mt-0.5">
+              Already have an account? Simply <span className="text-premium-main font-bold">Sign In</span>.
+            </p>
           </div>
           
           <div className="space-y-3">

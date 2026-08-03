@@ -6,10 +6,10 @@ import { useRouter, usePathname } from 'next/navigation';
 import { AuthSession } from '../../lib/auth/session';
 import { useAuth } from '../../lib/auth/AuthContext';
 import { usePendingApprovals, useMyRequests } from '../../hooks/useApprovals';
-import { Shield, LayoutDashboard, Key, LogOut, Users, CheckSquare, FileText, Settings, Plug2, KeyRound } from 'lucide-react';
+import { Shield, LayoutDashboard, Key, LogOut, Users, CheckSquare, FileText, Settings, Plug2, Puzzle } from 'lucide-react';
 import clsx from 'clsx';
 import { useState, useEffect } from 'react';
-import { Menu, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Menu } from 'lucide-react';
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -64,6 +64,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     { name: 'Vaults', href: '/vaults', icon: Key },
     { name: 'Sessions', href: '/sessions', icon: Users },
     { name: 'Approvals', href: '/approvals', icon: CheckSquare },
+    { name: 'Browser Extension', href: '/extension', icon: Puzzle },
     { name: 'Integrations', href: '/settings/integrations', icon: Plug2 },
     { name: 'Audit Log', href: '/audit', icon: FileText },
     { name: 'Team', href: '/settings/members', icon: Users },

@@ -65,13 +65,12 @@ export function DashboardSummary() {
           </p>
         </div>
         <div className="flex gap-2">
-          <a
-            href="/downloads/WITHUS-Extension.zip"
-            download
+          <Link
+            href="/extension"
             className="px-3.5 py-2 text-xs font-semibold rounded-lg bg-zinc-900 text-zinc-50 border border-zinc-800 hover:bg-zinc-800/80 hover:text-white transition-all duration-200 inline-flex items-center justify-center dark:bg-zinc-800/40 dark:text-zinc-50 dark:border-zinc-700/60 dark:hover:bg-zinc-800/80 shadow-sm"
           >
-            Download Extension
-          </a>
+            Browser Extension
+          </Link>
           <Link
             href="/vaults"
             className="premium-button-primary text-xs"

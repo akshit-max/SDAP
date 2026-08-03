@@ -97,6 +97,22 @@ function RegisterForm() {
           </p>
         </div>
 
+        {isInviteFlow && (
+          <div className="mb-6 p-4 bg-slate-50/50 dark:bg-zinc-900/30 border border-premium/50 rounded-lg text-center text-xs font-semibold leading-relaxed">
+            <p className="text-premium-main font-bold mb-1">First time joining WithUs?</p>
+            <p className="text-premium-muted text-[11px]">
+              You are creating a new account using the invited email.
+            </p>
+            <p className="text-premium-muted text-[11px] mt-0.5">
+              Already have an account? Click{' '}
+              <Link href={`/login?redirect=${encodeURIComponent(redirectParam)}`} className="text-premium-main font-bold underline">
+                Sign In
+              </Link>{' '}
+              instead to join the team.
+            </p>
+          </div>
+        )}
+
         {/* Form */}
         <form onSubmit={handleRegister} className="space-y-5">
           {/* Full Name */}
