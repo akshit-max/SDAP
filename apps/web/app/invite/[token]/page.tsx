@@ -128,32 +128,46 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
           <h2 className="text-base font-bold text-premium-main mb-2">
             You've been invited to join {inviteDetails.organizationName}
           </h2>
-          <p className="text-xs text-premium-muted font-semibold mb-6">
+          <p className="text-xs text-premium-muted font-semibold mb-8">
             Invited by <span className="font-bold text-premium-main">{inviteDetails.inviterName}</span>
           </p>
-          <div className="bg-slate-50/50 dark:bg-zinc-900/50 rounded-lg border border-premium py-2 px-3 mb-6 inline-block">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-premium-muted">Invited Email: <span className="font-mono text-premium-main lowercase">{inviteDetails.invitedEmail}</span></p>
-          </div>
 
-          <div className="mb-6 p-4.5 bg-slate-50/30 dark:bg-zinc-900/20 border border-premium/40 rounded-lg text-center text-xs font-semibold leading-relaxed">
-            <p className="text-premium-main font-bold mb-1">First time joining WithUs?</p>
-            <p className="text-premium-muted text-[11px] font-medium">
-              Click <span className="text-premium-main font-bold">Create Account</span> using your invited email address.
-            </p>
-            <p className="text-premium-muted text-[11px] font-medium mt-0.5">
-              Already have an account? Simply <span className="text-premium-main font-bold">Sign In</span>.
-            </p>
-          </div>
-          
-          <div className="space-y-3">
-            <button onClick={() => router.push(`/login?redirect=/invite/${token}`)}
-              className="w-full premium-button-primary">
-              Sign In
-            </button>
-            <button onClick={() => router.push(`/register?redirect=/invite/${token}`)}
-              className="w-full premium-button-secondary">
-              Create Account
-            </button>
+          <div className="space-y-6 text-left">
+            {/* Option 1: Existing User */}
+            <div className="space-y-2">
+              <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wider">
+                Already have an account?
+              </label>
+              <button 
+                onClick={() => router.push(`/login?redirect=/invite/${token}`)}
+                className="w-full premium-button-primary py-2.5 text-xs shadow-sm"
+              >
+                Sign In
+              </button>
+            </div>
+
+            {/* Divider line */}
+            <div className="relative flex py-2 items-center">
+              <div className="flex-grow border-t border-premium/50"></div>
+              <span className="flex-shrink mx-4 text-[9px] font-bold text-premium-muted uppercase tracking-wider">or</span>
+              <div className="flex-grow border-t border-premium/50"></div>
+            </div>
+
+            {/* Option 2: New User */}
+            <div className="space-y-2">
+              <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wider">
+                First time joining WithUs?
+              </label>
+              <button 
+                onClick={() => router.push(`/register?redirect=/invite/${token}`)}
+                className="w-full premium-button-secondary py-2.5 text-xs border border-premium"
+              >
+                Create Account
+              </button>
+              <p className="text-[10px] text-premium-muted leading-relaxed font-semibold mt-1.5 text-center">
+                Use your invited email <span className="text-premium-main font-bold font-mono">{inviteDetails.invitedEmail}</span> to register.
+              </p>
+            </div>
           </div>
         </Card>
       </Wrapper>
