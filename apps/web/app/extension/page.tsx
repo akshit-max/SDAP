@@ -89,8 +89,8 @@ export default function ExtensionPage() {
         <div className="p-4 bg-slate-50/50 dark:bg-zinc-900/30 border border-premium rounded-lg flex items-start gap-3">
           <Info className="w-4 h-4 text-premium-main mt-0.5 flex-shrink-0" />
           <div className="text-xs text-premium-muted leading-relaxed font-semibold">
-            <p className="text-premium-main font-bold mb-0.5">Looking for the Web Store version?</p>
-            WithUs is currently undergoing reviews for public extension stores. In the meantime, you can install the developer version using the step-by-step instructions below. Once approved, you'll be able to install it directly with a single click.
+            <p className="text-premium-main font-bold mb-0.5">Coming Soon</p>
+            Chrome Web Store & Microsoft Edge Add-ons support. In the meantime, you can install the developer version using the step-by-step instructions below.
           </div>
         </div>
 
@@ -176,6 +176,24 @@ export default function ExtensionPage() {
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
               Autofill prompts automatically trigger on logins (e.g. Vercel, GoDaddy)
+            </div>
+          </div>
+        </div>
+
+        {/* Troubleshooting Section */}
+        <div className="premium-card p-6">
+          <h2 className="text-xs font-bold text-premium-main uppercase tracking-wider mb-4 flex items-center gap-2">
+            <Info className="w-4 h-4 text-amber-500" />
+            Troubleshooting
+          </h2>
+          <div className="space-y-4 text-[11px] text-premium-muted leading-relaxed font-semibold">
+            <div>
+              <p className="text-premium-main font-bold">Extension icon not showing in toolbar?</p>
+              <p className="mt-0.5 font-medium">Click the Extensions icon (puzzle piece) in the browser toolbar and pin "WithUs Vault".</p>
+            </div>
+            <div>
+              <p className="text-premium-main font-bold">Autofill prompts not triggering?</p>
+              <p className="mt-0.5 font-medium">Confirm that the status dot in the extension pop-up is green, indicating you are successfully logged in. If not, click "Sign In" inside the extension.</p>
             </div>
           </div>
         </div>
