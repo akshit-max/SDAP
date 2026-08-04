@@ -28,3 +28,19 @@ export class PlatformRegistry {
 }
 
 export const platformRegistry = new PlatformRegistry();
+
+// ─── Phase 2 Migrations ──────────────────────────────────────────────────────
+
+platformRegistry.register({
+  id: 'GITHUB',
+  name: 'GitHub',
+  domains: ['github.com'],
+  login: {
+    url: 'https://github.com/login',
+    usernameSelector: 'input[name="login"], input#login_field',
+    passwordSelector: 'input[name="password"], input#password',
+    submitSelector: 'input[name="commit"], input[type="submit"], button[type="submit"]',
+  },
+  principalType: 'GITHUB_USERNAME',
+  supportsDelegation: true,
+});
