@@ -62,6 +62,18 @@ Check whether an existing component already satisfies the requirement. Extend if
 ## 16. Regression Rule
 After every runtime commit, never rely only on build, TypeScript, or lint success. A phase is considered complete ONLY when manual regression passes, extension behavior matches the stable baseline identically, no console/API errors exist, and all existing supported platforms behave identically.
 
+## 17. Documentation Synchronization
+Every implementation phase must update project documentation only if the behavior actually changes. If behavior has not changed, do not modify documentation unnecessarily. Avoid stale documentation.
+
+## 18. No Scope Creep
+Is this required by the client roadmap? If No → Don't implement it. Do not introduce generic workflow engines, event buses, microservices, complex caching layers, plugin frameworks, or any architectural pattern the client did not request.
+
+## 19. Technical Debt Log
+Do not fix architectural smells, duplicated code, or future improvements immediately unless they block implementation or create measurable regression risk. Instead, log them in `docs/tech-debt.md`.
+
+## 20. Keep the Client's Language
+Preserve the client's terminology in code, documentation, and commit messages (e.g., "Delegated Access", "Platform Integration", "Platform Configuration", "Gmail OAuth", "OTP", "Secure Session"). Avoid inventing new names for concepts the client has already defined.
+
 ## PRE-COMMIT CHECKLIST
 Before every commit, the AI must output the following questionnaire:
 Did I modify existing logic? [YES / NO]
