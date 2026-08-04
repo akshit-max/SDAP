@@ -13,6 +13,14 @@ export interface HealthCheckResult {
 // ─── Core Adapter Contract ────────────────────────────────────────────────────
 
 /**
+ * Resolves an internal user to a provider-specific identity.
+ * For example, mapping a user's email to their GitHub username.
+ */
+export interface IProviderIdentityResolver {
+  resolvePrincipalId(user: { id: string; email: string; providerProfiles?: unknown }): string;
+}
+
+/**
  * Every integration provider must implement this interface.
  * Business logic (auth, RBAC, sessions, audit) lives in WITHUS services.
  * The adapter is only responsible for communicating with the external platform.

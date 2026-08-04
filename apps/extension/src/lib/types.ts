@@ -71,3 +71,25 @@ export interface AutofillPayload {
   username: string;
   password: string;
 }
+
+// ─── V2 Platform Configuration ───────────────────────────────────────────────
+
+export interface PlatformConfig {
+  id: string;
+  name: string;
+  domains: string[];
+  login: {
+    url: string;
+    usernameSelector: string;
+    passwordSelector: string;
+    submitSelector?: string;
+  };
+  otp?: {
+    type: 'EMAIL' | 'SMS' | 'NONE';
+    inputSelector: string;
+    submitSelector?: string;
+  };
+  // Future extensibility as per architectural requirements
+  principalType?: string;
+  supportsDelegation?: boolean;
+}
