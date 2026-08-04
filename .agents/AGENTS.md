@@ -1,32 +1,84 @@
-# Project Rules
+# WITHUS Project - Core Engineering Principles
 
-## Engineering Charter: Delivery Philosophy
-The objective is not maximum speed or maximum perfection. The objective is sustained engineering velocity.
-For every implementation:
-1. Think carefully.
-2. Design once.
-3. Build efficiently.
-4. Verify thoroughly.
-5. Freeze confidently.
-6. Move immediately to the next module.
+These principles dictate all architectural and implementation decisions for the WITHUS project. They take precedence over implementation convenience.
 
-Avoid analysis paralysis. Avoid premature optimization. Avoid unnecessary abstractions. Do not overengineer for hypothetical future requirements. When multiple solutions satisfy the architecture, choose the simplest maintainable solution. Favor incremental progress over massive implementation batches. Each completed module should leave the project in a deployable and stable state.
+## 1. Client Scope First
+Implement only what is explicitly required by the client's roadmap. Do not introduce additional frameworks, generic abstractions for hypothetical futures, or unrequested optimizations.
 
-## Engineering Charter: Internal Rule (Reuse-First)
-Before creating any new service, helper, utility, interface, DTO, or abstraction, first search the codebase for an existing reusable implementation. Reuse or extend it whenever practical. New abstractions require architectural justification.
+## 2. Reuse Before Rewrite
+Treat the existing production architecture as the reference implementation. Decision order:
+1. Reuse the existing component unchanged.
+2. Extend the existing component.
+3. Wrap the existing component.
+4. Abstract only minimal platform-specific logic.
+5. Create a new component only as a last resort (must include technical justification).
 
-## Strict Engineering Discipline
-1. **Atomic Commits Only**: Make small, semantic commits (e.g. `feat(db): ...`, `test(api): ...`). One responsibility per commit.
-2. **Never Commit Broken Code**: `npm run lint`, `npm run typecheck`, `npm run test`, and `npm run build` must pass.
-3. **Small Pull Request Mentality**: Answer what, why, risk, verification, rollback for every feature.
-4. **ADR Rule**: Create ADRs for architecture only. Not bugs or UI.
-5. **Migrations**: Never modify old migrations. Review -> Apply -> Freeze.
-6. **Version Tags**: Consistently tag milestones (v0.1.0-foundation, v0.2.0-auth, etc.).
-7. **Protect Main**: Main is always deployable. Work in feature branches (`feature/...`) and merge only after verification.
-8. **Module Completion Checklist**: Verify requirements, DB, API, runtime, unit/integration tests, typecheck, lint, build, docs, and ADRs before freezing.
-9. **Keep Architecture Visible**: Maintain `docs/architecture/roadmap.md`, `module-registry.md`, and `dependency-graph.md`.
-10. **Continuous Architecture Review**: Start every phase by reviewing current architecture, preventing duplication, validating patterns, and resolving drift.
-11. **Foundation Freeze**: From Phase 4 onward, assume the foundation is frozen. Do not modify Authentication, Organizations, RBAC, Infrastructure, or CI unless it fixes a production bug, addresses a security issue, or is explicitly approved as an architectural change. All new functionality should build on the existing foundation rather than altering it to prevent "foundation drift".
-12. **Cryptographic Discipline**: Never optimize or simplify cryptographic code for convenience. Cryptographic operations must remain centralized, deterministic, fully tested, and documented. Any future changes to encryption, key management, or decryption logic require an ADR, dedicated regression tests, and a security review before merging.
-13. **Git Remote**: Always push commits to the `personal` remote (e.g. `git push personal main`) instead of `origin`, unless explicitly instructed otherwise.
-14. **Git Commits**: Never commit code automatically. Always wait for the user to explicitly ask you to commit before running `git commit`.
+## 3. Keep Existing Components
+Preserve Authentication, Authorization, Vault, Credential Encryption, Delegated Access Workflow, Session Lifecycle, Audit Logging, Extension Messaging, and existing APIs.
+
+## 4. Minimal Surface Area
+Modify the fewest possible files. Avoid large refactors, file reorganizations, and breaking existing APIs.
+
+## 5. Low Regression Policy
+Minimize regression risk. Classify changes (No Risk, Low Risk, Medium Risk, High Risk). Always prefer Low Risk over Medium/High Risk solutions.
+
+## 6. Configuration Over Code
+Support new platforms by adding metadata, selectors, and configurations, not by duplicating the login workflow.
+
+## 7. Preserve Existing Behaviour
+GitHub, Vercel, and GoDaddy are reference implementations. Any behavioral difference in their login, autofill, or session workflows is a regression.
+
+## 8. Avoid Premature Generalization
+Do not build complex plugin systems, dynamic loaders, or overly generic dependency injection. Build only what the roadmap requires.
+
+## 9. Preserve Simplicity
+Reduce complexity and duplication. Avoid increasing abstraction without measurable benefit.
+
+## 10. Regression Gate
+No phase is complete until existing integrations (GitHub, Vercel, GoDaddy) pass perfectly. If a regression occurs, halt implementation, fix it, and re-test.
+
+## 11. Dual Path Rule
+Until a platform migration completely passes its dedicated regression gate, keep the Old Path and New Path available. Do not delete `if(GITHUB)` logic until regression confirms the abstraction works perfectly.
+
+## 12. Complexity Budget
+Every new abstraction must have a business justification. It must either:
+1. Solve a client requirement.
+2. Remove duplicated logic.
+3. Reduce regression risk.
+
+## 13. UI & UX Consistency (Mandatory)
+Maintain the existing WITHUS design system. Follow the current spacing, typography, colors, shadows, border radius, and animations. Do not redesign existing pages. Match existing layouts.
+
+## 14. Component Reuse First
+Check whether an existing component already satisfies the requirement. Extend if appropriate. Create new only when no suitable reusable option exists.
+
+## 15. Git Safety Rules & Commit Discipline (Mandatory)
+- NEVER commit directly to `main`.
+- NEVER push directly to `main`.
+- NEVER push to `origin` unless explicitly requested by the user. Push ONLY to `personal`.
+- All development must happen exclusively on `feature/platform-integration-framework`.
+- Protect `stable-20260805` and `chrome-store-submitted-v1` tags. Do not rewrite their history.
+
+## 16. Regression Rule
+After every runtime commit, never rely only on build, TypeScript, or lint success. A phase is considered complete ONLY when manual regression passes, extension behavior matches the stable baseline identically, no console/API errors exist, and all existing supported platforms behave identically.
+
+## PRE-COMMIT CHECKLIST
+Before every commit, the AI must output the following questionnaire:
+Did I modify existing logic? [YES / NO]
+If YES, why couldn't I extend it?
+Could this have been implemented by configuration? [YES / NO]
+Which client requirement does this satisfy?
+Regression Risk: [No / Low / Medium / High]
+Files Modified/Added:
+
+## PRE-PUSH CHECKLIST
+Before every push, the AI must print:
+Current Branch:
+Files Modified:
+Files Added:
+Regression Status:
+Build Status:
+Destination Branch: (Must be feature/platform-integration-framework)
+
+## Final Default Decision Criterion
+When two solutions satisfy the requirements, **always** choose the one that reuses more existing code, modifies fewer files, introduces fewer abstractions, and has the lower regression risk.
