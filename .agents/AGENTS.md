@@ -74,6 +74,12 @@ Do not fix architectural smells, duplicated code, or future improvements immedia
 ## 20. Keep the Client's Language
 Preserve the client's terminology in code, documentation, and commit messages (e.g., "Delegated Access", "Platform Integration", "Platform Configuration", "Gmail OAuth", "OTP", "Secure Session"). Avoid inventing new names for concepts the client has already defined.
 
+## 21. Stable Baseline Preservation
+Before every runtime-affecting commit, compare against the stable baseline (`stable-20260805`). Every regression test must confirm identical behavior for GitHub, Vercel, and GoDaddy. Any behavioral difference without a specific client requirement is treated as a regression.
+
+## 22. Migration Complete Before Cleanup
+Do not remove legacy registries, legacy flows, legacy resolvers, or legacy provider mappings until GitHub, Vercel, and GoDaddy have all been fully migrated, have passed regression, and the client has accepted the migration. Only then will a dedicated cleanup phase be authorized.
+
 ## PRE-COMMIT CHECKLIST
 Before every commit, the AI must output the following questionnaire:
 Did I modify existing logic? [YES / NO]
