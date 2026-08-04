@@ -12,9 +12,36 @@
  */
 
 import { getProviderForHost } from '../providers/registry';
-import type { ExtensionMessage, ExtensionResponse, ExtensionSession, AutofillPayload } from '../lib/types';
+import { platformRegistry } from '../providers/platform-registry';
+import type { ExtensionMessage, ExtensionResponse, ExtensionSession, AutofillPayload, ProviderAdapter } from '../lib/types';
 
-const provider = getProviderForHost(location.hostname);
+let provider: ProviderAdapter | null = null;
+
+// Dual Path Resolution: Prefer V2 PlatformConfig, fallback to Legacy PROVIDER_REGISTRY
+const config = platformRegistry.getForHost(location.hostname);
+
+if (
+  config && 
+  config.login && 
+  config.login.usernameSelector && 
+  config.login.passwordSelector && 
+  config.login.submitSelector
+) {
+  // Wrap the declarative V2 config into the legacy ProviderAdapter interface
+  provider = {
+    name: config.name,
+    domains: config.domains,
+    getCredentialFields: () => ({
+      usernameSelector: config.login.usernameSelector,
+      passwordSelector: config.login.passwordSelector,
+      submitSelector: config.login.submitSelector,
+    })
+  };
+} else {
+  // Immediately fallback to legacy provider registry
+  provider = getProviderForHost(location.hostname);
+}
+
 if (!provider) {
   // Not a supported domain — do nothing
   throw new Error('WITHUS: unsupported domain, content script exiting');
