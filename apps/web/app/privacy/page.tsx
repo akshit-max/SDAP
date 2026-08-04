@@ -30,7 +30,7 @@ export default function PrivacyPolicyPage() {
             </h2>
             <div className="text-sm text-premium-muted leading-relaxed font-medium space-y-4">
               <p>
-                The WithUs Vault Browser Extension ("the Extension") is an enterprise security tool designed exclusively for authorized organizational users. It securely retrieves and autofills delegated credentials for approved platforms.
+                The WithUs Vault Browser Extension ("the Extension") is an enterprise security tool designed exclusively for authorized organizational users. It securely facilitates access to organization-approved credentials and autofills them on supported platforms after successful authentication and authorization.
               </p>
               <p>
                 Because we handle sensitive credential access, our privacy practices are strict. We do not sell your data, track your general browsing activity, or inject advertisements. This policy explains exactly what data the Extension accesses, stores, and transmits.
@@ -47,7 +47,7 @@ export default function PrivacyPolicyPage() {
               <p>To function properly, the Extension requests specific browser permissions:</p>
               <ul className="list-disc pl-5 space-y-2">
                 <li>
-                  <strong className="text-premium-main">ActiveTab & Scripting:</strong> The Extension accesses the Document Object Model (DOM) of specific, pre-approved target websites (e.g., Vercel, GitHub, GoDaddy) strictly to identify login fields and safely inject autofill credentials. It does not read your data or activity on other websites.
+                  <strong className="text-premium-main">ActiveTab & Scripting:</strong> The Extension accesses the Document Object Model (DOM) of supported websites configured by the WithUs platform strictly to identify login fields and safely inject autofill credentials. It does not read your data or activity on other websites.
                 </li>
                 <li>
                   <strong className="text-premium-main">Host Permissions:</strong> The Extension is strictly scoped to specific domains and does not possess broad access to your entire web history.
@@ -67,10 +67,10 @@ export default function PrivacyPolicyPage() {
               </p>
               <ul className="list-disc pl-5 space-y-2">
                 <li>
-                  <strong className="text-premium-main">What is stored locally:</strong> Upon successful login, the Extension stores a temporary Authentication Token (JWT) and basic session metadata in your browser's local secure storage.
+                  <strong className="text-premium-main">What is stored locally:</strong> Upon successful authentication, the Extension temporarily stores the minimum information required to maintain an authenticated session, including an authentication token and session metadata. This information is used solely to provide the requested functionality and is automatically cleared when the session expires or the user signs out.
                 </li>
                 <li>
-                  <strong className="text-premium-main">Security Controls:</strong> This token is protected by background alarms that enforce automatic session timeouts, clearing your authentication state when not in use.
+                  <strong className="text-premium-main">Security Controls:</strong> The Extension automatically expires inactive sessions and clears locally stored authentication information when a session expires or the user signs out.
                 </li>
               </ul>
             </div>
@@ -87,7 +87,7 @@ export default function PrivacyPolicyPage() {
               </p>
               <ul className="list-disc pl-5 space-y-2">
                 <li>
-                  <strong className="text-premium-main">What is transmitted:</strong> The Extension transmits your authentication token and strict identifiers necessary to request credential access for a specific session.
+                  <strong className="text-premium-main">What is transmitted:</strong> The Extension transmits only the minimum information required to authenticate requests and establish authorized access sessions with the WithUs platform.
                 </li>
                 <li>
                   <strong className="text-premium-main">Encryption:</strong> All transmissions occur over secure, encrypted HTTPS connections. No credentials or tokens are ever sent over unencrypted channels.
@@ -103,7 +103,31 @@ export default function PrivacyPolicyPage() {
             </h2>
             <div className="text-sm text-premium-muted leading-relaxed font-medium space-y-4">
               <p>
-                This Extension is not for general public utility. It is intended strictly for employees, contractors, and interns who have been explicitly invited and authorized by a managing organization using the WithUs platform. Unauthorized access attempts are logged and blocked by the API infrastructure.
+                This Extension is not for general public utility. It is intended strictly for employees, contractors, and interns who have been explicitly invited and authorized by a managing organization using the WithUs platform.
+              </p>
+            </div>
+          </section>
+
+          <section className="space-y-4 border-t border-premium pt-8">
+            <h2 className="text-lg font-bold text-premium-main flex items-center gap-2">
+              <Users className="w-5 h-5 text-premium-muted" />
+              6. Data Sharing
+            </h2>
+            <div className="text-sm text-premium-muted leading-relaxed font-medium space-y-4">
+              <p>
+                The Extension does not sell, rent, or use personal information for advertising or marketing purposes. Information is processed only to provide the requested functionality and communicate securely with the WithUs platform.
+              </p>
+            </div>
+          </section>
+
+          <section className="space-y-4">
+            <h2 className="text-lg font-bold text-premium-main flex items-center gap-2">
+              <FileText className="w-5 h-5 text-premium-muted" />
+              7. Policy Updates
+            </h2>
+            <div className="text-sm text-premium-muted leading-relaxed font-medium space-y-4">
+              <p>
+                We may update this Privacy Policy from time to time. Any changes will be published on this page with an updated effective date.
               </p>
             </div>
           </section>
@@ -111,16 +135,16 @@ export default function PrivacyPolicyPage() {
           <section className="space-y-4 border-t border-premium pt-8">
             <h2 className="text-lg font-bold text-premium-main flex items-center gap-2">
               <Mail className="w-5 h-5 text-premium-muted" />
-              6. Contact Us
+              8. Contact Us
             </h2>
             <div className="text-sm text-premium-muted leading-relaxed font-medium space-y-4">
               <p>
-                If you have questions or concerns about this Privacy Policy or how your organizational data is handled, please contact our support team.
+                For privacy-related inquiries, please contact:
               </p>
               <div className="p-4 bg-slate-50/50 dark:bg-zinc-900/30 border border-premium/50 rounded-lg inline-block">
                 <a href="mailto:makewithus.in@gmail.com" className="text-premium-main font-bold hover:underline flex items-center gap-2">
                   <Mail className="w-4 h-4" />
-                  makewithus.in@gmail.com
+                  Email: makewithus.in@gmail.com
                 </a>
               </div>
             </div>

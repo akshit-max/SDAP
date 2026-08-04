@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { DashboardShell } from '../../components/layout/DashboardShell';
 import { 
   Download, 
@@ -205,6 +206,22 @@ export default function ExtensionPage() {
                 Open the extension pop-up and confirm that the status dot in the top right is green (logged in). If it's grey, click <span className="font-bold text-premium-main">Sign In</span> first.
               </p>
             </div>
+          </div>
+        </div>
+
+        {/* Support & Privacy Footer */}
+        <div className="pt-4 flex items-center justify-between border-t border-premium/50 text-[10px] text-premium-muted font-bold">
+          <div>
+            &copy; {new Date().getFullYear()} WithUs. All rights reserved.
+          </div>
+          <div className="flex gap-4">
+            <Link href="/privacy" className="hover:text-premium-main transition-colors hover:underline">
+              Privacy Policy
+            </Link>
+            <span>&bull;</span>
+            <a href="mailto:makewithus.in@gmail.com" className="hover:text-premium-main transition-colors hover:underline">
+              Support
+            </a>
           </div>
         </div>
 
