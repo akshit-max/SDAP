@@ -365,6 +365,7 @@ async function fetchAndFillOtp(
     }
 
     otpCode = response.data.otp;
+    console.log('✅ WITHUS EXTRACTED OTP:', otpCode);
 
     const otpField = document.querySelector<HTMLInputElement>(inputSelector);
     if (!otpField || !isOtpFieldVisible(otpField)) {
