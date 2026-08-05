@@ -17,7 +17,11 @@
     "https://*.cpanelhosting.net/*",
     "https://*.siteground.com/*",
     "https://*.vercel.com/*",
-    "https://*.github.com/*"
+    "https://*.github.com/*",
+    "https://*.stripe.com/*",
+    "https://*.razorpay.com/*",
+    "https://*.shopify.com/*",
+    "https://*.linkedin.com/*"
   ],
   "background": {
     "service_worker": "background/service-worker.js",
@@ -32,7 +36,11 @@
         "https://*.cpanelhosting.net/*",
         "https://*.siteground.com/*",
         "https://*.github.com/*",
-        "https://*.vercel.com/*"
+        "https://*.vercel.com/*",
+        "https://*.stripe.com/*",
+        "https://*.razorpay.com/*",
+        "https://*.shopify.com/*",
+        "https://*.linkedin.com/*"
       ],
       "js": ["content/autofill.js"],
       "run_at": "document_idle"
