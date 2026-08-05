@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { IntegrationProvider } from '@prisma/client';
 import {
   IIntegrationAdapter,
+  IProviderIdentityResolver,
   HealthCheckResult,
   IntegrationResource,
   GrantAccessInput,
@@ -20,9 +21,19 @@ const VERCEL_API = 'https://api.vercel.com';
  * Vercel API docs: https://vercel.com/docs/rest-api
  */
 @Injectable()
-export class VercelAdapter implements IIntegrationAdapter {
+export class VercelAdapter implements IIntegrationAdapter, IProviderIdentityResolver {
   readonly provider = IntegrationProvider.VERCEL;
   private readonly logger = new Logger(VercelAdapter.name);
+
+  // ─── Identity Resolution ────────────────────────────────────────────────────
+
+  resolvePrincipalId(user: { id: string; email: string; providerProfiles?: unknown }): string {
+    // Vercel invitations use the user's email address
+    if (!user.email) {
+      throw new Error('Grantee has no email address configured.');
+    }
+    return user.email;
+  }
 
   // ─── Validate Token ─────────────────────────────────────────────────────────
 
