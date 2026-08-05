@@ -149,9 +149,9 @@ platformRegistry.register({
   domains: ['stripe.com', 'dashboard.stripe.com'],
   login: {
     url: 'https://dashboard.stripe.com/login',
-    usernameSelector: 'input[type="email"], input[autocomplete="username"]',
-    passwordSelector: 'input[type="password"], input[autocomplete="current-password"]',
-    submitSelector: 'button[type="submit"]',
+    usernameSelector: 'input[type="email"], input[name="email"], input[autocomplete="username"], #email',
+    passwordSelector: 'input[type="password"], input[name="password"], input[autocomplete="current-password"], #password',
+    submitSelector: 'button[type="submit"], input[type="submit"], [data-testid="login-button"]',
   },
   /**
    * OTP Config (Phase 7A)
