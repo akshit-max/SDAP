@@ -112,9 +112,16 @@ async function handleMessage(msg: ExtensionMessage): Promise<ExtensionResponse> 
 
     // ─── LAUNCH_SESSION ───────────────────────────────────────────────────────
     case 'LAUNCH_SESSION': {
+      console.log('[Service Worker] Received AUTOFILL request (LAUNCH_SESSION)');
+      
       const { sessionId, orgId } = msg.payload as { sessionId: string; orgId: string };
       const auth = await Storage.getAuth();
-      if (!auth) return { success: false, error: 'NOT_AUTHENTICATED' };
+      if (!auth) {
+        console.log('[Service Worker] No auth found');
+        return { success: false, error: 'NOT_AUTHENTICATED' };
+      }
+      
+      console.log('[Service Worker] Active tab resolved (API call starting)');
 
       const result = await WithusApi.launchSession(
         orgId,
