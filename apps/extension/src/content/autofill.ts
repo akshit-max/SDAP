@@ -218,9 +218,21 @@ window.addEventListener('withus:autofill', async (e: Event) => {
   if (!response.success || !response.data) return;
 
   const { username, password } = response.data;
-  const session = activeSessions.find(s => s.id === sessionId);
+  
+  let session = activeSessions.find(s => s.id === sessionId);
+  if (!session) {
+    await discoverSessions();
+    session = activeSessions.find(s => s.id === sessionId);
+  }
   const fallbackUsername = session?.resourceName || session?.secretName || '';
-  const fields = provider?.getCredentialFields();
+  
+  let fields = provider?.getCredentialFields();
+  let retries = 0;
+  while (!fields && retries < 10) {
+    await new Promise(r => setTimeout(r, 200));
+    fields = provider?.getCredentialFields();
+    retries++;
+  }
   if (!fields) return;
 
   try {
