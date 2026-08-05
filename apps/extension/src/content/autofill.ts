@@ -223,9 +223,9 @@ async function handleAutofillRequest(): Promise<void> {
 
 // ─── DOM Fill Helpers ─────────────────────────────────────────────────────────
 
-function fillField(selector: string, value: string): void {
-  const el = document.querySelector<HTMLInputElement>(selector);
-  if (!el) throw new Error(`Field not found: ${selector}`);
+function fillField(selectorOrEl: string | HTMLInputElement, value: string): void {
+  const el = typeof selectorOrEl === 'string' ? document.querySelector<HTMLInputElement>(selectorOrEl) : selectorOrEl;
+  if (!el) throw new Error(`Field not found: ${selectorOrEl}`);
 
   // Set value using native input setter so React/Vue controlled inputs update
   const nativeInputSetter = Object.getOwnPropertyDescriptor(
@@ -261,10 +261,11 @@ function startOtpWatcher(sessionId: string, orgId: string): void {
 
   // Immediate Check: In case of a hard-navigation (e.g. Razorpay /merchants/)
   // the OTP field might already be on the DOM when the content script loads.
-  const existingOtpField = document.querySelector<HTMLInputElement>(otpConfig.inputSelector);
-  if (existingOtpField && document.visibilityState === 'visible' && isOtpFieldVisible(existingOtpField)) {
+  const existingOtpFields = Array.from(document.querySelectorAll<HTMLInputElement>(otpConfig.inputSelector));
+  const existingOtpField = existingOtpFields.find(f => isOtpFieldVisible(f));
+  if (existingOtpField && document.visibilityState === 'visible') {
     otpCompleted = true;
-    fetchAndFillOtp(sessionId, orgId, otpConfig.inputSelector, otpConfig.submitSelector);
+    fetchAndFillOtp(sessionId, orgId, otpConfig.inputSelector, otpConfig.submitSelector, existingOtpField);
     return;
   }
 
@@ -273,14 +274,12 @@ function startOtpWatcher(sessionId: string, orgId: string): void {
   const observer = new MutationObserver(() => {
     if (otpRequested) return; // Guard 2: already in-flight within this watcher
 
-    const otpField = document.querySelector<HTMLInputElement>(otpConfig.inputSelector);
+    const otpFields = Array.from(document.querySelectorAll<HTMLInputElement>(otpConfig.inputSelector));
+    const otpField = otpFields.find(f => isOtpFieldVisible(f));
     if (!otpField) return;
 
     // Guard 4: only autofill if the tab is visible
     if (document.visibilityState !== 'visible') return;
-
-    // Guard 6: only fill visible, enabled, non-hidden fields
-    if (!isOtpFieldVisible(otpField)) return;
 
     // Set guards and disconnect BEFORE the async call so no second mutation can fire
     otpCompleted = true;            // Guard 1: module-level — survives even if watcher restarted
@@ -289,7 +288,7 @@ function startOtpWatcher(sessionId: string, orgId: string): void {
     clearTimeout(hardTimeout);      // Cancel the 30s timer
     document.removeEventListener('visibilitychange', onVisibilityChange); // Guard 5
 
-    fetchAndFillOtp(sessionId, orgId, otpConfig.inputSelector, otpConfig.submitSelector);
+    fetchAndFillOtp(sessionId, orgId, otpConfig.inputSelector, otpConfig.submitSelector, otpField);
   });
 
   observer.observe(document.body, { childList: true, subtree: true });
@@ -334,6 +333,7 @@ async function fetchAndFillOtp(
   orgId: string,
   inputSelector: string,
   submitSelector?: string,
+  resolvedOtpField?: HTMLInputElement
 ): Promise<void> {
   let otpCode: string | null = null;
 
@@ -367,13 +367,18 @@ async function fetchAndFillOtp(
     otpCode = response.data.otp;
     console.log('✅ WITHUS EXTRACTED OTP:', otpCode);
 
-    const otpField = document.querySelector<HTMLInputElement>(inputSelector);
+    let otpField = resolvedOtpField;
+    if (!otpField) {
+      const otpFields = Array.from(document.querySelectorAll<HTMLInputElement>(inputSelector));
+      otpField = otpFields.find(f => isOtpFieldVisible(f));
+    }
+
     if (!otpField || !isOtpFieldVisible(otpField)) {
       showToast('Could not locate the OTP field.', true);
       return;
     }
 
-    fillField(inputSelector, otpCode);
+    fillField(otpField, otpCode);
 
     // Auto-submit only if selector resolves to a visible, enabled element
     if (submitSelector) {
