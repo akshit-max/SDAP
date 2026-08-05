@@ -154,3 +154,29 @@ platformRegistry.register({
     submitSelector: 'button[type="submit"]',
   }
 });
+
+/**
+ * Razorpay Verification:
+ * 1. Fully supported via Vault Secret model? Yes.
+ * 2. Requires only Email/Password/Submit? Yes.
+ * 3. New runtime behavior? Razorpay uses OTP verification heavily and has merchant/organization switching.
+ * 4. Stable selectors? Yes, standard HTML5 attributes.
+ * 
+ * Supported:
+ * - Email / Password auth
+ * 
+ * Deferred to Phase 6/7:
+ * - OTP Verification (Email/Phone)
+ * - Merchant/Organization Selection
+ */
+platformRegistry.register({
+  id: 'RAZORPAY',
+  name: 'Razorpay',
+  domains: ['razorpay.com', 'dashboard.razorpay.com'],
+  login: {
+    url: 'https://dashboard.razorpay.com/signin',
+    usernameSelector: 'input[type="email"], input[autocomplete="username"]',
+    passwordSelector: 'input[type="password"], input[autocomplete="current-password"]',
+    submitSelector: 'button[type="submit"]',
+  }
+});
