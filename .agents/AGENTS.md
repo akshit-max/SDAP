@@ -80,6 +80,27 @@ Before every runtime-affecting commit, compare against the stable baseline (`sta
 ## 22. Migration Complete Before Cleanup
 Do not remove legacy registries, legacy flows, legacy resolvers, or legacy provider mappings until GitHub, Vercel, and GoDaddy have all been fully migrated, have passed regression, and the client has accepted the migration. Only then will a dedicated cleanup phase be authorized.
 
+## 23. One Public Entry Point (Extension Login Pipeline)
+Any future feature added to the extension must enter the login pipeline through one of these established sequential stages, in this order:
+
+```
+Platform Detection   (PlatformConfig.login.usernameSelector present on DOM)
+        ↓
+Credential Fill      (fillField — username, password)
+        ↓
+Credential Submit    (submitSelector → click)
+        ↓
+OTP Watcher          (startOtpWatcher — only if PlatformConfig.otp is defined)
+        ↓
+Completion           (otpCompleted = true, memory cleared)
+```
+
+**Do not introduce parallel login pipelines or alternate autofill engines.**
+**Do not bypass or fork the pipeline for individual providers.**
+Extend the existing pipeline instead.
+
+Rationale: The pipeline was designed to be sequential and linear so that each stage has exactly one entry point and one exit point. Parallel pipelines create race conditions, duplicate API calls, and make regression testing unpredictable. Any provider-specific behavior must be expressed as configuration (`PlatformConfig`) or as a small, opt-in hook within an existing stage — not as a separate flow.
+
 ## PRE-COMMIT CHECKLIST
 Before every commit, the AI must output the following questionnaire:
 Did I modify existing logic? [YES / NO]
