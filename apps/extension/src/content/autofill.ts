@@ -193,6 +193,9 @@ async function handleAutofillRequest(): Promise<void> {
       }
     }
     provider?.afterFill?.();
+    if (config?.otp) {
+      startOtpWatcher(session.id, (session as any).__orgId || activeOrgId);
+    }
 
     // Auto-submit — find the submit button and click it
     if (fields.submitSelector) {
@@ -201,11 +204,6 @@ async function handleAutofillRequest(): Promise<void> {
         // Small delay so React/Vue state can settle after the input events
         setTimeout(() => {
           submitBtn.click();
-          // Phase 7: Start OTP watcher ONLY after submit, and only if this
-          // platform has OTP configured. Never before submit.
-          if (config?.otp) {
-            startOtpWatcher(session.id, (session as any).__orgId || activeOrgId);
-          }
         }, 120);
       }
     }
@@ -435,6 +433,9 @@ window.addEventListener('withus:autofill', async (e: Event) => {
       }
     }
     provider?.afterFill?.();
+    if (config?.otp) {
+      startOtpWatcher(sessionId, orgId);
+    }
 
     if (fields.submitSelector) {
       const submitBtn = document.querySelector<HTMLElement>(fields.submitSelector);
