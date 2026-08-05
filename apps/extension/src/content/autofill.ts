@@ -17,6 +17,15 @@ import type { ExtensionMessage, ExtensionResponse, ExtensionSession, AutofillPay
 
 let provider: ProviderAdapter | null = null;
 
+// ─── OTP Completion Guard ─────────────────────────────────────────────────────
+// Module-level flag. Once an OTP attempt has been made on this page (success or
+// failure), this is set to true and never cleared. This guards against any code
+// path accidentally calling startOtpWatcher() a second time (e.g. a DOM mutation
+// storm, popup-triggered autofill, or future wiring changes).
+// The per-watcher otpRequested boolean (inside startOtpWatcher) handles the
+// within-watcher case; this handles the across-watcher case.
+let otpCompleted = false;
+
 // Dual Path Resolution: Prefer V2 PlatformConfig, fallback to Legacy PROVIDER_REGISTRY
 const config = platformRegistry.getForHost(location.hostname);
 
@@ -230,22 +239,26 @@ function fillField(selector: string, value: string): void {
 //
 // Started ONLY after a successful login submit. Never on page load.
 // Guardrails enforced:
-//   1. otpRequested boolean — API called at most once per watcher
-//   2. observer.disconnect() before any await — observer never fires twice
-//   3. 30-second hard timeout — watcher self-destructs if OTP field never appears
-//   4. Visibility check — won't autofill in a background tab
-//   5. visibilitychange listener — stops if user navigates away
-//   6. isOtpFieldVisible() — only fills visible, enabled fields
-//   7. No auto-retry on wrong OTP — watcher is gone after first fill attempt
+//   1. otpCompleted (module-level) — watcher never starts if OTP already attempted
+//   2. otpRequested (closure-level) — API called at most once per watcher instance
+//   3. observer.disconnect() before any await — observer never fires twice
+//   4. 30-second hard timeout — watcher self-destructs if OTP field never appears
+//   5. Visibility check — won't autofill in a background tab
+//   6. visibilitychange listener — stops if user navigates away
+//   7. isOtpFieldVisible() — only fills visible, enabled fields
+//   8. No auto-retry on wrong OTP — watcher + module flag are both exhausted after first fill
 
 function startOtpWatcher(sessionId: string, orgId: string): void {
+  // Guard 1: module-level — OTP already attempted on this page lifecycle
+  if (otpCompleted) return;
+
   const otpConfig = config?.otp;
   if (!otpConfig) return; // Should never happen — caller checks config?.otp first
 
-  let otpRequested = false; // Guard 1: single-request per watcher lifetime
+  let otpRequested = false; // Guard 2: single-request per watcher instance
 
   const observer = new MutationObserver(() => {
-    if (otpRequested) return; // Guard 1: already in-flight
+    if (otpRequested) return; // Guard 2: already in-flight within this watcher
 
     const otpField = document.querySelector<HTMLInputElement>(otpConfig.inputSelector);
     if (!otpField) return;
@@ -256,9 +269,10 @@ function startOtpWatcher(sessionId: string, orgId: string): void {
     // Guard 6: only fill visible, enabled, non-hidden fields
     if (!isOtpFieldVisible(otpField)) return;
 
-    // Set guard and disconnect BEFORE the async call so no second mutation can fire
-    otpRequested = true;            // Guard 1
-    observer.disconnect();          // Guard 2
+    // Set guards and disconnect BEFORE the async call so no second mutation can fire
+    otpCompleted = true;            // Guard 1: module-level — survives even if watcher restarted
+    otpRequested = true;            // Guard 2: closure-level
+    observer.disconnect();          // Guard 3
     clearTimeout(hardTimeout);      // Cancel the 30s timer
     document.removeEventListener('visibilitychange', onVisibilityChange); // Guard 5
 
