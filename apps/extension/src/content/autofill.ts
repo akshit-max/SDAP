@@ -190,7 +190,14 @@ async function handleAutofillRequest(): Promise<void> {
       const submitBtn = document.querySelector<HTMLElement>(fields.submitSelector);
       if (submitBtn) {
         // Small delay so React/Vue state can settle after the input events
-        setTimeout(() => submitBtn.click(), 120);
+        setTimeout(() => {
+          submitBtn.click();
+          // Phase 7: Start OTP watcher ONLY after submit, and only if this
+          // platform has OTP configured. Never before submit.
+          if (config?.otp) {
+            startOtpWatcher(session.id, (session as any).__orgId || activeOrgId);
+          }
+        }, 120);
       }
     }
   } catch {
@@ -217,6 +224,144 @@ function fillField(selector: string, value: string): void {
   // Dispatch events so framework re-renders pick up the change
   el.dispatchEvent(new Event('input', { bubbles: true }));
   el.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+// ─── OTP Watcher ──────────────────────────────────────────────────────────────
+//
+// Started ONLY after a successful login submit. Never on page load.
+// Guardrails enforced:
+//   1. otpRequested boolean — API called at most once per watcher
+//   2. observer.disconnect() before any await — observer never fires twice
+//   3. 30-second hard timeout — watcher self-destructs if OTP field never appears
+//   4. Visibility check — won't autofill in a background tab
+//   5. visibilitychange listener — stops if user navigates away
+//   6. isOtpFieldVisible() — only fills visible, enabled fields
+//   7. No auto-retry on wrong OTP — watcher is gone after first fill attempt
+
+function startOtpWatcher(sessionId: string, orgId: string): void {
+  const otpConfig = config?.otp;
+  if (!otpConfig) return; // Should never happen — caller checks config?.otp first
+
+  let otpRequested = false; // Guard 1: single-request per watcher lifetime
+
+  const observer = new MutationObserver(() => {
+    if (otpRequested) return; // Guard 1: already in-flight
+
+    const otpField = document.querySelector<HTMLInputElement>(otpConfig.inputSelector);
+    if (!otpField) return;
+
+    // Guard 4: only autofill if the tab is visible
+    if (document.visibilityState !== 'visible') return;
+
+    // Guard 6: only fill visible, enabled, non-hidden fields
+    if (!isOtpFieldVisible(otpField)) return;
+
+    // Set guard and disconnect BEFORE the async call so no second mutation can fire
+    otpRequested = true;            // Guard 1
+    observer.disconnect();          // Guard 2
+    clearTimeout(hardTimeout);      // Cancel the 30s timer
+    document.removeEventListener('visibilitychange', onVisibilityChange); // Guard 5
+
+    fetchAndFillOtp(sessionId, orgId, otpConfig.inputSelector, otpConfig.submitSelector);
+  });
+
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  // Guard 3: 30-second hard timeout — silent stop (OTP field never appeared)
+  const hardTimeout = setTimeout(() => {
+    observer.disconnect();
+    document.removeEventListener('visibilitychange', onVisibilityChange);
+  }, 30_000);
+
+  // Guard 5: stop if user navigates or hides the tab before OTP field appears
+  function onVisibilityChange() {
+    if (document.visibilityState === 'hidden') {
+      observer.disconnect();
+      clearTimeout(hardTimeout);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    }
+  }
+  document.addEventListener('visibilitychange', onVisibilityChange);
+}
+
+/**
+ * Returns true if the OTP input field is visible and interactable.
+ * Guards against hidden or disabled inputs that some SPAs keep in the DOM.
+ */
+function isOtpFieldVisible(el: HTMLInputElement): boolean {
+  if (el.disabled || el.hidden) return false;
+  if (el.type === 'hidden') return false;
+  const rect = el.getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0;
+}
+
+/**
+ * Calls the backend to retrieve the OTP, fills the field, and immediately
+ * clears the code from memory. Never retries on failure.
+ *
+ * OTP Boundary Rule: receives only { otp: string }, fills it, nullifies it.
+ * Guard 7: no auto-retry — if fill fails, user must request a new code.
+ */
+async function fetchAndFillOtp(
+  sessionId: string,
+  orgId: string,
+  inputSelector: string,
+  submitSelector?: string,
+): Promise<void> {
+  let otpCode: string | null = null;
+
+  try {
+    showToast('Fetching verification code...');
+
+    const response = await sendMessage<{ otp: string }>({
+      type: 'FETCH_OTP',
+      payload: { sessionId, orgId },
+    });
+
+    if (!response.success || !response.data?.otp) {
+      const msg = response.error || 'No OTP found.';
+      // Specific, actionable message for the Gmail-not-connected case
+      if (msg.toLowerCase().includes('not connected') || msg.toLowerCase().includes('gmail')) {
+        showToast(
+          'Automatic OTP is unavailable — the account owner has not connected Gmail to WithUs. ' +
+          'Ask the organization owner to enable Gmail integration.',
+          true,
+        );
+      } else if (msg.toLowerCase().includes('not found') || msg.toLowerCase().includes('no otp')) {
+        showToast('No OTP found. Please request a new verification code.', true);
+      } else if (msg.toLowerCase().includes('unavailable') || msg.toLowerCase().includes('rate')) {
+        showToast('Gmail temporarily unavailable. Please try again in a moment.', true);
+      } else {
+        showToast(msg, true);
+      }
+      return;
+    }
+
+    otpCode = response.data.otp;
+
+    const otpField = document.querySelector<HTMLInputElement>(inputSelector);
+    if (!otpField || !isOtpFieldVisible(otpField)) {
+      showToast('Could not locate the OTP field.', true);
+      return;
+    }
+
+    fillField(inputSelector, otpCode);
+
+    // Auto-submit only if selector resolves to a visible, enabled element
+    if (submitSelector) {
+      const submitBtn = document.querySelector<HTMLButtonElement | HTMLInputElement>(submitSelector);
+      if (submitBtn && !submitBtn.disabled && isOtpFieldVisible(submitBtn as HTMLInputElement)) {
+        setTimeout(() => submitBtn.click(), 120);
+      }
+      // Guard: if button not found or disabled — fill only, let user click manually
+    }
+
+    removeToast();
+  } catch {
+    showToast('OTP autofill failed. Please enter the code manually.', true);
+  } finally {
+    otpCode = null; // Guard 6: immediate memory clear regardless of success or failure
+  }
 }
 
 // ─── Message Helper ───────────────────────────────────────────────────────────
