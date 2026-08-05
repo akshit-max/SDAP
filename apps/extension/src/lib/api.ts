@@ -97,4 +97,21 @@ export const WithusApi = {
   ): Promise<{ plaintext: string }> {
     return request('POST', `/organizations/${orgId}/sessions/${sessionId}/reveal`, { reason }, token);
   },
+
+  // ─── OTP Fetch ────────────────────────────────────────────────────────────
+
+  /**
+   * Requests the latest OTP from the grantor's Gmail inbox.
+   * Returns only { otp: string } — no email content ever crosses this boundary.
+   *
+   * OTP Boundary Rule: this is the only place in the extension that calls /otp.
+   * The content script receives only the extracted code string.
+   */
+  async fetchOtp(
+    orgId: string,
+    sessionId: string,
+    token: string,
+  ): Promise<{ otp: string }> {
+    return request('POST', `/organizations/${orgId}/sessions/${sessionId}/otp`, {}, token);
+  },
 };

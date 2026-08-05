@@ -32,7 +32,8 @@ export type MessageType =
   | 'REQUEST_ACCESS'
   | 'CHECK_AUTH'
   | 'LOGOUT'
-  | 'LAUNCH_SESSION';
+  | 'LAUNCH_SESSION'
+  | 'FETCH_OTP';
 
 export interface ExtensionMessage {
   type: MessageType;
