@@ -58,3 +58,18 @@ platformRegistry.register({
   principalType: 'EMAIL',
   supportsDelegation: true,
 });
+
+platformRegistry.register({
+  id: 'GODADDY',
+  name: 'GoDaddy',
+  domains: ['godaddy.com', 'sso.godaddy.com'],
+  login: {
+    url: 'https://sso.godaddy.com/',
+    usernameSelector: '#username, input[name="username"], input[type="email"]',
+    passwordSelector: '#password, input[name="password"], input[type="password"]',
+    submitSelector: 'button#submitBtn, button[type="submit"], input[type="submit"]',
+    requirePasswordOnDOM: true,
+  },
+  principalType: 'EMAIL',
+  supportsDelegation: true,
+});

@@ -83,6 +83,7 @@ export interface PlatformConfig {
     usernameSelector: string;
     passwordSelector: string;
     submitSelector?: string;
+    requirePasswordOnDOM?: boolean;
   };
   otp?: {
     type: 'EMAIL' | 'SMS' | 'NONE';
