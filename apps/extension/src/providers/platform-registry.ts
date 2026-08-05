@@ -152,7 +152,21 @@ platformRegistry.register({
     usernameSelector: 'input[type="email"], input[autocomplete="username"]',
     passwordSelector: 'input[type="password"], input[autocomplete="current-password"]',
     submitSelector: 'button[type="submit"]',
-  }
+  },
+  /**
+   * OTP Config (Phase 7A)
+   *
+   * Supported: Email verification code (enforced on every login)
+   *
+   * Deferred to Phase 7B+:
+   * - Authenticator app TOTP
+   * - SMS OTP
+   */
+  otp: {
+    type: 'EMAIL',
+    inputSelector: 'input[name="otp"], input[autocomplete="one-time-code"], input[name="verification_code"]',
+    submitSelector: 'button[type="submit"]',
+  },
 });
 
 /**
