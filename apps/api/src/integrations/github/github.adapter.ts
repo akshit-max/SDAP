@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { IntegrationProvider } from '@prisma/client';
 import {
   IIntegrationAdapter,
+  IProviderIdentityResolver,
   HealthCheckResult,
   IntegrationResource,
   GrantAccessInput,
@@ -26,9 +27,23 @@ const GITHUB_API = 'https://api.github.com';
  * GitHub API docs: https://docs.github.com/en/rest
  */
 @Injectable()
-export class GitHubAdapter implements IIntegrationAdapter {
+export class GitHubAdapter implements IIntegrationAdapter, IProviderIdentityResolver {
   readonly provider = IntegrationProvider.GITHUB;
   private readonly logger = new Logger(GitHubAdapter.name);
+
+  // ─── Identity Resolution ────────────────────────────────────────────────────
+
+  resolvePrincipalId(user: { id: string; email: string; providerProfiles?: unknown }): string {
+    const githubUsername = (user.providerProfiles as any)?.githubUsername;
+    if (!githubUsername) {
+      // Use standard Error; IntegrationsService will handle/rethrow as needed,
+      // or we can throw a BadRequestException if we import it.
+      // We'll throw an Error to keep the adapter agnostic of HTTP exceptions if possible,
+      // but since it's NestJS, we can just throw Error.
+      throw new Error('Grantee has not configured their GitHub username.');
+    }
+    return githubUsername;
+  }
 
   // ─── Validate Token ─────────────────────────────────────────────────────────
 

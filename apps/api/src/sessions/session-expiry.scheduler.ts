@@ -61,7 +61,7 @@ export class SessionExpiryScheduler {
         integrationResourceType: true,
         integrationResourceExternalId: true,
         integrationReferenceId: true,
-        grantee: { select: { email: true, providerProfiles: true } },
+        grantee: { select: { id: true, email: true, providerProfiles: true } },
       },
     });
 
@@ -87,7 +87,7 @@ export class SessionExpiryScheduler {
         integrationResourceType: true,
         integrationResourceExternalId: true,
         integrationReferenceId: true,
-        grantee: { select: { email: true, providerProfiles: true } },
+        grantee: { select: { id: true, email: true, providerProfiles: true } },
       },
     });
 
@@ -148,7 +148,7 @@ export class SessionExpiryScheduler {
       integrationResourceType: string | null;
       integrationResourceExternalId: string | null;
       integrationReferenceId: string | null;
-      grantee: { email: string; providerProfiles?: any } | null;
+      grantee: { id: string; email: string; providerProfiles?: any } | null;
     },
     auditReason: string,
   ) {
@@ -159,12 +159,11 @@ export class SessionExpiryScheduler {
 
     if (isIntegrationBound) {
       let principalId = session.grantee!.email;
-      if (session.integrationProvider === 'GITHUB') {
-        const githubUsername = (session.grantee!.providerProfiles as any)?.githubUsername;
-        if (githubUsername) {
-          principalId = githubUsername;
-        } else {
-          this.logger.warn(`[EXPIRY] Session ${session.id}: Grantee has no GitHub username. Falling back to email.`);
+      if (typeof this.integrationsService.resolvePrincipalId === 'function') {
+        try {
+          principalId = this.integrationsService.resolvePrincipalId(session.integrationProvider as any, session.grantee!);
+        } catch (err: unknown) {
+          this.logger.warn(`[EXPIRY] Session ${session.id}: Principal resolution failed. Falling back to email. Error: ${(err as Error).message}`);
         }
       }
 

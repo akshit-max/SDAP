@@ -22,6 +22,21 @@ export class IntegrationsService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
+  // ─── Identity Resolution ────────────────────────────────────────────────────
+
+  resolvePrincipalId(provider: IntegrationProvider, user: { id: string; email: string; providerProfiles?: unknown }): string {
+    const adapter = this.registry.getAdapter(provider);
+    if ('resolvePrincipalId' in adapter && typeof (adapter as any).resolvePrincipalId === 'function') {
+      try {
+        return (adapter as any).resolvePrincipalId(user);
+      } catch (err: unknown) {
+        throw new BadRequestException((err as Error).message);
+      }
+    }
+    // Default fallback: assume email is the principal ID for most providers
+    return user.email;
+  }
+
   // ─── Connect ────────────────────────────────────────────────────────────────
 
   async connect(organizationId: string, userId: string, dto: ConnectIntegrationDto) {

@@ -115,7 +115,7 @@ export class SessionsService {
       try {
         const grantee = await this.prisma.user.findUnique({
           where: { id: dto.granteeId },
-          select: { email: true, providerProfiles: true },
+          select: { id: true, email: true, providerProfiles: true },
         });
 
         if (!grantee?.email) {
@@ -123,13 +123,8 @@ export class SessionsService {
         }
 
         let principalId = grantee.email;
-
-        if (integrationProvider === 'GITHUB') {
-          const githubUsername = (grantee.providerProfiles as any)?.githubUsername;
-          if (!githubUsername) {
-            throw new BadRequestException('Grantee has not configured their GitHub username.');
-          }
-          principalId = githubUsername;
+        if (typeof this.integrationsService.resolvePrincipalId === 'function') {
+          principalId = this.integrationsService.resolvePrincipalId(integrationProvider, grantee);
         }
 
         let result;
@@ -303,7 +298,7 @@ export class SessionsService {
   ) {
     const session = await this.prisma.delegatedSession.findUnique({
       where: { id: sessionId },
-      include: { grantee: { select: { email: true, providerProfiles: true } } },
+      include: { grantee: { select: { id: true, email: true, providerProfiles: true } } },
     });
 
     if (!session || session.organizationId !== organizationId) {
@@ -341,12 +336,8 @@ export class SessionsService {
       this.integrationsService
     ) {
       let principalId = session.grantee.email;
-      if (session.integrationProvider === 'GITHUB') {
-        const githubUsername = (session.grantee.providerProfiles as any)?.githubUsername;
-        if (!githubUsername) {
-          throw new BadGatewayException('Cannot revoke GitHub access: Grantee has no GitHub username configured.');
-        }
-        principalId = githubUsername;
+      if (typeof this.integrationsService.resolvePrincipalId === 'function') {
+        principalId = this.integrationsService.resolvePrincipalId(session.integrationProvider, session.grantee);
       }
 
       try {
