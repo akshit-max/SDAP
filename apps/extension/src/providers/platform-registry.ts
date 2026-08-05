@@ -73,3 +73,31 @@ platformRegistry.register({
   principalType: 'EMAIL',
   supportsDelegation: true,
 });
+
+/**
+ * LinkedIn Verification:
+ * 1. Fully supported via Vault Secret model? Yes.
+ * 2. Requires only Email/Password/Submit? Yes.
+ * 3. New runtime behavior? LinkedIn may prompt for OTP/2FA or CAPTCHA on anomalous logins.
+ * 4. Stable selectors? Yes, relying on standard `autocomplete` and `type` attributes since classes are obfuscated.
+ * 
+ * Supported:
+ * - Email / Phone
+ * - Password
+ * - Auto-submit (via generic selectors)
+ * 
+ * Deferred to Phase 6/7:
+ * - Email/App OTP
+ * - CAPTCHA challenges
+ */
+platformRegistry.register({
+  id: 'LINKEDIN',
+  name: 'LinkedIn',
+  domains: ['linkedin.com', 'www.linkedin.com'],
+  login: {
+    url: 'https://www.linkedin.com/login',
+    usernameSelector: 'input[name="session_key"], input[autocomplete="username"], input[type="email"], #username',
+    passwordSelector: 'input[name="session_password"], input[autocomplete="current-password"], input[type="password"], #password',
+    submitSelector: 'button[type="submit"], button[aria-label="Sign in"], .login__form_action_container button, form button',
+  }
+});
