@@ -128,3 +128,29 @@ platformRegistry.register({
     submitSelector: 'button[type="submit"], button[name="commit"]',
   }
 });
+
+/**
+ * Stripe Verification:
+ * 1. Fully supported via Vault Secret model? Yes.
+ * 2. Requires only Email/Password/Submit? The initial auth does. 
+ * 3. New runtime behavior? Yes, Stripe heavily enforces MFA for all logins, and may prompt for Account Selection.
+ * 4. Stable selectors? Yes, standard HTML5 attributes.
+ * 
+ * Supported:
+ * - Email / Password auth
+ * 
+ * Deferred to Phase 6/7:
+ * - App-based / SMS MFA (mandatory on Stripe)
+ * - Account Selection picker
+ */
+platformRegistry.register({
+  id: 'STRIPE',
+  name: 'Stripe',
+  domains: ['stripe.com', 'dashboard.stripe.com'],
+  login: {
+    url: 'https://dashboard.stripe.com/login',
+    usernameSelector: 'input[type="email"], input[autocomplete="username"]',
+    passwordSelector: 'input[type="password"], input[autocomplete="current-password"]',
+    submitSelector: 'button[type="submit"]',
+  }
+});
