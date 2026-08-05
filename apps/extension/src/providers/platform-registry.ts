@@ -101,3 +101,30 @@ platformRegistry.register({
     submitSelector: 'button[type="submit"], button[aria-label="Sign in"], .login__form_action_container button, form button',
   }
 });
+
+/**
+ * Shopify Verification:
+ * 1. Fully supported via Vault Secret model? Yes.
+ * 2. Requires only Email/Password/Submit? The initial auth does, but it often requires Workspace selection.
+ * 3. New runtime behavior? Yes, store/workspace picker after auth.
+ * 4. Stable selectors? Yes, standard HTML5 attributes.
+ * 
+ * Supported:
+ * - Email / Password auth
+ * 
+ * Deferred to Phase 6/7:
+ * - Workspace / Store Selection (e.g. if user is part of multiple Shopify stores)
+ * - Multi-step login variants (passkey/SSO)
+ * - OTP (often sent to email)
+ */
+platformRegistry.register({
+  id: 'SHOPIFY',
+  name: 'Shopify',
+  domains: ['shopify.com', 'accounts.shopify.com', 'admin.shopify.com'],
+  login: {
+    url: 'https://admin.shopify.com/login',
+    usernameSelector: 'input[type="email"], input[autocomplete="username"], #account_email',
+    passwordSelector: 'input[type="password"], input[autocomplete="current-password"], #account_password',
+    submitSelector: 'button[type="submit"], button[name="commit"]',
+  }
+});
