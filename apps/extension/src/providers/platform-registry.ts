@@ -44,3 +44,17 @@ platformRegistry.register({
   principalType: 'GITHUB_USERNAME',
   supportsDelegation: true,
 });
+
+platformRegistry.register({
+  id: 'VERCEL',
+  name: 'Vercel',
+  domains: ['vercel.com'],
+  login: {
+    url: 'https://vercel.com/login',
+    usernameSelector: 'input[type="email"], input[name="email"]',
+    passwordSelector: 'input[type="password"], input[name="password"]',
+    submitSelector: 'button[type="submit"]',
+  },
+  principalType: 'EMAIL',
+  supportsDelegation: true,
+});
