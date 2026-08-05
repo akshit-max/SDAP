@@ -25,6 +25,10 @@ import { ApprovalPolicyService } from '../../approvals/approval-policy.service';
 import { ApprovalsService } from '../../approvals/approvals.service';
 import { Throttle } from '@nestjs/throttler';
 import { OrganizationContext } from '../../authorization/decorators/organization-context.decorator';
+import { GmailAdapter } from '../../integrations/gmail/gmail.adapter';
+import { GmailOtpService } from '../../integrations/gmail/gmail-otp.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { PrismaService } from '../../prisma/prisma.service';
 
 const RevealSessionSchema = z.object({
   reason: z.string().min(1, 'Reason is required for auditing purposes'),
@@ -40,6 +44,10 @@ export class SessionsController {
     private readonly sessionsService: SessionsService,
     private readonly approvalPolicyService: ApprovalPolicyService,
     private readonly approvalsService: ApprovalsService,
+    private readonly gmailAdapter: GmailAdapter,
+    private readonly gmailOtpService: GmailOtpService,
+    private readonly eventEmitter: EventEmitter2,
+    private readonly prisma: PrismaService,
   ) {}
 
   @Post()
@@ -128,5 +136,73 @@ export class SessionsController {
       dto.reason,
     );
     return { plaintext };
+  }
+
+  /**
+   * POST /organizations/:orgId/sessions/:sessionId/otp
+   *
+   * Fetches the latest OTP from the grantor's Gmail inbox.
+   *
+   * Security model:
+   *  - Session must be ACTIVE and not expired.
+   *  - Requesting user must be the designated grantee.
+   *  - OTP is extracted on the backend — extension never receives email body.
+   *  - Audit event is emitted on every successful OTP fetch.
+   *
+   * OTP Boundary Rule:
+   *  - Returns only { otp: string }.
+   *  - Never returns email body, subject, sender, or Gmail metadata.
+   */
+  @Post(':sessionId/otp')
+  @ApiOperation({ summary: 'Fetch OTP from grantor Gmail for an active delegated session' })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  async fetchOtp(
+    @Param('orgId') orgId: string,
+    @Param('sessionId') sessionId: string,
+    @Request() req: RequestWithUser,
+  ) {
+    // ── Validate session ─────────────────────────────────────────────────────
+    const session = await this.prisma.delegatedSession.findUnique({
+      where: { id: sessionId },
+      include: { grantor: { select: { id: true } } },
+    });
+
+    if (!session || session.organizationId !== orgId) {
+      return { error: 'Session not found.' };
+    }
+    if (session.granteeId !== req.user.id) {
+      return { error: 'You are not the grantee of this session.' };
+    }
+    if (session.status !== 'ACTIVE') {
+      return { error: `Session is ${session.status.toLowerCase()}.` };
+    }
+    if (new Date(session.expiresAt) < new Date()) {
+      return { error: 'Session has expired.' };
+    }
+
+    // ── Get a valid access token for the GRANTOR's Gmail ────────────────────
+    const accessToken = await this.gmailAdapter.getValidAccessToken(session.organizationId);
+
+    // ── Extract OTP — extension never sees email content ────────────────────
+    const otp = await this.gmailOtpService.fetchLatestOtp(
+      accessToken,
+      session.integrationProvider ?? null,
+    );
+
+    // ── Audit log ────────────────────────────────────────────────────────────
+    this.eventEmitter.emit('audit.log', {
+      organizationId: orgId,
+      actorId: req.user.id,
+      action: 'otp.fetched',
+      resourceType: 'SESSION',
+      resourceId: sessionId,
+      metadata: {
+        platform: session.integrationProvider ?? 'UNKNOWN',
+        grantorId: session.grantorId,
+      },
+    });
+
+    // OTP Boundary Rule: return only the code string, nothing else.
+    return { otp };
   }
 }
