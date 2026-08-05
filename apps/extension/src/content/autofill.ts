@@ -86,6 +86,12 @@ async function discoverSessions(): Promise<void> {
   // BUT only if we actually detect a login form on this specific page
   if (provider?.getCredentialFields()) {
     handleAutofillRequest();
+  } else if (config?.otp) {
+    // Hard-navigation case: The user landed on a separate OTP page (e.g. Razorpay /merchants/)
+    const otpField = document.querySelector<HTMLInputElement>(config.otp.inputSelector);
+    if (otpField && isOtpFieldVisible(otpField)) {
+      startOtpWatcher(activeSessions[0].id, activeOrgId);
+    }
   }
 }
 
@@ -252,6 +258,15 @@ function startOtpWatcher(sessionId: string, orgId: string): void {
 
   const otpConfig = config?.otp;
   if (!otpConfig) return; // Should never happen — caller checks config?.otp first
+
+  // Immediate Check: In case of a hard-navigation (e.g. Razorpay /merchants/)
+  // the OTP field might already be on the DOM when the content script loads.
+  const existingOtpField = document.querySelector<HTMLInputElement>(otpConfig.inputSelector);
+  if (existingOtpField && document.visibilityState === 'visible' && isOtpFieldVisible(existingOtpField)) {
+    otpCompleted = true;
+    fetchAndFillOtp(sessionId, orgId, otpConfig.inputSelector, otpConfig.submitSelector);
+    return;
+  }
 
   let otpRequested = false; // Guard 2: single-request per watcher instance
 
