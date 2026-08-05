@@ -192,5 +192,9 @@ platformRegistry.register({
     usernameSelector: 'input[type="email"], input[type="text"], input[type="tel"], input[autocomplete="username"]',
     passwordSelector: 'input[type="password"], input[autocomplete="current-password"]',
     submitSelector: 'button[type="submit"]',
+  },
+  otp: {
+    type: 'EMAIL',
+    inputSelector: 'input[name="otp"], input[autocomplete="one-time-code"]',
   }
 });
