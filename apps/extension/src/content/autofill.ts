@@ -31,11 +31,17 @@ if (
   provider = {
     name: config.name,
     domains: config.domains,
-    getCredentialFields: () => ({
-      usernameSelector: config.login.usernameSelector,
-      passwordSelector: config.login.passwordSelector,
-      submitSelector: config.login.submitSelector,
-    })
+    getCredentialFields: () => {
+      // Mimic legacy behavior: only return fields if the primary username field is actually on the DOM
+      const exists = document.querySelector(config.login.usernameSelector);
+      if (!exists) return null;
+      
+      return {
+        usernameSelector: config.login.usernameSelector,
+        passwordSelector: config.login.passwordSelector,
+        submitSelector: config.login.submitSelector,
+      };
+    }
   };
 } else {
   // Immediately fallback to legacy provider registry
