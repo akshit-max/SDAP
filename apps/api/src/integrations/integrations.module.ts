@@ -12,9 +12,12 @@ import { IntegrationsController } from './integrations.controller';
 import { VercelAdapter } from './vercel/vercel.adapter';
 import { GitHubAdapter } from './github/github.adapter';
 import { GoDaddyAdapter } from './godaddy/godaddy.adapter';
+import { GmailAdapter } from './gmail/gmail.adapter';
+import { GmailOtpService } from './gmail/gmail-otp.service';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [PrismaModule, VaultsModule],
+  imports: [PrismaModule, VaultsModule, ConfigModule],
   providers: [
     // Core framework
     IntegrationRegistry,
@@ -24,9 +27,11 @@ import { GoDaddyAdapter } from './godaddy/godaddy.adapter';
     VercelAdapter,
     GitHubAdapter,
     GoDaddyAdapter,
+    GmailAdapter,
+    GmailOtpService,
   ],
   controllers: [IntegrationsController],
-  exports: [IntegrationsService],
+  exports: [IntegrationsService, GmailAdapter, GmailOtpService],
 })
 export class IntegrationsModule implements OnModuleInit {
   constructor(
@@ -34,6 +39,7 @@ export class IntegrationsModule implements OnModuleInit {
     private readonly vercel: VercelAdapter,
     private readonly github: GitHubAdapter,
     private readonly godaddy: GoDaddyAdapter,
+    private readonly gmail: GmailAdapter,
   ) {}
 
   /**
@@ -44,5 +50,6 @@ export class IntegrationsModule implements OnModuleInit {
     this.registry.registerAdapter(this.vercel);
     this.registry.registerAdapter(this.github);
     this.registry.registerAdapter(this.godaddy);
+    this.registry.registerAdapter(this.gmail);
   }
 }
