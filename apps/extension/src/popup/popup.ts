@@ -177,7 +177,6 @@ function renderSessions(sessions: ExtensionSession[], orgId: string, tabId: numb
 }
 
 async function handleAutofill(btn: HTMLButtonElement, tabId: number | undefined) {
-  console.log('[Popup] Autofill button clicked');
   const sessionId = btn.dataset.sessionId!;
   const orgId = btn.dataset.orgId!;
 
@@ -187,7 +186,6 @@ async function handleAutofill(btn: HTMLButtonElement, tabId: number | undefined)
   if (tabId) {
     // Trigger autofill in the content script via scripting API
     try {
-      console.log('[Popup] Sending message to service worker (via content script injection)');
       await chrome.scripting.executeScript({
         target: { tabId },
         func: triggerAutofill,
@@ -207,7 +205,6 @@ async function handleAutofill(btn: HTMLButtonElement, tabId: number | undefined)
 
 /** Injected into the page to trigger autofill via the content script message channel */
 function triggerAutofill(sessionId: string, orgId: string) {
-  console.log('[Service Worker] Dispatching withus:autofill event (executed from popup scripting)');
   window.dispatchEvent(
     new CustomEvent('withus:autofill', { detail: { sessionId, orgId } }),
   );

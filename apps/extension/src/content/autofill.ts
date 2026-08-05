@@ -67,8 +67,6 @@ if (!provider) {
   throw new Error('WITHUS: unsupported domain, content script exiting');
 }
 
-console.log('[Content Script] Loaded and initialized for provider:', provider.name);
-
 // ─── Session Discovery ────────────────────────────────────────────────────────
 
 let activeSessions: ExtensionSession[] = [];
@@ -407,7 +405,6 @@ function sendMessage<T>(msg: ExtensionMessage): Promise<ExtensionResponse<T>> {
 // The popup can inject a specific sessionId to autofill, bypassing the badge.
 
 window.addEventListener('withus:autofill', async (e: Event) => {
-  console.log('[Content Script] withus:autofill listener fired');
   const { sessionId, orgId } = (e as CustomEvent<{ sessionId: string; orgId: string }>).detail;
 
   const response = await sendMessage<AutofillPayload>({
@@ -415,45 +412,23 @@ window.addEventListener('withus:autofill', async (e: Event) => {
     payload: { sessionId, orgId },
   });
 
-  if (!response.success || !response.data) {
-    console.log('[Content Script] LAUNCH_SESSION failed or returned no data');
-    return;
-  }
+  if (!response.success || !response.data) return;
 
-  console.log('[Content Script] Session lookup');
   const { username, password } = response.data;
   const session = activeSessions.find(s => s.id === sessionId);
   const fallbackUsername = session?.resourceName || session?.secretName || '';
-  
-  console.log('[Content Script] PlatformConfig resolved');
   const fields = provider?.getCredentialFields();
-  if (!fields) {
-    console.log('[Content Script] Username selector found: false (getCredentialFields returned null)');
-    return;
-  }
-  
-  console.log('[Content Script] Username selector found:', fields.usernameSelector);
-  console.log('[Content Script] Password selector found:', fields.passwordSelector);
+  if (!fields) return;
 
   try {
-    console.log('[Content Script] Filling username');
     fillField(fields.usernameSelector, username || fallbackUsername);
-    console.log('[Content Script] Filling password');
     fillField(fields.passwordSelector, password);
     provider?.afterFill?.();
 
     if (fields.submitSelector) {
-      console.log('[Content Script] Submit button found:', fields.submitSelector);
       const submitBtn = document.querySelector<HTMLElement>(fields.submitSelector);
-      if (submitBtn) {
-        console.log('[Content Script] Clicking submit');
-        setTimeout(() => submitBtn.click(), 120);
-      } else {
-        console.log('[Content Script] Submit button DOM element not found');
-      }
+      if (submitBtn) setTimeout(() => submitBtn.click(), 120);
     }
-  } catch (err) {
-    console.log('[Content Script] Error during filling/submit:', err);
   } finally {
     (response.data as any) = null;
   }
