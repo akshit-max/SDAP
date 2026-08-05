@@ -189,7 +189,7 @@ platformRegistry.register({
   domains: ['razorpay.com', 'dashboard.razorpay.com'],
   login: {
     url: 'https://dashboard.razorpay.com/signin',
-    usernameSelector: 'input[type="email"], input[autocomplete="username"]',
+    usernameSelector: 'input[type="email"], input[type="text"], input[type="tel"], input[autocomplete="username"]',
     passwordSelector: 'input[type="password"], input[autocomplete="current-password"]',
     submitSelector: 'button[type="submit"]',
   }

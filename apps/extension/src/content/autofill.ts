@@ -424,8 +424,16 @@ window.addEventListener('withus:autofill', async (e: Event) => {
   }
 
   try {
-    fillField(fields.usernameSelector, username || fallbackUsername);
-    fillField(fields.passwordSelector, password);
+    if (fields.usernameSelector) {
+      fillField(fields.usernameSelector, username || fallbackUsername);
+    }
+    if (fields.passwordSelector && password) {
+      try {
+        fillField(fields.passwordSelector, password);
+      } catch {
+        // Ignore missing password on multi-step logins (e.g. Razorpay, Shopify)
+      }
+    }
     provider?.afterFill?.();
 
     if (fields.submitSelector) {
