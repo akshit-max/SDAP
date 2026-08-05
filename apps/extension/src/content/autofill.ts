@@ -418,7 +418,10 @@ window.addEventListener('withus:autofill', async (e: Event) => {
   const session = activeSessions.find(s => s.id === sessionId);
   const fallbackUsername = session?.resourceName || session?.secretName || '';
   const fields = provider?.getCredentialFields();
-  if (!fields) return;
+  if (!fields) {
+    showToast('Failed to find login fields on this page.', true);
+    return;
+  }
 
   try {
     fillField(fields.usernameSelector, username || fallbackUsername);
@@ -428,7 +431,10 @@ window.addEventListener('withus:autofill', async (e: Event) => {
     if (fields.submitSelector) {
       const submitBtn = document.querySelector<HTMLElement>(fields.submitSelector);
       if (submitBtn) setTimeout(() => submitBtn.click(), 120);
+      else showToast('Could not find submit button.', true);
     }
+  } catch (err: any) {
+    showToast(err.message || 'Failed to fill credentials', true);
   } finally {
     (response.data as any) = null;
   }
