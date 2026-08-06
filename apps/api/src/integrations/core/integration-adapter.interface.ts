@@ -21,6 +21,18 @@ export interface IProviderIdentityResolver {
 }
 
 /**
+ * Providers that support OAuth 2.0 flow implement this interface.
+ */
+export interface IOAuthProvider {
+  buildAuthorizationUrl(state: string): string;
+  exchangeCodeAndStore(organizationId: string, userId: string, code: string): Promise<{ grantedEmail: string }>;
+}
+
+export function isOAuthProvider(adapter: IIntegrationAdapter): adapter is IIntegrationAdapter & IOAuthProvider {
+  return 'buildAuthorizationUrl' in adapter && 'exchangeCodeAndStore' in adapter;
+}
+
+/**
  * Every integration provider must implement this interface.
  * Business logic (auth, RBAC, sessions, audit) lives in WITHUS services.
  * The adapter is only responsible for communicating with the external platform.

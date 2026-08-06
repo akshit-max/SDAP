@@ -96,6 +96,38 @@ export class IntegrationsService {
     return { id: connection.id, provider: connection.provider, identity, status: connection.status };
   }
 
+  // ─── OAuth Flow ─────────────────────────────────────────────────────────────
+
+  async getOAuthUrl(organizationId: string, provider: IntegrationProvider, state: string) {
+    const adapter = this.registry.getAdapter(provider);
+    
+    // We import this inline or from the core types if available, but for now we'll cast.
+    // Instead of importing the type guard, we can just check the methods.
+    if ('buildAuthorizationUrl' in adapter && typeof adapter.buildAuthorizationUrl === 'function') {
+      return { url: adapter.buildAuthorizationUrl(state) };
+    }
+    throw new BadRequestException(`Provider ${provider} does not support OAuth`);
+  }
+
+  async handleOAuthCallback(organizationId: string, userId: string, provider: IntegrationProvider, code: string) {
+    const adapter = this.registry.getAdapter(provider);
+    
+    if ('exchangeCodeAndStore' in adapter && typeof adapter.exchangeCodeAndStore === 'function') {
+      try {
+        const { grantedEmail } = await adapter.exchangeCodeAndStore(organizationId, userId, code);
+        this.eventEmitter.emit('integration.connected', {
+          organizationId,
+          provider,
+          actorId: userId,
+        });
+        return { identity: grantedEmail, status: IntegrationStatus.ACTIVE };
+      } catch (err: unknown) {
+        throw new BadRequestException(`OAuth failed: ${(err as Error).message}`);
+      }
+    }
+    throw new BadRequestException(`Provider ${provider} does not support OAuth`);
+  }
+
   // ─── Disconnect ──────────────────────────────────────────────────────────────
 
   async disconnect(organizationId: string, userId: string, provider: IntegrationProvider) {
