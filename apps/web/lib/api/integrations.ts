@@ -1,6 +1,6 @@
 import { apiClient } from './client';
 
-export type IntegrationProvider = 'VERCEL' | 'GITHUB' | 'GODADDY';
+export type IntegrationProvider = 'VERCEL' | 'GITHUB' | 'GODADDY' | 'GMAIL';
 export type IntegrationStatus = 'ACTIVE' | 'DISCONNECTED' | 'ERROR';
 
 export interface IntegrationConnection {

@@ -8,6 +8,7 @@ import {
   useConnectIntegration,
   useDisconnectIntegration,
   useHealthCheck,
+  useOAuthUrl,
 } from '../../../hooks/useIntegrations';
 import { useToast } from '../../../components/common/Toast';
 import { ConfirmModal } from '../../../components/common/ConfirmModal';
@@ -24,6 +25,7 @@ import {
   Globe,
   Code2,
   Zap,
+  Mail,
 } from 'lucide-react';
 import type { IntegrationProvider, IntegrationConnection } from '../../../lib/api/integrations';
 
@@ -34,10 +36,20 @@ const PROVIDERS: {
   name: string;
   description: string;
   docsUrl: string;
-  patUrl: string;
-  patHint: string;
+  authenticationType: 'PAT' | 'OAUTH';
+  // Required only if authenticationType === 'PAT'
+  patUrl?: string;
+  patHint?: string;
   icon: React.ReactNode;
 }[] = [
+  {
+    id: 'GMAIL',
+    name: 'Gmail',
+    description: 'Connect your Gmail account to allow WITHUS to extract OTPs sent to your organization inbox automatically.',
+    docsUrl: 'https://developers.google.com/gmail/api',
+    authenticationType: 'OAUTH',
+    icon: <Mail className="w-5 h-5" />,
+  },
   {
     id: 'VERCEL',
     name: 'Vercel',
@@ -45,6 +57,7 @@ const PROVIDERS: {
     docsUrl: 'https://vercel.com/docs/rest-api',
     patUrl: 'https://vercel.com/account/tokens',
     patHint: 'Create a token at vercel.com/account/tokens. Requires "Full Account" scope.',
+    authenticationType: 'PAT',
     icon: <span className="text-lg font-bold">▲</span>,
   },
   {
@@ -54,6 +67,7 @@ const PROVIDERS: {
     docsUrl: 'https://docs.github.com/en/rest',
     patUrl: 'https://github.com/settings/tokens',
     patHint: 'Create a PAT (classic) with: read:org, admin:org, repo. Or a Fine-grained token with org access.',
+    authenticationType: 'PAT',
     icon: <Code2 className="w-5 h-5" />,
   },
 ];
@@ -191,7 +205,7 @@ function ConnectModal({
     <PromptModal
       isOpen={!!provider}
       title={`Connect ${provider.name}`}
-      message={provider.patHint}
+      message={provider.patHint || ''}
       label="Personal Access Token"
       placeholder="Paste your PAT here…"
       confirmLabel="Connect"
@@ -212,6 +226,7 @@ export default function IntegrationsPage() {
   const { mutate: connectIntegration, isPending: isConnecting } = useConnectIntegration(orgId);
   const { mutate: disconnectIntegration, isPending: isDisconnecting } = useDisconnectIntegration(orgId);
   const { mutate: runHealthCheck, isPending: isCheckingHealth } = useHealthCheck(orgId);
+  const { mutate: getOAuthUrl } = useOAuthUrl(orgId);
   const { toast } = useToast();
 
   const currentMember = (organization as any)?.role;
@@ -219,6 +234,21 @@ export default function IntegrationsPage() {
 
   const [connectingProvider, setConnectingProvider] = useState<typeof PROVIDERS[0] | null>(null);
   const [disconnectingProvider, setDisconnectingProvider] = useState<IntegrationProvider | null>(null);
+
+  const handleInitiateConnect = (provider: typeof PROVIDERS[0]) => {
+    if (provider.authenticationType === 'PAT') {
+      setConnectingProvider(provider);
+    } else if (provider.authenticationType === 'OAUTH') {
+      getOAuthUrl(provider.id, {
+        onSuccess: (data) => {
+          if (data.url) window.location.href = data.url;
+        },
+        onError: (err: any) => {
+          toast('error', err?.response?.data?.message || `Failed to initiate OAuth for ${provider.name}`);
+        }
+      });
+    }
+  };
 
   const handleConnect = (token: string) => {
     if (!connectingProvider) return;
@@ -311,7 +341,7 @@ export default function IntegrationsPage() {
                   key={provider.id}
                   provider={provider}
                   connection={connection}
-                  onConnect={(id) => setConnectingProvider(PROVIDERS.find((p) => p.id === id) || null)}
+                  onConnect={(id) => handleInitiateConnect(PROVIDERS.find((p) => p.id === id)!)}
                   onDisconnect={(id) => setDisconnectingProvider(id)}
                   onHealthCheck={(id) => runHealthCheck(id)}
                   isCheckingHealth={isCheckingHealth}
