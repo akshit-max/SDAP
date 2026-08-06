@@ -258,7 +258,7 @@ function fillField(selectorOrEl: string | HTMLInputElement, value: string): void
 
 function startPasswordWatcher(
   passwordSelector: string,
-  submitSelector: string,
+  submitSelector: string | undefined,
   password: string,
   sessionId: string,
   orgId: string,
