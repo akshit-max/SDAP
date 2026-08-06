@@ -41,6 +41,16 @@ export const integrationsApi = {
     return res.data;
   },
 
+  getOAuthUrl: async (orgId: string, provider: IntegrationProvider): Promise<{ url: string }> => {
+    const res = await apiClient.get(`/organizations/${orgId}/integrations/${provider}/oauth/url`);
+    return res.data;
+  },
+
+  handleOAuthCallback: async (orgId: string, provider: IntegrationProvider, code: string) => {
+    const res = await apiClient.post(`/organizations/${orgId}/integrations/${provider}/oauth/callback`, { code });
+    return res.data;
+  },
+
   disconnect: async (orgId: string, provider: IntegrationProvider) => {
     const res = await apiClient.delete(`/organizations/${orgId}/integrations/${provider}`);
     return res.data;
