@@ -55,6 +55,10 @@ platformRegistry.register({
     passwordSelector: 'input[type="password"], input[name="password"]',
     submitSelector: 'button[type="submit"]',
   },
+  otp: {
+    type: 'EMAIL',
+    inputSelector: 'input[autocomplete="one-time-code"], input[inputmode="numeric"], input[type="number"]',
+  },
   principalType: 'EMAIL',
   supportsDelegation: true,
 });

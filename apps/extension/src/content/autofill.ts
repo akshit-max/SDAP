@@ -88,8 +88,10 @@ async function discoverSessions(): Promise<void> {
     handleAutofillRequest();
   } else if (config?.otp) {
     // Hard-navigation case: The user landed on a separate OTP page (e.g. Razorpay /merchants/)
-    const otpField = document.querySelector<HTMLInputElement>(config.otp.inputSelector);
-    if (otpField && isOtpFieldVisible(otpField)) {
+    // Use querySelectorAll to skip hidden form inputs and find the first VISIBLE OTP field.
+    const otpFields = Array.from(document.querySelectorAll<HTMLInputElement>(config.otp.inputSelector));
+    const visibleOtpField = otpFields.find(f => isOtpFieldVisible(f));
+    if (visibleOtpField) {
       startOtpWatcher(activeSessions[0].id, activeOrgId);
     }
   }
@@ -191,11 +193,20 @@ async function handleAutofillRequest(): Promise<void> {
       fillField(fields.usernameSelector, username);
     }
     if (fields.passwordSelector && password) {
-      // Vercel and some others might not have a password field on the first page
-      try {
-        fillField(fields.passwordSelector, password);
-      } catch {
-        // Ignore missing password field if we successfully filled username
+      const pwEl = document.querySelector<HTMLInputElement>(fields.passwordSelector);
+      if (pwEl && isOtpFieldVisible(pwEl)) {
+        // Password field is already on the DOM — fill it immediately (GitHub, LinkedIn, Stripe, etc.)
+        try { fillField(pwEl, password); } catch { /* ignore */ }
+      } else if (!pwEl) {
+        // Password field is NOT yet in the DOM — multi-step login (e.g. Razorpay step 2).
+        // Watch for it to appear via MutationObserver. Does NOT affect single-step platforms.
+        startPasswordWatcher(
+          fields.passwordSelector,
+          fields.submitSelector,
+          password,
+          session.id,
+          (session as any).__orgId || activeOrgId,
+        );
       }
     }
     provider?.afterFill?.();
@@ -237,6 +248,43 @@ function fillField(selectorOrEl: string | HTMLInputElement, value: string): void
   // Dispatch events so framework re-renders pick up the change
   el.dispatchEvent(new Event('input', { bubbles: true }));
   el.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+// ─── Password Step Watcher ────────────────────────────────────────────────────
+// For multi-step logins (e.g. Razorpay) where the password field only appears
+// after a SPA transition from the email step. Watches for the password field to
+// appear in the DOM, fills it, then hands off to the OTP watcher if needed.
+// Self-destructs after 30 seconds. Does NOT affect single-step platforms.
+
+function startPasswordWatcher(
+  passwordSelector: string,
+  submitSelector: string,
+  password: string,
+  sessionId: string,
+  orgId: string,
+): void {
+  const observer = new MutationObserver(() => {
+    const pwEl = document.querySelector<HTMLInputElement>(passwordSelector);
+    if (!pwEl || !isOtpFieldVisible(pwEl)) return;
+
+    observer.disconnect();
+    clearTimeout(timeout);
+
+    try {
+      fillField(pwEl, password);
+      // Hand off to OTP watcher if this platform expects an OTP after password
+      if (config?.otp) startOtpWatcher(sessionId, orgId);
+      if (submitSelector) {
+        const submitBtn = document.querySelector<HTMLElement>(submitSelector);
+        if (submitBtn) setTimeout(() => submitBtn.click(), 120);
+      }
+    } catch {
+      showToast('Password autofill failed — please enter manually.', true);
+    }
+  });
+
+  observer.observe(document.body, { childList: true, subtree: true });
+  const timeout = setTimeout(() => observer.disconnect(), 30_000);
 }
 
 // ─── OTP Watcher ──────────────────────────────────────────────────────────────
