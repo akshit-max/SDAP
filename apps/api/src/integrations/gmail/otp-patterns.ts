@@ -73,6 +73,17 @@ export const OTP_PATTERNS: OtpPattern[] = [
     group: 1,
   },
 
+  {
+    platform: 'VERCEL',
+    senderDomains: ['vercel.com', 'system@vercel.com'],
+    // Vercel login email body (decoded HTML): "...login request was made from [City, Country]. 988598 This code..."
+    // The 6-digit code appears as a standalone number after a period+space or on its own line.
+    // We match it specifically as a 6-digit number that is NOT preceded by a hyphen (to avoid matching
+    // username suffixes like "navyabhandula-3225").
+    regex: /(?<![a-zA-Z0-9-])(\d{6})(?!\d)/,
+    group: 1,
+  },
+
   // ─── Generic fallback: first 4–8 digit code near a keyword ───────────────
 
   {
@@ -81,7 +92,10 @@ export const OTP_PATTERNS: OtpPattern[] = [
     //   "OTP: 654321"
     //   "Enter the code 9876 to"
     //   "verification code — 123456"
-    regex: /(?:code|otp|passcode|token|verify|verification)[\s\S]{0,80}?(\b\d{4,8}\b)/i,
+    //
+    // Note: uses a negative lookbehind for hyphens to avoid matching numbers
+    // embedded in usernames like "navyabhandula-3225".
+    regex: /(?:code|otp|passcode|token|verify|verification)[\s\S]{0,80}?(?<![a-zA-Z0-9-])(\b\d{4,8}\b)/i,
     group: 1,
   },
 ];

@@ -36,7 +36,7 @@ export class GmailAdapter implements IIntegrationAdapter {
   private readonly logger = new Logger(GmailAdapter.name);
 
   private readonly TOKEN_URL = 'https://oauth2.googleapis.com/token';
-  private readonly PROFILE_URL = 'https://gmail.googleapis.com/gmail/v1/users/me/profile';
+  private readonly PROFILE_URL = 'https://www.googleapis.com/oauth2/v3/userinfo';
   private readonly AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 
   constructor(
@@ -58,8 +58,8 @@ export class GmailAdapter implements IIntegrationAdapter {
       client_id: this.config.getOrThrow('GOOGLE_CLIENT_ID'),
       redirect_uri: this.config.getOrThrow('GOOGLE_REDIRECT_URI'),
       response_type: 'code',
-      // Minimum scope: read-only access to Gmail for OTP retrieval
-      scope: 'https://www.googleapis.com/auth/gmail.readonly',
+      // Minimum scope: read-only access to Gmail for OTP retrieval, plus openid/email for profile
+      scope: 'openid email https://www.googleapis.com/auth/gmail.readonly',
       access_type: 'offline',   // Required to receive a refresh_token
       prompt: 'consent',        // Forces consent screen so refresh_token is always issued
       state,
@@ -113,7 +113,7 @@ export class GmailAdapter implements IIntegrationAdapter {
       throw new Error('Failed to resolve Gmail address after token exchange.');
     }
     const profile = await profileRes.json() as any;
-    const grantedEmail: string = profile.emailAddress;
+    const grantedEmail: string = profile.email ?? profile.emailAddress;
 
     // ── Encrypt access token (stored as encryptedToken) ─────────────────────
     const { encryptedToken, encryptedDek, keyMetadataId } =

@@ -190,15 +190,18 @@ platformRegistry.register({
 platformRegistry.register({
   id: 'RAZORPAY',
   name: 'Razorpay',
-  domains: ['razorpay.com', 'dashboard.razorpay.com'],
+  // accounts.razorpay.com is the OAuth/login subdomain; dashboard.razorpay.com is post-login
+  domains: ['razorpay.com', 'dashboard.razorpay.com', 'accounts.razorpay.com'],
   login: {
-    url: 'https://dashboard.razorpay.com/signin',
-    usernameSelector: 'input[type="email"], input[type="text"], input[type="tel"], input[autocomplete="username"]',
+    url: 'https://accounts.razorpay.com/auth',
+    usernameSelector: 'input[type="email"], input[type="text"], input[type="tel"], input[autocomplete="username"], input[autocomplete="email"]',
     passwordSelector: 'input[type="password"], input[autocomplete="current-password"], input[placeholder*="password" i]',
-    submitSelector: 'button[type="submit"], button#btn-login, #btn-login, button',
+    // Target the Continue button specifically — avoid matching every <button> on the page
+    submitSelector: 'button[type="submit"], button#btn-login, #btn-login, button.btn-primary, button[data-testid="btn-submit"]',
   },
   otp: {
     type: 'EMAIL',
-    inputSelector: 'input[name="otp"], input[autocomplete="one-time-code"]',
+    // Razorpay OTP screen uses individual digit boxes with name="otp" or autocomplete="one-time-code"
+    inputSelector: 'input[name="otp"], input[autocomplete="one-time-code"], input[inputmode="numeric"][maxlength="1"], input[type="number"][maxlength="1"]',
   }
 });

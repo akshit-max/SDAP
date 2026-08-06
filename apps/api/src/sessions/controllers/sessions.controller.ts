@@ -160,6 +160,7 @@ export class SessionsController {
     @Param('orgId') orgId: string,
     @Param('sessionId') sessionId: string,
     @Request() req: RequestWithUser,
+    @Body() body: { platform?: string; loginStartTime?: number },
   ) {
     // ── Validate session ─────────────────────────────────────────────────────
     const session = await this.prisma.delegatedSession.findUnique({
@@ -180,13 +181,20 @@ export class SessionsController {
       return { error: 'Session has expired.' };
     }
 
+    // ── Resolve platform — prefer body (sent by extension from current URL) over DB value ──
+    // The extension knows what page it's on (VERCEL, RAZORPAY, etc.) even when the
+    // session's integrationProvider column is null (legacy sessions created before this field).
+    const platform = body?.platform ?? session.integrationProvider ?? null;
+    const loginStartTime = body?.loginStartTime ?? Date.now() - 30_000;
+
     // ── Get a valid access token for the GRANTOR's Gmail ────────────────────
     const accessToken = await this.gmailAdapter.getValidAccessToken(session.organizationId);
 
     // ── Extract OTP — extension never sees email content ────────────────────
     const otp = await this.gmailOtpService.fetchLatestOtp(
       accessToken,
-      session.integrationProvider ?? null,
+      platform,
+      loginStartTime,
     );
 
     // ── Audit log ────────────────────────────────────────────────────────────
@@ -197,7 +205,7 @@ export class SessionsController {
       resourceType: 'SESSION',
       resourceId: sessionId,
       metadata: {
-        platform: session.integrationProvider ?? 'UNKNOWN',
+        platform: platform ?? 'UNKNOWN',
         grantorId: session.grantorId,
       },
     });

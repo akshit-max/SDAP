@@ -25,6 +25,7 @@ let provider: ProviderAdapter | null = null;
 // The per-watcher otpRequested boolean (inside startOtpWatcher) handles the
 // within-watcher case; this handles the across-watcher case.
 let otpCompleted = false;
+let loginStartTime = Date.now();
 
 // Dual Path Resolution: Prefer V2 PlatformConfig, fallback to Legacy PROVIDER_REGISTRY
 const config = platformRegistry.getForHost(location.hostname);
@@ -162,6 +163,8 @@ async function handleAutofillRequest(): Promise<void> {
   const session = activeSessions.sort((a, b) => a.revealCount - b.revealCount)[0];
   if (!session) return;
 
+  loginStartTime = Date.now(); // Capture exact time the login attempt started
+
   showToast('WithUs session detected... Logging you in...');
 
   // Introduce 1-second delay for premium UX
@@ -208,7 +211,7 @@ async function handleAutofillRequest(): Promise<void> {
     }
     provider?.afterFill?.();
     if (config?.otp) {
-      startOtpWatcher(session.id, (session as any).__orgId || activeOrgId);
+      startOtpWatcher(session.id, (session as any).__orgId || activeOrgId, loginStartTime);
     }
 
     // Auto-submit — find the submit button and click it
@@ -270,7 +273,7 @@ function startPasswordWatcher(
     try {
       fillField(pwEl, password);
       // Hand off to OTP watcher if this platform expects an OTP after password
-      if (config?.otp) startOtpWatcher(sessionId, orgId);
+      if (config?.otp) startOtpWatcher(sessionId, orgId, loginStartTime);
       if (submitSelector) {
         const submitBtn = document.querySelector<HTMLElement>(submitSelector);
         if (submitBtn) setTimeout(() => submitBtn.click(), 120);
@@ -297,7 +300,7 @@ function startPasswordWatcher(
 //   7. isOtpFieldVisible() — only fills visible, enabled fields
 //   8. No auto-retry on wrong OTP — watcher + module flag are both exhausted after first fill
 
-function startOtpWatcher(sessionId: string, orgId: string): void {
+function startOtpWatcher(sessionId: string, orgId: string, startTime: number): void {
   // Guard 1: module-level — OTP already attempted on this page lifecycle
   if (otpCompleted) return;
 
@@ -310,7 +313,7 @@ function startOtpWatcher(sessionId: string, orgId: string): void {
   const existingOtpField = existingOtpFields.find(f => isOtpFieldVisible(f));
   if (existingOtpField && document.visibilityState === 'visible') {
     otpCompleted = true;
-    fetchAndFillOtp(sessionId, orgId, otpConfig.inputSelector, otpConfig.submitSelector, existingOtpField);
+    fetchAndFillOtp(sessionId, orgId, otpConfig.inputSelector, otpConfig.submitSelector, existingOtpField, config?.id, startTime);
     return;
   }
 
@@ -333,7 +336,7 @@ function startOtpWatcher(sessionId: string, orgId: string): void {
     clearTimeout(hardTimeout);      // Cancel the 30s timer
     document.removeEventListener('visibilitychange', onVisibilityChange); // Guard 5
 
-    fetchAndFillOtp(sessionId, orgId, otpConfig.inputSelector, otpConfig.submitSelector, otpField);
+    fetchAndFillOtp(sessionId, orgId, otpConfig.inputSelector, otpConfig.submitSelector, otpField, config?.id, startTime);
   });
 
   observer.observe(document.body, { childList: true, subtree: true });
@@ -378,7 +381,9 @@ async function fetchAndFillOtp(
   orgId: string,
   inputSelector: string,
   submitSelector?: string,
-  resolvedOtpField?: HTMLInputElement
+  resolvedOtpField?: HTMLInputElement,
+  platform?: string,
+  loginStartTime?: number,
 ): Promise<void> {
   let otpCode: string | null = null;
 
@@ -387,7 +392,9 @@ async function fetchAndFillOtp(
 
     const response = await sendMessage<{ otp: string }>({
       type: 'FETCH_OTP',
-      payload: { sessionId, orgId },
+      // Include the platform so the backend can use a sender-specific Gmail search
+      // Include the loginStartTime so the backend only picks up NEW emails
+      payload: { sessionId, orgId, platform, loginStartTime },
     });
 
     if (!response.success || !response.data?.otp) {
@@ -500,7 +507,7 @@ window.addEventListener('withus:autofill', async (e: Event) => {
     }
     provider?.afterFill?.();
     if (config?.otp) {
-      startOtpWatcher(sessionId, orgId);
+      startOtpWatcher(sessionId, orgId, loginStartTime);
     }
 
     if (fields.submitSelector) {

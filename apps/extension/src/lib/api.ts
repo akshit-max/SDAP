@@ -111,7 +111,9 @@ export const WithusApi = {
     orgId: string,
     sessionId: string,
     token: string,
+    platform?: string,
+    loginStartTime?: number,
   ): Promise<{ otp: string }> {
-    return request('POST', `/organizations/${orgId}/sessions/${sessionId}/otp`, {}, token);
+    return request('POST', `/organizations/${orgId}/sessions/${sessionId}/otp`, { platform, loginStartTime }, token);
   },
 };

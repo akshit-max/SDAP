@@ -31,43 +31,61 @@ export class GmailOtpService {
    * @param platform     The integrationProvider of the DelegatedSession (e.g. 'STRIPE')
    * @returns            The extracted OTP code string
    */
-  async fetchLatestOtp(accessToken: string, platform: string | null): Promise<string> {
+  async fetchLatestOtp(accessToken: string, platform: string | null, loginStartTime: number): Promise<string> {
     // ── Build search query ──────────────────────────────────────────────────
     const query = this.buildSearchQuery(platform);
     this.logger.debug(`[OTP] Gmail search: q="${query}" platform="${platform}"`);
 
-    // ── Search for matching messages ────────────────────────────────────────
-    const listRes = await this.gmailGet(
-      `/messages?q=${encodeURIComponent(query)}&maxResults=5`,
-      accessToken,
-    );
-
-    const messages: Array<{ id: string; threadId: string }> = listRes.messages ?? [];
-
-    if (messages.length === 0) {
-      throw new NotFoundException(
-        'No OTP email found in the last 5 minutes. Please request a new verification code.',
+    // Poll up to 8 times (~16 seconds max waiting)
+    for (let attempt = 0; attempt < 8; attempt++) {
+      // ── Search for matching messages ────────────────────────────────────────
+      const listRes = await this.gmailGet(
+        `/messages?q=${encodeURIComponent(query)}&maxResults=5`,
+        accessToken,
       );
-    }
 
-    // ── Fetch each message body and attempt extraction ──────────────────────
-    // Messages are returned newest-first by the Gmail API.
-    for (const { id } of messages) {
-      const message = await this.gmailGet(`/messages/${id}?format=full`, accessToken);
-      const body = this.extractEmailBody(message);
-      const sender = this.extractSender(message);
+      const messages: Array<{ id: string; threadId: string }> = listRes.messages ?? [];
 
-      if (!body) continue;
+      // ── Fetch each message body and attempt extraction ──────────────────────
+      for (const { id } of messages) {
+        const message = await this.gmailGet(`/messages/${id}?format=full`, accessToken);
+        
+        // Filter by internalDate (millisecond timestamp). Allow 15 seconds of clock skew.
+        const internalDate = parseInt(message.internalDate, 10);
+        if (internalDate < loginStartTime - 15000) {
+          // Message is too old. Because Gmail returns newest-first, all subsequent
+          // messages in this array will also be too old.
+          break;
+        }
 
-      const otp = this.extractOtp(body, sender, platform);
-      if (otp) {
-        this.logger.log(`[OTP] Extracted code for platform="${platform}" from message id="${id}"`);
-        return otp;
+        const body = this.extractEmailBody(message);
+        const sender = this.extractSender(message);
+
+        // PHASE 3 DEBUG LOGGING — remove before production
+        this.logger.debug(`[OTP-DEBUG] Message id="${id}" sender="${sender}" internalDate="${internalDate}"`);
+        this.logger.debug(`[OTP-DEBUG] Body snippet: ${body?.slice(0, 200)}`);
+
+        if (!body) continue;
+
+        const otp = this.extractOtp(body, sender, platform);
+
+        // PHASE 3 DEBUG LOGGING — remove before production
+        this.logger.debug(`[OTP-DEBUG] Extracted OTP: ${otp ?? 'null (no match)'}`);
+
+        if (otp) {
+          this.logger.log(`[OTP] Extracted code for platform="${platform}" from message id="${id}"`);
+          return otp;
+        }
       }
+
+      // If we reach here, we found no NEW matching OTP email in this poll cycle.
+      // Wait 2 seconds before trying again.
+      this.logger.debug(`[OTP] No new OTP found on attempt ${attempt + 1}/8. Retrying in 2s...`);
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
     throw new NotFoundException(
-      'An OTP email was found but no verification code could be extracted. Please request a new code.',
+      'No OTP email found. Please request a new verification code.',
     );
   }
 

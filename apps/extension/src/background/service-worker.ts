@@ -159,11 +159,11 @@ async function handleMessage(msg: ExtensionMessage): Promise<ExtensionResponse> 
     // The service worker holds the auth token — the content script never sees it.
     // Returns only { otp: string }. OTP Boundary Rule enforced here.
     case 'FETCH_OTP': {
-      const { sessionId, orgId } = msg.payload as { sessionId: string; orgId: string };
+      const { sessionId, orgId, platform, loginStartTime } = msg.payload as { sessionId: string; orgId: string; platform?: string; loginStartTime?: number };
       const auth = await Storage.getAuth();
       if (!auth) return { success: false, error: 'NOT_AUTHENTICATED' };
 
-      const result = await WithusApi.fetchOtp(orgId, sessionId, auth.accessToken);
+      const result = await WithusApi.fetchOtp(orgId, sessionId, auth.accessToken, platform, loginStartTime);
       // Pass only the code string — nothing from the email body crosses this boundary.
       return { success: true, data: { otp: result.otp } };
     }
