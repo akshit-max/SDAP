@@ -41,14 +41,11 @@ if (
     name: config.name,
     domains: config.domains,
     getCredentialFields: () => {
-      // Mimic legacy behavior: only return fields if the primary username field is actually on the DOM
       const usernameExists = document.querySelector(config.login.usernameSelector);
-      if (!usernameExists) return null;
+      const passwordExists = config.login.passwordSelector ? document.querySelector(config.login.passwordSelector) : null;
       
-      if (config.login.requirePasswordOnDOM) {
-        const passwordExists = document.querySelector(config.login.passwordSelector);
-        if (!passwordExists) return null;
-      }
+      // Allow if either the email or password field is present
+      if (!usernameExists && !passwordExists) return null;
       
       return {
         usernameSelector: config.login.usernameSelector,

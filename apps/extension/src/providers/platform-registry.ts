@@ -57,7 +57,7 @@ platformRegistry.register({
   },
   otp: {
     type: 'EMAIL',
-    inputSelector: 'input[autocomplete="one-time-code"], input[inputmode="numeric"], input[type="number"]',
+    inputSelector: 'input[autocomplete="one-time-code"], input[inputmode="numeric"], input[type="number"], input[name="code"], input[type="text"][maxlength="1"]',
   },
   principalType: 'EMAIL',
   supportsDelegation: true,
@@ -194,8 +194,8 @@ platformRegistry.register({
   login: {
     url: 'https://dashboard.razorpay.com/signin',
     usernameSelector: 'input[type="email"], input[type="text"], input[type="tel"], input[autocomplete="username"]',
-    passwordSelector: 'input[type="password"], input[autocomplete="current-password"]',
-    submitSelector: 'button[type="submit"]',
+    passwordSelector: 'input[type="password"], input[autocomplete="current-password"], input[placeholder*="password" i]',
+    submitSelector: 'button[type="submit"], button#btn-login, #btn-login, button',
   },
   otp: {
     type: 'EMAIL',
