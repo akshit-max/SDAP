@@ -61,8 +61,11 @@ if (
 }
 
 if (!provider) {
-  // Not a supported domain — do nothing
-  throw new Error('WITHUS: unsupported domain, content script exiting');
+  // Not a supported login page — content script exits silently.
+  // This is expected when the manifest injects on broad patterns like *.razorpay.com/*
+  // which also matches post-login dashboard pages (dashboard.razorpay.com).
+  // Using `throw` here causes a noisy "Uncaught Error" in the browser's extension panel.
+  // Instead we just skip all initialization below.
 }
 
 // ─── Session Discovery ────────────────────────────────────────────────────────
@@ -242,10 +245,12 @@ async function handleAutofillRequest(): Promise<void> {
       // This can happen when selectors are too broad (e.g. input[type="text"] matches
       // a password field that momentarily lost its type attribute).
       if (usernameEl && isOtpFieldVisible(usernameEl) && usernameEl !== pwEl) {
+        // Fill email — focus it so the field is active
         fillField(usernameEl, username);
-        // Wait 80ms: gives React time to commit the email state before the natural
-        // blur that happens when we focus the password field below.
-        await new Promise(r => setTimeout(r, 80));
+        // Wait for React to process the email state update before we proceed.
+        // We do NOT focus the password field next (skipFocus=true below) so that
+        // the email field does NOT blur and React does NOT re-render it back to empty.
+        await new Promise(r => setTimeout(r, 150));
       }
     }
     if (fields.passwordSelector && password) {
@@ -284,28 +289,42 @@ async function handleAutofillRequest(): Promise<void> {
 
 // ─── DOM Fill Helpers ─────────────────────────────────────────────────────────
 
-function fillField(selectorOrEl: string | HTMLInputElement, value: string): void {
+// skipFocus: pass true when filling a secondary field that should NOT steal focus
+// from a previously-filled field. This is critical for LinkedIn-style controlled
+// inputs where React re-renders and clears the email field on blur.
+function fillField(
+  selectorOrEl: string | HTMLInputElement,
+  value: string,
+  skipFocus = false,
+): void {
   const el = typeof selectorOrEl === 'string' ? document.querySelector<HTMLInputElement>(selectorOrEl) : selectorOrEl;
   if (!el) throw new Error(`Field not found: ${selectorOrEl}`);
 
-  // Focus the element so browser/framework treats it as active
-  el.focus();
+  // Only focus if explicitly requested — focusing causes the PREVIOUS field to blur,
+  // which can trigger React’s onBlur re-render and clear a value we just set.
+  if (!skipFocus) el.focus();
 
   // Use native prototype setter to bypass any framework-controlled property descriptor.
-  // This ensures the DOM value is set even on React/Vue controlled inputs.
   const nativeInputSetter = Object.getOwnPropertyDescriptor(
     window.HTMLInputElement.prototype,
     'value',
   )?.set;
+
+  // React maintains an internal _valueTracker on each controlled input.
+  // Reset it to '' so React always sees a delta (tracker="" vs el.value=newValue)
+  // and fires onChange to update React state.
+  const tracker = (el as any)._valueTracker;
+  if (tracker) tracker.setValue('');
+
   nativeInputSetter?.call(el, value);
 
   // Dispatch a realistic sequence of events so React/Angular/Vue pick up the change.
-  // InputEvent with inputType='insertText' matches what real browser typing produces.
   el.dispatchEvent(new InputEvent('input',  { bubbles: true, data: value, inputType: 'insertText' }));
   el.dispatchEvent(new Event('change', { bubbles: true }));
   el.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: value.slice(-1) }));
   el.dispatchEvent(new KeyboardEvent('keyup',   { bubbles: true, key: value.slice(-1) }));
 }
+
 
 
 /**
@@ -677,9 +696,13 @@ window.addEventListener('withus:autofill', async (e: Event) => {
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
-// Wait for DOM to be ready before detecting session
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', discoverSessions);
-} else {
-  discoverSessions();
+// Only run on supported login pages (provider was resolved above).
+// If provider is null (e.g. post-login dashboard pages injected via broad manifest pattern),
+// nothing executes — we exit silently without throwing.
+if (provider) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', discoverSessions);
+  } else {
+    discoverSessions();
+  }
 }

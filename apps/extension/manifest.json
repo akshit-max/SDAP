@@ -44,6 +44,13 @@
         "https://*.shopify.com/*",
         "https://*.linkedin.com/*"
       ],
+      "exclude_matches": [
+        "https://dashboard.razorpay.com/*",
+        "https://app.razorpay.com/*",
+        "https://app.vercel.com/*",
+        "https://dashboard.stripe.com/dashboard",
+        "https://app.shopify.com/*"
+      ],
       "js": ["content/autofill.js"],
       "run_at": "document_idle"
     }
