@@ -29,7 +29,7 @@ export class PlatformRegistry {
 
 export const platformRegistry = new PlatformRegistry();
 
-// ─── Phase 2 Migrations ──────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Phase 2 Migrations Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 platformRegistry.register({
   id: 'GITHUB',
@@ -79,11 +79,11 @@ platformRegistry.register({
 });
 
 /**
- * LinkedIn — Deferred (known issue)
+ * LinkedIn Ã¢â‚¬â€ Deferred (known issue)
  *
  * Password autofill works. Email field exhibits platform-specific React
  * controlled-input DOM behaviour that causes the value to be cleared on blur.
- * Deferred indefinitely — not blocking the client's primary objectives.
+ * Deferred indefinitely Ã¢â‚¬â€ not blocking the client's primary objectives.
  */
 platformRegistry.register({
   id: 'LINKEDIN',
@@ -130,7 +130,7 @@ platformRegistry.register({
   id: 'RAZORPAY',
   name: 'Razorpay',
   // Only accounts.razorpay.com is the login/auth subdomain.
-  // dashboard.razorpay.com is the post-login dashboard — removing it prevents
+  // dashboard.razorpay.com is the post-login dashboard Ã¢â‚¬â€ removing it prevents
   // the extension from showing the "Logging you in..." toast on the dashboard page.
   domains: ['accounts.razorpay.com'],
   login: {
@@ -146,30 +146,30 @@ platformRegistry.register({
   }
 });
 
-// ─── Phase 3: Government Portals ─────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Phase 3: Government Portals Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 //
 // Architecture Preservation Directive:
 //   These portals require CAPTCHA and/or SMS OTP which cannot be automated
 //   without external infrastructure the client has not requested.
 //
-//   Strategy: fill username + password → pause → toast → user completes manually.
+//   Strategy: fill username + password Ã¢â€ â€™ pause Ã¢â€ â€™ toast Ã¢â€ â€™ user completes manually.
 //   This is implemented via the generic `manualStepMessage` field.
 //   No platform-specific logic. No captchaSelector. No new framework code.
 
 /**
- * MCA Portal (Ministry of Corporate Affairs) — Partial Support
+ * MCA Portal (Ministry of Corporate Affairs) Ã¢â‚¬â€ Partial Support
  *
  * Authentication flow:
- *   User ID → Password → CAPTCHA (manual) → OTP (manual)
+ *   User ID Ã¢â€ â€™ Password Ã¢â€ â€™ CAPTCHA (manual) Ã¢â€ â€™ OTP (manual)
  *
  * What we automate:
- *   ✅ Fill User ID (CIN/LLPIN/FCRN for companies, or email for individuals)
- *   ✅ Fill password
- *   ⏸  Pause — toast asks user to complete CAPTCHA
- *   ✋  User solves CAPTCHA and submits manually
+ *   Ã¢Å“â€¦ Fill User ID (CIN/LLPIN/FCRN for companies, or email for individuals)
+ *   Ã¢Å“â€¦ Fill password
+ *   Ã¢ÂÂ¸  Pause Ã¢â‚¬â€ toast asks user to complete CAPTCHA
+ *   Ã¢Å“â€¹  User solves CAPTCHA and submits manually
  *
- * CAPTCHA: alphanumeric image CAPTCHA — intentionally not automated.
- * OTP: sent to registered mobile — outside Gmail OTP pipeline.
+ * CAPTCHA: alphanumeric image CAPTCHA Ã¢â‚¬â€ intentionally not automated.
+ * OTP: sent to registered mobile Ã¢â‚¬â€ outside Gmail OTP pipeline.
  *
  * Selector notes (confirmed from portal DOM at foportal/fologin.html):
  *   User ID field is input[type="text"], NOT input[type="email"]
@@ -197,31 +197,31 @@ platformRegistry.register({
       'input[name="password"]',
       'input[id="password"]',
     ].join(', '),
-    // No submitSelector — manualStepMessage prevents auto-submit
+    // No submitSelector Ã¢â‚¬â€ manualStepMessage prevents auto-submit
   },
   manualStepMessage: 'Credentials filled. Please complete the CAPTCHA to continue.',
 });
 
 /**
- * GST Portal — Partial Support
+ * GST Portal Ã¢â‚¬â€ Partial Support
  *
  * Authentication flow:
- *   Username (GSTIN) → Password → CAPTCHA (manual) → 2FA OTP (manual, mobile)
+ *   Username (GSTIN) Ã¢â€ â€™ Password Ã¢â€ â€™ CAPTCHA (manual) Ã¢â€ â€™ 2FA OTP (manual, mobile)
  *
  * What we automate:
- *   ✅ Fill username (GSTIN or registered user ID)
- *   ✅ Fill password
- *   ⏸  Pause — toast asks user to complete CAPTCHA + OTP
- *   ✋  User solves CAPTCHA and enters OTP manually
+ *   Ã¢Å“â€¦ Fill username (GSTIN or registered user ID)
+ *   Ã¢Å“â€¦ Fill password
+ *   Ã¢ÂÂ¸  Pause Ã¢â‚¬â€ toast asks user to complete CAPTCHA + OTP
+ *   Ã¢Å“â€¹  User solves CAPTCHA and enters OTP manually
  *
- * CAPTCHA: alphanumeric visual CAPTCHA — intentionally not automated.
- * 2FA OTP: mandatory since April 2023, sent to mobile — outside Gmail pipeline.
+ * CAPTCHA: alphanumeric visual CAPTCHA Ã¢â‚¬â€ intentionally not automated.
+ * 2FA OTP: mandatory since April 2023, sent to mobile Ã¢â‚¬â€ outside Gmail pipeline.
  *
  * Selector notes (confirmed from portal DOM at services.gst.gov.in/services/login):
  *   Username: <input name="user_name" id="user_name" type="text">
  *   Password: <input name="user_pass" id="user_pass" type="password">
- *   CAPTCHA:  another input[type="text"] — must NOT match username selector
- *   → input[type="text"] intentionally excluded from usernameSelector
+ *   CAPTCHA:  another input[type="text"] Ã¢â‚¬â€ must NOT match username selector
+ *   Ã¢â€ â€™ input[type="text"] intentionally excluded from usernameSelector
  */
 platformRegistry.register({
   id: 'GST',
@@ -229,7 +229,7 @@ platformRegistry.register({
   domains: ['gst.gov.in', 'services.gst.gov.in'],
   login: {
     url: 'https://services.gst.gov.in/services/login',
-    // Specific name/id selectors only — intentionally exclude input[type="text"]
+    // Specific name/id selectors only Ã¢â‚¬â€ intentionally exclude input[type="text"]
     // to prevent matching the CAPTCHA field which is also type=text on this page.
     usernameSelector: [
       '#user_name',
@@ -245,23 +245,23 @@ platformRegistry.register({
       'input[type="password"]',    // standard fallback
       'input[name="password"]',
     ].join(', '),
-    // No submitSelector — manualStepMessage prevents auto-submit
+    // No submitSelector Ã¢â‚¬â€ manualStepMessage prevents auto-submit
   },
   manualStepMessage: 'Credentials filled. Please complete the CAPTCHA and OTP verification to continue.',
 });
 
 /**
- * Udyam Portal — Partial Support
+ * Udyam Portal Ã¢â‚¬â€ Partial Support
  *
  * Authentication flow:
- *   Udyam Registration Number → Mobile Number → "Validate & Generate OTP" → SMS OTP → Login
+ *   Udyam Registration Number Ã¢â€ â€™ Mobile Number Ã¢â€ â€™ "Validate & Generate OTP" Ã¢â€ â€™ SMS OTP Ã¢â€ â€™ Login
  *
  * This is NOT a username + password flow. It is OTP-based with no password field.
  *
  * What we automate:
- *   ✅ Fill Udyam Registration Number (19-digit, e.g. UDYAM-MH-10-0000001)
- *   ⏸  Pause — toast instructs user to fill mobile number and request OTP
- *   ✋  User enters mobile number, clicks "Validate & Generate OTP", enters SMS OTP
+ *   Ã¢Å“â€¦ Fill Udyam Registration Number (19-digit, e.g. UDYAM-MH-10-0000001)
+ *   Ã¢ÂÂ¸  Pause Ã¢â‚¬â€ toast instructs user to fill mobile number and request OTP
+ *   Ã¢Å“â€¹  User enters mobile number, clicks "Validate & Generate OTP", enters SMS OTP
  *
  * Why we don't fill the mobile number:
  *   - Architecture Preservation Directive: do not use passwordSelector for non-password fields
@@ -291,4 +291,28 @@ platformRegistry.register({
     // Architecture Preservation Directive: do not overload passwordSelector semantics.
   },
   manualStepMessage: 'Udyam Registration Number filled. Please enter your mobile number and click "Validate & Generate OTP" to receive your OTP.',
+});
+
+/**
+ * Google Ads — Partial Support
+ *
+ * Authentication flow:
+ *   Google accounts use a two-step flow (email -> password) and often enforce passkeys,
+ *   risk engine prompts, and account choosers.
+ *
+ * What we automate:
+ *   ✅ Fill email field on the initial login screen.
+ *   ⏸  Pause — instruct user to complete remaining steps (password/passkey/etc) manually.
+ */
+platformRegistry.register({
+  id: 'GOOGLE_ADS',
+  name: 'Google Ads',
+  domains: ['ads.google.com', 'accounts.google.com'],
+  login: {
+    url: 'https://ads.google.com/',
+    usernameSelector: 'input[type="email"], input[name="identifier"], input#identifierId',
+    // Deliberately omitting passwordSelector to respect the frozen architecture
+    // and prevent breaking on Google's two-step flow and passkey mandates.
+  },
+  manualStepMessage: 'Email filled. Google requires manual sign-in due to passkey / 2FA / account chooser. Click "Next" and continue manually.',
 });
