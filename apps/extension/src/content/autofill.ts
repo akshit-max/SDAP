@@ -30,13 +30,7 @@ let loginStartTime = Date.now();
 // Dual Path Resolution: Prefer V2 PlatformConfig, fallback to Legacy PROVIDER_REGISTRY
 const config = platformRegistry.getForHost(location.hostname);
 
-if (
-  config && 
-  config.login && 
-  config.login.usernameSelector && 
-  config.login.passwordSelector && 
-  config.login.submitSelector
-) {
+if (config && config.login && config.login.usernameSelector) {
   // Wrap the declarative V2 config into the legacy ProviderAdapter interface
   provider = {
     name: config.name,

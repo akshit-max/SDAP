@@ -82,7 +82,12 @@ export interface PlatformConfig {
   login: {
     url: string;
     usernameSelector: string;
-    passwordSelector: string;
+    /**
+     * Optional for platforms that don't use a separate password field
+     * (e.g. Udyam: Registration Number → OTP only, no password).
+     * All standard username+password platforms provide this.
+     */
+    passwordSelector?: string;
     submitSelector?: string;
     requirePasswordOnDOM?: boolean;
   };

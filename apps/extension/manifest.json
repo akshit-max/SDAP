@@ -45,7 +45,8 @@
         "https://*.linkedin.com/*",
         "https://*.mca.gov.in/*",
         "https://gst.gov.in/*",
-        "https://*.gst.gov.in/*"
+        "https://*.gst.gov.in/*",
+        "https://udyamregistration.gov.in/*"
       ],
       "exclude_matches": [
         "https://dashboard.razorpay.com/*",

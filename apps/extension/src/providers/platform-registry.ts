@@ -310,3 +310,52 @@ platformRegistry.register({
   manualStepMessage: 'Credentials filled. Please complete the CAPTCHA and OTP verification to continue.',
 });
 
+/**
+ * Udyam Portal — Partial Support
+ *
+ * Authentication flow:
+ *   Udyam Registration Number → Mobile Number → "Validate & Generate OTP" → SMS OTP → Login
+ *
+ * This is NOT a username + password flow. It is OTP-based with no password field.
+ *
+ * What we automate:
+ *   ✅ Fill Udyam Registration Number (19-digit, e.g. UDYAM-MH-10-0000001)
+ *   ⏸  Pause — toast instructs user to fill mobile number and request OTP
+ *   ✋  User enters mobile number, clicks "Validate & Generate OTP", enters SMS OTP
+ *
+ * Why we don't fill the mobile number:
+ *   - Architecture Preservation Directive: do not use passwordSelector for non-password fields
+ *   - Mobile number is easy to type; Registration Number (19 chars) is the hard credential
+ *   - SMS OTP infrastructure is outside our Gmail OTP pipeline
+ *
+ * Vault credential format (for this platform):
+ *   Store the Udyam Registration Number as the sole credential.
+ *   Example: "UDYAM-MH-10-0000001"
+ *
+ * Credential stored in vault:
+ *   The service worker will set username = "UDYAM-MH-10-0000001", password = ""
+ *   Only the username field (Registration Number) is filled.
+ */
+platformRegistry.register({
+  id: 'UDYAM',
+  name: 'Udyam Portal',
+  domains: ['udyamregistration.gov.in'],
+  login: {
+    url: 'https://udyamregistration.gov.in',
+    // Udyam Registration Number field selectors (gov.in portals often use name/id attributes)
+    usernameSelector: [
+      'input[name="udyam_no"]',
+      'input[id="udyam_no"]',
+      'input[name="Udyam_No"]',
+      'input[name="udyamNo"]',
+      'input[placeholder*="Udyam" i]',
+      'input[placeholder*="Registration Number" i]',
+      'input[maxlength="19"]',   // Registration numbers are exactly 19 chars
+    ].join(', '),
+    // No passwordSelector — mobile number is NOT represented here.
+    // Architecture Preservation Directive: do not overload passwordSelector semantics.
+  },
+  // Pause after filling Registration Number — user fills mobile + OTP manually.
+  // SMS OTP cannot be intercepted by the Gmail pipeline.
+  manualStepMessage: 'Udyam Registration Number filled. Please enter your mobile number and click "Validate & Generate OTP" to receive your OTP.',
+});
