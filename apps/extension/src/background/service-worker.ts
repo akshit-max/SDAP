@@ -123,19 +123,38 @@ async function handleMessage(msg: ExtensionMessage): Promise<ExtensionResponse> 
         auth.accessToken,
       );
 
-      // Parse username and password format. Supports both newline and colon separation.
+      // Parse username and password format. Supports:
+      //   1. Newline-separated: "username\npassword"
+      //   2. Colon-separated:   "username:password"
+      //   3. Space-separated:   "user@email.com password123"
+      //      (first token treated as username when it looks like an email/username)
+      //   4. Single value:      entire plaintext is the password
       let username = '';
       let password = '';
       if (result.plaintext.includes('\n')) {
         const parts = result.plaintext.split('\n');
-        username = parts[0];
-        password = parts.slice(1).join('\n');
+        username = parts[0].trim();
+        password = parts.slice(1).join('\n').trim();
       } else if (result.plaintext.includes(':')) {
         const parts = result.plaintext.split(':');
-        username = parts[0];
-        password = parts.slice(1).join(':');
+        username = parts[0].trim();
+        password = parts.slice(1).join(':').trim();
+      } else if (result.plaintext.includes(' ')) {
+        // Space-separated: split on FIRST space only.
+        // Treat first token as username if it looks like email/username (no spaces, has @).
+        // E.g. "akshitaksir@gmail.com Akshitbhan@2005" → user="akshitaksir@gmail.com", pass="Akshitbhan@2005"
+        const spaceIdx = result.plaintext.indexOf(' ');
+        const firstToken = result.plaintext.slice(0, spaceIdx);
+        const rest = result.plaintext.slice(spaceIdx + 1);
+        if (firstToken.includes('@') || firstToken.length < 50) {
+          username = firstToken;
+          password = rest;
+        } else {
+          username = '';
+          password = result.plaintext;
+        }
       } else {
-        username = ''; // Leave blank instead of duplicating the password
+        username = ''; // Single value — treat as password only
         password = result.plaintext;
       }
 

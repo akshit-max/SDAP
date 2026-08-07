@@ -144,32 +144,34 @@ export class GmailOtpService {
     return null;
   }
 
-  /**
-   * Decodes the email body from Gmail's MIME payload.
-   * Handles both single-part and multipart messages, preferring text/plain.
-   */
   private extractEmailBody(message: any): string | null {
     const payload = message?.payload;
     if (!payload) return null;
 
-    // Single-part: body data directly on payload
-    if (payload.body?.data) {
-      return Buffer.from(payload.body.data, 'base64url').toString('utf8');
+    // Recursively collect all MIME parts at any nesting depth
+    const collectParts = (part: any): any[] => {
+      const results: any[] = [part];
+      if (part?.parts) {
+        for (const child of part.parts) {
+          results.push(...collectParts(child));
+        }
+      }
+      return results;
+    };
+
+    const allParts = collectParts(payload);
+
+    // Prefer text/plain — cleanest for regex matching, no HTML noise
+    const plainPart = allParts.find(p => p?.mimeType === 'text/plain' && p?.body?.data);
+    if (plainPart) {
+      return Buffer.from(plainPart.body.data, 'base64url').toString('utf8');
     }
 
-    // Multipart: walk parts, prefer text/plain
-    if (payload.parts) {
-      const textPart = payload.parts.find((p: any) => p.mimeType === 'text/plain');
-      if (textPart?.body?.data) {
-        return Buffer.from(textPart.body.data, 'base64url').toString('utf8');
-      }
-      // Fallback to text/html if no plain text available
-      const htmlPart = payload.parts.find((p: any) => p.mimeType === 'text/html');
-      if (htmlPart?.body?.data) {
-        const html = Buffer.from(htmlPart.body.data, 'base64url').toString('utf8');
-        // Strip HTML tags for regex matching
-        return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
-      }
+    // Fallback to text/html with tags stripped
+    const htmlPart = allParts.find(p => p?.mimeType === 'text/html' && p?.body?.data);
+    if (htmlPart) {
+      const html = Buffer.from(htmlPart.body.data, 'base64url').toString('utf8');
+      return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
     }
 
     return null;

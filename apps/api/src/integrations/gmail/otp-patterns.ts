@@ -60,8 +60,9 @@ export const OTP_PATTERNS: OtpPattern[] = [
   {
     platform: 'RAZORPAY',
     senderDomains: ['razorpay.com'],
-    // Razorpay: "OTP for login is 123456"
-    regex: /(?:OTP\s+(?:for\s+login\s+)?is\s+)(\d{4,6})/i,
+    // Razorpay: "Use the following verification code: 542284"
+    // Also matches older format: "OTP for login is 123456"
+    regex: /(?:verification\s+code[:：]\s*|OTP\s+(?:for\s+login\s+)?is\s+)(\d{4,6})/i,
     group: 1,
   },
 

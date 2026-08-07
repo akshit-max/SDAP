@@ -99,10 +99,17 @@ platformRegistry.register({
   name: 'LinkedIn',
   domains: ['linkedin.com', 'www.linkedin.com'],
   login: {
-    url: 'https://www.linkedin.com/login',
-    usernameSelector: 'input[name="session_key"], input[autocomplete="username"], input[type="email"], #username',
-    passwordSelector: 'input[name="session_password"], input[autocomplete="current-password"], input[type="password"], #password',
-    submitSelector: 'button[type="submit"], button[aria-label="Sign in"], .login__form_action_container button, form button',
+    // LinkedIn moved its login page to /flagship-web/login/ (new SPA).
+    // The old /login still works too — both are on www.linkedin.com which is in domains[].
+    url: 'https://www.linkedin.com/flagship-web/login/',
+    // LinkedIn's email/phone field selectors covering both old /login and new /flagship-web/login:
+    // - name="session_key" / #session_key: classic login page
+    // - autocomplete="username" or autocomplete="email": both values seen across versions
+    // - input[type="text"]: last-resort broad match (SPA may not have name/id attrs)
+    usernameSelector: 'input[name="session_key"], #session_key, input[autocomplete="username"], input[autocomplete="email"], input[type="email"], #username, input[type="text"]',
+    passwordSelector: 'input[name="session_password"], #session_password, input[autocomplete="current-password"], input[type="password"], #password',
+    // The Sign in button on LinkedIn's form
+    submitSelector: 'button[type="submit"], button[aria-label="Sign in"], .login__form_action_container button',
   }
 });
 
@@ -190,18 +197,22 @@ platformRegistry.register({
 platformRegistry.register({
   id: 'RAZORPAY',
   name: 'Razorpay',
-  // accounts.razorpay.com is the OAuth/login subdomain; dashboard.razorpay.com is post-login
-  domains: ['razorpay.com', 'dashboard.razorpay.com', 'accounts.razorpay.com'],
+  // Only accounts.razorpay.com is the login/auth subdomain.
+  // dashboard.razorpay.com is the post-login dashboard — removing it prevents
+  // the extension from showing the "Logging you in..." toast on the dashboard page.
+  domains: ['accounts.razorpay.com'],
   login: {
     url: 'https://accounts.razorpay.com/auth',
     usernameSelector: 'input[type="email"], input[type="text"], input[type="tel"], input[autocomplete="username"], input[autocomplete="email"]',
     passwordSelector: 'input[type="password"], input[autocomplete="current-password"], input[placeholder*="password" i]',
-    // Target the Continue button specifically — avoid matching every <button> on the page
+    // Target the Continue / Login button specifically
     submitSelector: 'button[type="submit"], button#btn-login, #btn-login, button.btn-primary, button[data-testid="btn-submit"]',
   },
   otp: {
     type: 'EMAIL',
-    // Razorpay OTP screen uses individual digit boxes with name="otp" or autocomplete="one-time-code"
+    // Razorpay OTP screen: 6 individual single-digit input boxes
     inputSelector: 'input[name="otp"], input[autocomplete="one-time-code"], input[inputmode="numeric"][maxlength="1"], input[type="number"][maxlength="1"]',
+    // The Verify button that submits the OTP form
+    submitSelector: 'button[type="submit"], button.btn-primary, button[data-testid="btn-verify"], button:not([disabled])',
   }
 });

@@ -119,8 +119,11 @@ export class GmailAdapter implements IIntegrationAdapter {
     const { encryptedToken, encryptedDek, keyMetadataId } =
       await this.encryption.encryptToken(access_token, organizationId, 'GMAIL');
 
-    // ── Encrypt refresh token (stored separately in providerMeta) ───────────
-    const { encryptedToken: encryptedRefreshToken } =
+    // ── Encrypt refresh token — use its own DEK stored in providerMeta ───────
+    // The refresh token MUST use its own DEK because conn.encryptedDek belongs
+    // to the access token only. Mixing them causes AES-GCM auth-tag failures
+    // after the first token refresh (when conn.encryptedDek is rotated).
+    const { encryptedToken: encryptedRefreshToken, encryptedDek: encryptedRefreshDek } =
       await this.encryption.encryptToken(refresh_token, organizationId, 'GMAIL_REFRESH');
 
     const tokenExpiry = Date.now() + (expires_in ?? 3600) * 1000;
@@ -135,6 +138,7 @@ export class GmailAdapter implements IIntegrationAdapter {
         keyMetadataId,
         providerMeta: {
           encryptedRefreshToken,  // AES-256-GCM encrypted
+          encryptedRefreshDek,    // DEK for the refresh token (separate from access token DEK)
           tokenExpiry,
           scope: 'gmail.readonly',
           grantedEmail,
@@ -153,6 +157,7 @@ export class GmailAdapter implements IIntegrationAdapter {
         keyMetadataId,
         providerMeta: {
           encryptedRefreshToken,
+          encryptedRefreshDek,    // DEK for the refresh token
           tokenExpiry,
           scope: 'gmail.readonly',
           grantedEmail,
@@ -199,12 +204,30 @@ export class GmailAdapter implements IIntegrationAdapter {
       throw new Error('Gmail refresh token is missing. Please reconnect Gmail.');
     }
 
-    const refreshToken = this.encryption.decryptToken(
-      encryptedRefreshToken,
-      conn.encryptedDek,
-      organizationId,
-      'GMAIL_REFRESH',
-    );
+    // Use the refresh token's own DEK (encryptedRefreshDek) if available.
+    // Fall back to conn.encryptedDek for rows created before this fix (those rows
+    // will still fail if the access token was already refreshed once — the user
+    // must reconnect Gmail in that case).
+    const refreshDek: string = meta.encryptedRefreshDek ?? conn.encryptedDek;
+
+    let refreshToken: string;
+    try {
+      refreshToken = this.encryption.decryptToken(
+        encryptedRefreshToken,
+        refreshDek,
+        organizationId,
+        'GMAIL_REFRESH',
+      );
+    } catch (decryptErr) {
+      // AES-GCM auth-tag mismatch: the stored DEK doesn't match the one used to
+      // encrypt the refresh token. This happens on rows created before the
+      // encryptedRefreshDek fix. Mark the connection as errored so the grantor
+      // sees a clear "reconnect" prompt in the dashboard.
+      await this.markError(conn.id, 'Refresh token decryption failed — re-authorization required.');
+      throw new Error(
+        'Gmail connection needs to be refreshed. Please ask the account owner to reconnect Gmail in the WithUs dashboard.',
+      );
+    }
 
     const tokenRes = await fetch(this.TOKEN_URL, {
       method: 'POST',

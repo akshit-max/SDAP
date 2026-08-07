@@ -80,19 +80,62 @@ async function discoverSessions(): Promise<void> {
   activeSessions = response.data.sessions;
   activeOrgId = response.data.orgId;
   
-  // Magic GoDaddy flow: auto-fill immediately if session exists!
-  // BUT only if we actually detect a login form on this specific page
-  if (provider?.getCredentialFields()) {
+  // Only activate if this page has a login form OR a visible OTP field.
+  // This prevents the toast from firing on post-login pages like
+  // dashboard.razorpay.com/app/dashboard which match the domain but have no login UI.
+  const checkAndActivate = () => {
+    const fields = provider?.getCredentialFields();
+    if (!fields) return false;
+
+    // At least one of: username field or password field must be in the DOM
+    const hasUsername = fields.usernameSelector
+      ? !!document.querySelector(fields.usernameSelector)
+      : false;
+    const hasPassword = fields.passwordSelector
+      ? !!document.querySelector(fields.passwordSelector)
+      : false;
+
+    return hasUsername || hasPassword;
+  };
+
+  if (checkAndActivate()) {
     handleAutofillRequest();
-  } else if (config?.otp) {
-    // Hard-navigation case: The user landed on a separate OTP page (e.g. Razorpay /merchants/)
-    // Use querySelectorAll to skip hidden form inputs and find the first VISIBLE OTP field.
+    return;
+  }
+
+  if (config?.otp) {
+    // Hard-navigation case: landed directly on a standalone OTP page
     const otpFields = Array.from(document.querySelectorAll<HTMLInputElement>(config.otp.inputSelector));
     const visibleOtpField = otpFields.find(f => isOtpFieldVisible(f));
     if (visibleOtpField) {
-      startOtpWatcher(activeSessions[0].id, activeOrgId);
+      startOtpWatcher(activeSessions[0].id, activeOrgId, loginStartTime);
+      return;
     }
   }
+
+  // SPA page: form not rendered yet — watch for login fields to appear
+  // (e.g. LinkedIn /flagship-web/login/ hydrates after script runs)
+  let formWatchAttempts = 0;
+  const MAX_FORM_WAIT_ATTEMPTS = 40; // 40 × 250ms = 10 seconds max
+  const formWatcher = new MutationObserver(() => {
+    formWatchAttempts++;
+    if (formWatchAttempts > MAX_FORM_WAIT_ATTEMPTS) {
+      formWatcher.disconnect();
+      return;
+    }
+    if (checkAndActivate()) {
+      formWatcher.disconnect();
+      handleAutofillRequest();
+    } else if (config?.otp) {
+      const otpFields = Array.from(document.querySelectorAll<HTMLInputElement>(config.otp.inputSelector));
+      if (otpFields.find(f => isOtpFieldVisible(f))) {
+        formWatcher.disconnect();
+        startOtpWatcher(activeSessions[0].id, activeOrgId, loginStartTime);
+      }
+    }
+  });
+  formWatcher.observe(document.body, { childList: true, subtree: true });
+  // If neither login form nor OTP field found — do nothing (e.g. post-login dashboard)
 }
 
 // ─── Magic Toast ──────────────────────────────────────────────────────────────
@@ -189,17 +232,26 @@ async function handleAutofillRequest(): Promise<void> {
   }
 
   try {
-    if (fields.usernameSelector) {
-      fillField(fields.usernameSelector, username);
+    const pwEl = fields.passwordSelector
+      ? document.querySelector<HTMLInputElement>(fields.passwordSelector)
+      : null;
+
+    if (fields.usernameSelector && username) {
+      const usernameEl = document.querySelector<HTMLInputElement>(fields.usernameSelector);
+      // Safety: the username and password selectors must not match the SAME element.
+      // This can happen when selectors are too broad (e.g. input[type="text"] matches
+      // a password field that momentarily lost its type attribute).
+      if (usernameEl && isOtpFieldVisible(usernameEl) && usernameEl !== pwEl) {
+        fillField(usernameEl, username);
+        // Wait 80ms: gives React time to commit the email state before the natural
+        // blur that happens when we focus the password field below.
+        await new Promise(r => setTimeout(r, 80));
+      }
     }
     if (fields.passwordSelector && password) {
-      const pwEl = document.querySelector<HTMLInputElement>(fields.passwordSelector);
       if (pwEl && isOtpFieldVisible(pwEl)) {
-        // Password field is already on the DOM — fill it immediately (GitHub, LinkedIn, Stripe, etc.)
         try { fillField(pwEl, password); } catch { /* ignore */ }
       } else if (!pwEl) {
-        // Password field is NOT yet in the DOM — multi-step login (e.g. Razorpay step 2).
-        // Watch for it to appear via MutationObserver. Does NOT affect single-step platforms.
         startPasswordWatcher(
           fields.passwordSelector,
           fields.submitSelector,
@@ -214,16 +266,14 @@ async function handleAutofillRequest(): Promise<void> {
       startOtpWatcher(session.id, (session as any).__orgId || activeOrgId, loginStartTime);
     }
 
-    // Auto-submit — find the submit button and click it
-    if (fields.submitSelector) {
-      const submitBtn = document.querySelector<HTMLElement>(fields.submitSelector);
-      if (submitBtn) {
-        // Small delay so React/Vue state can settle after the input events
-        setTimeout(() => {
-          submitBtn.click();
-        }, 120);
-      }
-    }
+    // Wait 200ms after filling all fields so React fully commits both email + password
+    // state before we click submit. Without this, the form may submit with empty values.
+    await new Promise(r => setTimeout(r, 200));
+
+    // Auto-submit — clickSubmitButton tries CSS selector then exact text-content match,
+    // retrying up to 10 times with 150ms intervals to handle React re-renders.
+    // Skips social auth buttons (Google, Microsoft, Apple, etc.) automatically.
+    clickSubmitButton(fields.submitSelector);
   } catch {
     showToast('Autofill failed — please fill in manually.', true);
   } finally {
@@ -238,16 +288,91 @@ function fillField(selectorOrEl: string | HTMLInputElement, value: string): void
   const el = typeof selectorOrEl === 'string' ? document.querySelector<HTMLInputElement>(selectorOrEl) : selectorOrEl;
   if (!el) throw new Error(`Field not found: ${selectorOrEl}`);
 
-  // Set value using native input setter so React/Vue controlled inputs update
+  // Focus the element so browser/framework treats it as active
+  el.focus();
+
+  // Use native prototype setter to bypass any framework-controlled property descriptor.
+  // This ensures the DOM value is set even on React/Vue controlled inputs.
   const nativeInputSetter = Object.getOwnPropertyDescriptor(
     window.HTMLInputElement.prototype,
     'value',
   )?.set;
   nativeInputSetter?.call(el, value);
 
-  // Dispatch events so framework re-renders pick up the change
-  el.dispatchEvent(new Event('input', { bubbles: true }));
+  // Dispatch a realistic sequence of events so React/Angular/Vue pick up the change.
+  // InputEvent with inputType='insertText' matches what real browser typing produces.
+  el.dispatchEvent(new InputEvent('input',  { bubbles: true, data: value, inputType: 'insertText' }));
   el.dispatchEvent(new Event('change', { bubbles: true }));
+  el.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: value.slice(-1) }));
+  el.dispatchEvent(new KeyboardEvent('keyup',   { bubbles: true, key: value.slice(-1) }));
+}
+
+
+/**
+ * Finds the submit / primary action button on the page.
+ * Tries the CSS selector first. If that doesn't match, falls back to finding
+ * a visible, enabled <button> whose text matches common submit labels.
+ * This handles cases like Razorpay's plain <button>Login</button> that has
+ * no type="submit", class, or data attribute to select on.
+ *
+ * Retries up to maxAttempts times with intervalMs delay between each attempt,
+ * to handle SPA pages where the button renders slightly after the input field.
+ */
+function clickSubmitButton(
+  selector?: string,
+  maxAttempts = 10,
+  intervalMs = 150,
+): void {
+  const SUBMIT_LABELS = new Set(['login', 'log in', 'continue', 'verify', 'submit', 'next', 'sign in', 'signin', 'proceed']);
+  // Social auth buttons to never click — their text often starts with a SUBMIT_LABEL
+  // e.g. "Sign in with Google", "Sign in with Microsoft", "Continue with Apple"
+  const SOCIAL_KEYWORDS = ['google', 'microsoft', 'apple', 'facebook', 'github', 'twitter', 'sso', 'saml'];
+
+  const tryFind = (): HTMLElement | null => {
+    // 1. CSS selector path — most specific
+    if (selector) {
+      const els = Array.from(document.querySelectorAll<HTMLElement>(selector));
+      const visible = els.find(el => {
+        if ((el as any).disabled) return false;
+        const rect = el.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return false;
+        // Skip social login buttons even if they match the CSS selector
+        const text = el.textContent?.toLowerCase() ?? '';
+        return !SOCIAL_KEYWORDS.some(kw => text.includes(kw));
+      });
+      if (visible) return visible;
+    }
+
+    // 2. Text-content fallback — EXACT match only to avoid clicking social auth
+    // buttons like "Sign in with Microsoft" (which starts with "sign in")
+    return Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(btn => {
+      if (btn.disabled) return false;
+      const rect = btn.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return false;
+      const text = btn.textContent?.trim().toLowerCase() ?? '';
+      // Reject any button that contains social provider keywords
+      if (SOCIAL_KEYWORDS.some(kw => text.includes(kw))) return false;
+      // EXACT match only — "sign in with microsoft" ≠ "sign in"
+      return SUBMIT_LABELS.has(text);
+    }) ?? null;
+  };
+
+  let attempts = 0;
+  const retry = () => {
+    attempts++;
+    const btn = tryFind();
+    if (btn) {
+      btn.click();
+      return;
+    }
+    if (attempts < maxAttempts) {
+      setTimeout(retry, intervalMs);
+    }
+    // If still not found after all attempts — silently give up.
+    // Credentials are already filled; user can click manually.
+  };
+
+  retry();
 }
 
 // ─── Password Step Watcher ────────────────────────────────────────────────────
@@ -274,10 +399,8 @@ function startPasswordWatcher(
       fillField(pwEl, password);
       // Hand off to OTP watcher if this platform expects an OTP after password
       if (config?.otp) startOtpWatcher(sessionId, orgId, loginStartTime);
-      if (submitSelector) {
-        const submitBtn = document.querySelector<HTMLElement>(submitSelector);
-        if (submitBtn) setTimeout(() => submitBtn.click(), 120);
-      }
+      // Click submit button — retries automatically if not immediately rendered
+      clickSubmitButton(submitSelector);
     } catch {
       showToast('Password autofill failed — please enter manually.', true);
     }
@@ -430,7 +553,35 @@ async function fetchAndFillOtp(
       return;
     }
 
-    fillField(otpField, otpCode);
+    // ── Multi-box OTP detection (e.g. Razorpay: 6 separate single-digit inputs) ──
+    // If there are multiple visible inputs matching the selector, distribute
+    // one digit per box. Otherwise fill the whole code into the single field.
+    const allOtpBoxes = Array.from(document.querySelectorAll<HTMLInputElement>(inputSelector))
+      .filter(f => isOtpFieldVisible(f));
+
+    if (allOtpBoxes.length > 1 && otpCode.length === allOtpBoxes.length) {
+      // Distribute one digit per box
+      for (let i = 0; i < allOtpBoxes.length; i++) {
+        const box = allOtpBoxes[i];
+        const digit = otpCode[i];
+
+        box.focus();
+        box.dispatchEvent(new KeyboardEvent('keydown', { key: digit, bubbles: true }));
+
+        // Use native setter so React/Vue controlled inputs pick up the change
+        const nativeSetter = Object.getOwnPropertyDescriptor(
+          window.HTMLInputElement.prototype, 'value',
+        )?.set;
+        nativeSetter?.call(box, digit);
+
+        box.dispatchEvent(new Event('input', { bubbles: true }));
+        box.dispatchEvent(new Event('change', { bubbles: true }));
+        box.dispatchEvent(new KeyboardEvent('keyup', { key: digit, bubbles: true }));
+      }
+    } else {
+      // Single input — fill entire OTP string at once (Vercel, GitHub, Stripe, etc.)
+      fillField(otpField, otpCode);
+    }
 
     // Auto-submit only if selector resolves to a visible, enabled element
     if (submitSelector) {
@@ -496,7 +647,12 @@ window.addEventListener('withus:autofill', async (e: Event) => {
 
   try {
     if (fields.usernameSelector) {
-      fillField(fields.usernameSelector, username || fallbackUsername);
+      // Only fill if the element is present — avoids error on multi-step flows
+      // where the email field has already been submitted (e.g. Razorpay password step)
+      const usernameEl = document.querySelector<HTMLInputElement>(fields.usernameSelector);
+      if (usernameEl && isOtpFieldVisible(usernameEl)) {
+        fillField(usernameEl, username || fallbackUsername);
+      }
     }
     if (fields.passwordSelector && password) {
       try {
@@ -510,11 +666,8 @@ window.addEventListener('withus:autofill', async (e: Event) => {
       startOtpWatcher(sessionId, orgId, loginStartTime);
     }
 
-    if (fields.submitSelector) {
-      const submitBtn = document.querySelector<HTMLElement>(fields.submitSelector);
-      if (submitBtn) setTimeout(() => submitBtn.click(), 120);
-      else showToast('Could not find submit button.', true);
-    }
+    // clickSubmitButton tries CSS selector then text-content fallback with retries
+    clickSubmitButton(fields.submitSelector);
   } catch (err: any) {
     showToast(err.message || 'Failed to fill credentials', true);
   } finally {

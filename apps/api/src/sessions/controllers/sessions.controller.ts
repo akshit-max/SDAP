@@ -6,6 +6,7 @@ import {
   Body,
   UseGuards,
   Request,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { SessionsService } from '../sessions.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -187,15 +188,31 @@ export class SessionsController {
     const platform = body?.platform ?? session.integrationProvider ?? null;
     const loginStartTime = body?.loginStartTime ?? Date.now() - 30_000;
 
-    // ── Get a valid access token for the GRANTOR's Gmail ────────────────────
-    const accessToken = await this.gmailAdapter.getValidAccessToken(session.organizationId);
+    // ── Get a valid access token for the GRANTOR's Gmail ──────────────────
+    let accessToken: string;
+    try {
+      accessToken = await this.gmailAdapter.getValidAccessToken(session.organizationId);
+    } catch (err: any) {
+      // Convert known Gmail errors (missing/expired token, decryption failure) into
+      // a clean 503 so the extension shows a helpful message instead of a generic 500.
+      throw new ServiceUnavailableException(
+        err?.message ?? 'Gmail connection unavailable. Please reconnect Gmail in the dashboard.',
+      );
+    }
 
-    // ── Extract OTP — extension never sees email content ────────────────────
-    const otp = await this.gmailOtpService.fetchLatestOtp(
-      accessToken,
-      platform,
-      loginStartTime,
-    );
+    // ── Extract OTP — extension never sees email content ──────────────────
+    let otp: string | null;
+    try {
+      otp = await this.gmailOtpService.fetchLatestOtp(
+        accessToken,
+        platform,
+        loginStartTime,
+      );
+    } catch (err: any) {
+      throw new ServiceUnavailableException(
+        err?.message ?? 'Failed to extract OTP from Gmail.',
+      );
+    }
 
     // ── Audit log ────────────────────────────────────────────────────────────
     this.eventEmitter.emit('audit.log', {
