@@ -94,7 +94,16 @@ async function handleMessage(msg: ExtensionMessage): Promise<ExtensionResponse> 
               if (s.expiresAt && new Date(s.expiresAt) < new Date()) return false;
               
               const name = s.resourceName?.toLowerCase() || '';
-              return hostname.split('.').some((part) => name.includes(part) && part.length > 3);
+              if (!name) return false;
+              // Match sessions to the current domain bidirectionally:
+              //   1. A hostname segment is contained in the resourceName  (e.g. "github" ∈ "github")
+              //   2. The resourceName is contained in a hostname segment  (e.g. "udyam" ∈ "udyamregistration")
+              // Skip generic TLD/infrastructure tokens that would cause false positives.
+              // Floor of 3 chars keeps acronyms (mca, gst) while filtering "in", "co" etc.
+              const GENERIC = new Set(['gov', 'com', 'net', 'org', 'in', 'co', 'www', 'app', 'api']);
+              const parts = hostname.split('.').filter(p => p.length >= 3 && !GENERIC.has(p));
+              return parts.some((part) => name.includes(part) || part.includes(name));
+
             }).map(s => ({ ...s, __orgId: m.organizationId }));
             
             allSessions = allSessions.concat(matching);
