@@ -216,3 +216,97 @@ platformRegistry.register({
     submitSelector: 'button[type="submit"], button.btn-primary, button[data-testid="btn-verify"], button:not([disabled])',
   }
 });
+
+// ─── Phase 3: Government Portals ─────────────────────────────────────────────
+//
+// Architecture Preservation Directive:
+//   These portals require CAPTCHA and/or SMS OTP which cannot be automated
+//   without external infrastructure the client has not requested.
+//
+//   Strategy: fill username + password → pause → toast → user completes manually.
+//   This is implemented via the generic `manualStepMessage` field.
+//   No platform-specific logic. No captchaSelector. No new framework code.
+
+/**
+ * MCA Portal (Ministry of Corporate Affairs) — Partial Support
+ *
+ * Authentication flow:
+ *   Username → Password → CAPTCHA (manual) → OTP (manual)
+ *
+ * What we automate:
+ *   ✅ Fill username (email or User ID)
+ *   ✅ Fill password
+ *   ⏸  Pause — toast asks user to complete CAPTCHA
+ *   ✋  User solves CAPTCHA and submits manually
+ *
+ * CAPTCHA: alphanumeric image CAPTCHA — intentionally not automated.
+ * OTP: sent to registered mobile — outside Gmail OTP pipeline.
+ */
+platformRegistry.register({
+  id: 'MCA',
+  name: 'MCA Portal',
+  domains: ['www.mca.gov.in', 'mca.gov.in'],
+  login: {
+    url: 'https://www.mca.gov.in/content/mca/global/en/mca/master-data/MDS.html',
+    // MCA V3 uses standard email/username + password inputs before the CAPTCHA section
+    usernameSelector: [
+      'input[name="userId"]',
+      'input[id="userId"]',
+      'input[type="email"]',
+      'input[name="username"]',
+      'input[id="username"]',
+      'input[name="loginid"]',
+      'input[id="loginid"]',
+    ].join(', '),
+    passwordSelector: [
+      'input[type="password"]',
+      'input[name="password"]',
+      'input[id="password"]',
+    ].join(', '),
+    // No submitSelector — manualStepMessage prevents auto-submit
+  },
+  // Generic pause message. User completes CAPTCHA then submits manually.
+  manualStepMessage: 'Credentials filled. Please complete the CAPTCHA to continue.',
+});
+
+/**
+ * GST Portal — Partial Support
+ *
+ * Authentication flow:
+ *   Username (GSTIN) → Password → CAPTCHA (manual) → 2FA OTP (manual, mobile)
+ *
+ * What we automate:
+ *   ✅ Fill username (GSTIN or registered user ID)
+ *   ✅ Fill password
+ *   ⏸  Pause — toast asks user to complete CAPTCHA + OTP
+ *   ✋  User solves CAPTCHA and enters OTP manually
+ *
+ * CAPTCHA: alphanumeric visual CAPTCHA — intentionally not automated.
+ * 2FA OTP: mandatory since April 2023, sent to mobile — outside Gmail pipeline.
+ */
+platformRegistry.register({
+  id: 'GST',
+  name: 'GST Portal',
+  domains: ['gst.gov.in', 'services.gst.gov.in'],
+  login: {
+    url: 'https://services.gst.gov.in/services/login',
+    // GST portal uses standard form inputs for username and password
+    usernameSelector: [
+      'input[name="user_name"]',
+      'input[id="user_name"]',
+      'input[name="username"]',
+      'input[id="username"]',
+      'input[type="text"]',
+    ].join(', '),
+    passwordSelector: [
+      'input[type="password"]',
+      'input[name="user_pass"]',
+      'input[id="user_pass"]',
+      'input[name="password"]',
+    ].join(', '),
+    // No submitSelector — manualStepMessage prevents auto-submit
+  },
+  // Generic pause message. User completes CAPTCHA + 2FA OTP then submits manually.
+  manualStepMessage: 'Credentials filled. Please complete the CAPTCHA and OTP verification to continue.',
+});
+

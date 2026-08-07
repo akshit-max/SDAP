@@ -267,6 +267,21 @@ async function handleAutofillRequest(): Promise<void> {
       }
     }
     provider?.afterFill?.();
+
+    // ── Manual Step Pause ──────────────────────────────────────────────────────
+    // Some platforms (MCA, GST) require a manual security challenge (CAPTCHA,
+    // SMS OTP, etc.) that cannot be automated without external infrastructure.
+    // When `manualStepMessage` is set on the PlatformConfig, we fill credentials
+    // then pause here — showing the message and returning WITHOUT auto-submitting.
+    // The user completes the challenge and submits the form themselves.
+    //
+    // This is intentionally generic. No CAPTCHA-specific logic.
+    // Architecture Preservation Directive: do not add captchaSelector or similar.
+    if (config?.manualStepMessage) {
+      showToast(config.manualStepMessage);
+      return;
+    }
+
     if (config?.otp) {
       startOtpWatcher(session.id, (session as any).__orgId || activeOrgId, loginStartTime);
     }

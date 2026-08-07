@@ -42,7 +42,10 @@
         "https://*.stripe.com/*",
         "https://*.razorpay.com/*",
         "https://*.shopify.com/*",
-        "https://*.linkedin.com/*"
+        "https://*.linkedin.com/*",
+        "https://*.mca.gov.in/*",
+        "https://gst.gov.in/*",
+        "https://*.gst.gov.in/*"
       ],
       "exclude_matches": [
         "https://dashboard.razorpay.com/*",

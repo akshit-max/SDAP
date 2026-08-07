@@ -91,6 +91,15 @@ export interface PlatformConfig {
     inputSelector: string;
     submitSelector?: string;
   };
+  /**
+   * When set, the autofill engine fills credentials then pauses — it does NOT
+   * auto-submit. Instead it shows this message as a toast so the user can
+   * complete any remaining manual step (CAPTCHA, SMS OTP, passkey, etc.).
+   *
+   * Generic by design. Never add platform-specific logic here.
+   * Examples: MCA CAPTCHA, GST CAPTCHA, Udyam SMS OTP.
+   */
+  manualStepMessage?: string;
   // Future extensibility as per architectural requirements
   principalType?: string;
   supportsDelegation?: boolean;
