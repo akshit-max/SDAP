@@ -90,8 +90,8 @@ platformRegistry.register({
   name: 'LinkedIn',
   domains: ['linkedin.com', 'www.linkedin.com'],
   login: {
-    url: 'https://www.linkedin.com/flagship-web/login/',
-    usernameSelector: 'input[name="session_key"], #session_key, input[autocomplete="username"], input[autocomplete="email"], input[type="email"], #username, input[type="text"]',
+    url: 'https://www.linkedin.com/checkpoint/lg/login?trk=hb_signin',
+    usernameSelector: 'input[name="session_key"], #session_key, input[autocomplete="username"], input[autocomplete="email"], input[type="email"], #username',
     passwordSelector: 'input[name="session_password"], #session_password, input[autocomplete="current-password"], input[type="password"], #password',
     submitSelector: 'button[type="submit"], button[aria-label="Sign in"], .login__form_action_container button',
   }
@@ -182,17 +182,15 @@ platformRegistry.register({
   login: {
     url: 'https://www.mca.gov.in/content/mca/global/en/foportal/fologin.html',
     // User ID: accepts CIN/LLPIN/FCRN for companies or email for other users.
-    // Confirmed type=text (not type=email) from actual portal DOM.
-    // Order: specific name/id first, broad type=text fallback last.
+    // NOTE: input[type="text"] or form-based fallbacks are BANNED here.
+    // The MCA header contains a search bar form that appears before the login
+    // form in the DOM, so generic fallbacks will match the search bar.
     usernameSelector: [
-      'input[name="userId"]',
-      'input[id="userId"]',
-      'input[name="username"]',
-      'input[id="username"]',
-      'input[name="loginid"]',
-      'input[id="loginid"]',
-      'input[name="userid"]',
-      'input[type="text"]',    // confirmed: MCA User ID is type=text
+      'input[name="userID" i]',    // exact match from DOM (case-insensitive)
+      'input[name="userId" i]',
+      'input[name="loginid" i]',
+      '.userID input',             // wrapper class from DOM
+      '.user-id-input input',      // wrapper class from DOM
     ].join(', '),
     passwordSelector: [
       'input[type="password"]',
@@ -234,12 +232,14 @@ platformRegistry.register({
     // Specific name/id selectors only — intentionally exclude input[type="text"]
     // to prevent matching the CAPTCHA field which is also type=text on this page.
     usernameSelector: [
+      '#user_name',
       'input[name="user_name"]',
       'input[id="user_name"]',
       'input[name="username"]',
       'input[id="username"]',
     ].join(', '),
     passwordSelector: [
+      '#user_pass',                // Exact ID match based on DOM snippet
       'input[name="user_pass"]',   // GST-specific: confirmed from portal DOM
       'input[id="user_pass"]',
       'input[type="password"]',    // standard fallback

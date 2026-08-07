@@ -229,28 +229,30 @@ async function handleAutofillRequest(): Promise<void> {
   }
 
   try {
-    const pwEl = fields.passwordSelector
-      ? document.querySelector<HTMLInputElement>(fields.passwordSelector)
-      : null;
+    const pwEls = fields.passwordSelector
+      ? Array.from(document.querySelectorAll<HTMLInputElement>(fields.passwordSelector))
+      : [];
+    const pwEl = pwEls.find(el => isOtpFieldVisible(el));
 
     if (fields.usernameSelector && username) {
-      const usernameEl = document.querySelector<HTMLInputElement>(fields.usernameSelector);
+      const usernameEls = Array.from(document.querySelectorAll<HTMLInputElement>(fields.usernameSelector));
+      const usernameEl = usernameEls.find(el => isOtpFieldVisible(el));
       // Safety: the username and password selectors must not match the SAME element.
-      // This can happen when selectors are too broad (e.g. input[type="text"] matches
-      // a password field that momentarily lost its type attribute).
-      if (usernameEl && isOtpFieldVisible(usernameEl) && usernameEl !== pwEl) {
-        // Fill email — focus it so the field is active
+      if (usernameEl && usernameEl !== pwEl) {
         fillField(usernameEl, username);
-        // Wait for React to process the email state update before we proceed.
-        // We do NOT focus the password field next (skipFocus=true below) so that
-        // the email field does NOT blur and React does NOT re-render it back to empty.
         await new Promise(r => setTimeout(r, 150));
       }
     }
+    
+    if (!password) {
+      showToast('⚠️ WARNING: No password found in your vault! Please update it in the web dashboard.', true);
+      await new Promise(r => setTimeout(r, 3000)); // Show for 3s so they read it
+    }
+
     if (fields.passwordSelector && password) {
-      if (pwEl && isOtpFieldVisible(pwEl)) {
+      if (pwEl) {
         try { fillField(pwEl, password); } catch { /* ignore */ }
-      } else if (!pwEl) {
+      } else {
         startPasswordWatcher(
           fields.passwordSelector,
           fields.submitSelector,
@@ -325,7 +327,13 @@ function fillField(
   const tracker = (el as any)._valueTracker;
   if (tracker) tracker.setValue('');
 
-  nativeInputSetter?.call(el, value);
+  try {
+    nativeInputSetter?.call(el, value);
+  } catch { /* ignore */ }
+  
+  // Hard fallback: if native setter is missing/intercepted (common in Angular
+  // anti-bot directives), assign value directly.
+  el.value = value;
 
   // Dispatch a realistic sequence of events so React/Angular/Vue pick up the change.
   el.dispatchEvent(new InputEvent('input',  { bubbles: true, data: value, inputType: 'insertText' }));
@@ -417,8 +425,9 @@ function startPasswordWatcher(
   orgId: string,
 ): void {
   const observer = new MutationObserver(() => {
-    const pwEl = document.querySelector<HTMLInputElement>(passwordSelector);
-    if (!pwEl || !isOtpFieldVisible(pwEl)) return;
+    const pwEls = Array.from(document.querySelectorAll<HTMLInputElement>(passwordSelector));
+    const pwEl = pwEls.find(el => isOtpFieldVisible(el));
+    if (!pwEl) return;
 
     observer.disconnect();
     clearTimeout(timeout);
