@@ -131,6 +131,12 @@ platformRegistry.register({
     passwordSelector: 'input[type="password"], input[name="password"], input[autocomplete="current-password"]',
     submitSelector: 'button[type="submit"], input[type="submit"], button[data-testid="login-button"]',
   },
+  hideElementsCSS: [
+    'input[data-testid="login-password-input"]',
+    '#old-password',
+    'div:has(> input[data-testid="login-password-input"])',
+    'div:has(> input#old-password)'
+  ],
   otp: {
     type: 'EMAIL',
     inputSelector: 'input[name="otp"], input[autocomplete="one-time-code"], input[name="verification_code"]',
