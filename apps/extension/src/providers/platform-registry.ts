@@ -154,7 +154,10 @@ platformRegistry.register({
   otp: {
     type: 'EMAIL',
     inputSelector: 'input[name="otp"], input[autocomplete="one-time-code"], input[inputmode="numeric"][maxlength="1"], input[type="number"][maxlength="1"]',
-    submitSelector: 'button[type="submit"], button.btn-primary, button[data-testid="btn-verify"], button:not([disabled])',
+    // NOTE: Do NOT add button:not([disabled]) — that matches Resend/Back buttons first
+    // and takes the delegate back to the login page. Fail-open: if no specific button
+    // found, OTP is filled but user clicks Verify manually.
+    submitSelector: 'button[data-testid="btn-verify"], button[type="submit"].btn-primary',
   }
 });
 
