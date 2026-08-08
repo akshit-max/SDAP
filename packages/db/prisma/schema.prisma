@@ -398,6 +398,7 @@ enum IntegrationProvider {
   VERCEL
   GITHUB
   GODADDY
+  GMAIL
 }
 
 enum IntegrationStatus {

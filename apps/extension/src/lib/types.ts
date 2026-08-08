@@ -32,7 +32,8 @@ export type MessageType =
   | 'REQUEST_ACCESS'
   | 'CHECK_AUTH'
   | 'LOGOUT'
-  | 'LAUNCH_SESSION';
+  | 'LAUNCH_SESSION'
+  | 'FETCH_OTP';
 
 export interface ExtensionMessage {
   type: MessageType;
@@ -70,4 +71,46 @@ export interface ProviderAdapter {
 export interface AutofillPayload {
   username: string;
   password: string;
+}
+
+// ─── V2 Platform Configuration ───────────────────────────────────────────────
+
+export interface PlatformConfig {
+  id: string;
+  name: string;
+  domains: string[];
+  login: {
+    url: string;
+    usernameSelector: string;
+    /**
+     * Optional for platforms that don't use a separate password field
+     * (e.g. Udyam: Registration Number → OTP only, no password).
+     * All standard username+password platforms provide this.
+     */
+    passwordSelector?: string;
+    submitSelector?: string;
+    requirePasswordOnDOM?: boolean;
+  };
+  otp?: {
+    type: 'EMAIL' | 'SMS' | 'NONE';
+    inputSelector: string;
+    submitSelector?: string;
+  };
+  /**
+   * Array of CSS selectors to forcefully hide from the UI (e.g., 'Show Password' buttons).
+   * Injected globally into document.head to survive React re-renders.
+   */
+  hideElementsCSS?: string[];
+  /**
+   * When set, the autofill engine fills credentials then pauses — it does NOT
+   * auto-submit. Instead it shows this message as a toast so the user can
+   * complete any remaining manual step (CAPTCHA, SMS OTP, passkey, etc.).
+   *
+   * Generic by design. Never add platform-specific logic here.
+   * Examples: MCA CAPTCHA, GST CAPTCHA, Udyam SMS OTP.
+   */
+  manualStepMessage?: string;
+  // Future extensibility as per architectural requirements
+  principalType?: string;
+  supportsDelegation?: boolean;
 }

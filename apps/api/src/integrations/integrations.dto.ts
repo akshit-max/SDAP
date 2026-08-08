@@ -10,6 +10,13 @@ export class ConnectIntegrationDto {
   token!: string;
 }
 
+export const OAuthCallbackSchema = z.object({
+  code: z.string().min(1, 'Authorization code is required'),
+});
+export class OAuthCallbackDto {
+  code!: string;
+}
+
 export const GrantIntegrationAccessSchema = z.object({
   resourceId: z.string().min(1),
   principalEmail: z.string().email(),

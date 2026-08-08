@@ -11,13 +11,19 @@
     "privacy"
   ],
   "host_permissions": [
+    "http://localhost:4000/*",
+    "http://127.0.0.1:4000/*",
     "https://*.godaddy.com/*",
     "https://*.hostinger.com/*",
     "https://*.cpanel.net/*",
     "https://*.cpanelhosting.net/*",
     "https://*.siteground.com/*",
     "https://*.vercel.com/*",
-    "https://*.github.com/*"
+    "https://*.github.com/*",
+    "https://*.stripe.com/*",
+    "https://*.razorpay.com/*",
+    "https://*.shopify.com/*",
+    "https://*.linkedin.com/*"
   ],
   "background": {
     "service_worker": "background/service-worker.js",
@@ -32,7 +38,24 @@
         "https://*.cpanelhosting.net/*",
         "https://*.siteground.com/*",
         "https://*.github.com/*",
-        "https://*.vercel.com/*"
+        "https://*.vercel.com/*",
+        "https://*.stripe.com/*",
+        "https://*.razorpay.com/*",
+        "https://*.shopify.com/*",
+        "https://*.linkedin.com/*",
+        "https://*.mca.gov.in/*",
+        "https://gst.gov.in/*",
+        "https://*.gst.gov.in/*",
+        "https://udyamregistration.gov.in/*",
+        "https://ads.google.com/*",
+        "https://accounts.google.com/*"
+      ],
+      "exclude_matches": [
+        "https://dashboard.razorpay.com/*",
+        "https://app.razorpay.com/*",
+        "https://app.vercel.com/*",
+        "https://dashboard.stripe.com/dashboard",
+        "https://app.shopify.com/*"
       ],
       "js": ["content/autofill.js"],
       "run_at": "document_end"

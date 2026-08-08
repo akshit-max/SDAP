@@ -94,7 +94,16 @@ async function handleMessage(msg: ExtensionMessage): Promise<ExtensionResponse> 
               if (s.expiresAt && new Date(s.expiresAt) < new Date()) return false;
               
               const name = s.resourceName?.toLowerCase() || '';
-              return hostname.split('.').some((part) => name.includes(part) && part.length > 3);
+              if (!name) return false;
+              // Match sessions to the current domain bidirectionally:
+              //   1. A hostname segment is contained in the resourceName  (e.g. "github" ∈ "github")
+              //   2. The resourceName is contained in a hostname segment  (e.g. "udyam" ∈ "udyamregistration")
+              // Skip generic TLD/infrastructure tokens that would cause false positives.
+              // Floor of 3 chars keeps acronyms (mca, gst) while filtering "in", "co" etc.
+              const GENERIC = new Set(['gov', 'com', 'net', 'org', 'in', 'co', 'www', 'app', 'api']);
+              const parts = hostname.split('.').filter(p => p.length >= 3 && !GENERIC.has(p));
+              return parts.some((part) => name.includes(part) || part.includes(name));
+
             }).map(s => ({ ...s, __orgId: m.organizationId }));
             
             allSessions = allSessions.concat(matching);
@@ -123,19 +132,38 @@ async function handleMessage(msg: ExtensionMessage): Promise<ExtensionResponse> 
         auth.accessToken,
       );
 
-      // Parse username and password format. Supports both newline and colon separation.
+      // Parse username and password format. Supports:
+      //   1. Newline-separated: "username\npassword"
+      //   2. Colon-separated:   "username:password"
+      //   3. Space-separated:   "user@email.com password123"
+      //      (first token treated as username when it looks like an email/username)
+      //   4. Single value:      entire plaintext is the password
       let username = '';
       let password = '';
       if (result.plaintext.includes('\n')) {
         const parts = result.plaintext.split('\n');
-        username = parts[0];
-        password = parts.slice(1).join('\n');
+        username = parts[0].trim();
+        password = parts.slice(1).join('\n').trim();
       } else if (result.plaintext.includes(':')) {
         const parts = result.plaintext.split(':');
-        username = parts[0];
-        password = parts.slice(1).join(':');
+        username = parts[0].trim();
+        password = parts.slice(1).join(':').trim();
+      } else if (result.plaintext.includes(' ')) {
+        // Space-separated: split on FIRST space only.
+        // Treat first token as username if it looks like email/username (no spaces, has @).
+        // E.g. "akshitaksir@gmail.com Akshitbhan@2005" → user="akshitaksir@gmail.com", pass="Akshitbhan@2005"
+        const spaceIdx = result.plaintext.indexOf(' ');
+        const firstToken = result.plaintext.slice(0, spaceIdx);
+        const rest = result.plaintext.slice(spaceIdx + 1);
+        if (firstToken.includes('@') || firstToken.length < 50) {
+          username = firstToken;
+          password = rest;
+        } else {
+          username = '';
+          password = result.plaintext;
+        }
       } else {
-        username = ''; // Leave blank instead of duplicating the password
+        username = ''; // Single value — treat as password only
         password = result.plaintext;
       }
 
@@ -152,6 +180,20 @@ async function handleMessage(msg: ExtensionMessage): Promise<ExtensionResponse> 
       }
       await Storage.clearAuth();
       return { success: true };
+    }
+
+    // ─── FETCH_OTP ────────────────────────────────────────────────────────────
+    // Called by autofill.ts after a login form is submitted and an OTP field appears.
+    // The service worker holds the auth token — the content script never sees it.
+    // Returns only { otp: string }. OTP Boundary Rule enforced here.
+    case 'FETCH_OTP': {
+      const { sessionId, orgId, platform, loginStartTime } = msg.payload as { sessionId: string; orgId: string; platform?: string; loginStartTime?: number };
+      const auth = await Storage.getAuth();
+      if (!auth) return { success: false, error: 'NOT_AUTHENTICATED' };
+
+      const result = await WithusApi.fetchOtp(orgId, sessionId, auth.accessToken, platform, loginStartTime);
+      // Pass only the code string — nothing from the email body crosses this boundary.
+      return { success: true, data: { otp: result.otp } };
     }
 
     default:

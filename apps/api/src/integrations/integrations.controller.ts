@@ -25,6 +25,8 @@ import {
   GrantIntegrationAccessDto,
   RevokeIntegrationAccessSchema,
   RevokeIntegrationAccessDto,
+  OAuthCallbackSchema,
+  OAuthCallbackDto,
 } from './integrations.dto';
 
 @ApiTags('Integrations')
@@ -59,6 +61,38 @@ export class IntegrationsController {
     @Body(new ZodValidationPipe(ConnectIntegrationSchema)) dto: ConnectIntegrationDto,
   ) {
     return this.integrationsService.connect(orgId, req.user.id, dto);
+  }
+
+  /**
+   * GET /organizations/:orgId/integrations/:provider/oauth/url
+   * Get the OAuth authorization URL for a provider.
+   */
+  @Get(':provider/oauth/url')
+  @ApiOperation({ summary: 'Get the OAuth authorization URL for a provider' })
+  @RequirePermissions(Permission.INTEGRATION_CONNECT)
+  getOAuthUrl(
+    @Param('orgId') orgId: string,
+    @Param('provider') provider: IntegrationProvider,
+  ) {
+    // Generate a random state or CSRF token if needed, passing a dummy 'state' for now
+    const state = Buffer.from(JSON.stringify({ orgId, provider, ts: Date.now() })).toString('base64');
+    return this.integrationsService.getOAuthUrl(orgId, provider, state);
+  }
+
+  /**
+   * POST /organizations/:orgId/integrations/:provider/oauth/callback
+   * Handle the OAuth callback and complete the connection.
+   */
+  @Post(':provider/oauth/callback')
+  @ApiOperation({ summary: 'Complete an OAuth connection using the authorization code' })
+  @RequirePermissions(Permission.INTEGRATION_CONNECT)
+  handleOAuthCallback(
+    @Param('orgId') orgId: string,
+    @Param('provider') provider: IntegrationProvider,
+    @Request() req: RequestWithUser,
+    @Body(new ZodValidationPipe(OAuthCallbackSchema)) dto: OAuthCallbackDto,
+  ) {
+    return this.integrationsService.handleOAuthCallback(orgId, req.user.id, provider, dto.code);
   }
 
   /**

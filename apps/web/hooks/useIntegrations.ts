@@ -24,6 +24,26 @@ export function useConnectIntegration(orgId: string | null) {
   });
 }
 
+export function useOAuthUrl(orgId: string | null) {
+  return useMutation({
+    mutationFn: (provider: IntegrationProvider) => {
+      if (!orgId) throw new Error('Organization required');
+      return integrationsApi.getOAuthUrl(orgId, provider);
+    },
+  });
+}
+
+export function useOAuthCallback(orgId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ provider, code }: { provider: IntegrationProvider; code: string }) => {
+      if (!orgId) throw new Error('Organization required');
+      return integrationsApi.handleOAuthCallback(orgId, provider, code);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['integrations', orgId] }),
+  });
+}
+
 export function useDisconnectIntegration(orgId: string | null) {
   const qc = useQueryClient();
   return useMutation({

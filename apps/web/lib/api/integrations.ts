@@ -1,6 +1,6 @@
 import { apiClient } from './client';
 
-export type IntegrationProvider = 'VERCEL' | 'GITHUB' | 'GODADDY';
+export type IntegrationProvider = 'VERCEL' | 'GITHUB' | 'GODADDY' | 'GMAIL';
 export type IntegrationStatus = 'ACTIVE' | 'DISCONNECTED' | 'ERROR';
 
 export interface IntegrationConnection {
@@ -38,6 +38,16 @@ export const integrationsApi = {
       provider,
       token,
     });
+    return res.data;
+  },
+
+  getOAuthUrl: async (orgId: string, provider: IntegrationProvider): Promise<{ url: string }> => {
+    const res = await apiClient.get(`/organizations/${orgId}/integrations/${provider}/oauth/url`);
+    return res.data;
+  },
+
+  handleOAuthCallback: async (orgId: string, provider: IntegrationProvider, code: string) => {
+    const res = await apiClient.post(`/organizations/${orgId}/integrations/${provider}/oauth/callback`, { code });
     return res.data;
   },
 

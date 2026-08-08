@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { IntegrationProvider } from '@prisma/client';
 import {
   IIntegrationAdapter,
+  IProviderIdentityResolver,
   HealthCheckResult,
   IntegrationResource,
   GrantAccessInput,
@@ -31,9 +32,19 @@ const GODADDY_API = 'https://api.godaddy.com';
  * GoDaddy API docs: https://developer.godaddy.com/doc
  */
 @Injectable()
-export class GoDaddyAdapter implements IIntegrationAdapter {
+export class GoDaddyAdapter implements IIntegrationAdapter, IProviderIdentityResolver {
   readonly provider = IntegrationProvider.GODADDY;
   private readonly logger = new Logger(GoDaddyAdapter.name);
+
+  // ─── Identity Resolution ────────────────────────────────────────────────────
+
+  resolvePrincipalId(user: { id: string; email: string; providerProfiles?: unknown }): string {
+    // GoDaddy logins use the user's email address
+    if (!user.email) {
+      throw new Error('Grantee has no email address configured.');
+    }
+    return user.email;
+  }
 
   // ─── Validate Token ─────────────────────────────────────────────────────────
 

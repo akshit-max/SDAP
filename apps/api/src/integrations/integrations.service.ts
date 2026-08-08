@@ -22,6 +22,21 @@ export class IntegrationsService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
+  // ─── Identity Resolution ────────────────────────────────────────────────────
+
+  resolvePrincipalId(provider: IntegrationProvider, user: { id: string; email: string; providerProfiles?: unknown }): string {
+    const adapter = this.registry.getAdapter(provider);
+    if ('resolvePrincipalId' in adapter && typeof (adapter as any).resolvePrincipalId === 'function') {
+      try {
+        return (adapter as any).resolvePrincipalId(user);
+      } catch (err: unknown) {
+        throw new BadRequestException((err as Error).message);
+      }
+    }
+    // Default fallback: assume email is the principal ID for most providers
+    return user.email;
+  }
+
   // ─── Connect ────────────────────────────────────────────────────────────────
 
   async connect(organizationId: string, userId: string, dto: ConnectIntegrationDto) {
@@ -79,6 +94,38 @@ export class IntegrationsService {
     });
 
     return { id: connection.id, provider: connection.provider, identity, status: connection.status };
+  }
+
+  // ─── OAuth Flow ─────────────────────────────────────────────────────────────
+
+  async getOAuthUrl(organizationId: string, provider: IntegrationProvider, state: string) {
+    const adapter = this.registry.getAdapter(provider);
+    
+    // We import this inline or from the core types if available, but for now we'll cast.
+    // Instead of importing the type guard, we can just check the methods.
+    if ('buildAuthorizationUrl' in adapter && typeof adapter.buildAuthorizationUrl === 'function') {
+      return { url: adapter.buildAuthorizationUrl(state) };
+    }
+    throw new BadRequestException(`Provider ${provider} does not support OAuth`);
+  }
+
+  async handleOAuthCallback(organizationId: string, userId: string, provider: IntegrationProvider, code: string) {
+    const adapter = this.registry.getAdapter(provider);
+    
+    if ('exchangeCodeAndStore' in adapter && typeof adapter.exchangeCodeAndStore === 'function') {
+      try {
+        const { grantedEmail } = await adapter.exchangeCodeAndStore(organizationId, userId, code);
+        this.eventEmitter.emit('integration.connected', {
+          organizationId,
+          provider,
+          actorId: userId,
+        });
+        return { identity: grantedEmail, status: IntegrationStatus.ACTIVE };
+      } catch (err: unknown) {
+        throw new BadRequestException(`OAuth failed: ${(err as Error).message}`);
+      }
+    }
+    throw new BadRequestException(`Provider ${provider} does not support OAuth`);
   }
 
   // ─── Disconnect ──────────────────────────────────────────────────────────────
