@@ -76,7 +76,9 @@ platformRegistry.register({
   },
   hideElementsCSS: [
     'button[aria-label="Show password" i]',
-    'button[aria-label="Hide password" i]'
+    'button[aria-label="Hide password" i]',
+    '#password',
+    'div:has(> input#password)'
   ],
   principalType: 'EMAIL',
   supportsDelegation: true,
