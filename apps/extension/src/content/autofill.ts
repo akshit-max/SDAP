@@ -597,12 +597,19 @@ async function fetchAndFillOtp(
     console.log('✅ WITHUS EXTRACTED OTP:', otpCode);
 
     let otpField = resolvedOtpField;
+
+    // React often destroys and recreates DOM nodes while we are awaiting the network.
+    // If the captured field is no longer visible (e.g. detached from DOM), discard it.
+    if (otpField && !isOtpFieldVisible(otpField)) {
+      otpField = undefined;
+    }
+
     if (!otpField) {
       const otpFields = Array.from(document.querySelectorAll<HTMLInputElement>(inputSelector));
       otpField = otpFields.find(f => isOtpFieldVisible(f));
     }
 
-    if (!otpField || !isOtpFieldVisible(otpField)) {
+    if (!otpField) {
       showToast('Could not locate the OTP field.', true);
       return;
     }
