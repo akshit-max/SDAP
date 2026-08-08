@@ -153,17 +153,15 @@ platformRegistry.register({
   },
   hideElementsCSS: [
     'button[aria-label="Show password" i]',
-    'button[data-blade-component="icon-button"] svg',
-    'input[type="password"]',
-    'div[data-blade-component="base-box"]:has(> input[type="password"])'
+    'button[data-blade-component="icon-button"] svg'
   ],
   otp: {
     type: 'EMAIL',
     inputSelector: 'input[name="otp"], input[autocomplete="one-time-code"], input[inputmode="numeric"][maxlength="1"], input[type="number"][maxlength="1"]',
-    // NOTE: Do NOT add button:not([disabled]) — that matches Resend/Back buttons first
-    // and takes the delegate back to the login page. Fail-open: if no specific button
-    // found, OTP is filled but user clicks Verify manually.
-    submitSelector: 'button[data-testid="btn-verify"], button[type="submit"].btn-primary',
+    // Specific selectors first. button[type="submit"] is the safe fallback since
+    // after all 6 digits are filled, the only submit-type button on this page is Verify.
+    // We deliberately removed button:not([disabled]) as it matched Resend/Back first.
+    submitSelector: 'button[data-testid="btn-verify"], button[data-testid="verify-btn"], button[type="submit"]',
   }
 });
 

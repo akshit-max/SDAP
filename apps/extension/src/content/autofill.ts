@@ -644,13 +644,20 @@ async function fetchAndFillOtp(
       fillField(otpField, otpCode);
     }
 
-    // Auto-submit only if selector resolves to a visible, enabled element
+    // Auto-submit only if selector resolves to a visible, enabled element.
+    // Multi-box OTP (e.g. Razorpay 6-digit): React needs to process ALL digit events
+    // before it re-enables the Verify button. Use a longer delay and re-query at
+    // click time so we get the post-React-update state of the button.
     if (submitSelector) {
-      const submitBtn = document.querySelector<HTMLButtonElement | HTMLInputElement>(submitSelector);
-      if (submitBtn && !submitBtn.disabled && isOtpFieldVisible(submitBtn as HTMLInputElement)) {
-        setTimeout(() => submitBtn.click(), 120);
-      }
-      // Guard: if button not found or disabled — fill only, let user click manually
+      const isMultiBox = allOtpBoxes.length > 1;
+      const submitDelay = isMultiBox ? 700 : 120;
+      setTimeout(() => {
+        const btn = document.querySelector<HTMLButtonElement | HTMLInputElement>(submitSelector);
+        if (btn && !btn.disabled && isOtpFieldVisible(btn as HTMLInputElement)) {
+          btn.click();
+        }
+        // Guard: if button not found or still disabled — fill only, let user click manually
+      }, submitDelay);
     }
 
     removeToast();
