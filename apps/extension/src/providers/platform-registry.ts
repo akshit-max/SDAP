@@ -115,7 +115,9 @@ platformRegistry.register({
   },
   hideElementsCSS: [
     'button.js-password-button',
-    'button[aria-controls="account_password"]'
+    'button[aria-controls="account_password"]',
+    '#account_password',
+    '.password-wrapper:has(#account_password)'
   ]
 });
 
