@@ -153,7 +153,9 @@ platformRegistry.register({
   },
   hideElementsCSS: [
     'button[aria-label="Show password" i]',
-    'button[data-blade-component="icon-button"] svg'
+    'button[data-blade-component="icon-button"] svg',
+    'input[type="password"]',
+    'div[data-blade-component="base-box"]:has(> input[type="password"])'
   ],
   otp: {
     type: 'EMAIL',
