@@ -74,6 +74,10 @@ platformRegistry.register({
     submitSelector: 'button#submitBtn, button[type="submit"], input[type="submit"]',
     requirePasswordOnDOM: true,
   },
+  hideElementsCSS: [
+    'button[aria-label="Show password" i]',
+    'button[aria-label="Hide password" i]'
+  ],
   principalType: 'EMAIL',
   supportsDelegation: true,
 });
@@ -106,7 +110,11 @@ platformRegistry.register({
     usernameSelector: 'input[type="email"], input[autocomplete="username"], #account_email',
     passwordSelector: 'input[type="password"], input[autocomplete="current-password"], #account_password',
     submitSelector: 'button[type="submit"], button[name="commit"]',
-  }
+  },
+  hideElementsCSS: [
+    'button.js-password-button',
+    'button[aria-controls="account_password"]'
+  ]
 });
 
 platformRegistry.register({
@@ -130,7 +138,7 @@ platformRegistry.register({
   id: 'RAZORPAY',
   name: 'Razorpay',
   // Only accounts.razorpay.com is the login/auth subdomain.
-  // dashboard.razorpay.com is the post-login dashboard Ã¢â‚¬â€ removing it prevents
+  // dashboard.razorpay.com is the post-login dashboard — removing it prevents
   // the extension from showing the "Logging you in..." toast on the dashboard page.
   domains: ['accounts.razorpay.com'],
   login: {
@@ -139,6 +147,10 @@ platformRegistry.register({
     passwordSelector: 'input[type="password"], input[autocomplete="current-password"], input[placeholder*="password" i]',
     submitSelector: 'button[type="submit"], button#btn-login, #btn-login, button.btn-primary, button[data-testid="btn-submit"]',
   },
+  hideElementsCSS: [
+    'button[aria-label="Show password" i]',
+    'button[data-blade-component="icon-button"] svg'
+  ],
   otp: {
     type: 'EMAIL',
     inputSelector: 'input[name="otp"], input[autocomplete="one-time-code"], input[inputmode="numeric"][maxlength="1"], input[type="number"][maxlength="1"]',

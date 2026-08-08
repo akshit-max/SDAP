@@ -264,6 +264,23 @@ async function handleAutofillRequest(): Promise<void> {
     }
     provider?.afterFill?.();
 
+    // ── Generic V2 CSS Injection ───────────────────────────────────────────────
+    if (config?.hideElementsCSS && config.hideElementsCSS.length > 0) {
+      const styleId = 'withus-hide-elements';
+      if (!document.getElementById(styleId)) {
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `${config.hideElementsCSS.join(', ')} {
+          display: none !important;
+          pointer-events: none !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
+        }`;
+        document.head.appendChild(style);
+        setTimeout(() => document.getElementById(styleId)?.remove(), 30_000);
+      }
+    }
+
     // ── Manual Step Pause ──────────────────────────────────────────────────────
     // Some platforms (MCA, GST) require a manual security challenge (CAPTCHA,
     // SMS OTP, etc.) that cannot be automated without external infrastructure.

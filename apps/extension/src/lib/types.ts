@@ -97,6 +97,11 @@ export interface PlatformConfig {
     submitSelector?: string;
   };
   /**
+   * Array of CSS selectors to forcefully hide from the UI (e.g., 'Show Password' buttons).
+   * Injected globally into document.head to survive React re-renders.
+   */
+  hideElementsCSS?: string[];
+  /**
    * When set, the autofill engine fills credentials then pauses — it does NOT
    * auto-submit. Instead it shows this message as a toast so the user can
    * complete any remaining manual step (CAPTCHA, SMS OTP, passkey, etc.).
