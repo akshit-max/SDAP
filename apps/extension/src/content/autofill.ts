@@ -251,7 +251,7 @@ async function handleAutofillRequest(): Promise<void> {
 
     if (fields.passwordSelector && password) {
       if (pwEl) {
-        try { fillField(pwEl, password); } catch { /* ignore */ }
+        try { fillField(pwEl, password, true); } catch { /* ignore */ }
       } else {
         startPasswordWatcher(
           fields.passwordSelector,
