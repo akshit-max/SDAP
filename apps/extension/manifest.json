@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "WithUs Vault",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Securely autofill delegated credentials for supported platforms through WithUs.",
   "permissions": [
     "storage",
