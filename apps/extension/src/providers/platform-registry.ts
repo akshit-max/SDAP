@@ -171,13 +171,31 @@ platformRegistry.register({
   }
 });
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Phase 3: Government Portals Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+platformRegistry.register({
+  id: 'LINKEDIN',
+  name: 'LinkedIn',
+  domains: ['linkedin.com'],
+  login: {
+    url: 'https://www.linkedin.com/login',
+    usernameSelector: 'input[name="session_key"], input#username, input[type="text"], input[type="email"]',
+    passwordSelector: 'input[name="session_password"], input#password, input[type="password"]',
+    submitSelector: 'button[type="submit"], input[type="submit"], button[data-litms-control-urn="login-submit"]',
+  },
+  hideElementsCSS: [
+    'input[type="password"][autocomplete="current-password"]',
+    'button[aria-label="Show password" i]',
+    'button:has(svg#visibility-small)',
+    'div:has(> input[type="password"][autocomplete="current-password"])'
+  ]
+});
+
+// ─── Phase 3: Government Portals ──────────────────────────────────────────────────────────────
 //
 // Architecture Preservation Directive:
 //   These portals require CAPTCHA and/or SMS OTP which cannot be automated
 //   without external infrastructure the client has not requested.
 //
-//   Strategy: fill username + password Ã¢â€ â€™ pause Ã¢â€ â€™ toast Ã¢â€ â€™ user completes manually.
+//   Strategy: fill username + password ➔ pause ➔ toast ➔ user completes manually.
 //   This is implemented via the generic `manualStepMessage` field.
 //   No platform-specific logic. No captchaSelector. No new framework code.
 
