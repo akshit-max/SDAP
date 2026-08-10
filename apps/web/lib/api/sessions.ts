@@ -32,4 +32,16 @@ export const sessionsApi = {
     const response = await apiClient.post(`/organizations/${orgId}/sessions/${sessionId}/reveal`, { reason });
     return response.data.plaintext;
   },
+
+  /** Admin: get all sessions granted to a specific org member */
+  getSessionsByMember: async (orgId: string, memberId: string): Promise<DelegatedSessionDto[]> => {
+    const response = await apiClient.get(`/organizations/${orgId}/members/${memberId}/sessions`);
+    return response.data;
+  },
+
+  /** Admin: revoke all active sessions for a specific org member */
+  revokeAllForMember: async (orgId: string, memberId: string): Promise<{ revokedCount: number; skippedCount: number }> => {
+    const response = await apiClient.post(`/organizations/${orgId}/members/${memberId}/revoke-all`);
+    return response.data;
+  },
 };

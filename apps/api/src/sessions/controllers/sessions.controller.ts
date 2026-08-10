@@ -230,4 +230,52 @@ export class SessionsController {
     // OTP Boundary Rule: return only the code string, nothing else.
     return { otp };
   }
+
+  /**
+   * GET /organizations/:orgId/members/:memberId/sessions
+   *
+   * Admin-only: Returns all sessions where the specified member is the grantee.
+   * Used to power the "Granted Access" panel on the Team Members page.
+   */
+  @Get('/members/:memberId/sessions')
+  @ApiOperation({ summary: 'Get all sessions granted to a specific member (admin)' })
+  @RequirePermissions(Permission.SECRET_READ)
+  async getGranteeSessions(
+    @Param('orgId') orgId: string,
+    @Param('memberId') memberId: string,
+    @Request() req: RequestWithUser,
+  ) {
+    // Only admins/owners may inspect another member's sessions
+    const membership = await this.prisma.organizationMember.findUnique({
+      where: { organizationId_userId: { organizationId: orgId, userId: req.user.id } },
+    });
+    if (!membership || (membership.role !== 'ADMIN' && membership.role !== 'OWNER')) {
+      return [];
+    }
+    return this.sessionsService.getSessionsByGrantee(orgId, memberId);
+  }
+
+  /**
+   * POST /organizations/:orgId/members/:memberId/revoke-all
+   *
+   * Admin-only: Revokes all active sessions for the specified member.
+   * Individual sessions may still be revoked with the existing /:sessionId/revoke endpoint.
+   */
+  @Post('/members/:memberId/revoke-all')
+  @ApiOperation({ summary: 'Revoke all active sessions for a specific member (admin)' })
+  @RequirePermissions(Permission.SECRET_READ)
+  async revokeAllGranteeSessions(
+    @Param('orgId') orgId: string,
+    @Param('memberId') memberId: string,
+    @Request() req: RequestWithUser,
+  ) {
+    // Only admins/owners may bulk-revoke
+    const membership = await this.prisma.organizationMember.findUnique({
+      where: { organizationId_userId: { organizationId: orgId, userId: req.user.id } },
+    });
+    if (!membership || (membership.role !== 'ADMIN' && membership.role !== 'OWNER')) {
+      throw new Error('Only admins and owners can revoke all sessions for a member.');
+    }
+    return this.sessionsService.revokeAllForGrantee(orgId, memberId, req.user.id);
+  }
 }

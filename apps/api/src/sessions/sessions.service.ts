@@ -487,4 +487,69 @@ export class SessionsService {
       return plaintext;
     });
   }
+
+  /**
+   * Returns all delegated sessions where the given userId is the grantee.
+   * Used by admins to see what access has been granted to a specific member.
+   */
+  async getSessionsByGrantee(organizationId: string, granteeId: string) {
+    const sessions = await this.prisma.delegatedSession.findMany({
+      where: { organizationId, granteeId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        grantor: { select: { email: true, fullName: true } },
+      },
+    });
+    return this.enrichSessionsWithResourceNames(sessions);
+  }
+
+  /**
+   * Revokes all ACTIVE delegated sessions for a specific grantee in the org.
+   * Vault/Secret sessions are revoked directly; integration sessions use the
+   * existing per-session revoke path so provider cleanup is triggered correctly.
+   * Returns a summary: { revokedCount, skippedCount }.
+   */
+  async revokeAllForGrantee(
+    organizationId: string,
+    granteeId: string,
+    adminId: string,
+  ) {
+    // Fetch only sessions in revocable states
+    const sessions = await this.prisma.delegatedSession.findMany({
+      where: {
+        organizationId,
+        granteeId,
+        status: { in: ['ACTIVE', 'REVOKE_FAILED'] },
+      },
+      include: { grantee: { select: { id: true, email: true, providerProfiles: true } } },
+    });
+
+    if (sessions.length === 0) {
+      return { revokedCount: 0, skippedCount: 0 };
+    }
+
+    let revokedCount = 0;
+    let skippedCount = 0;
+
+    for (const session of sessions) {
+      try {
+        await this.revokeSession(organizationId, session.id, adminId);
+        revokedCount++;
+      } catch {
+        // Individual revoke failures are non-fatal for the bulk operation
+        skippedCount++;
+      }
+    }
+
+    this.eventEmitter.emit('audit.log', {
+      organizationId,
+      actorId: adminId,
+      action: 'session.revoke_all',
+      resourceType: 'USER',
+      resourceId: granteeId,
+      metadata: { revokedCount, skippedCount },
+    });
+
+    return { revokedCount, skippedCount };
+  }
 }
