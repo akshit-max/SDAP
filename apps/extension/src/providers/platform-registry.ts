@@ -240,13 +240,20 @@ platformRegistry.register({
       'input[name="password"]',
       'input[id="password"]',
     ].join(', '),
-    // No submitSelector Ã¢â‚¬â€ manualStepMessage prevents auto-submit
+    // No submitSelector — manualStepMessage prevents auto-submit
   },
   manualStepMessage: 'Credentials filled. Please complete the CAPTCHA to continue.',
+  capabilityRestrictions: {
+    'GST_FILING': {
+      allowedRoutePatterns: ['/foportal/fologin', '/MCA2/mca2_index.html#'],
+      restrictedRoutePatterns: ['/DCA', '/company/incorporateCompany'],
+      hideElementsCSS: ['a[href*="DCA"]', '#menu-company-incorporation']
+    }
+  },
 });
 
 /**
- * GST Portal Ã¢â‚¬â€ Partial Support
+ * GST Portal — Partial Support
  *
  * Authentication flow:
  *   Username (GSTIN) Ã¢â€ â€™ Password Ã¢â€ â€™ CAPTCHA (manual) Ã¢â€ â€™ 2FA OTP (manual, mobile)
