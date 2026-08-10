@@ -221,7 +221,7 @@ platformRegistry.register({
 platformRegistry.register({
   id: 'MCA',
   name: 'MCA Portal',
-  domains: ['www.mca.gov.in', 'mca.gov.in'],
+  domains: ['www.mca.gov.in', 'mca.gov.in', 'localhost', '127.0.0.1'],
   login: {
     url: 'https://www.mca.gov.in/content/mca/global/en/foportal/fologin.html',
     // User ID: accepts CIN/LLPIN/FCRN for companies or email for other users.

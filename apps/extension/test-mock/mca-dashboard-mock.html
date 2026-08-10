@@ -51,6 +51,40 @@
     </div>
 
     <script>
+        // Mock chrome extension API
+        window.chrome = {
+            runtime: {
+                sendMessage: function(msg, callback) {
+                    console.log('Intercepted sendMessage:', msg);
+                    if (msg.type === 'GET_ACTIVE_SESSION') {
+                        // Read URL parameter to determine test mode
+                        const params = new URLSearchParams(window.location.search);
+                        const mode = params.get('mode');
+                        
+                        let capabilities = [];
+                        if (mode === 'gst') capabilities = ['GST_FILING'];
+                        if (mode === 'unrestricted') capabilities = [];
+                        if (mode === 'none') {
+                            callback({ success: true, data: { sessions: [] } });
+                            return;
+                        }
+
+                        callback({
+                            success: true,
+                            data: {
+                                sessions: [{
+                                    id: 'mock-session-1',
+                                    capabilities: capabilities
+                                }]
+                            }
+                        });
+                    }
+                }
+            }
+        };
+    </script>
+    <script src="../dist/content/capability-enforcer.js"></script>
+    <script>
         // Simulate a simple SPA-like routing behavior to test pushState interception
         document.querySelectorAll('a').forEach(link => {
             link.addEventListener('click', (e) => {
