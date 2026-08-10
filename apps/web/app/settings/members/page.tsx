@@ -11,7 +11,6 @@ import {
   useChangeMemberRole,
   useRemoveMember,
 } from '../../../hooks/useOrganization';
-import { useSessionsByMember, useRevokeSession, useRevokeAllForMember } from '../../../hooks/useSessions';
 import { Loading } from '../../../components/common/Loading';
 import { useToast } from '../../../components/common/Toast';
 import { ConfirmModal } from '../../../components/common/ConfirmModal';
@@ -36,8 +35,10 @@ import {
   Key,
   GitBranch,
   Globe,
+  ArrowRight,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { useRouter } from 'next/navigation';
 
 const roleIcons: Record<string, React.ReactNode> = {
   OWNER: <Crown className="w-3 h-3 text-amber-500" />,
@@ -73,149 +74,9 @@ function ResourceIcon({ provider }: { provider?: string | null }) {
   return <Key className="w-3 h-3 text-slate-500" />;
 }
 
-/** Inline grants panel shown when a member row is expanded */
-function MemberGrantsPanel({
-  orgId,
-  memberId,
-  memberName,
-}: {
-  orgId: string;
-  memberId: string;
-  memberName: string;
-}) {
-  const { data: sessions = [], isLoading, refetch } = useSessionsByMember(orgId, memberId);
-  const { mutate: revokeSession, isPending: isRevoking } = useRevokeSession(orgId);
-  const { mutate: revokeAll, isPending: isRevokingAll } = useRevokeAllForMember(orgId);
-  const { toast } = useToast();
-  const [confirmRevokeAll, setConfirmRevokeAll] = useState(false);
-  const [revokingSessionId, setRevokingSessionId] = useState<string | null>(null);
-
-  const activeSessions = sessions.filter(s => s.status === 'ACTIVE' || s.status === 'REVOKE_FAILED');
-
-  const handleRevokeOne = (sessionId: string) => {
-    setRevokingSessionId(sessionId);
-    revokeSession(sessionId, {
-      onSuccess: () => {
-        toast('success', 'Session revoked.');
-        refetch();
-        setRevokingSessionId(null);
-      },
-      onError: (err) => {
-        toast('error', err.message || 'Failed to revoke session.');
-        setRevokingSessionId(null);
-      },
-    });
-  };
-
-  const handleRevokeAll = () => {
-    revokeAll(memberId, {
-      onSuccess: (data) => {
-        toast('success', `Revoked ${data.revokedCount} session${data.revokedCount !== 1 ? 's' : ''}.`);
-        refetch();
-      },
-      onError: (err) => {
-        toast('error', err.message || 'Failed to revoke all sessions.');
-      },
-    });
-  };
-
-  if (isLoading) {
-    return (
-      <div className="px-5 py-4 border-t border-premium bg-slate-50/40 dark:bg-zinc-950/20">
-        <Loading message="Loading granted access…" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="border-t border-premium bg-slate-50/40 dark:bg-zinc-950/20">
-      <div className="px-5 pt-4 pb-2 flex items-center justify-between">
-        <p className="text-[10px] font-bold text-premium-muted uppercase tracking-wider">Granted Access</p>
-        {activeSessions.length > 0 && (
-          <button
-            onClick={() => setConfirmRevokeAll(true)}
-            disabled={isRevokingAll}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 rounded-md hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors disabled:opacity-50"
-          >
-            <ShieldOff className="w-3 h-3" />
-            Revoke All Access
-          </button>
-        )}
-      </div>
-
-      {sessions.length === 0 ? (
-        <p className="px-5 pb-4 text-xs text-premium-muted">No access currently granted to this member.</p>
-      ) : (
-        <div className="px-5 pb-4 space-y-2">
-          {sessions.map((session: any) => {
-            const isActive = session.status === 'ACTIVE' || session.status === 'REVOKE_FAILED';
-            const isThisRevoking = revokingSessionId === session.id && isRevoking;
-            return (
-              <div
-                key={session.id}
-                className={clsx(
-                  'flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border text-xs transition-colors',
-                  isActive
-                    ? 'bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-700'
-                    : 'bg-slate-50 dark:bg-slate-900/30 border-slate-100 dark:border-slate-800 opacity-60'
-                )}
-              >
-                {/* Left: icon + info */}
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <ResourceIcon provider={session.integrationProvider} />
-                  <div className="min-w-0">
-                    <p className="font-semibold text-premium-main truncate">
-                      {session.resourceName || session.integrationProvider || 'Secret'}
-                      {session.capabilities?.length > 0 && (
-                        <span className="ml-2 text-[10px] font-normal text-slate-400">
-                          ({session.capabilities.join(', ')})
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-[10px] text-premium-muted truncate">
-                      Expires {new Date(session.expiresAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Right: status + revoke */}
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className={clsx('px-2 py-0.5 rounded-full text-[10px] font-bold border', sessionStatusBadge[session.status] || sessionStatusBadge['EXPIRED'])}>
-                    {session.status === 'REVOKE_FAILED' ? 'Retry' : session.status.charAt(0) + session.status.slice(1).toLowerCase()}
-                  </span>
-                  {isActive && (
-                    <button
-                      onClick={() => handleRevokeOne(session.id)}
-                      disabled={isThisRevoking || isRevoking}
-                      title="Revoke this session"
-                      className="p-1.5 text-slate-400 hover:text-red-500 dark:hover:text-red-400 rounded transition-colors disabled:opacity-50"
-                    >
-                      {isThisRevoking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Revoke All confirmation */}
-      <ConfirmModal
-        isOpen={confirmRevokeAll}
-        title="Revoke All Access"
-        message={`This will revoke all ${activeSessions.length} active session${activeSessions.length !== 1 ? 's' : ''} currently granted to ${memberName}. This cannot be undone.`}
-        confirmLabel="Revoke All"
-        danger
-        isPending={isRevokingAll}
-        onConfirm={() => { setConfirmRevokeAll(false); handleRevokeAll(); }}
-        onCancel={() => setConfirmRevokeAll(false)}
-      />
-    </div>
-  );
-}
 
 export default function MembersPage() {
+  const router = useRouter();
   const { organization, user } = useAuth();
   const orgId = organization?.id || '';
   const currentUserId = user?.id || '';
@@ -232,7 +93,6 @@ export default function MembersPage() {
   const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
   const [grantAccessMemberId, setGrantAccessMemberId] = useState<string | null>(null);
-  const [expandedMemberId, setExpandedMemberId] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<{ memberId: string; email?: string } | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
@@ -474,18 +334,11 @@ export default function MembersPage() {
                 const isOwner = member.role === 'OWNER';
                 const isSelf = member.userId === currentUserId;
                 const canEdit = canManage && !isOwner && !isSelf;
-                const isExpanded = expandedMemberId === member.userId;
-
                 return (
                   <li key={member.id} className="border-b border-premium/65 last:border-b-0 bg-premium-surface">
                     {/* ── Member Row ── */}
                     <div
-                      className={clsx(
-                        'px-5 py-3.5 flex items-center justify-between transition-colors',
-                        canManage ? 'cursor-pointer hover:bg-slate-50/50 dark:hover:bg-zinc-900/10' : '',
-                        isExpanded && 'bg-slate-50/50 dark:bg-zinc-900/10',
-                      )}
-                      onClick={() => canManage && setExpandedMemberId(isExpanded ? null : member.userId)}
+                      className="px-5 py-3.5 flex items-center justify-between transition-colors hover:bg-slate-50/50 dark:hover:bg-zinc-900/10"
                     >
                       {/* Left: Avatar + Info */}
                       <div className="flex items-center gap-3 min-w-0">
@@ -517,9 +370,16 @@ export default function MembersPage() {
 
                         {/* Expand toggle (admin view) */}
                         {canManage && (
-                          <span className="text-slate-400">
-                            {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push('/settings/members/' + member.userId);
+                            }}
+                            className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          >
+                            View Access
+                            <ArrowRight className="w-3 h-3" />
+                          </button>
                         )}
 
                         {/* Three-dot menu for edit/remove */}
@@ -557,14 +417,7 @@ export default function MembersPage() {
                       </div>
                     </div>
 
-                    {/* ── Grants Panel (expanded) ── */}
-                    {isExpanded && canManage && (
-                      <MemberGrantsPanel
-                        orgId={orgId}
-                        memberId={member.userId}
-                        memberName={member.user?.fullName || member.user?.email || 'this member'}
-                      />
-                    )}
+
                   </li>
                 );
               })}
