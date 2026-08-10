@@ -383,37 +383,39 @@ export default function MembersPage() {
                         )}
 
                         {/* Three-dot menu for edit/remove */}
-                        {canEdit && (
-                          <div className="relative" onClick={(e) => e.stopPropagation()}>
-                            <button
-                              onClick={() => setOpenMenuId(openMenuId === member.id ? null : member.id)}
-                              className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded transition-colors"
-                            >
-                              <MoreVertical className="w-4 h-4" />
-                            </button>
+                        <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
+                          {canEdit && (
+                            <div className="relative" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                onClick={() => setOpenMenuId(openMenuId === member.id ? null : member.id)}
+                                className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded transition-colors"
+                              >
+                                <MoreVertical className="w-4 h-4" />
+                              </button>
 
-                            {openMenuId === member.id && (
-                               <>
-                                 <div
-                                   className="fixed inset-0 z-10"
-                                   onClick={() => setOpenMenuId(null)}
-                                 />
-                                 <div className="absolute right-0 mt-1 w-36 bg-premium-surface border border-premium rounded-lg shadow-none overflow-hidden z-20 py-1">
-                                   <button
-                                     onClick={() => {
-                                       handleRemoveMember(member.id, member.user?.email);
-                                       setOpenMenuId(null);
-                                     }}
-                                     disabled={isRemoving}
-                                     className="w-full text-left px-4 py-2 text-xs font-bold text-red-650 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 disabled:opacity-50"
-                                   >
-                                     Remove Member
-                                   </button>
-                                 </div>
-                               </>
-                             )}
-                          </div>
-                        )}
+                              {openMenuId === member.id && (
+                                 <>
+                                   <div
+                                     className="fixed inset-0 z-10"
+                                     onClick={() => setOpenMenuId(null)}
+                                   />
+                                   <div className="absolute right-0 mt-1 w-36 bg-premium-surface border border-premium rounded-lg shadow-none overflow-hidden z-20 py-1">
+                                     <button
+                                       onClick={() => {
+                                         handleRemoveMember(member.id, member.user?.email);
+                                         setOpenMenuId(null);
+                                       }}
+                                       disabled={isRemoving}
+                                       className="w-full text-left px-4 py-2 text-xs font-bold text-red-650 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 disabled:opacity-50"
+                                     >
+                                       Remove Member
+                                     </button>
+                                   </div>
+                                 </>
+                               )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
 
