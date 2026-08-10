@@ -101,11 +101,12 @@ export class SessionsService {
         permission: dto.permission as unknown as SessionPermission,
         expiresAt: new Date(dto.expiresAt),
         maxReveals: dto.maxReveals,
+        capabilities: dto.capabilities ?? null,
         // PENDING_GRANT for integration-backed, ACTIVE for plain vault/secret sessions
         status: isIntegrationBound ? 'PENDING_GRANT' : 'ACTIVE',
-        integrationProvider: integrationProvider ?? null,
-        integrationResourceType: integrationResourceType ?? null,
-        integrationResourceExternalId: integrationResourceExternalId ?? null,
+        integrationProvider: isIntegrationBound ? integrationProvider : null,
+        integrationResourceType: isIntegrationBound ? integrationResourceType : null,
+        integrationResourceExternalId: isIntegrationBound ? integrationResourceExternalId : null,
         integrationReferenceId: null,
       },
     });

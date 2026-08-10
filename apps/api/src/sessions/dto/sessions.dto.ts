@@ -34,6 +34,9 @@ export class CreateSessionDto {
 
   @ApiProperty({ example: 'Need access for deployment', description: 'Justification for creating the session' })
   justification!: string;
+
+  @ApiPropertyOptional({ example: ['GST_FILING'], description: 'List of module capabilities allowed for this session' })
+  capabilities?: string[];
 }
 
 export class RevealSessionDto {

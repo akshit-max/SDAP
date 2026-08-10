@@ -293,6 +293,7 @@ model DelegatedSession {
   expiresAt   DateTime
   maxReveals  Int? // Optional limit on reveals
   revealCount Int           @default(0)
+  capabilities Json? // Array of strings representing module-level access (null = unrestricted)
 
   // ─── Integration binding ─────────────────────────────────────────────────
   // Populated when a native provider integration is used (e.g. Vercel, GitHub).
