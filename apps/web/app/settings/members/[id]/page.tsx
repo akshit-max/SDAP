@@ -17,16 +17,50 @@ import {
   Key,
   GitBranch,
   Globe,
-  Filter
+  Filter,
+  CheckCircle,
+  Clock,
+  XCircle
 } from 'lucide-react';
 import clsx from 'clsx';
 import { SessionStatus } from '@repo/types';
 
-const sessionStatusBadge: Record<string, string> = {
-  ACTIVE: 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border-emerald-200/50',
-  EXPIRED: 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700',
-  REVOKED: 'bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 border-red-200/50',
-  REVOKE_FAILED: 'bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border-amber-200/50',
+const formatExpiry = (expiresAt: string | Date) => {
+  const d = new Date(expiresAt);
+  const now = new Date();
+  const diffMs = d.getTime() - now.getTime();
+  const diffMins = Math.round(diffMs / 60000);
+
+  if (diffMins <= 0) return `Expired`;
+  if (diffMins < 60) return `Expires in ${diffMins}m`;
+  const diffHours = Math.round(diffMins / 60);
+  if (diffHours < 24) return `Expires in ${diffHours}h`;
+  const diffDays = Math.round(diffHours / 24);
+  return `Expires in ${diffDays}d`;
+};
+
+const getStatusBadge = (status: SessionStatus, expiresAt: string | Date) => {
+  if (status === 'REVOKED') {
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border border-red-200/30 dark:border-red-900/30 flex-shrink-0">
+        <XCircle className="w-3 h-3 mr-1" /> Revoked
+      </span>
+    );
+  }
+
+  if (status === 'EXPIRED' || new Date(expiresAt) <= new Date()) {
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/30 flex-shrink-0">
+        <Clock className="w-3 h-3 mr-1" /> Expired
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200/20 dark:border-emerald-900/20 flex-shrink-0">
+      <CheckCircle className="w-3 h-3 mr-1" /> {status === 'REVOKE_FAILED' ? 'Retry' : 'Active'}
+    </span>
+  );
 };
 
 function ResourceIcon({ provider }: { provider?: string | null }) {
@@ -202,6 +236,7 @@ export default function MemberSessionsPage() {
                   <tr>
                     <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">Resource / Scope</th>
                     <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">Capabilities</th>
+                    <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">Usage</th>
                     <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">Status / Expiry</th>
                     <th scope="col" className="px-5 py-2.5 text-right text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">Actions</th>
                   </tr>
@@ -229,13 +264,20 @@ export default function MemberSessionsPage() {
                           </p>
                         </td>
                         <td className="px-5 py-3 whitespace-nowrap">
+                          {session.scope !== 'INTEGRATION' ? (
+                            <div className="flex flex-col text-[10px] font-bold text-premium-muted">
+                              <span>Uses: {session.revealCount} / {session.maxReveals ?? '∞'}</span>
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 font-semibold italic">N/A</span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3 whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <span className={clsx('px-2 py-0.5 rounded-full text-[10px] font-bold border', sessionStatusBadge[session.status] || sessionStatusBadge['EXPIRED'])}>
-                              {session.status === 'REVOKE_FAILED' ? 'Retry' : session.status.charAt(0) + session.status.slice(1).toLowerCase()}
-                            </span>
-                            <span className="text-[10px] text-premium-muted font-bold">
-                              {new Date(session.expiresAt).toLocaleDateString()}
-                            </span>
+                            {getStatusBadge(session.status, session.expiresAt)}
+                            <div className="text-[10px] text-premium-muted flex flex-col font-bold">
+                              <span>{formatExpiry(session.expiresAt)}</span>
+                            </div>
                           </div>
                         </td>
                         <td className="px-5 py-3 whitespace-nowrap text-right">
