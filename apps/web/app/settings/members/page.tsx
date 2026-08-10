@@ -36,6 +36,7 @@ import {
   GitBranch,
   Globe,
   ArrowRight,
+  Search,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useRouter } from 'next/navigation';
@@ -95,9 +96,18 @@ export default function MembersPage() {
   const [grantAccessMemberId, setGrantAccessMemberId] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<{ memberId: string; email?: string } | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const currentMember = members.find((m) => m.userId === currentUserId);
   const canManage = currentMember?.role === 'OWNER' || currentMember?.role === 'ADMIN';
+
+  const filteredMembers = members.filter((member: any) => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    const name = member.user?.fullName?.toLowerCase() || '';
+    const emailStr = member.user?.email?.toLowerCase() || '';
+    return name.includes(term) || emailStr.includes(term);
+  });
 
   const handleInvite = (e: React.FormEvent) => {
     e.preventDefault();
@@ -324,13 +334,30 @@ export default function MembersPage() {
             </span>
           </div>
 
+          <div className="px-5 py-3 border-b border-premium bg-premium-surface">
+            <div className="relative">
+              <Search className="w-4 h-4 text-premium-muted absolute left-3 top-1/2 -translate-y-1/2" />
+              <input 
+                type="text" 
+                placeholder="Search team members by name or email..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-zinc-600 transition-shadow text-premium-main placeholder:text-premium-muted"
+              />
+            </div>
+          </div>
+
           {isLoading ? (
             <div className="p-6 bg-premium-surface">
               <Loading message="Loading members…" />
             </div>
+          ) : filteredMembers.length === 0 ? (
+            <div className="p-8 text-center text-premium-muted text-sm bg-premium-surface">
+              No members match your search.
+            </div>
           ) : (
             <ul className="divide-y divide-premium">
-              {members.map((member) => {
+              {filteredMembers.map((member: any) => {
                 const isOwner = member.role === 'OWNER';
                 const isSelf = member.userId === currentUserId;
                 const canEdit = canManage && !isOwner && !isSelf;
