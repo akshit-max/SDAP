@@ -20,7 +20,8 @@ import {
   Filter,
   CheckCircle,
   Clock,
-  XCircle
+  XCircle,
+  Search
 } from 'lucide-react';
 import clsx from 'clsx';
 import { SessionStatus } from '@repo/types';
@@ -86,6 +87,7 @@ export default function MemberSessionsPage() {
   const { toast } = useToast();
 
   const [filter, setFilter] = useState<FilterType>('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
@@ -106,16 +108,24 @@ export default function MemberSessionsPage() {
     });
   }, [allSessions]);
 
-  // Apply Filter
+  // Apply Filter and Search
   const filteredSessions = useMemo(() => {
     return sortedSessions.filter((session) => {
-      if (filter === 'ALL') return true;
-      if (filter === 'ACTIVE') return session.status === 'ACTIVE' || session.status === 'REVOKE_FAILED';
-      if (filter === 'EXPIRED') return session.status === 'EXPIRED';
-      if (filter === 'REVOKED') return session.status === 'REVOKED';
+      if (filter === 'ACTIVE' && session.status !== 'ACTIVE' && session.status !== 'REVOKE_FAILED') return false;
+      if (filter === 'EXPIRED' && session.status !== 'EXPIRED') return false;
+      if (filter === 'REVOKED' && session.status !== 'REVOKED') return false;
+      
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const resourceName = (session.resourceName || session.integrationProvider || 'Secret').toLowerCase();
+        const caps = (session.capabilities || []).join(' ').toLowerCase();
+        if (!resourceName.includes(query) && !caps.includes(query)) {
+          return false;
+        }
+      }
       return true;
     });
-  }, [sortedSessions, filter]);
+  }, [sortedSessions, filter, searchQuery]);
 
   // Apply Pagination
   const totalPages = Math.max(1, Math.ceil(filteredSessions.length / pageSize));
@@ -124,10 +134,10 @@ export default function MemberSessionsPage() {
     return filteredSessions.slice(start, start + pageSize);
   }, [filteredSessions, page, pageSize]);
 
-  // Reset page when filter changes
+  // Reset page when filter or search changes
   React.useEffect(() => {
     setPage(1);
-  }, [filter]);
+  }, [filter, searchQuery]);
 
   const activeSessionsCount = allSessions.filter((s: any) => s.status === 'ACTIVE' || s.status === 'REVOKE_FAILED').length;
 
@@ -222,6 +232,19 @@ export default function MemberSessionsPage() {
                   {f.charAt(0) + f.slice(1).toLowerCase()}
                 </button>
               ))}
+            </div>
+          </div>
+
+          <div className="px-5 py-2.5 border-b border-premium bg-premium-surface">
+            <div className="relative">
+              <Search className="w-4 h-4 text-premium-muted absolute left-3 top-1/2 -translate-y-1/2" />
+              <input 
+                type="text" 
+                placeholder="Search sessions by resource name or capability..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-1.5 text-xs bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-zinc-600 transition-shadow text-premium-main placeholder:text-premium-muted"
+              />
             </div>
           </div>
 

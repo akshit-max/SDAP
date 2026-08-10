@@ -262,7 +262,7 @@ export function CreateSessionModal({
             )}
             */}
             {/* Vault is always available */}
-              <label className={`col-span-2 flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${selectedAccessType === 'VAULT' ? 'bg-slate-900 border-slate-900 dark:bg-slate-100 dark:border-slate-100' : 'bg-white border-slate-200 hover:border-slate-300 dark:bg-slate-900 dark:border-slate-800 dark:hover:border-slate-700'}`}>
+              <label className={`col-span-2 flex justify-center items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${selectedAccessType === 'VAULT' ? 'bg-slate-900 border-slate-900 dark:bg-slate-100 dark:border-slate-100' : 'bg-white border-slate-200 hover:border-slate-300 dark:bg-slate-900 dark:border-slate-800 dark:hover:border-slate-700'}`}>
                 <input type="radio" name="accessType" className="hidden" value="VAULT" checked={selectedAccessType === 'VAULT'} onChange={() => setSelectedAccessType('VAULT')} />
                 <Lock className={`w-4 h-4 ${selectedAccessType === 'VAULT' ? 'text-white dark:text-slate-900' : 'text-slate-500 dark:text-slate-400'}`} />
                 <span className={`text-sm font-medium ${selectedAccessType === 'VAULT' ? 'text-white dark:text-slate-900' : 'text-slate-700 dark:text-slate-300'}`}>
