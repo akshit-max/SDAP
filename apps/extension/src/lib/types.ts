@@ -22,6 +22,7 @@ export interface ExtensionSession {
   revealCount: number;
   maxReveals: number | null;
   status?: string;
+  capabilities?: string[];
 }
 
 // ─── Messages (content ↔ service worker) ─────────────────────────────────────
@@ -75,6 +76,12 @@ export interface AutofillPayload {
 
 // ─── V2 Platform Configuration ───────────────────────────────────────────────
 
+export interface CapabilityRestriction {
+  allowedRoutePatterns?: string[];
+  restrictedRoutePatterns?: string[];
+  hideElementsCSS?: string[];
+}
+
 export interface PlatformConfig {
   id: string;
   name: string;
@@ -101,6 +108,10 @@ export interface PlatformConfig {
    * Injected globally into document.head to survive React re-renders.
    */
   hideElementsCSS?: string[];
+  /**
+   * Optional map of capability restrictions for module-level access.
+   */
+  capabilityRestrictions?: Record<string, CapabilityRestriction>;
   /**
    * When set, the autofill engine fills credentials then pauses — it does NOT
    * auto-submit. Instead it shows this message as a toast so the user can

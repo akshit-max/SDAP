@@ -31,6 +31,7 @@ const sharedConfig = {
 const entryPoints = [
   { in: 'src/background/service-worker.ts', out: 'background/service-worker' },
   { in: 'src/content/autofill.ts', out: 'content/autofill' },
+  { in: 'src/content/capability-enforcer.ts', out: 'content/capability-enforcer' },
   { in: 'src/popup/popup.ts', out: 'popup/popup' },
 ];
 
