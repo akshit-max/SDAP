@@ -403,13 +403,13 @@ export function CreateSessionModal({
                 <label className={clsx(
                   'flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all',
                   accessRestriction === 'restricted'
-                    ? 'border-amber-500 bg-amber-50 dark:border-amber-400 dark:bg-amber-950/20'
+                    ? 'border-slate-900 bg-slate-50 dark:border-slate-300 dark:bg-slate-900'
                     : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
                 )}>
                   <input
                     type="radio"
                     name="accessRestriction"
-                    className="mt-0.5 accent-amber-500"
+                    className="mt-0.5 accent-slate-900 dark:accent-slate-100"
                     checked={accessRestriction === 'restricted'}
                     onChange={() => setAccessRestriction('restricted')}
                   />
