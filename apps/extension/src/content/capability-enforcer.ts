@@ -36,18 +36,26 @@ async function initEnforcer() {
   // We assume only one active session per platform.
   const session = response.data.sessions[0];
 
-  if (!session.capabilities || session.capabilities.length === 0) {
-    return; // Unrestricted session, do nothing
+  let restrictionsToApply: string[] = [];
+
+  if (config.id === 'MCA') {
+    if (!session.mcaRestrictedModules || session.mcaRestrictedModules.length === 0) {
+      return; // No MCA restrictions, do nothing
+    }
+    restrictionsToApply = session.mcaRestrictedModules;
+  } else {
+    if (!session.capabilities || session.capabilities.length === 0) {
+      return; // Unrestricted session, do nothing
+    }
+    restrictionsToApply = session.capabilities;
   }
 
   const stylesToInject: string[] = [];
   const restrictedRoutes: string[] = [];
   const allowedRoutes: string[] = [];
 
-  // Aggregate restrictions for all granted capabilities
-  // In this model, the config defines what the UI should look like for a specific capability.
-  // For 'GST_FILING', it defines the elements to hide (other modules).
-  for (const cap of session.capabilities) {
+  // Aggregate restrictions for all mapped restriction rules
+  for (const cap of restrictionsToApply) {
     const restriction = config.capabilityRestrictions[cap];
     if (restriction) {
       if (restriction.hideElementsCSS) {

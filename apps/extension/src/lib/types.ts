@@ -23,6 +23,7 @@ export interface ExtensionSession {
   maxReveals: number | null;
   status?: string;
   capabilities?: string[];
+  mcaRestrictedModules?: string[];
 }
 
 // ─── Messages (content ↔ service worker) ─────────────────────────────────────
