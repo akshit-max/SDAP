@@ -421,28 +421,30 @@ export function CreateSessionModal({
                     {accessRestriction === 'restricted' && (
                       <div className="mt-3 space-y-2">
                         <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Allowed Modules</p>
-                        {availableCapabilities.map(cap => (
-                          <label
-                            key={cap.key}
-                            className={clsx(
-                              'flex items-start gap-2.5 p-2.5 rounded-md border cursor-pointer transition-all',
-                              selectedCapabilities.includes(cap.key)
-                                ? 'border-emerald-500 bg-emerald-50 dark:border-emerald-400 dark:bg-emerald-950/20'
-                                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 hover:border-slate-300'
-                            )}
-                          >
-                            <input
-                              type="checkbox"
-                              className="mt-0.5 accent-emerald-600"
-                              checked={selectedCapabilities.includes(cap.key)}
-                              onChange={() => toggleCapability(cap.key)}
-                            />
-                            <div>
-                              <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">{cap.label}</p>
-                              <p className="text-[10px] text-slate-400">{cap.description}</p>
-                            </div>
-                          </label>
-                        ))}
+                        <div className="max-h-56 overflow-y-auto space-y-2 pr-1.5 custom-scrollbar">
+                          {availableCapabilities.map(cap => (
+                            <label
+                              key={cap.key}
+                              className={clsx(
+                                'flex items-start gap-2.5 p-2.5 rounded-md border cursor-pointer transition-all',
+                                selectedCapabilities.includes(cap.key)
+                                  ? 'border-emerald-500 bg-emerald-50 dark:border-emerald-400 dark:bg-emerald-950/20'
+                                  : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 hover:border-slate-300'
+                              )}
+                            >
+                              <input
+                                type="checkbox"
+                                className="mt-0.5 accent-emerald-600"
+                                checked={selectedCapabilities.includes(cap.key)}
+                                onChange={() => toggleCapability(cap.key)}
+                              />
+                              <div>
+                                <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">{cap.label}</p>
+                                <p className="text-[10px] text-slate-400">{cap.description}</p>
+                              </div>
+                            </label>
+                          ))}
+                        </div>
                         {selectedCapabilities.length === 0 && (
                           <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">⚠ Select at least one module to allow.</p>
                         )}

@@ -37,4 +37,6 @@ export interface DelegatedSessionDto {
   grantee?: { email: string; fullName: string } | null;
   grantor?: { email: string; fullName: string } | null;
   resourceName?: string | null;
+  integrationProvider?: string | null;
+  capabilities?: string[] | null;
 }
