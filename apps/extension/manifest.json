@@ -33,6 +33,7 @@
   "content_scripts": [
     {
       "matches": [
+        "http://localhost:8080/*",
         "https://*.godaddy.com/*",
         "https://*.hostinger.com/*",
         "https://*.cpanel.net/*",
@@ -65,7 +66,8 @@
       "matches": [
         "https://*.mca.gov.in/*",
         "http://localhost:8080/*",
-        "http://127.0.0.1:8080/*"
+        "http://127.0.0.1:8080/*",
+        "http://mca.localhost:8080/*"
       ],
       "js": ["content/capability-enforcer.js"],
       "run_at": "document_start"

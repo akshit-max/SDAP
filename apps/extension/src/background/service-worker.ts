@@ -102,6 +102,8 @@ async function handleMessage(msg: ExtensionMessage): Promise<ExtensionResponse> 
               // Floor of 3 chars keeps acronyms (mca, gst) while filtering "in", "co" etc.
               const GENERIC = new Set(['gov', 'com', 'net', 'org', 'in', 'co', 'www', 'app', 'api']);
               const parts = hostname.split('.').filter(p => p.length >= 3 && !GENERIC.has(p));
+              
+
               return parts.some((part) => name.includes(part) || part.includes(name));
 
             }).map(s => ({ ...s, __orgId: m.organizationId }));

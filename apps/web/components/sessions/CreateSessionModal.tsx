@@ -21,7 +21,15 @@ import clsx from 'clsx';
  */
 const PLATFORM_CAPABILITY_MAP: Record<string, { key: string; label: string; description: string }[]> = {
   mca: [
-    { key: 'GST_FILING', label: 'GST Filing', description: 'File GST returns and manage GST compliance' },
+    { key: 'mca.master_data', label: 'Master Data', description: 'Access MCA Master Data services' },
+    { key: 'mca.llp_efiling', label: 'LLP e-Filing', description: 'File LLP forms and returns' },
+    { key: 'mca.fo_services', label: 'FO Services', description: 'Access Front Office services' },
+    { key: 'mca.dsc_services', label: 'DSC Services', description: 'Manage Digital Signature Certificates' },
+    { key: 'mca.company_efiling', label: 'Company e-Filing', description: 'File company forms and returns' },
+    { key: 'mca.complaints', label: 'Complaints', description: 'File and track complaints' },
+    { key: 'mca.document_related_services', label: 'Document Related Services', description: 'Request certified copies and view public documents' },
+    { key: 'mca.payment_services', label: 'Payment Services', description: 'Manage fees and payments' },
+    { key: 'mca.id_databank', label: 'ID Databank', description: 'Access Independent Directors Databank' },
   ],
 };
 
@@ -178,6 +186,12 @@ export function CreateSessionModal({
       payload.scope = SessionScope.SECRET;
       payload.resourceId = selectedSecretId;
       payload.permission = SessionPermission.REVEAL;
+
+      const lower = selectedSecretName.toLowerCase();
+      const matchedKeyword = Object.keys(PLATFORM_CAPABILITY_MAP).find(k => lower.includes(k));
+      if (matchedKeyword) {
+        payload.integrationProvider = matchedKeyword.toUpperCase();
+      }
     } else {
       payload.scope = 'INTEGRATION'; // Bypass Vault Check
       payload.resourceId = selectedIntegrationResource; 

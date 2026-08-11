@@ -19,6 +19,18 @@ import { CreateSessionDto } from './dto/sessions.dto';
 
 export const INTEGRATIONS_SERVICE_TOKEN = 'INTEGRATIONS_SERVICE';
 
+const MCA_TOP_LEVEL_MODULES = [
+  'mca.master_data',
+  'mca.llp_efiling',
+  'mca.fo_services',
+  'mca.dsc_services',
+  'mca.company_efiling',
+  'mca.complaints',
+  'mca.document_related_services',
+  'mca.payment_services',
+  'mca.id_databank'
+];
+
 @Injectable()
 export class SessionsService {
   private readonly logger = new Logger(SessionsService.name);
@@ -104,7 +116,7 @@ export class SessionsService {
         capabilities: dto.capabilities ?? null,
         // PENDING_GRANT for integration-backed, ACTIVE for plain vault/secret sessions
         status: isIntegrationBound ? 'PENDING_GRANT' : 'ACTIVE',
-        integrationProvider: isIntegrationBound ? integrationProvider : null,
+        integrationProvider: integrationProvider || null,
         integrationResourceType: isIntegrationBound ? integrationResourceType : null,
         integrationResourceExternalId: isIntegrationBound ? integrationResourceExternalId : null,
         integrationReferenceId: null,
@@ -235,6 +247,8 @@ export class SessionsService {
     return session;
   }
 
+
+
   async getIncomingSessions(organizationId: string, userId: string) {
     const where: any = { granteeId: userId };
     if (organizationId) {
@@ -247,7 +261,17 @@ export class SessionsService {
         grantor: { select: { email: true, fullName: true } },
       },
     });
-    return this.enrichSessionsWithResourceNames(sessions);
+    
+    const enriched = await this.enrichSessionsWithResourceNames(sessions);
+    
+    return enriched.map(session => {
+      if (session.integrationProvider === 'MCA') {
+        const allowed = (session.capabilities as string[]) || [];
+        const mcaRestrictedModules = MCA_TOP_LEVEL_MODULES.filter(mod => !allowed.includes(mod));
+        return { ...session, mcaRestrictedModules };
+      }
+      return session;
+    });
   }
 
   async getOutgoingSessions(organizationId: string, userId: string) {
@@ -288,7 +312,9 @@ export class SessionsService {
           ? (secretMap.get(s.resourceId) ?? null)
           : s.scope === 'VAULT'
             ? (vaultMap.get(s.resourceId) ?? null)
-            : null,
+            : s.scope === 'INTEGRATION'
+              ? ((s as any).integrationProvider ?? null)
+              : null,
     }));
   }
 
