@@ -221,7 +221,7 @@ platformRegistry.register({
 platformRegistry.register({
   id: 'MCA',
   name: 'MCA Portal',
-  domains: ['www.mca.gov.in', 'mca.gov.in', 'localhost', '127.0.0.1'],
+  domains: ['www.mca.gov.in', 'mca.gov.in'],
   login: {
     url: 'https://www.mca.gov.in/content/mca/global/en/foportal/fologin.html',
     // User ID: accepts CIN/LLPIN/FCRN for companies or email for other users.
@@ -242,7 +242,7 @@ platformRegistry.register({
     ].join(', '),
     // No submitSelector — manualStepMessage prevents auto-submit
   },
-  manualStepMessage: 'Credentials filled. Please complete the CAPTCHA to continue.',
+  manualStepMessage: 'WithUs Vault: Secure session activated. Please resolve the CAPTCHA to proceed.',
   capabilityRestrictions: {
     'mca.master_data': { hideElementsCSS: ['li.level-1:has(> a[href$="/mca/master-data.html"])'] },
     'mca.llp_efiling': { hideElementsCSS: ['li.level-1:has(> a[href$="/mca/llp-e-filling.html"])'] },

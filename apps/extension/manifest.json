@@ -13,6 +13,8 @@
   "host_permissions": [
     "http://localhost:4000/*",
     "http://127.0.0.1:4000/*",
+    "http://localhost:8080/*",
+    "http://127.0.0.1:8080/*",
     "https://*.godaddy.com/*",
     "https://*.hostinger.com/*",
     "https://*.cpanel.net/*",
@@ -57,7 +59,8 @@
         "https://app.razorpay.com/*",
         "https://app.vercel.com/*",
         "https://dashboard.stripe.com/dashboard",
-        "https://app.shopify.com/*"
+        "https://app.shopify.com/*",
+        "https://*.mca.gov.in/content/mca/global/en/mca/*"
       ],
       "js": ["content/autofill.js"],
       "run_at": "document_end"

@@ -16,20 +16,60 @@ if (!(window as any).__WITHUS_ENFORCER_LOADED__) {
   initEnforcer();
 }
 
+// ─── Cache key for instant first-paint restriction (session-scoped, cleared on browser close) ──
+const WITHUS_CACHE_KEY = 'withus_cap_cache_v1';
+
+/** Builds and injects the CSS <style> tag for the given restriction list. */
+function injectCSS(config: ReturnType<typeof platformRegistry.getForHost>, restrictions: string[]) {
+  if (!config) return;
+  const styleId = 'withus-capability-enforcer-css';
+  const stylesToInject: string[] = [];
+  for (const cap of restrictions) {
+    const rule = config.capabilityRestrictions?.[cap];
+    if (rule?.hideElementsCSS) stylesToInject.push(...rule.hideElementsCSS);
+  }
+  if (stylesToInject.length === 0) return;
+  let styleEl = document.getElementById(styleId) as HTMLStyleElement | null;
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = styleId;
+    document.documentElement.appendChild(styleEl);
+  }
+  styleEl.textContent = stylesToInject
+    .map(sel => `${sel} { display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }`)
+    .join('\n');
+}
+
 async function initEnforcer() {
   const config = platformRegistry.getForHost(location.hostname);
   if (!config || !config.capabilityRestrictions) {
     return; // Not a supported platform, or no capability restrictions defined
   }
 
-  // Fetch active sessions
+  // ── INSTANT PAINT: apply cached restrictions before any network call ────────
+  // On every MCA page navigation the cache fires synchronously (sub-millisecond)
+  // so there is zero visible flash of unrestricted content on repeat visits.
+  try {
+    const cached = await chrome.storage.session.get(WITHUS_CACHE_KEY);
+    const cachedRestrictions: string[] | undefined = cached[WITHUS_CACHE_KEY];
+    if (cachedRestrictions && cachedRestrictions.length > 0) {
+      injectCSS(config, cachedRestrictions);
+    }
+  } catch (_) {
+    // storage unavailable — fall through to network fetch
+  }
+
+  // ── FRESH FETCH: always verify with the backend and update cache ─────────────
   const response = await sendMessage<{ sessions: ExtensionSession[]; orgId: string }>({
     type: 'GET_ACTIVE_SESSION',
     payload: { domain: location.hostname },
   });
 
   if (!response.success || !response.data?.sessions.length) {
-    return; // No active session, do nothing
+    // Session gone — clear cache and remove injected CSS so nothing stale persists
+    chrome.storage.session.remove(WITHUS_CACHE_KEY).catch(() => {});
+    document.getElementById('withus-capability-enforcer-css')?.remove();
+    return;
   }
 
   // For this POC, we use the first active session for this domain.
@@ -40,6 +80,8 @@ async function initEnforcer() {
 
   if (config.id === 'MCA') {
     if (!session.mcaRestrictedModules || session.mcaRestrictedModules.length === 0) {
+      chrome.storage.session.remove(WITHUS_CACHE_KEY).catch(() => {});
+      document.getElementById('withus-capability-enforcer-css')?.remove();
       return; // No MCA restrictions, do nothing
     }
     restrictionsToApply = session.mcaRestrictedModules;
@@ -49,6 +91,9 @@ async function initEnforcer() {
     }
     restrictionsToApply = session.capabilities;
   }
+
+  // Update cache for the next page load
+  chrome.storage.session.set({ [WITHUS_CACHE_KEY]: restrictionsToApply }).catch(() => {});
 
   const stylesToInject: string[] = [];
   const restrictedRoutes: string[] = [];
@@ -74,16 +119,9 @@ async function initEnforcer() {
     return; // No actionable restrictions
   }
 
-  // 1. Inject permanent CSS to hide elements
+  // 1. Inject/update permanent CSS to hide elements (injectCSS is idempotent)
   if (stylesToInject.length > 0) {
-    const styleId = 'withus-capability-enforcer-css';
-    if (!document.getElementById(styleId)) {
-      const styleEl = document.createElement('style');
-      styleEl.id = styleId;
-      // Use !important to override any specific platform styles
-      styleEl.textContent = stylesToInject.map(selector => `${selector} { display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }`).join('\n');
-      document.documentElement.appendChild(styleEl);
-    }
+    injectCSS(config, restrictionsToApply);
   }
 
   // 2. Intercept SPA routing
