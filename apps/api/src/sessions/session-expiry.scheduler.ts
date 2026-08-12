@@ -154,6 +154,7 @@ export class SessionExpiryScheduler {
   ) {
     const isIntegrationBound =
       session.integrationProvider &&
+      session.integrationProvider !== 'MCA' &&
       session.integrationResourceExternalId &&
       session.grantee?.email;
 

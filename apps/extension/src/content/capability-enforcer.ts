@@ -79,12 +79,20 @@ async function initEnforcer() {
   let restrictionsToApply: string[] = [];
 
   if (config.id === 'MCA') {
-    if (!session.mcaRestrictedModules || session.mcaRestrictedModules.length === 0) {
+    // If backend provided explicit restrictions, use them. 
+    // If missing (legacy session), derive from capabilities.
+    let mcaRestricted = session.mcaRestrictedModules;
+    if (!mcaRestricted && Array.isArray(session.capabilities)) {
+      const MCA_TOP_LEVEL_MODULES = ['mca.master_data', 'mca.llp_efiling', 'mca.fo_services', 'mca.dsc_services', 'mca.company_efiling', 'mca.complaints', 'mca.document_related_services', 'mca.payment_services', 'mca.id_databank'];
+      mcaRestricted = MCA_TOP_LEVEL_MODULES.filter(mod => !session.capabilities!.includes(mod));
+    }
+    
+    if (!mcaRestricted || mcaRestricted.length === 0) {
       chrome.storage.session.remove(WITHUS_CACHE_KEY).catch(() => {});
       document.getElementById('withus-capability-enforcer-css')?.remove();
       return; // No MCA restrictions, do nothing
     }
-    restrictionsToApply = session.mcaRestrictedModules;
+    restrictionsToApply = mcaRestricted;
   } else {
     if (!session.capabilities || session.capabilities.length === 0) {
       return; // Unrestricted session, do nothing

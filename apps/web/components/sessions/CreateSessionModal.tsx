@@ -446,7 +446,7 @@ export function CreateSessionModal({
                           ))}
                         </div>
                         {selectedCapabilities.length === 0 && (
-                          <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">⚠ Select at least one module to allow.</p>
+                          <p className="text-[10px] text-rose-500 dark:text-rose-400 mt-1">⚠ Select at least one module to allow.</p>
                         )}
                       </div>
                     )}

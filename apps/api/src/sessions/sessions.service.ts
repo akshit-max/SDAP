@@ -266,8 +266,11 @@ export class SessionsService {
     
     return enriched.map(session => {
       if (session.integrationProvider === 'MCA') {
-        const allowed = (session.capabilities as string[]) || [];
-        const mcaRestrictedModules = MCA_TOP_LEVEL_MODULES.filter(mod => !allowed.includes(mod));
+        let mcaRestrictedModules: string[] = [];
+        if (session.capabilities !== null) {
+          const allowed = (session.capabilities as string[]) || [];
+          mcaRestrictedModules = MCA_TOP_LEVEL_MODULES.filter(mod => !allowed.includes(mod));
+        }
         return { ...session, mcaRestrictedModules };
       }
       return session;
