@@ -251,7 +251,7 @@ async function handleAutofillRequest(): Promise<void> {
 
     if (fields.passwordSelector && password) {
       if (pwEl) {
-        try { fillField(pwEl, password, true); } catch { /* ignore */ }
+        try { fillField(pwEl, password, config?.id !== 'MCA'); } catch { /* ignore */ }
       } else {
         startPasswordWatcher(
           fields.passwordSelector,
@@ -353,12 +353,10 @@ function fillField(
   el.value = value;
 
   // Dispatch a realistic sequence of events so React/Angular/Vue pick up the change.
-  el.dispatchEvent(new FocusEvent('focus', { bubbles: true }));
   el.dispatchEvent(new InputEvent('input',  { bubbles: true, data: value, inputType: 'insertText' }));
   el.dispatchEvent(new Event('change', { bubbles: true }));
   el.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: value.slice(-1) }));
   el.dispatchEvent(new KeyboardEvent('keyup',   { bubbles: true, key: value.slice(-1) }));
-  el.dispatchEvent(new FocusEvent('blur', { bubbles: true }));
 }
 
 
