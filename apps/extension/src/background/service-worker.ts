@@ -48,13 +48,26 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     const auth = await Storage.getAuth();
     if (!auth) return; // Not authenticated — skip silently
 
-    // Send a heartbeat for the first active entry.
-    // With the tab-keyed map, each tab's PLATFORM_ACTIVE keeps its own entry;
-    // we send one heartbeat per alarm tick because the DB is keyed per (org, user).
-    // Multiple concurrent platform tabs all keep lastSeenAt fresh, just alternating.
-    // WithusApi.heartbeat() is internally try/catch and never throws.
-    const { orgId, platform } = entries[0];
-    await WithusApi.heartbeat(orgId, platform, auth.accessToken);
+    // Deduplicate by (orgId + platform) — two tabs on the same platform
+    // would produce identical heartbeats, so we only send one per pair per tick.
+    // This keeps network calls proportional to distinct platforms, not tab count.
+    const seen = new Set<string>();
+    const distinct = entries.filter(({ orgId, platform }) => {
+      const key = `${orgId}::${platform}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    // Send a heartbeat for EVERY distinct active platform.
+    // Promise.allSettled ensures a failure on one platform never cancels the others.
+    // WithusApi.heartbeat() is internally try/catch and never throws, but
+    // allSettled is a belt-and-suspenders guarantee at the alarm level.
+    await Promise.allSettled(
+      distinct.map(({ orgId, platform }) =>
+        WithusApi.heartbeat(orgId, platform, auth.accessToken),
+      ),
+    );
   }
 });
 
