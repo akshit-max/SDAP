@@ -1,0 +1,1 @@
+import { PrismaClient } from '@prisma/client'; const p = new PrismaClient(); const u = await p.user.findMany({select:{id:true,email:true,passwordHash:true}}); u.forEach(x=>console.log(x.email+' | '+x.passwordHash.slice(0,30))); console.log('All unique: '+(new Set(u.map(x=>x.passwordHash)).size===u.length)); await p.$disconnect();

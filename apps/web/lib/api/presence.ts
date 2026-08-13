@@ -2,6 +2,10 @@ import { apiClient } from './client';
 
 export interface PresenceRecord {
   userId: string;
+  user?: {
+    fullName: string | null;
+    email: string;
+  };
   platform: string;
   lastSeenAt: string; // ISO timestamp
   /**

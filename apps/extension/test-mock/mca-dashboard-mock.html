@@ -28,26 +28,14 @@
     <h2>Dashboard Modules</h2>
     
     <div class="dashboard">
-        <!-- Module 1: GST Filing (We will allow this) -->
-        <div class="module-card">
-            <h3>GST Services</h3>
-            <p>File returns, view ledger, etc.</p>
-            <a href="#gst-dashboard" class="btn nav-gst" id="btn-gst">GST Filing</a>
-        </div>
-
-        <!-- Module 2: Company Incorporation (We will restrict this) -->
-        <div class="module-card" id="menu-company-incorporation">
-            <h3>Company Services</h3>
-            <p>Incorporate new company, change directors.</p>
-            <a href="#incorporate" class="btn">Incorporate Company</a>
-        </div>
-
-        <!-- Module 3: Director KYC (We will restrict this via href attribute selector) -->
-        <div class="module-card">
-            <h3>Director KYC</h3>
-            <p>Submit DIN KYC documents.</p>
-            <a href="/DCA/kyc" class="btn">Update KYC (DCA)</a>
-        </div>
+        <ul>
+            <li class="level-2"><a href="/content/mca/global/en/mca/master-data.html">Master Data</a></li>
+            <li class="level-2"><a href="/content/mca/global/en/mca/llp-e-filling.html">LLP e-Filing</a></li>
+            <li class="level-2"><a href="/content/mca/global/en/mca/fo-llp-services.html">FO Services</a></li>
+            <li class="level-2"><a href="/content/mca/global/en/mca/dsc-services-v3.html">DSC Services</a></li>
+            <li class="level-2"><a href="/content/mca/global/en/mca/e-filing.html">Company e-Filing</a></li>
+            <li class="level-2"><a href="/content/mca/global/en/mca/complaints.html">Complaints</a></li>
+        </ul>
     </div>
 
     <script>
@@ -61,9 +49,10 @@
                         const params = new URLSearchParams(window.location.search);
                         const mode = params.get('mode');
                         
-                        let capabilities = [];
-                        if (mode === 'gst') capabilities = ['GST_FILING'];
-                        if (mode === 'unrestricted') capabilities = [];
+                        let mcaRestrictedModules = [];
+                        if (mode === 'mca_test1') mcaRestrictedModules = ['mca.master_data'];
+                        if (mode === 'mca_test2') mcaRestrictedModules = ['mca.master_data', 'mca.dsc_services', 'mca.company_efiling'];
+                        
                         if (mode === 'none') {
                             callback({ success: true, data: { sessions: [] } });
                             return;
@@ -74,7 +63,8 @@
                             data: {
                                 sessions: [{
                                     id: 'mock-session-1',
-                                    capabilities: capabilities
+                                    capabilities: ['EXISTING_CAP_SHOULD_BE_IGNORED_FOR_MCA'],
+                                    mcaRestrictedModules: mcaRestrictedModules
                                 }]
                             }
                         });

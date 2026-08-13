@@ -120,19 +120,26 @@ export class PresenceService {
    * isActive is computed at query time: lastSeenAt within the last 90 seconds.
    * Only ADMIN/OWNER callers should reach this — RBAC enforced in the controller.
    */
-  async getOrgPresence(organizationId: string): Promise<PresenceRecord[]> {
+  async getOrgPresence(organizationId: string) {
     const records = await this.prisma.userPresence.findMany({
       where: { organizationId },
       select: {
         userId: true,
         platform: true,
         lastSeenAt: true,
+        user: {
+          select: {
+            fullName: true,
+            email: true,
+          }
+        }
       },
     });
 
     const now = Date.now();
     return records.map((r) => ({
       userId: r.userId,
+      user: r.user,
       platform: r.platform,
       lastSeenAt: r.lastSeenAt,
       isActive: now - r.lastSeenAt.getTime() <= ACTIVE_WINDOW_MS,
