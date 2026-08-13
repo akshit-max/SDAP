@@ -116,4 +116,25 @@ export const WithusApi = {
   ): Promise<{ otp: string }> {
     return request('POST', `/organizations/${orgId}/sessions/${sessionId}/otp`, { platform, loginStartTime }, token);
   },
+
+  // ─── Presence Heartbeat ───────────────────────────────────────────────────
+
+  /**
+   * Report that the user is active on a given platform.
+   *
+   * This is fire-and-forget — the server always returns 204, and any network
+   * or auth error is intentionally silenced. Heartbeat failures must never
+   * interrupt autofill, session handling, or any other extension flow.
+   *
+   * The server validates that the user has an active authorized session for
+   * the reported platform before recording the heartbeat.
+   */
+  async heartbeat(orgId: string, platform: string, token: string): Promise<void> {
+    try {
+      await request('POST', `/organizations/${orgId}/presence/heartbeat`, { platform }, token);
+    } catch {
+      // Intentionally silenced — presence is non-blocking
+    }
+  },
 };
+

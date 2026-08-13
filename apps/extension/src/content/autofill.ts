@@ -76,7 +76,19 @@ async function discoverSessions(): Promise<void> {
   if (!response.success || !response.data?.sessions.length) return;
   activeSessions = response.data.sessions;
   activeOrgId = response.data.orgId;
-  
+
+  // ── Presence heartbeat signal ──────────────────────────────────────────────
+  // Notify the service worker that we're on an active-session platform so it
+  // can persist the platform name and fire heartbeats via the 30s alarm.
+  // Fire-and-forget: never awaited, errors silenced — cannot affect autofill.
+  if (config?.name) {
+    chrome.runtime.sendMessage({
+      type: 'PLATFORM_ACTIVE',
+      payload: { platform: config.name, orgId: activeOrgId },
+    }).catch(() => {/* non-blocking */});
+  }
+  // ── End presence signal ────────────────────────────────────────────────────
+
   // Only activate if this page has a login form OR a visible OTP field.
   // This prevents the toast from firing on post-login pages like
   // dashboard.razorpay.com/app/dashboard which match the domain but have no login UI.
@@ -134,6 +146,7 @@ async function discoverSessions(): Promise<void> {
   formWatcher.observe(document.body, { childList: true, subtree: true });
   // If neither login form nor OTP field found — do nothing (e.g. post-login dashboard)
 }
+
 
 // ─── Magic Toast ──────────────────────────────────────────────────────────────
 

@@ -18,17 +18,37 @@ import type { ExtensionMessage, ExtensionResponse } from '../lib/types';
 
 chrome.alarms.create('token-refresh', { periodInMinutes: 50 });
 
-chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name !== 'token-refresh') return;
-  const auth = await Storage.getAuth();
-  if (!auth?.refreshToken) return;
+// ─── Presence Heartbeat Alarm ─────────────────────────────────────────────────
+// 0.5 minutes = 30 seconds. This matches Chrome's MV3 production minimum.
+// Using chrome.alarms (not setInterval) because service workers are ephemeral
+// and terminate between events; alarms survive worker termination.
+chrome.alarms.create('presence-heartbeat', { periodInMinutes: 0.5 });
 
-  try {
-    const fresh = await WithusApi.refresh(auth.refreshToken);
-    await Storage.setAuth(fresh);
-  } catch {
-    // Refresh failed — user will be asked to log in again via popup
-    await Storage.clearAuth();
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name === 'token-refresh') {
+    const auth = await Storage.getAuth();
+    if (!auth?.refreshToken) return;
+
+    try {
+      const fresh = await WithusApi.refresh(auth.refreshToken);
+      await Storage.setAuth(fresh);
+    } catch {
+      // Refresh failed — user will be asked to log in again via popup
+      await Storage.clearAuth();
+    }
+  }
+
+  if (alarm.name === 'presence-heartbeat') {
+    // Read persisted presence state — survives service worker restarts.
+    const presence = await Storage.getPresence();
+    if (!presence) return; // No active platform — nothing to report
+
+    const auth = await Storage.getAuth();
+    if (!auth) return; // Not authenticated — skip silently
+
+    // WithusApi.heartbeat() is internally try/catch and never throws.
+    // Failure here is non-blocking and non-observable to the user.
+    await WithusApi.heartbeat(presence.orgId, presence.platform, auth.accessToken);
   }
 });
 
@@ -196,6 +216,20 @@ async function handleMessage(msg: ExtensionMessage): Promise<ExtensionResponse> 
       const result = await WithusApi.fetchOtp(orgId, sessionId, auth.accessToken, platform, loginStartTime);
       // Pass only the code string — nothing from the email body crosses this boundary.
       return { success: true, data: { otp: result.otp } };
+    }
+
+    // ─── PLATFORM_ACTIVE ──────────────────────────────────────────────────────
+    // Sent by the content script when it detects a recognized platform AND the
+    // user has an active delegated session. We persist { platform, orgId } in
+    // chrome.storage.local so the presence-heartbeat alarm can read it after
+    // the service worker is restarted by Chrome (MV3 ephemeral lifecycle).
+    case 'PLATFORM_ACTIVE': {
+      const { platform, orgId } = msg.payload as { platform: string; orgId: string };
+      // Persist across service-worker restarts — non-blocking, fire-and-forget.
+      Storage.setPresence({ platform, orgId }).catch(() => {
+        // Ignore storage errors — presence is non-critical
+      });
+      return { success: true };
     }
 
     default:

@@ -35,7 +35,9 @@ export type MessageType =
   | 'CHECK_AUTH'
   | 'LOGOUT'
   | 'LAUNCH_SESSION'
-  | 'FETCH_OTP';
+  | 'FETCH_OTP'
+  | 'PLATFORM_ACTIVE'; // Sent by content script when a recognized platform is detected
+
 
 export interface ExtensionMessage {
   type: MessageType;
