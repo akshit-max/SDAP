@@ -515,7 +515,9 @@ model UserPresence {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // One presence record per user per org — UPSERT prevents unbounded growth
-  @@unique([organizationId, userId])
+  // One presence record per user per org per platform.
+  // Multiple rows per user are expected (one per active platform).
+  // UPSERT on every heartbeat prevents unbounded growth.
+  @@unique([organizationId, userId, platform])
   @@index([organizationId, lastSeenAt])
 }

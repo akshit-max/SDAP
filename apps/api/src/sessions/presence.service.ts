@@ -87,14 +87,14 @@ export class PresenceService {
       const matchedSessionId = activeSessions[0]?.id ?? null;
 
       // ── UPSERT presence record ──────────────────────────────────────────────
-      // @@unique([organizationId, userId]) guarantees one row per user per org.
+      // @@unique([organizationId, userId, platform]) guarantees one row per user
+      // per org per platform — multiple active platforms produce separate rows.
       // lastSeenAt is set by Prisma's @updatedAt on every update.
       await this.prisma.userPresence.upsert({
         where: {
-          organizationId_userId: { organizationId, userId },
+          organizationId_userId_platform: { organizationId, userId, platform },
         },
         update: {
-          platform,
           sessionId: matchedSessionId,
           // lastSeenAt updated automatically by @updatedAt
         },

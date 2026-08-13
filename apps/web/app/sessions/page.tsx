@@ -2,14 +2,13 @@
 
 import React, { useState } from 'react';
 import { useIncomingSessions, useOutgoingSessions, useRevokeSession } from '../../hooks/useSessions';
-import { usePresence } from '../../hooks/usePresence';
 import { sessionsApi } from '../../lib/api/sessions';
 import { DashboardShell } from '../../components/layout/DashboardShell';
 import { CreateSessionModal } from '../../components/sessions/CreateSessionModal';
 import { RequestAccessModal } from '../../components/sessions/RequestAccessModal';
 import { ConfirmModal } from '../../components/common/ConfirmModal';
 import { PromptModal } from '../../components/common/PromptModal';
-import { Plus, Trash2, Clock, CheckCircle, XCircle, Eye, Loader2, Radio } from 'lucide-react';
+import { Plus, Trash2, Clock, CheckCircle, XCircle, Eye, Loader2 } from 'lucide-react';
 import { SessionStatus } from '@repo/types';
 import { useAuth } from '../../lib/auth/AuthContext';
 import { useToast } from '../../components/common/Toast';
@@ -25,8 +24,6 @@ export default function SessionsPage() {
 
   const canGrantAccess = organization?.role === 'OWNER' || organization?.role === 'ADMIN';
 
-  // Presence: poll every 30s, only for admins/owners
-  const { presenceMap } = usePresence(orgId || null, canGrantAccess);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   // Pagination states
@@ -233,7 +230,6 @@ export default function SessionsPage() {
                     <tr>
                       <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">Grantee</th>
                       <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">Scope / Resource</th>
-                      <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">Presence</th>
                       <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">Status / Uses</th>
                       <th scope="col" className="px-5 py-2.5 text-right text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">Actions</th>
                     </tr>
@@ -256,43 +252,6 @@ export default function SessionsPage() {
                                 `GitHub · ${(session as any).integrationResourceExternalId}`
                               ) : `${session.scope} · ${session.resourceName || session.resourceId}`}
                             </p>
-                          </td>
-                          {/* ── Presence Badge ── */}
-                          <td className="px-5 py-3 whitespace-nowrap">
-                            {(() => {
-                              const presence = presenceMap.get(session.granteeId);
-                              if (!presence) {
-                                return (
-                                  <span
-                                    className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/40"
-                                    title="No recent activity reported by the WithUs extension"
-                                  >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400 flex-shrink-0" />
-                                    Inactive
-                                  </span>
-                                );
-                              }
-                              if (presence.isActive) {
-                                return (
-                                  <span
-                                    className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200/30 dark:border-emerald-900/30"
-                                    title={`Extension last reported activity ${Math.round((Date.now() - new Date(presence.lastSeenAt).getTime()) / 1000)}s ago`}
-                                  >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0 animate-pulse" />
-                                    Active · {presence.platform}
-                                  </span>
-                                );
-                              }
-                              return (
-                                <span
-                                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/40"
-                                  title={`Last seen on ${presence.platform} ${Math.round((Date.now() - new Date(presence.lastSeenAt).getTime()) / 60000)}m ago`}
-                                >
-                                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 flex-shrink-0" />
-                                  Inactive
-                                </span>
-                              );
-                            })()}
                           </td>
                           <td className="px-5 py-3 whitespace-nowrap">
                             <div className="flex items-center gap-2">
