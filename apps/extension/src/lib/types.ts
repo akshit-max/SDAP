@@ -36,7 +36,8 @@ export type MessageType =
   | 'LOGOUT'
   | 'LAUNCH_SESSION'
   | 'FETCH_OTP'
-  | 'PLATFORM_ACTIVE'; // Sent by content script when a recognized platform is detected
+  | 'PLATFORM_ACTIVE'  // Content script: recognized platform + active session detected
+  | 'PLATFORM_GONE';   // Content script: page is unloading (tab close / navigate away)
 
 
 export interface ExtensionMessage {

@@ -39,16 +39,22 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   }
 
   if (alarm.name === 'presence-heartbeat') {
-    // Read persisted presence state — survives service worker restarts.
-    const presence = await Storage.getPresence();
-    if (!presence) return; // No active platform — nothing to report
+    // Read the tab-keyed presence map — survives service worker restarts.
+    // If the map is empty (all platform tabs closed/navigated away) → skip.
+    const tabs = await Storage.getActiveTabs();
+    const entries = Object.values(tabs);
+    if (entries.length === 0) return; // No active platform tabs — nothing to report
 
     const auth = await Storage.getAuth();
     if (!auth) return; // Not authenticated — skip silently
 
+    // Send a heartbeat for the first active entry.
+    // With the tab-keyed map, each tab's PLATFORM_ACTIVE keeps its own entry;
+    // we send one heartbeat per alarm tick because the DB is keyed per (org, user).
+    // Multiple concurrent platform tabs all keep lastSeenAt fresh, just alternating.
     // WithusApi.heartbeat() is internally try/catch and never throws.
-    // Failure here is non-blocking and non-observable to the user.
-    await WithusApi.heartbeat(presence.orgId, presence.platform, auth.accessToken);
+    const { orgId, platform } = entries[0];
+    await WithusApi.heartbeat(orgId, platform, auth.accessToken);
   }
 });
 
@@ -66,10 +72,10 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.runtime.onMessage.addListener(
   (
     message: ExtensionMessage,
-    _sender: chrome.runtime.MessageSender,
+    sender: chrome.runtime.MessageSender,
     sendResponse: (res: ExtensionResponse) => void,
   ) => {
-    handleMessage(message)
+    handleMessage(message, sender)
       .then(sendResponse)
       .catch((err) => sendResponse({ success: false, error: String(err?.message || err) }));
 
@@ -78,7 +84,18 @@ chrome.runtime.onMessage.addListener(
   },
 );
 
-async function handleMessage(msg: ExtensionMessage): Promise<ExtensionResponse> {
+// ─── Tab Lifecycle — Belt-and-Suspenders Presence Cleanup ────────────────────
+// When a tab closes (regardless of whether the content script managed to send
+// PLATFORM_GONE), we remove its entry from the presence map.
+// This is the primary cleanup path for hard tab closes (Ctrl+W, browser shutdown).
+chrome.tabs.onRemoved.addListener((tabId) => {
+  Storage.clearTabPresence(tabId).catch(() => {/* non-blocking */});
+});
+
+async function handleMessage(
+  msg: ExtensionMessage,
+  sender?: chrome.runtime.MessageSender,
+): Promise<ExtensionResponse> {
   switch (msg.type) {
     // ─── CHECK_AUTH ──────────────────────────────────────────────────────────
     case 'CHECK_AUTH': {
@@ -220,15 +237,37 @@ async function handleMessage(msg: ExtensionMessage): Promise<ExtensionResponse> 
 
     // ─── PLATFORM_ACTIVE ──────────────────────────────────────────────────────
     // Sent by the content script when it detects a recognized platform AND the
-    // user has an active delegated session. We persist { platform, orgId } in
-    // chrome.storage.local so the presence-heartbeat alarm can read it after
-    // the service worker is restarted by Chrome (MV3 ephemeral lifecycle).
+    // user has an active delegated session.
+    //
+    // We store this keyed by sender.tab.id so that:
+    //   • Multiple platform tabs are tracked independently (no overwrites)
+    //   • Closing tab N only removes its own entry; other tabs remain active
+    //   • chrome.tabs.onRemoved (above) handles hard closes
     case 'PLATFORM_ACTIVE': {
       const { platform, orgId } = msg.payload as { platform: string; orgId: string };
-      // Persist across service-worker restarts — non-blocking, fire-and-forget.
-      Storage.setPresence({ platform, orgId }).catch(() => {
-        // Ignore storage errors — presence is non-critical
-      });
+      const tabId = sender?.tab?.id;
+      if (tabId !== undefined) {
+        // Tab-scoped — safe to persist, cleanup happens via PLATFORM_GONE or onRemoved.
+        Storage.setTabPresence(tabId, { platform, orgId }).catch(() => {
+          // Ignore storage errors — presence is non-critical
+        });
+      }
+      // If tabId is somehow undefined (e.g. message from popup), silently ignore.
+      return { success: true };
+    }
+
+    // ─── PLATFORM_GONE ───────────────────────────────────────────────────────
+    // Sent by the content script's 'pagehide' listener when the user navigates
+    // away from a recognized platform page.
+    //
+    // This is the primary cleanup path for navigation-away.
+    // chrome.tabs.onRemoved (above) is the belt-and-suspenders fallback for
+    // hard tab closes where pagehide may not fire in time.
+    case 'PLATFORM_GONE': {
+      const tabId = sender?.tab?.id;
+      if (tabId !== undefined) {
+        Storage.clearTabPresence(tabId).catch(() => {/* non-blocking */});
+      }
       return { success: true };
     }
 
