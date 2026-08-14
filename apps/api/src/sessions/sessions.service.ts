@@ -244,7 +244,7 @@ export class SessionsService {
         dto.granteeId,
         dto.scope || 'SECRET',
         dto.resourceId || 'integration',
-        undefined,
+        integrationProvider,
         (dto as any).justification,
         dto.expiresAt,
       ),
