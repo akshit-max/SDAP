@@ -3,6 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { IntegrationsService } from '../integrations/integrations.service';
+import { DelegatedSessionExpiredEvent } from './events/session-expired.event';
 
 /**
  * SessionExpiryScheduler
@@ -61,6 +62,7 @@ export class SessionExpiryScheduler {
         integrationResourceType: true,
         integrationResourceExternalId: true,
         integrationReferenceId: true,
+        createdAt: true,
         grantee: { select: { id: true, email: true, providerProfiles: true } },
       },
     });
@@ -87,6 +89,7 @@ export class SessionExpiryScheduler {
         integrationResourceType: true,
         integrationResourceExternalId: true,
         integrationReferenceId: true,
+        createdAt: true,
         grantee: { select: { id: true, email: true, providerProfiles: true } },
       },
     });
@@ -148,6 +151,7 @@ export class SessionExpiryScheduler {
       integrationResourceType: string | null;
       integrationResourceExternalId: string | null;
       integrationReferenceId: string | null;
+      createdAt: Date;
       grantee: { id: string; email: string; providerProfiles?: any } | null;
     },
     auditReason: string,
@@ -185,6 +189,12 @@ export class SessionExpiryScheduler {
           where: { id: session.id },
           data: { status: 'EXPIRED' },
         });
+
+        const durationSeconds = Math.floor((Date.now() - session.createdAt.getTime()) / 1000);
+        this.eventEmitter.emit(
+          'session.expired',
+          new DelegatedSessionExpiredEvent(session.id, session.organizationId, durationSeconds),
+        );
 
         this.eventEmitter.emit('audit.log', {
           organizationId: session.organizationId,
@@ -237,6 +247,12 @@ export class SessionExpiryScheduler {
           where: { id: session.id },
           data: { status: 'EXPIRED' },
         });
+
+        const durationSeconds = Math.floor((Date.now() - session.createdAt.getTime()) / 1000);
+        this.eventEmitter.emit(
+          'session.expired',
+          new DelegatedSessionExpiredEvent(session.id, session.organizationId, durationSeconds),
+        );
       } catch (err: unknown) {
         this.logger.error(`[EXPIRY] Failed to expire session ${session.id}: ${(err as Error).message}`);
       }

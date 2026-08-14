@@ -94,6 +94,9 @@ export class AuditListenerService {
         granteeId: event.granteeId,
         scope: event.scope,
         resourceId: event.resourceId,
+        ...(event.platform ? { platform: event.platform } : {}),
+        ...(event.reason ? { reason: event.reason } : {}),
+        ...(event.expiresAt ? { expiresAt: event.expiresAt } : {}),
       },
     );
   }
@@ -106,7 +109,21 @@ export class AuditListenerService {
       event.revokedByUserId,
       'DELEGATED_SESSION',
       event.sessionId,
-      {},
+      {
+        ...(event.durationSeconds !== undefined ? { durationSeconds: event.durationSeconds } : {}),
+      },
+    );
+  }
+
+  @OnEvent('session.expired')
+  async handleSessionExpired(event: any) {
+    await this.persistEvent(
+      event.organizationId,
+      'session.expired',
+      null,
+      'DELEGATED_SESSION',
+      event.sessionId,
+      { durationSeconds: event.durationSeconds },
     );
   }
 

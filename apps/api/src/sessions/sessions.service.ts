@@ -195,6 +195,9 @@ export class SessionsService {
             dto.granteeId,
             dto.scope || 'SECRET',
             dto.resourceId || 'integration',
+            integrationProvider,
+            (dto as any).justification,
+            dto.expiresAt,
           ),
         );
 
@@ -241,6 +244,9 @@ export class SessionsService {
         dto.granteeId,
         dto.scope || 'SECRET',
         dto.resourceId || 'integration',
+        undefined,
+        (dto as any).justification,
+        dto.expiresAt,
       ),
     );
 
@@ -439,9 +445,12 @@ export class SessionsService {
       },
     });
 
+    const durationSeconds = session.createdAt
+      ? Math.floor((Date.now() - session.createdAt.getTime()) / 1000)
+      : undefined;
     this.eventEmitter.emit(
       'session.revoked',
-      new DelegatedSessionRevokedEvent(session.id, organizationId, userId),
+      new DelegatedSessionRevokedEvent(session.id, organizationId, userId, durationSeconds),
     );
 
     return updated;

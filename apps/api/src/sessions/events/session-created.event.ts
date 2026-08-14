@@ -6,6 +6,9 @@ export class DelegatedSessionCreatedEvent {
     public readonly granteeId: string,
     public readonly scope: string,
     public readonly resourceId: string,
+    public readonly platform?: string,
+    public readonly reason?: string,
+    public readonly expiresAt?: Date,
     public readonly timestamp: Date = new Date(),
   ) {}
 }
