@@ -99,6 +99,7 @@ export function CreateSessionModal({
 
   const [expiresInHours, setExpiresInHours] = useState<number | ''>(1);
   const [maxReveals, setMaxReveals] = useState<number | ''>(20);
+  const [justification, setJustification] = useState('');
 
   const [integrationRole, setIntegrationRole] = useState<string>('DEVELOPER');
 
@@ -130,6 +131,7 @@ export function CreateSessionModal({
     setSelectedCapabilities([]);
     setExpiresInHours(1);
     setMaxReveals(20);
+    setJustification('');
     onClose();
   };
 
@@ -176,6 +178,7 @@ export function CreateSessionModal({
       granteeId,
       expiresAt,
       maxReveals: maxReveals === '' ? undefined : Number(maxReveals),
+      justification: justification.trim() || undefined,
       // Only include capabilities if restricted mode is selected and capabilities exist
       capabilities: (accessRestriction === 'restricted' && selectedCapabilities.length > 0)
         ? selectedCapabilities
@@ -457,6 +460,20 @@ export function CreateSessionModal({
           )}
         </>
         )}
+
+        {/* Step 4: Reason / Justification */}
+        <div>
+          <label className={labelClass}>
+            Reason / Justification <span className="text-slate-400 font-normal">(optional)</span>
+          </label>
+          <input
+            type="text"
+            placeholder="e.g. Need access for deployment..."
+            className={selectClass}
+            value={justification}
+            onChange={(e) => setJustification(e.target.value)}
+          />
+        </div>
 
         {/* Step 5: Expiry + limits */}
         <div className="grid grid-cols-2 gap-3">
