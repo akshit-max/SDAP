@@ -240,13 +240,24 @@ platformRegistry.register({
       'input[name="password"]',
       'input[id="password"]',
     ].join(', '),
-    // No submitSelector Ã¢â‚¬â€ manualStepMessage prevents auto-submit
+    // No submitSelector — manualStepMessage prevents auto-submit
   },
-  manualStepMessage: 'Credentials filled. Please complete the CAPTCHA to continue.',
+  manualStepMessage: 'WithUs Vault: Secure session activated. Please resolve the CAPTCHA to proceed.',
+  capabilityRestrictions: {
+    'mca.master_data': { hideElementsCSS: ['li.level-1:has(> a[href$="/mca/master-data.html"])'] },
+    'mca.llp_efiling': { hideElementsCSS: ['li.level-1:has(> a[href$="/mca/llp-e-filling.html"])'] },
+    'mca.fo_services': { hideElementsCSS: ['li.level-1:has(> a[href$="/mca/fo-llp-services.html"])'] },
+    'mca.dsc_services': { hideElementsCSS: ['li.level-1:has(> a[href$="/mca/dsc-services-v3.html"])'] },
+    'mca.company_efiling': { hideElementsCSS: ['li.level-1:has(> a[href$="/mca/e-filing.html"])'] },
+    'mca.complaints': { hideElementsCSS: ['li.level-1:has(> a[href$="/mca/complaints.html"])'] },
+    'mca.document_related_services': { hideElementsCSS: ['li.level-1:has(> a[href$="/mca/document-related-services.html"])'] },
+    'mca.payment_services': { hideElementsCSS: ['li.level-1:has(> a[href$="/mca/fee-and-payment-services.html"])'] },
+    'mca.id_databank': { hideElementsCSS: ['li.level-1:has(> a[href$="/mca/id-databank-services.html"])'] },
+  },
 });
 
 /**
- * GST Portal Ã¢â‚¬â€ Partial Support
+ * GST Portal — Partial Support
  *
  * Authentication flow:
  *   Username (GSTIN) Ã¢â€ â€™ Password Ã¢â€ â€™ CAPTCHA (manual) Ã¢â€ â€™ 2FA OTP (manual, mobile)

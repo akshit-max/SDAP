@@ -76,7 +76,40 @@ async function discoverSessions(): Promise<void> {
   if (!response.success || !response.data?.sessions.length) return;
   activeSessions = response.data.sessions;
   activeOrgId = response.data.orgId;
-  
+
+  // ── Presence heartbeat signal ──────────────────────────────────────────────
+  // Notify the service worker that we're on an active-session platform so it
+  // can persist the platform name (keyed by tab ID) and fire heartbeats via
+  // the 30s alarm. Fire-and-forget: never awaited, errors silenced.
+  if (config?.name) {
+    chrome.runtime.sendMessage({
+      type: 'PLATFORM_ACTIVE',
+      payload: { platform: config.name, orgId: activeOrgId },
+    }).catch(() => {/* non-blocking */});
+
+    // ── Presence cleanup signal ────────────────────────────────────────────
+    // When this page unloads (navigation away, tab close, refresh), tell the
+    // service worker to remove this tab's entry from the presence map.
+    //
+    // 'pagehide' is preferred over 'beforeunload' because:
+    //   • It fires reliably for tab closes and navigations in Chromium
+    //   • It is not cancellable (unlike 'beforeunload')
+    //   • It works with BFCache (page may be restored, but we re-register on
+    //     the next 'pageshow' / discoverSessions() re-run)
+    //
+    // { once: true } guarantees this only fires once per page instance.
+    // Fire-and-forget: sendMessage may fail if the service worker is already
+    // terminating — that's fine, chrome.tabs.onRemoved is the fallback.
+    window.addEventListener('pagehide', () => {
+      chrome.runtime.sendMessage({
+        type: 'PLATFORM_GONE',
+        payload: {},
+      }).catch(() => {/* non-blocking — service worker cleanup is belt-and-suspenders */});
+    }, { once: true });
+    // ── End presence cleanup signal ────────────────────────────────────────
+  }
+  // ── End presence signals ────────────────────────────────────────────────
+
   // Only activate if this page has a login form OR a visible OTP field.
   // This prevents the toast from firing on post-login pages like
   // dashboard.razorpay.com/app/dashboard which match the domain but have no login UI.
@@ -134,6 +167,7 @@ async function discoverSessions(): Promise<void> {
   formWatcher.observe(document.body, { childList: true, subtree: true });
   // If neither login form nor OTP field found — do nothing (e.g. post-login dashboard)
 }
+
 
 // ─── Magic Toast ──────────────────────────────────────────────────────────────
 
@@ -251,7 +285,7 @@ async function handleAutofillRequest(): Promise<void> {
 
     if (fields.passwordSelector && password) {
       if (pwEl) {
-        try { fillField(pwEl, password, true); } catch { /* ignore */ }
+        try { fillField(pwEl, password, config?.id !== 'MCA'); } catch { /* ignore */ }
       } else {
         startPasswordWatcher(
           fields.passwordSelector,

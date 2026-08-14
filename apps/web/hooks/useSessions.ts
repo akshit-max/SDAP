@@ -56,3 +56,34 @@ export function useRevealSessionSecret(orgId: string | null) {
     },
   });
 }
+
+/**
+ * Admin hook: fetch all sessions where a specific member is the grantee.
+ * Enabled only when orgId and memberId are both present.
+ */
+export function useSessionsByMember(orgId: string | null, memberId: string | null) {
+  return useQuery({
+    queryKey: ['sessions', 'member', orgId, memberId],
+    queryFn: () => sessionsApi.getSessionsByMember(orgId!, memberId!),
+    enabled: !!orgId && !!memberId,
+  });
+}
+
+/**
+ * Admin mutation: revoke all active sessions for a specific member.
+ * Invalidates both the general sessions cache and the per-member cache.
+ */
+export function useRevokeAllForMember(orgId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (memberId: string) => {
+      if (!orgId) throw new Error('Organization ID is required');
+      return sessionsApi.revokeAllForMember(orgId, memberId);
+    },
+    onSuccess: (_data, memberId) => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['sessions', 'member', orgId, memberId] });
+    },
+  });
+}

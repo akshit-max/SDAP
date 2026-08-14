@@ -19,6 +19,18 @@ import { CreateSessionDto } from './dto/sessions.dto';
 
 export const INTEGRATIONS_SERVICE_TOKEN = 'INTEGRATIONS_SERVICE';
 
+const MCA_TOP_LEVEL_MODULES = [
+  'mca.master_data',
+  'mca.llp_efiling',
+  'mca.fo_services',
+  'mca.dsc_services',
+  'mca.company_efiling',
+  'mca.complaints',
+  'mca.document_related_services',
+  'mca.payment_services',
+  'mca.id_databank'
+];
+
 @Injectable()
 export class SessionsService {
   private readonly logger = new Logger(SessionsService.name);
@@ -101,11 +113,12 @@ export class SessionsService {
         permission: dto.permission as unknown as SessionPermission,
         expiresAt: new Date(dto.expiresAt),
         maxReveals: dto.maxReveals,
+        capabilities: dto.capabilities ?? null,
         // PENDING_GRANT for integration-backed, ACTIVE for plain vault/secret sessions
         status: isIntegrationBound ? 'PENDING_GRANT' : 'ACTIVE',
-        integrationProvider: integrationProvider ?? null,
-        integrationResourceType: integrationResourceType ?? null,
-        integrationResourceExternalId: integrationResourceExternalId ?? null,
+        integrationProvider: integrationProvider || null,
+        integrationResourceType: isIntegrationBound ? integrationResourceType : null,
+        integrationResourceExternalId: isIntegrationBound ? integrationResourceExternalId : null,
         integrationReferenceId: null,
       },
     });
@@ -234,6 +247,8 @@ export class SessionsService {
     return session;
   }
 
+
+
   async getIncomingSessions(organizationId: string, userId: string) {
     const where: any = { granteeId: userId };
     if (organizationId) {
@@ -246,7 +261,20 @@ export class SessionsService {
         grantor: { select: { email: true, fullName: true } },
       },
     });
-    return this.enrichSessionsWithResourceNames(sessions);
+    
+    const enriched = await this.enrichSessionsWithResourceNames(sessions);
+    
+    return enriched.map(session => {
+      if (session.integrationProvider === 'MCA') {
+        let mcaRestrictedModules: string[] = [];
+        if (session.capabilities !== null) {
+          const allowed = (session.capabilities as string[]) || [];
+          mcaRestrictedModules = MCA_TOP_LEVEL_MODULES.filter(mod => !allowed.includes(mod));
+        }
+        return { ...session, mcaRestrictedModules };
+      }
+      return session;
+    });
   }
 
   async getOutgoingSessions(organizationId: string, userId: string) {
@@ -287,7 +315,9 @@ export class SessionsService {
           ? (secretMap.get(s.resourceId) ?? null)
           : s.scope === 'VAULT'
             ? (vaultMap.get(s.resourceId) ?? null)
-            : null,
+            : s.scope === 'INTEGRATION'
+              ? ((s as any).integrationProvider ?? null)
+              : null,
     }));
   }
 
@@ -485,5 +515,70 @@ export class SessionsService {
 
       return plaintext;
     });
+  }
+
+  /**
+   * Returns all delegated sessions where the given userId is the grantee.
+   * Used by admins to see what access has been granted to a specific member.
+   */
+  async getSessionsByGrantee(organizationId: string, granteeId: string) {
+    const sessions = await this.prisma.delegatedSession.findMany({
+      where: { organizationId, granteeId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        grantor: { select: { email: true, fullName: true } },
+      },
+    });
+    return this.enrichSessionsWithResourceNames(sessions);
+  }
+
+  /**
+   * Revokes all ACTIVE delegated sessions for a specific grantee in the org.
+   * Vault/Secret sessions are revoked directly; integration sessions use the
+   * existing per-session revoke path so provider cleanup is triggered correctly.
+   * Returns a summary: { revokedCount, skippedCount }.
+   */
+  async revokeAllForGrantee(
+    organizationId: string,
+    granteeId: string,
+    adminId: string,
+  ) {
+    // Fetch only sessions in revocable states
+    const sessions = await this.prisma.delegatedSession.findMany({
+      where: {
+        organizationId,
+        granteeId,
+        status: { in: ['ACTIVE', 'REVOKE_FAILED'] },
+      },
+      include: { grantee: { select: { id: true, email: true, providerProfiles: true } } },
+    });
+
+    if (sessions.length === 0) {
+      return { revokedCount: 0, skippedCount: 0 };
+    }
+
+    let revokedCount = 0;
+    let skippedCount = 0;
+
+    for (const session of sessions) {
+      try {
+        await this.revokeSession(organizationId, session.id, adminId);
+        revokedCount++;
+      } catch {
+        // Individual revoke failures are non-fatal for the bulk operation
+        skippedCount++;
+      }
+    }
+
+    this.eventEmitter.emit('audit.log', {
+      organizationId,
+      actorId: adminId,
+      action: 'session.revoke_all',
+      resourceType: 'USER',
+      resourceId: granteeId,
+      metadata: { revokedCount, skippedCount },
+    });
+
+    return { revokedCount, skippedCount };
   }
 }

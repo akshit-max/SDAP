@@ -27,9 +27,19 @@ import {
   Clock,
   Copy,
   Check,
-  UserCheck,
   MoreVertical,
+  ChevronDown,
+  ChevronUp,
+  ShieldOff,
+  ShieldAlert,
+  Key,
+  GitBranch,
+  Globe,
+  ArrowRight,
+  Search,
 } from 'lucide-react';
+import clsx from 'clsx';
+import { useRouter } from 'next/navigation';
 
 const roleIcons: Record<string, React.ReactNode> = {
   OWNER: <Crown className="w-3 h-3 text-amber-500" />,
@@ -43,6 +53,13 @@ const roleBadge: Record<string, string> = {
   MEMBER: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700',
 };
 
+const sessionStatusBadge: Record<string, string> = {
+  ACTIVE: 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border-emerald-200/50',
+  EXPIRED: 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700',
+  REVOKED: 'bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 border-red-200/50',
+  REVOKE_FAILED: 'bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border-amber-200/50',
+};
+
 function Avatar({ name, email }: { name?: string; email?: string }) {
   const label = (name || email || '?')[0]?.toUpperCase();
   return (
@@ -52,7 +69,15 @@ function Avatar({ name, email }: { name?: string; email?: string }) {
   );
 }
 
+function ResourceIcon({ provider }: { provider?: string | null }) {
+  if (provider === 'GITHUB') return <GitBranch className="w-3 h-3 text-slate-500" />;
+  if (provider === 'GODADDY') return <Globe className="w-3 h-3 text-slate-500" />;
+  return <Key className="w-3 h-3 text-slate-500" />;
+}
+
+
 export default function MembersPage() {
+  const router = useRouter();
   const { organization, user } = useAuth();
   const orgId = organization?.id || '';
   const currentUserId = user?.id || '';
@@ -61,7 +86,7 @@ export default function MembersPage() {
   const { data: invitations = [] } = useOrgInvitations(orgId);
   const { mutate: inviteMember, isPending: isInviting } = useInviteMember(orgId);
   const { mutate: cancelInvitation, isPending: isCancelling } = useCancelInvitation(orgId);
-  const { mutate: changeRole, isPending: isChangingRole } = useChangeMemberRole(orgId);
+  const { mutate: changeRole } = useChangeMemberRole(orgId);
   const { mutate: removeMember, isPending: isRemoving } = useRemoveMember(orgId);
   const { toast } = useToast();
 
@@ -69,13 +94,20 @@ export default function MembersPage() {
   const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
   const [grantAccessMemberId, setGrantAccessMemberId] = useState<string | null>(null);
-  // Confirm modal state for member removal
   const [confirmRemove, setConfirmRemove] = useState<{ memberId: string; email?: string } | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // Determine current user's role for permission gating
   const currentMember = members.find((m) => m.userId === currentUserId);
   const canManage = currentMember?.role === 'OWNER' || currentMember?.role === 'ADMIN';
+
+  const filteredMembers = members.filter((member: any) => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    const name = member.user?.fullName?.toLowerCase() || '';
+    const emailStr = member.user?.email?.toLowerCase() || '';
+    return name.includes(term) || emailStr.includes(term);
+  });
 
   const handleInvite = (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,8 +130,6 @@ export default function MembersPage() {
         setTimeout(() => setCopiedInviteId(null), 2000);
       });
     } else if (email) {
-      // Because tokens are securely hashed, we cannot retrieve old links.
-      // Generate a new token by re-inviting (upsert) to get a fresh link to copy.
       inviteMember(email, {
         onSuccess: (data) => {
           if (data?.data?.rawToken) {
@@ -304,83 +334,119 @@ export default function MembersPage() {
             </span>
           </div>
 
+          <div className="px-5 py-3 border-b border-premium bg-premium-surface">
+            <div className="relative">
+              <Search className="w-4 h-4 text-premium-muted absolute left-3 top-1/2 -translate-y-1/2" />
+              <input 
+                type="text" 
+                placeholder="Search team members by name or email..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-zinc-600 transition-shadow text-premium-main placeholder:text-premium-muted"
+              />
+            </div>
+          </div>
+
           {isLoading ? (
             <div className="p-6 bg-premium-surface">
               <Loading message="Loading members…" />
             </div>
+          ) : filteredMembers.length === 0 ? (
+            <div className="p-8 text-center text-premium-muted text-sm bg-premium-surface">
+              No members match your search.
+            </div>
           ) : (
             <ul className="divide-y divide-premium">
-              {members.map((member) => {
+              {filteredMembers.map((member: any) => {
                 const isOwner = member.role === 'OWNER';
                 const isSelf = member.userId === currentUserId;
                 const canEdit = canManage && !isOwner && !isSelf;
-
                 return (
-                  <li
-                    key={member.id}
-                    className="px-5 py-3.5 flex items-center justify-between hover:bg-slate-50/30 dark:hover:bg-zinc-900/10 transition-colors border-b border-premium/65 last:border-b-0 bg-premium-surface"
-                  >
-                    {/* Left: Avatar + Info */}
-                    <div className="flex items-center gap-3 min-w-0">
-                      <Avatar name={member.user?.fullName} email={member.user?.email} />
-                      <div className="min-w-0">
-                        <p className="text-xs font-bold text-premium-main truncate">
-                          {member.user?.fullName || '—'}
-                          {isSelf && (
-                            <span className="ml-1.5 text-[10px] font-bold text-premium-muted">(you)</span>
+                  <li key={member.id} className="border-b border-premium/65 last:border-b-0 bg-premium-surface">
+                    {/* ── Member Row ── */}
+                    <div
+                      className="px-5 py-3.5 flex items-center justify-between transition-colors hover:bg-slate-50/50 dark:hover:bg-zinc-900/10"
+                    >
+                      {/* Left: Avatar + Info */}
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Avatar name={member.user?.fullName} email={member.user?.email} />
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-premium-main truncate">
+                            {member.user?.fullName || '—'}
+                            {isSelf && (
+                              <span className="ml-1.5 text-[10px] font-bold text-premium-muted">(you)</span>
+                            )}
+                          </p>
+                          <p className="text-[10px] text-premium-muted font-semibold truncate">
+                            {member.user?.email}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Right: Role + Expand chevron + Actions */}
+                      <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                        {/* Role badge */}
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                            roleBadge[member.role] || roleBadge['MEMBER']
+                          }`}
+                        >
+                          {roleIcons[member.role]}
+                          {member.role}
+                        </span>
+
+                        {/* Expand toggle (admin view) */}
+                        {canManage && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push('/settings/members/' + member.userId);
+                            }}
+                            className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          >
+                            View Access
+                            <ArrowRight className="w-3 h-3" />
+                          </button>
+                        )}
+
+                        {/* Three-dot menu for edit/remove */}
+                        <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
+                          {canEdit && (
+                            <div className="relative" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                onClick={() => setOpenMenuId(openMenuId === member.id ? null : member.id)}
+                                className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded transition-colors"
+                              >
+                                <MoreVertical className="w-4 h-4" />
+                              </button>
+
+                              {openMenuId === member.id && (
+                                 <>
+                                   <div
+                                     className="fixed inset-0 z-10"
+                                     onClick={() => setOpenMenuId(null)}
+                                   />
+                                   <div className="absolute right-0 mt-1 w-36 bg-premium-surface border border-premium rounded-lg shadow-none overflow-hidden z-20 py-1">
+                                     <button
+                                       onClick={() => {
+                                         handleRemoveMember(member.id, member.user?.email);
+                                         setOpenMenuId(null);
+                                       }}
+                                       disabled={isRemoving}
+                                       className="w-full text-left px-4 py-2 text-xs font-bold text-red-650 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 disabled:opacity-50"
+                                     >
+                                       Remove Member
+                                     </button>
+                                   </div>
+                                 </>
+                               )}
+                            </div>
                           )}
-                        </p>
-                        <p className="text-[10px] text-premium-muted font-semibold truncate">
-                          {member.user?.email}
-                        </p>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Right: Role + Actions */}
-                    <div className="flex items-center gap-2 flex-shrink-0 ml-3">
-                      {/* Role badge */}
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                          roleBadge[member.role] || roleBadge['MEMBER']
-                        }`}
-                      >
-                        {roleIcons[member.role]}
-                        {member.role}
-                      </span>
 
-                      {/* Three-dot menu for edit/remove */}
-                      {canEdit && (
-                        <div className="relative">
-                          <button
-                            onClick={() => setOpenMenuId(openMenuId === member.id ? null : member.id)}
-                            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded transition-colors"
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                          </button>
-                          
-                          {openMenuId === member.id && (
-                             <>
-                               <div 
-                                 className="fixed inset-0 z-10" 
-                                 onClick={() => setOpenMenuId(null)} 
-                               />
-                               <div className="absolute right-0 mt-1 w-36 bg-premium-surface border border-premium rounded-lg shadow-none overflow-hidden z-20 py-1">
-                                 <button
-                                   onClick={() => {
-                                     handleRemoveMember(member.id, member.user?.email);
-                                     setOpenMenuId(null);
-                                   }}
-                                   disabled={isRemoving}
-                                   className="w-full text-left px-4 py-2 text-xs font-bold text-red-650 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 disabled:opacity-50"
-                                 >
-                                   Remove Member
-                                 </button>
-                               </div>
-                             </>
-                           )}
-                        </div>
-                      )}
-                    </div>
                   </li>
                 );
               })}
@@ -413,3 +479,4 @@ export default function MembersPage() {
     </DashboardShell>
   );
 }
+

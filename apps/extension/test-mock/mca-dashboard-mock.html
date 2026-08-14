@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock MCA Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4; }
+        .header { background: #003366; color: white; padding: 15px; text-align: center; margin-bottom: 20px; }
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+        .module-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; }
+        .module-card h3 { margin-top: 0; }
+        .btn { display: inline-block; padding: 10px 15px; background: #007bff; color: white; text-decoration: none; border-radius: 4px; margin-top: 10px; }
+        
+        /* Simulating MCA's actual menu structures for testing CSS injection */
+        #menu-company-incorporation { border-left: 5px solid #dc3545; }
+        a[href*="DCA"] { background: #28a745; }
+        .nav-gst { border-left: 5px solid #ffc107; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>MCA Mock Portal</h1>
+        <p>Logged in as: Company ABC Delegate</p>
+    </div>
+
+    <h2>Dashboard Modules</h2>
+    
+    <div class="dashboard">
+        <ul>
+            <li class="level-2"><a href="/content/mca/global/en/mca/master-data.html">Master Data</a></li>
+            <li class="level-2"><a href="/content/mca/global/en/mca/llp-e-filling.html">LLP e-Filing</a></li>
+            <li class="level-2"><a href="/content/mca/global/en/mca/fo-llp-services.html">FO Services</a></li>
+            <li class="level-2"><a href="/content/mca/global/en/mca/dsc-services-v3.html">DSC Services</a></li>
+            <li class="level-2"><a href="/content/mca/global/en/mca/e-filing.html">Company e-Filing</a></li>
+            <li class="level-2"><a href="/content/mca/global/en/mca/complaints.html">Complaints</a></li>
+        </ul>
+    </div>
+
+    <script>
+        // Mock chrome extension API
+        window.chrome = {
+            runtime: {
+                sendMessage: function(msg, callback) {
+                    console.log('Intercepted sendMessage:', msg);
+                    if (msg.type === 'GET_ACTIVE_SESSION') {
+                        // Read URL parameter to determine test mode
+                        const params = new URLSearchParams(window.location.search);
+                        const mode = params.get('mode');
+                        
+                        let mcaRestrictedModules = [];
+                        if (mode === 'mca_test1') mcaRestrictedModules = ['mca.master_data'];
+                        if (mode === 'mca_test2') mcaRestrictedModules = ['mca.master_data', 'mca.dsc_services', 'mca.company_efiling'];
+                        
+                        if (mode === 'none') {
+                            callback({ success: true, data: { sessions: [] } });
+                            return;
+                        }
+
+                        callback({
+                            success: true,
+                            data: {
+                                sessions: [{
+                                    id: 'mock-session-1',
+                                    capabilities: ['EXISTING_CAP_SHOULD_BE_IGNORED_FOR_MCA'],
+                                    mcaRestrictedModules: mcaRestrictedModules
+                                }]
+                            }
+                        });
+                    }
+                }
+            }
+        };
+    </script>
+    <script src="../dist/content/capability-enforcer.js"></script>
+    <script>
+        // Simulate a simple SPA-like routing behavior to test pushState interception
+        document.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const url = e.target.getAttribute('href');
+                history.pushState(null, '', url);
+                
+                // Show a fake route change indicator
+                const div = document.createElement('div');
+                div.textContent = `Navigated to: ${url}`;
+                div.style.padding = '10px';
+                div.style.background = '#e9ecef';
+                div.style.marginTop = '20px';
+                document.body.appendChild(div);
+                setTimeout(() => div.remove(), 2000);
+            });
+        });
+    </script>
+</body>
+</html>

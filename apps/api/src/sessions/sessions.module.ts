@@ -4,12 +4,15 @@ import { GlobalSessionsController } from './controllers/global-sessions.controll
 import { SessionsService, INTEGRATIONS_SERVICE_TOKEN } from './sessions.service';
 import { SessionValidationService } from './session-validation.service';
 import { SessionExpiryScheduler } from './session-expiry.scheduler';
+import { PresenceService } from './presence.service';
+import { PresenceController } from './presence.controller';
 import { VaultsModule } from '../vaults/vaults.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthorizationModule } from '../authorization/authorization.module';
 import { ApprovalsModule } from '../approvals/approvals.module';
 import { IntegrationsModule } from '../integrations/integrations.module';
 import { IntegrationsService } from '../integrations/integrations.service';
+
 
 @Module({
   imports: [
@@ -19,11 +22,12 @@ import { IntegrationsService } from '../integrations/integrations.service';
     forwardRef(() => ApprovalsModule),
     forwardRef(() => IntegrationsModule),
   ],
-  controllers: [SessionsController, GlobalSessionsController],
+  controllers: [SessionsController, GlobalSessionsController, PresenceController],
   providers: [
     SessionsService,
     SessionValidationService,
     SessionExpiryScheduler,
+    PresenceService,
     {
       // Alias so SessionsService can inject IntegrationsService via @Optional()
       // without a direct circular-dep import at the class level.
@@ -34,3 +38,4 @@ import { IntegrationsService } from '../integrations/integrations.service';
   exports: [SessionsService, SessionValidationService],
 })
 export class SessionsModule {}
+

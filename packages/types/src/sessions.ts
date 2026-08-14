@@ -13,6 +13,7 @@ export const CreateSessionSchema = z.object({
   permission: z.nativeEnum(SessionPermission).default(SessionPermission.REVEAL),
   expiresAt: z.coerce.date(),
   maxReveals: z.number().int().min(1).optional(),
+  capabilities: z.array(z.string()).optional().nullable(),
 });
 
 export type CreateSessionDto = z.infer<typeof CreateSessionSchema>;
@@ -36,4 +37,6 @@ export interface DelegatedSessionDto {
   grantee?: { email: string; fullName: string } | null;
   grantor?: { email: string; fullName: string } | null;
   resourceName?: string | null;
+  integrationProvider?: string | null;
+  capabilities?: string[] | null;
 }

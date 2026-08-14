@@ -10,8 +10,36 @@ import { SessionScope, SessionPermission } from '@repo/types';
 import { Modal } from '../common/Modal';
 import { CustomSelect } from '../common/Select';
 import { useToast } from '../common/Toast';
-import { X, Lock, Users, Calendar, AlertCircle, Loader2, GitBranch, Key, ChevronDown, Triangle, Globe } from 'lucide-react';
+import { ShieldCheck, Lock, Loader2, GitBranch, Triangle, Globe, ChevronDown, ChevronRight } from 'lucide-react';
 import clsx from 'clsx';
+
+/**
+ * Generic map of secret-name keyword → available capabilities.
+ * Keys are lowercase substrings of the vault/secret name.
+ * Values are the human-readable capability labels and their API keys.
+ * Add new platforms here; NO platform-specific conditionals elsewhere.
+ */
+const PLATFORM_CAPABILITY_MAP: Record<string, { key: string; label: string; description: string }[]> = {
+  mca: [
+    { key: 'mca.master_data', label: 'Master Data', description: 'Access MCA Master Data services' },
+    { key: 'mca.llp_efiling', label: 'LLP e-Filing', description: 'File LLP forms and returns' },
+    { key: 'mca.fo_services', label: 'FO Services', description: 'Access Front Office services' },
+    { key: 'mca.dsc_services', label: 'DSC Services', description: 'Manage Digital Signature Certificates' },
+    { key: 'mca.company_efiling', label: 'Company e-Filing', description: 'File company forms and returns' },
+    { key: 'mca.complaints', label: 'Complaints', description: 'File and track complaints' },
+    { key: 'mca.document_related_services', label: 'Document Related Services', description: 'Request certified copies and view public documents' },
+    { key: 'mca.payment_services', label: 'Payment Services', description: 'Manage fees and payments' },
+    { key: 'mca.id_databank', label: 'ID Databank', description: 'Access Independent Directors Databank' },
+  ],
+};
+
+function getCapabilitiesForSecret(secretName: string): { key: string; label: string; description: string }[] {
+  const lower = secretName.toLowerCase();
+  for (const [keyword, caps] of Object.entries(PLATFORM_CAPABILITY_MAP)) {
+    if (lower.includes(keyword)) return caps;
+  }
+  return [];
+}
 
 interface CreateSessionModalProps {
   orgId: string;
@@ -61,6 +89,10 @@ export function CreateSessionModal({
   // Vault State
   const [selectedVaultId, setSelectedVaultId] = useState('');
   const [selectedSecretId, setSelectedSecretId] = useState('');
+
+  // Capability State (generic — driven by PLATFORM_CAPABILITY_MAP)
+  const [accessRestriction, setAccessRestriction] = useState<'full' | 'restricted'>('full');
+  const [selectedCapabilities, setSelectedCapabilities] = useState<string[]>([]);
   
   // Integration State
   const [selectedIntegrationResource, setSelectedIntegrationResource] = useState('');
@@ -70,11 +102,16 @@ export function CreateSessionModal({
 
   const [integrationRole, setIntegrationRole] = useState<string>('DEVELOPER');
 
+
   // Fetch secrets whenever a vault is selected
   const { data: secrets = [], isLoading: isLoadingSecrets } = useSecretsByVault(
     orgId,
     selectedVaultId || null,
   );
+
+  // Resolve available capabilities for the currently selected secret (after secrets are loaded)
+  const selectedSecretName = secrets.find(s => s.id === selectedSecretId)?.name ?? '';
+  const availableCapabilities = getCapabilitiesForSecret(selectedSecretName);
 
   // Fetch Integrations
   const { data: connections = [] } = useIntegrations(orgId);
@@ -89,9 +126,17 @@ export function CreateSessionModal({
     setSelectedIntegrationResource('');
     setSelectedVaultId('');
     setSelectedSecretId('');
+    setAccessRestriction('full');
+    setSelectedCapabilities([]);
     setExpiresInHours(1);
     setMaxReveals(20);
     onClose();
+  };
+
+  const toggleCapability = (key: string) => {
+    setSelectedCapabilities(prev =>
+      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+    );
   };
 
   const handleVaultChange = (vaultId: string) => {
@@ -131,12 +176,22 @@ export function CreateSessionModal({
       granteeId,
       expiresAt,
       maxReveals: maxReveals === '' ? undefined : Number(maxReveals),
+      // Only include capabilities if restricted mode is selected and capabilities exist
+      capabilities: (accessRestriction === 'restricted' && selectedCapabilities.length > 0)
+        ? selectedCapabilities
+        : null,
     };
 
     if (accessMode === 'VAULT') {
       payload.scope = SessionScope.SECRET;
       payload.resourceId = selectedSecretId;
       payload.permission = SessionPermission.REVEAL;
+
+      const lower = selectedSecretName.toLowerCase();
+      const matchedKeyword = Object.keys(PLATFORM_CAPABILITY_MAP).find(k => lower.includes(k));
+      if (matchedKeyword) {
+        payload.integrationProvider = matchedKeyword.toUpperCase();
+      }
     } else {
       payload.scope = 'INTEGRATION'; // Bypass Vault Check
       payload.resourceId = selectedIntegrationResource; 
@@ -210,6 +265,8 @@ export function CreateSessionModal({
                 <span className={`text-sm font-medium ${selectedAccessType === 'VERCEL' ? 'text-slate-900 dark:text-slate-100' : 'text-slate-500'}`}>Vercel Project</span>
               </label>
             )}
+            {/* HIDDEN: GoDaddy is temporarily disabled per request */}
+            {/* 
             {connections.some(c => c.provider === 'GODADDY') && (
               <label className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all ${selectedAccessType === 'GODADDY' ? 'border-slate-900 bg-slate-50 dark:border-slate-300 dark:bg-slate-900' : 'border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600'}`}>
                 <input type="radio" name="accessType" className="hidden" checked={selectedAccessType === 'GODADDY'} onChange={() => { setSelectedAccessType('GODADDY'); setSelectedIntegrationResource(''); }} />
@@ -217,8 +274,9 @@ export function CreateSessionModal({
                 <span className={`text-sm font-medium ${selectedAccessType === 'GODADDY' ? 'text-slate-900 dark:text-slate-100' : 'text-slate-500'}`}>GoDaddy Account</span>
               </label>
             )}
+            */}
             {/* Vault is always available */}
-              <label className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${selectedAccessType === 'VAULT' ? 'bg-slate-900 border-slate-900 dark:bg-slate-100 dark:border-slate-100' : 'bg-white border-slate-200 hover:border-slate-300 dark:bg-slate-900 dark:border-slate-800 dark:hover:border-slate-700'}`}>
+              <label className={`col-span-2 flex justify-center items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${selectedAccessType === 'VAULT' ? 'bg-slate-900 border-slate-900 dark:bg-slate-100 dark:border-slate-100' : 'bg-white border-slate-200 hover:border-slate-300 dark:bg-slate-900 dark:border-slate-800 dark:hover:border-slate-700'}`}>
                 <input type="radio" name="accessType" className="hidden" value="VAULT" checked={selectedAccessType === 'VAULT'} onChange={() => setSelectedAccessType('VAULT')} />
                 <Lock className={`w-4 h-4 ${selectedAccessType === 'VAULT' ? 'text-white dark:text-slate-900' : 'text-slate-500 dark:text-slate-400'}`} />
                 <span className={`text-sm font-medium ${selectedAccessType === 'VAULT' ? 'text-white dark:text-slate-900' : 'text-slate-700 dark:text-slate-300'}`}>
@@ -312,7 +370,92 @@ export function CreateSessionModal({
                 }
               />
             </div>
-          </>
+
+          {/* Capability restriction section — only shown when a secret with known capabilities is selected */}
+          {accessMode === 'VAULT' && availableCapabilities.length > 0 && (
+            <div className="mt-3 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+              <div className="px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2">
+                <ShieldCheck className="w-3.5 h-3.5 text-slate-500" />
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Access Mode</span>
+              </div>
+              <div className="p-3.5 space-y-2.5">
+                {/* Radio: Full Access */}
+                <label className={clsx(
+                  'flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all',
+                  accessRestriction === 'full'
+                    ? 'border-slate-900 bg-slate-50 dark:border-slate-300 dark:bg-slate-900'
+                    : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                )}>
+                  <input
+                    type="radio"
+                    name="accessRestriction"
+                    className="mt-0.5 accent-slate-900 dark:accent-slate-100"
+                    checked={accessRestriction === 'full'}
+                    onChange={() => { setAccessRestriction('full'); setSelectedCapabilities([]); }}
+                  />
+                  <div>
+                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Full Access</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Delegate can use all modules on this platform.</p>
+                  </div>
+                </label>
+
+                {/* Radio: Restricted Access */}
+                <label className={clsx(
+                  'flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all',
+                  accessRestriction === 'restricted'
+                    ? 'border-slate-900 bg-slate-50 dark:border-slate-300 dark:bg-slate-900'
+                    : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                )}>
+                  <input
+                    type="radio"
+                    name="accessRestriction"
+                    className="mt-0.5 accent-slate-900 dark:accent-slate-100"
+                    checked={accessRestriction === 'restricted'}
+                    onChange={() => setAccessRestriction('restricted')}
+                  />
+                  <div className="flex-1">
+                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Restricted Access</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Limit delegate to specific modules only.</p>
+
+                    {/* Capability checklist — only shown when restricted is selected */}
+                    {accessRestriction === 'restricted' && (
+                      <div className="mt-3 space-y-2">
+                        <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Allowed Modules</p>
+                        <div className="max-h-56 overflow-y-auto space-y-2 pr-1.5 custom-scrollbar">
+                          {availableCapabilities.map(cap => (
+                            <label
+                              key={cap.key}
+                              className={clsx(
+                                'flex items-start gap-2.5 p-2.5 rounded-md border cursor-pointer transition-all',
+                                selectedCapabilities.includes(cap.key)
+                                  ? 'border-emerald-500 bg-emerald-50 dark:border-emerald-400 dark:bg-emerald-950/20'
+                                  : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 hover:border-slate-300'
+                              )}
+                            >
+                              <input
+                                type="checkbox"
+                                className="mt-0.5 accent-emerald-600"
+                                checked={selectedCapabilities.includes(cap.key)}
+                                onChange={() => toggleCapability(cap.key)}
+                              />
+                              <div>
+                                <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">{cap.label}</p>
+                                <p className="text-[10px] text-slate-400">{cap.description}</p>
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                        {selectedCapabilities.length === 0 && (
+                          <p className="text-[10px] text-rose-500 dark:text-rose-400 mt-1">⚠ Select at least one module to allow.</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </label>
+              </div>
+            </div>
+          )}
+        </>
         )}
 
         {/* Step 5: Expiry + limits */}

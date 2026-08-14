@@ -71,6 +71,7 @@ model User {
   approvalRequests        ApprovalRequest[]
   auditEvents             AuditEvent[]
   passwordResetTokens     PasswordResetToken[]
+  presences               UserPresence[]
 }
 
 model RefreshToken {
@@ -126,6 +127,7 @@ model Organization {
   integrationConnections IntegrationConnection[]
   apiKeys              ApiKey[]
   webhookSubscriptions WebhookSubscription[]
+  userPresences        UserPresence[]
 }
 
 model OrganizationMember {
@@ -293,6 +295,7 @@ model DelegatedSession {
   expiresAt   DateTime
   maxReveals  Int? // Optional limit on reveals
   revealCount Int           @default(0)
+  capabilities Json? // Array of strings representing module-level access (null = unrestricted)
 
   // ─── Integration binding ─────────────────────────────────────────────────
   // Populated when a native provider integration is used (e.g. Vercel, GitHub).
@@ -489,4 +492,32 @@ model WebhookSubscription {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
+}
+
+// ─── Release E: User Presence Monitoring ─────────────────────────────────────
+//
+// Tracks the last time a user's extension sent a heartbeat for a specific
+// platform. Completely separate from session lifecycle (ACTIVE/EXPIRED/REVOKED).
+// One row per (organizationId, userId) — UPSERT on every heartbeat.
+// Admin queries this to show 🟢 Active — MCA vs 🔴 Inactive.
+
+model UserPresence {
+  id             String   @id @default(uuid())
+  organizationId String
+  userId         String
+  /// Which platform the extension was active on (e.g. "MCA", "GITHUB")
+  platform       String
+  /// The session that was active at last heartbeat — nullable (presence is session-independent)
+  sessionId      String?
+  /// Updated on every heartbeat. Stale = lastSeenAt < NOW() - 90s → INACTIVE
+  lastSeenAt     DateTime @default(now()) @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // One presence record per user per org per platform.
+  // Multiple rows per user are expected (one per active platform).
+  // UPSERT on every heartbeat prevents unbounded growth.
+  @@unique([organizationId, userId, platform])
+  @@index([organizationId, lastSeenAt])
 }

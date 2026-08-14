@@ -22,6 +22,9 @@ export default function SessionsPage() {
   const { data: outgoingSessions, isLoading: isLoadingOutgoing } = useOutgoingSessions(orgId);
   const { mutate: revokeSession, isPending: isRevoking } = useRevokeSession(orgId);
 
+  const canGrantAccess = organization?.role === 'OWNER' || organization?.role === 'ADMIN';
+
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   // Pagination states
   const [incPage, setIncPage] = useState(1);
@@ -37,7 +40,6 @@ export default function SessionsPage() {
   // Confirm modal state (replaces window.confirm for revoke)
   const [confirmRevokeId, setConfirmRevokeId] = useState<string | null>(null);
 
-  const canGrantAccess = organization?.role === 'OWNER' || organization?.role === 'ADMIN';
   const canCreateSession = !!orgId;
 
   const formatExpiry = (expiresAt: string | Date) => {

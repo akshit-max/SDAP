@@ -28,8 +28,8 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-md' 
         onClick={onClose}
       />
       {/* Panel */}
-      <div className={`relative w-full ${maxWidth} bg-white dark:bg-zinc-950 rounded-2xl shadow-2xl border border-premium overflow-hidden`}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-premium">
+      <div className={`relative w-full ${maxWidth} max-h-[calc(100vh-2rem)] flex flex-col bg-white dark:bg-zinc-950 rounded-2xl shadow-2xl border border-premium overflow-hidden`}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-premium flex-shrink-0">
           <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">{title}</h2>
           <button
             onClick={onClose}
@@ -38,7 +38,7 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-md' 
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="p-6">{children}</div>
+        <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">{children}</div>
       </div>
     </div>
   );

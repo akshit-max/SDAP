@@ -13,6 +13,9 @@
   "host_permissions": [
     "http://localhost:4000/*",
     "http://127.0.0.1:4000/*",
+    "https://withus-yy5i.onrender.com/*",
+    "http://localhost:8080/*",
+    "http://127.0.0.1:8080/*",
     "https://*.godaddy.com/*",
     "https://*.hostinger.com/*",
     "https://*.cpanel.net/*",
@@ -33,6 +36,7 @@
   "content_scripts": [
     {
       "matches": [
+        "http://localhost:8080/*",
         "https://*.godaddy.com/*",
         "https://*.hostinger.com/*",
         "https://*.cpanel.net/*",
@@ -56,10 +60,21 @@
         "https://app.razorpay.com/*",
         "https://app.vercel.com/*",
         "https://dashboard.stripe.com/dashboard",
-        "https://app.shopify.com/*"
+        "https://app.shopify.com/*",
+        "https://*.mca.gov.in/content/mca/global/en/mca/*"
       ],
       "js": ["content/autofill.js"],
       "run_at": "document_end"
+    },
+    {
+      "matches": [
+        "https://*.mca.gov.in/*",
+        "http://localhost:8080/*",
+        "http://127.0.0.1:8080/*",
+        "http://mca.localhost:8080/*"
+      ],
+      "js": ["content/capability-enforcer.js"],
+      "run_at": "document_start"
     }
   ],
   "action": {
