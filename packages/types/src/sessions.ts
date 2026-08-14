@@ -14,6 +14,7 @@ export const CreateSessionSchema = z.object({
   expiresAt: z.coerce.date(),
   maxReveals: z.number().int().min(1).optional(),
   capabilities: z.array(z.string()).optional().nullable(),
+  justification: z.string().optional(),
 });
 
 export type CreateSessionDto = z.infer<typeof CreateSessionSchema>;
