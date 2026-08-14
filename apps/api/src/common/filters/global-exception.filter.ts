@@ -38,9 +38,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       );
     }
     
-    // TEMPORARY: Log ALL errors to a file for debugging
-    require('fs').appendFileSync(require('path').join(process.cwd(), 'error.log'), `[${status}] ${message}\n`);
-
 
     response.status(status).json({
       success: false,

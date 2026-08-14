@@ -22,17 +22,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       try {
         const rootDir = process.cwd();
         publicKey = readFileSync(join(rootDir, 'keys', 'public.pem'), 'utf-8');
-      } catch {
-        // Fallback for MVP if keys are not generated/configured
-        publicKey = `-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4bgTcNYc5gywm/wm6PF5
-OvyWWfXmuEzhbBaY3GRSA2Apd30pntXxb3RRMWKQwD7tm1VZMORlNKZlt1a7V9aO
-wGBjxgsN9XLCwKpBlfom2cRAspsRoT/SiCvt4l4eq5YvaS5uhIK75OyeAi/drR5g
-Qlhj4A3A7BNqTn8xbTRwyxfCYXDerrsDtDn2fXLdDOEY+90LxuVv1B2dnmvruToB
-+AjHqGLpm7YpOeZpMf/fdpD7JWinnU4KhhjV2TeRnVJwgZDzUBUN2Ccj5vrC65Au
-B4HLUxZC3a/0OfbkwNoD+noAnn5z4MRuOhWXtiHpxLtOG1P6KQYEKwNdZ4OIOFvg
-7wIDAQAB
------END PUBLIC KEY-----`;
+      } catch (e) {
+        // No hardcoded fallback — the application must not start without a valid JWT public key.
+        // Set JWT_PUBLIC_KEY env var (production) or generate keys/public.pem (local dev).
+        throw new Error(
+          'JWT public key is not configured. Set JWT_PUBLIC_KEY environment variable, ' +
+          'or generate keys/public.pem for local development. ' +
+          `Original error: ${(e as Error).message}`,
+        );
       }
     }
 
