@@ -20,6 +20,8 @@ import {
   Key,
   RefreshCw,
   Activity,
+  Clock,
+  Timer,
 } from 'lucide-react';
 import { AuditEventDto } from '@repo/types';
 import { useAuth } from '../../lib/auth/AuthContext';
@@ -40,6 +42,7 @@ const ACTION_MAP: Record<string, ActionConfig> = {
   'secret.revealed':    { label: 'Secret Revealed',     icon: <Eye className="w-3.5 h-3.5" />,       color: 'text-violet-700 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-950/30 border-violet-200/50 dark:border-violet-900/30' },
   'session.created':    { label: 'Session Granted',     icon: <Key className="w-3.5 h-3.5" />,       color: 'text-amber-700 dark:text-amber-400',   bg: 'bg-amber-50 dark:bg-amber-950/30 border-amber-200/50 dark:border-amber-900/30' },
   'session.revoked':    { label: 'Session Revoked',     icon: <X className="w-3.5 h-3.5" />,         color: 'text-red-700 dark:text-red-400',       bg: 'bg-red-50 dark:bg-red-950/30 border-red-200/50 dark:border-red-900/30' },
+  'session.expired':    { label: 'Session Expired',     icon: <Clock className="w-3.5 h-3.5" />,     color: 'text-slate-600 dark:text-slate-400',   bg: 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700' },
   'approval.requested': { label: 'Approval Requested',  icon: <Shield className="w-3.5 h-3.5" />,    color: 'text-amber-700 dark:text-amber-400',   bg: 'bg-amber-50 dark:bg-amber-950/30 border-amber-200/50 dark:border-amber-900/30' },
   'approval.approved':  { label: 'Approval Granted',    icon: <Check className="w-3.5 h-3.5" />,     color: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200/50 dark:border-emerald-900/30' },
   'approval.rejected':  { label: 'Approval Rejected',   icon: <X className="w-3.5 h-3.5" />,         color: 'text-red-700 dark:text-red-400',       bg: 'bg-red-50 dark:bg-red-950/30 border-red-200/50 dark:border-red-900/30' },
@@ -89,10 +92,100 @@ const ACTION_OPTIONS = [
   { value: 'secret.deleted', label: 'Secret Deleted' },
   { value: 'session.created', label: 'Session Granted' },
   { value: 'session.revoked', label: 'Session Revoked' },
+  { value: 'session.expired', label: 'Session Expired' },
   { value: 'approval.requested', label: 'Approval Requested' },
   { value: 'approval.approved', label: 'Approval Granted' },
   { value: 'approval.rejected', label: 'Approval Rejected' },
 ];
+
+// ─── Duration formatter ───────────────────────────────────────────────────────
+function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  if (m < 60) return `${m} minute${m !== 1 ? 's' : ''}`;
+  const h = Math.floor(m / 60);
+  const rem = m % 60;
+  return rem > 0 ? `${h}h ${rem}m` : `${h} hour${h !== 1 ? 's' : ''}`;
+}
+
+// ─── Smart metadata row renderer ─────────────────────────────────────────────
+// Shows human-readable fields for known session events.
+// For all events, a collapsible "View raw" section preserves the original JSON.
+function AuditMetaDetails({ action, metadata }: { action: string; metadata: Record<string, any> }) {
+  const [showRaw, setShowRaw] = useState(false);
+  const hasRaw = Object.keys(metadata).length > 0;
+
+  const platformLabel = metadata.platform
+    ? metadata.platform.charAt(0) + metadata.platform.slice(1).toLowerCase()
+    : null;
+
+  const expiresLabel = metadata.expiresAt
+    ? new Date(metadata.expiresAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+    : null;
+
+  const durationLabel =
+    typeof metadata.durationSeconds === 'number'
+      ? formatDuration(metadata.durationSeconds)
+      : null;
+
+  // Fields to render per action type
+  const rows: { label: string; value: string }[] = [];
+
+  if (action === 'session.created') {
+    if (platformLabel) rows.push({ label: 'Platform', value: platformLabel });
+    if (metadata.grantee) rows.push({ label: 'Granted to', value: String(metadata.grantee) });
+    if (metadata.reason) rows.push({ label: 'Reason', value: String(metadata.reason) });
+    if (metadata.scope) rows.push({ label: 'Scope', value: String(metadata.scope) });
+    if (expiresLabel) rows.push({ label: 'Expires', value: expiresLabel });
+  } else if (action === 'session.revoked') {
+    if (platformLabel) rows.push({ label: 'Platform', value: platformLabel });
+    if (durationLabel) rows.push({ label: 'Duration', value: durationLabel });
+    if (metadata.reason) rows.push({ label: 'Reason', value: String(metadata.reason) });
+  } else if (action === 'session.expired') {
+    if (platformLabel) rows.push({ label: 'Platform', value: platformLabel });
+    if (durationLabel) rows.push({ label: 'Duration', value: durationLabel });
+    rows.push({ label: 'Status', value: 'Expired — automatic' });
+  }
+
+  return (
+    <div className="space-y-2">
+      {/* Human-readable fields — shown when we know the event type */}
+      {rows.length > 0 && (
+        <div className="flex flex-wrap gap-x-6 gap-y-1.5">
+          {rows.map(({ label, value }) => (
+            <div key={label} className="flex items-baseline gap-1.5 min-w-[140px]">
+              <span className="text-[10px] font-bold text-premium-muted uppercase tracking-wider w-20 flex-shrink-0">{label}</span>
+              <span className="text-xs font-semibold text-premium-main">{value}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Raw JSON — always available, collapsed by default */}
+      {hasRaw && (
+        <div>
+          <button
+            onClick={() => setShowRaw(r => !r)}
+            className="flex items-center gap-1 text-[10px] font-bold text-premium-muted hover:text-premium-main uppercase tracking-wider transition-colors mt-1"
+          >
+            {showRaw ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            {showRaw ? 'Hide raw details' : 'View raw details'}
+          </button>
+          {showRaw && (
+            <pre className="mt-1.5 bg-slate-950 border border-premium/50 text-emerald-450 p-3 rounded-lg overflow-x-auto text-[10px] leading-relaxed font-mono">
+              {JSON.stringify(metadata, null, 2)}
+            </pre>
+          )}
+        </div>
+      )}
+
+      {/* Fallback for events with no metadata at all */}
+      {!hasRaw && rows.length === 0 && (
+        <span className="text-xs text-premium-muted italic">No additional details.</span>
+      )}
+    </div>
+  );
+}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function AuditPage() {
@@ -268,12 +361,13 @@ export default function AuditPage() {
                                     <p className="font-bold text-premium-main">v{event.eventVersion}</p>
                                   </div>
                                 </div>
-                                {Boolean(event.metadata) && Object.keys(event.metadata as object).length > 0 && (
+                                {Boolean(event.metadata) && (
                                   <>
-                                    <p className="text-[10px] font-bold text-premium-muted uppercase tracking-wider mb-1.5">Metadata</p>
-                                    <pre className="bg-slate-950 border border-premium/50 text-emerald-450 p-3 rounded-lg overflow-x-auto text-[10px] leading-relaxed font-mono">
-                                      {JSON.stringify(event.metadata, null, 2)}
-                                    </pre>
+                                    <p className="text-[10px] font-bold text-premium-muted uppercase tracking-wider mb-2">Details</p>
+                                    <AuditMetaDetails
+                                      action={event.action}
+                                      metadata={(event.metadata as Record<string, any>) ?? {}}
+                                    />
                                   </>
                                 )}
                               </div>
