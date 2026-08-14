@@ -5,6 +5,7 @@ import {
   Param,
   Body,
   UseGuards,
+  NotFoundException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiSecurity } from '@nestjs/swagger';
 import { ApiKeyGuard } from '../common/guards/api-key.guard';
@@ -49,11 +50,11 @@ export class ProgrammaticController {
   ) {
     const { organizationId } = (req as any).apiKeyContext;
 
-    // Delegate to SecretLifecycleService — it enforces org scoping
+    // Fetch secret metadata; vault.organizationId is now selected so the org check below works.
     const result = await this.secretLifecycle.getSecretMetadataById(secretId);
-    // Verify it belongs to the caller's org
-    if ((result as any)?.vault?.organizationId !== organizationId) {
-      throw new Error('Secret not found in your organization.');
+    // Enforce org-scope: reject if the secret's vault does not belong to the caller's org.
+    if (result.vault.organizationId !== organizationId) {
+      throw new NotFoundException('Secret not found in your organization.');
     }
     return result;
   }

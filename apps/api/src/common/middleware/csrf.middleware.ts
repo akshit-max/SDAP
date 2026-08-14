@@ -16,9 +16,27 @@ export function csrfMiddleware(req: Request, res: Response, next: NextFunction) 
     });
   }
 
-  // 2. Skip verification for safe methods, extension, or auth endpoints (which don't have a session yet)
+  // 2. Skip verification for safe methods, auth endpoints, or extension requests with Bearer auth.
+  //
+  // Extension CSRF bypass requires a Bearer Authorization header to be present.
+  // Bearer token auth is inherently CSRF-resistant — the browser cannot auto-inject it
+  // on cross-site requests the way it can inject cookies. A malicious page sending only
+  // the X-Extension-Client header (without a Bearer token) still hits CSRF verification.
+  //
+  // /auth/logout and /auth/refresh are excluded alongside login/register because they are
+  // part of the auth flow; the extension calls them without a Bearer token.
   const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
-  if (safeMethods.includes(req.method) || req.header('X-Extension-Client') === 'withus-mv3' || req.path.includes('/auth/login') || req.path.includes('/auth/register') || req.path.includes('/auth/forgot-password') || req.path.includes('/auth/reset-password')) {
+  const isExtensionWithBearer =
+    req.header('X-Extension-Client') === 'withus-mv3' && !!req.header('Authorization');
+  const isAuthEndpoint =
+    req.path.includes('/auth/login') ||
+    req.path.includes('/auth/logout') ||
+    req.path.includes('/auth/refresh') ||
+    req.path.includes('/auth/register') ||
+    req.path.includes('/auth/forgot-password') ||
+    req.path.includes('/auth/reset-password');
+
+  if (safeMethods.includes(req.method) || isExtensionWithBearer || isAuthEndpoint) {
     return next();
   }
 

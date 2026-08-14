@@ -218,6 +218,10 @@ export class SecretLifecycleService {
         revealCount: true,
         createdBy: true,
         updatedBy: true,
+        // Required for org-scope enforcement in ProgrammaticController.
+        // Without this, result.vault was always undefined and the check
+        // (result.vault.organizationId !== callerOrgId) always threw — endpoint was broken.
+        vault: { select: { organizationId: true } },
       },
     });
 
