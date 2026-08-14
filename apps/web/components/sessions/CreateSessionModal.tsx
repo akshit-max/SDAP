@@ -194,6 +194,11 @@ export function CreateSessionModal({
       const matchedKeyword = Object.keys(PLATFORM_CAPABILITY_MAP).find(k => lower.includes(k));
       if (matchedKeyword) {
         payload.integrationProvider = matchedKeyword.toUpperCase();
+      } else {
+        const vault = vaults.find(v => v.id === selectedVaultId);
+        if (vault) {
+          payload.integrationProvider = vault.name;
+        }
       }
     } else {
       payload.scope = 'INTEGRATION'; // Bypass Vault Check
