@@ -204,7 +204,6 @@ export class IntegrationsController {
       if (isMatch('www.mca.gov.in') || isMatch('mca.gov.in')) return { compatible: true, platform: 'MCA Portal' };
       if (isMatch('gst.gov.in') || isMatch('services.gst.gov.in')) return { compatible: true, platform: 'GST Portal' };
       if (isMatch('udyamregistration.gov.in')) return { compatible: true, platform: 'Udyam Portal' };
-      if (isMatch('ads.google.com') || isMatch('accounts.google.com')) return { compatible: true, platform: 'Google Ads' };
 
       return { compatible: false, platform: null, reason: 'unrecognized_platform' };
     } catch (e) {
