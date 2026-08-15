@@ -93,6 +93,16 @@ a {
   color: var(--text-muted);
 }
 
+.theme-light {
+  --bg-primary: #e5e5ea;
+  --bg-surface: #ffffff;
+  --border-subtle: #d1d5db;
+  --text-main: #09090b;
+  --text-muted: #71717a;
+  --primary-accent: #a3e635;
+  --primary-accent-text: #09090b;
+}
+
 .premium-card {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);

@@ -56,7 +56,7 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-premium-bg p-6">
+    <div className="theme-light min-h-screen flex flex-col items-center justify-center bg-premium-bg p-6">
       <div className="max-w-md w-full premium-card p-8 shadow-sm bg-premium-surface">
 
         {/* Header */}
