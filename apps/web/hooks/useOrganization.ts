@@ -95,3 +95,14 @@ export function useRemoveMember(orgId: string) {
     },
   });
 }
+
+export function useOffboardMember(orgId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (memberId: string) => organizationsApi.offboardMember(orgId, memberId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: orgKeys.members(orgId) });
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+    },
+  });
+}

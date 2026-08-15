@@ -10,6 +10,7 @@ import {
   useCancelInvitation,
   useChangeMemberRole,
   useRemoveMember,
+  useOffboardMember,
 } from '../../../hooks/useOrganization';
 import { Loading } from '../../../components/common/Loading';
 import { useToast } from '../../../components/common/Toast';
@@ -37,6 +38,7 @@ import {
   Globe,
   ArrowRight,
   Search,
+  UserX,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useRouter } from 'next/navigation';
@@ -88,6 +90,7 @@ export default function MembersPage() {
   const { mutate: cancelInvitation, isPending: isCancelling } = useCancelInvitation(orgId);
   const { mutate: changeRole } = useChangeMemberRole(orgId);
   const { mutate: removeMember, isPending: isRemoving } = useRemoveMember(orgId);
+  const { mutate: offboardMember, isPending: isOffboarding } = useOffboardMember(orgId);
   const { toast } = useToast();
 
   const [email, setEmail] = useState('');
@@ -95,6 +98,7 @@ export default function MembersPage() {
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
   const [grantAccessMemberId, setGrantAccessMemberId] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<{ memberId: string; email?: string } | null>(null);
+  const [confirmOffboard, setConfirmOffboard] = useState<{ memberId: string; email?: string; name?: string } | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -181,6 +185,23 @@ export default function MembersPage() {
     removeMember(memberId, {
       onSuccess: () => toast('success', 'Member removed.'),
       onError: (err) => toast('error', err.message || 'Failed to remove member.'),
+    });
+  };
+
+  const handleOffboardMember = (memberId: string, memberEmail?: string, memberName?: string) => {
+    setConfirmOffboard({ memberId, email: memberEmail, name: memberName });
+  };
+
+  const handleOffboardConfirmed = () => {
+    if (!confirmOffboard) return;
+    const { memberId, email, name } = confirmOffboard;
+    setConfirmOffboard(null);
+    offboardMember(memberId, {
+      onSuccess: (data: any) => {
+        const label = name || email || 'Member';
+        toast('success', `${label} offboarded. ${data?.sessionsRevoked ?? 0} session(s) revoked.`);
+      },
+      onError: (err: any) => toast('error', err.message || 'Failed to offboard member.'),
     });
   };
 
@@ -426,14 +447,26 @@ export default function MembersPage() {
                                      className="fixed inset-0 z-10"
                                      onClick={() => setOpenMenuId(null)}
                                    />
-                                   <div className="absolute right-0 mt-1 w-36 bg-premium-surface border border-premium rounded-lg shadow-none overflow-hidden z-20 py-1">
+                                   <div className="absolute right-0 mt-1 w-44 bg-premium-surface border border-premium rounded-lg shadow-none overflow-hidden z-20 py-1">
+                                     <button
+                                       onClick={() => {
+                                         handleOffboardMember(member.id, member.user?.email, member.user?.fullName);
+                                         setOpenMenuId(null);
+                                       }}
+                                       disabled={isOffboarding}
+                                       className="w-full text-left px-4 py-2 text-xs font-bold text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/20 disabled:opacity-50 flex items-center gap-2"
+                                     >
+                                       <UserX className="w-3.5 h-3.5" />
+                                       Offboard Employee
+                                     </button>
+                                     <div className="border-t border-premium my-0.5" />
                                      <button
                                        onClick={() => {
                                          handleRemoveMember(member.id, member.user?.email);
                                          setOpenMenuId(null);
                                        }}
                                        disabled={isRemoving}
-                                       className="w-full text-left px-4 py-2 text-xs font-bold text-red-650 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 disabled:opacity-50"
+                                       className="w-full text-left px-4 py-2 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 disabled:opacity-50"
                                      >
                                        Remove Member
                                      </button>
@@ -475,6 +508,18 @@ export default function MembersPage() {
         isPending={isRemoving}
         onConfirm={handleRemoveConfirmed}
         onCancel={() => setConfirmRemove(null)}
+      />
+
+      {/* Offboard Employee Confirm Modal */}
+      <ConfirmModal
+        isOpen={!!confirmOffboard}
+        title="Offboard Employee"
+        message={`This will permanently offboard ${confirmOffboard?.name || confirmOffboard?.email || 'this member'} from WITHUS:\n\n• Revoke all active delegated sessions\n• Invalidate all refresh tokens (login sessions)\n• Cancel any pending approval requests\n• Remove from this organization\n\nNote: External portals (GitHub, Vercel, etc.) that WITHUS granted access to will have that access revoked. Any short-lived access JWTs (≤15 min) may briefly remain valid until expiry.`}
+        confirmLabel="Offboard Now"
+        danger
+        isPending={isOffboarding}
+        onConfirm={handleOffboardConfirmed}
+        onCancel={() => setConfirmOffboard(null)}
       />
     </DashboardShell>
   );

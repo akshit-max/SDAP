@@ -53,6 +53,11 @@ export const organizationsApi = {
     return response.data;
   },
 
+  offboardMember: async (orgId: string, memberId: string) => {
+    const response = await apiClient.post(`/organizations/${orgId}/members/${memberId}/offboard`);
+    return response.data as { success: boolean; sessionsRevoked: number; refreshTokensRevoked: number; approvalsCancelled: number };
+  },
+
   acceptInvite: async (token: string) => {
     const response = await apiClient.post(`/organizations/invites/${token}/accept`);
     return response.data;

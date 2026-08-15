@@ -173,4 +173,16 @@ export class OrganizationsController {
     await this.organizationsService.removeMember(id, memberId, req.user.id);
     return { success: true };
   }
+
+  @RequirePermissions(Permission.MEMBER_REMOVE)
+  @OrganizationContext('id')
+  @Post(':id/members/:memberId/offboard')
+  @ApiOperation({ summary: 'Offboard a member: revoke all sessions, tokens, pending approvals, and remove membership' })
+  async offboardMember(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Param('memberId') memberId: string,
+  ) {
+    return this.organizationsService.offboardMember(id, memberId, req.user.id);
+  }
 }

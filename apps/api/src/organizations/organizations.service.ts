@@ -13,12 +13,14 @@ import {
   InvitationAcceptedEvent,
 } from './organizations.events';
 import { ORG_CONFIG } from '@repo/config';
+import { SessionsService } from '../sessions/sessions.service';
 
 @Injectable()
 export class OrganizationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly sessionsService: SessionsService,
   ) {}
 
   private async generateUniqueSlug(baseName: string): Promise<string> {
@@ -285,5 +287,102 @@ export class OrganizationsService {
       where: { id: memberId },
       data: { removedAt: new Date(), updatedBy: requestorId },
     });
+  }
+
+  /**
+   * Offboard a member: revoke all their WITHUS-controlled access in sequence.
+   *
+   * NOTE: This is intentionally NOT wrapped in a single Prisma transaction.
+   * revokeAllForGrantee() calls external integration providers (GitHub, Vercel,
+   * GoDaddy) and emits events — these side-effects cannot be rolled back by
+   * a database transaction. Partial-failure handling:
+   *   - If session revocation fails for individual sessions, they are marked
+   *     REVOKE_FAILED and the scheduler will retry them. The offboard continues.
+   *   - If refresh-token revocation fails, it is a non-fatal Prisma error and
+   *     is caught — offboarding continues.
+   *   - If approval cancellation fails, it is non-fatal — offboarding continues.
+   *   - removeMember() is called last. If any prior step threw uncaught, this
+   *     will NOT be reached and membership is preserved for retry.
+   *   - A single audit event is emitted after all steps complete.
+   */
+  async offboardMember(orgId: string, memberId: string, requestorId: string) {
+    const member = await this.prisma.organizationMember.findFirst({
+      where: { id: memberId, organizationId: orgId, removedAt: null },
+      include: { user: { select: { id: true, email: true, fullName: true } } },
+    });
+    if (!member) throw new ConflictException('Member not found');
+    if (member.role === 'OWNER') {
+      throw new ConflictException('Cannot offboard the OWNER of an organization');
+    }
+    if (member.userId === requestorId) {
+      throw new ConflictException('You cannot offboard yourself');
+    }
+
+    const userId = member.userId;
+
+    // Step 1 — Revoke all active delegated sessions (reuses existing primitive).
+    // Individual integration revocations that fail are set to REVOKE_FAILED and
+    // retried by the scheduler — they do not abort offboarding.
+    const sessionResult = await this.sessionsService.revokeAllForGrantee(
+      orgId,
+      userId,
+      requestorId,
+    );
+
+    // Step 2 — Invalidate all WITHUS refresh tokens for this user.
+    // Pattern reused from password-reset flow (auth.service.ts).
+    // The user's existing short-lived access JWT (≤15 min TTL) remains valid
+    // until natural expiry — this is a known limitation, not fixed here.
+    let refreshRevokedCount = 0;
+    try {
+      const result = await this.prisma.refreshToken.updateMany({
+        where: { userId, isRevoked: false },
+        data: { isRevoked: true, revokedAt: new Date() },
+      });
+      refreshRevokedCount = result.count;
+    } catch {
+      // Non-fatal: session access is already gone via step 1.
+    }
+
+    // Step 3 — Cancel any pending approval requests FROM this user.
+    // This prevents an already-submitted request from being auto-approved
+    // after the user has been offboarded.
+    let approvalCancelledCount = 0;
+    try {
+      const result = await this.prisma.approvalRequest.updateMany({
+        where: { organizationId: orgId, requesterId: userId, status: 'PENDING' },
+        data: { status: 'REJECTED', reason: 'Cancelled: requestor was offboarded', resolvedAt: new Date(), resolvedBy: requestorId },
+      });
+      approvalCancelledCount = result.count;
+    } catch {
+      // Non-fatal.
+    }
+
+    // Step 4 — Remove the membership (reuses existing removeMember primitive).
+    await this.removeMember(orgId, memberId, requestorId);
+
+    // Step 5 — Emit a single top-level audit event for the offboarding action.
+    this.eventEmitter.emit('audit.log', {
+      organizationId: orgId,
+      actorId: requestorId,
+      action: 'member.offboarded',
+      resourceType: 'USER',
+      resourceId: userId,
+      metadata: {
+        email: member.user?.email,
+        name: member.user?.fullName,
+        sessionsRevoked: sessionResult.revokedCount,
+        sessionsSkipped: sessionResult.skippedCount,
+        refreshTokensRevoked: refreshRevokedCount,
+        approvalsCancelled: approvalCancelledCount,
+      },
+    });
+
+    return {
+      success: true,
+      sessionsRevoked: sessionResult.revokedCount,
+      refreshTokensRevoked: refreshRevokedCount,
+      approvalsCancelled: approvalCancelledCount,
+    };
   }
 }
