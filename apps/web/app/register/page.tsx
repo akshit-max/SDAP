@@ -81,8 +81,44 @@ function RegisterForm() {
   };
 
   return (
-    <div className="theme-light min-h-screen flex flex-col items-center justify-center bg-premium-bg p-6">
-      <div className="max-w-md w-full premium-card p-10 bg-premium-surface">
+    <div className="theme-light min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-premium-bg">
+      {/* Brand Side (Left) */}
+      <div className="hidden lg:flex lg:col-span-5 bg-zinc-950 text-white p-16 flex-col justify-between relative overflow-hidden border-r border-zinc-900 select-none">
+        {/* Subtle grid backdrop for the dark side */}
+        <div className="absolute inset-0 opacity-15 bg-[linear-gradient(to_right,#3f3f46_1px,transparent_1px),linear-gradient(to_bottom,#3f3f46_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+        <div className="absolute top-0 right-0 w-80 h-80 bg-lime-400/5 rounded-full blur-3xl"></div>
+        
+        {/* Brand Header */}
+        <div className="flex items-center gap-3 relative z-10">
+          <div className="w-8 h-8 flex items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800">
+            <svg className="w-4 h-4 text-lime-400" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2l2.3 4.8 5.1-1.6-1.6 5.1 4.8 2.3-4.8 2.3 1.6 5.1-5.1-1.6-2.3 4.8-2.3-4.8-5.1 1.6 1.6-5.1-4.8-2.3 4.8-2.3-1.6-5.1 5.1 1.6L12 2z"/>
+            </svg>
+          </div>
+          <span className="font-bold text-[11px] uppercase tracking-widest text-zinc-300">WithUs</span>
+        </div>
+
+        {/* Hero Text */}
+        <div className="relative z-10 max-w-sm my-auto space-y-4">
+          <h2 className="text-3xl font-extrabold tracking-tight text-white leading-tight">
+            Security first.<br />
+            Credentials simplified.
+          </h2>
+          <p className="text-zinc-400 text-xs leading-relaxed font-medium">
+            Manage delegated access to GitHub, Vercel, Stripe, and government portals with scoped sessions, automatic OTP extraction, and zero raw credential exposure.
+          </p>
+        </div>
+
+        {/* Brand Footer */}
+        <div className="relative z-10 flex items-center gap-2 text-zinc-500 text-[10px] font-bold tracking-wider uppercase">
+          <svg className="w-4 h-4 text-lime-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+          Enterprise Grade Protection
+        </div>
+      </div>
+
+      {/* Form Side (Right) */}
+      <div className="lg:col-span-7 flex items-center justify-center p-8 relative">
+        <div className="max-w-md w-full premium-card p-10 bg-premium-surface">
  
         {/* Header */}
         <div className="text-center mb-8">
@@ -210,6 +246,7 @@ function RegisterForm() {
             </Link>
           </div>
         </form>
+      </div>
       </div>
     </div>
   );
