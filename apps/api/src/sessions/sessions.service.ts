@@ -450,7 +450,14 @@ export class SessionsService {
       : undefined;
     this.eventEmitter.emit(
       'session.revoked',
-      new DelegatedSessionRevokedEvent(session.id, organizationId, userId, durationSeconds),
+      new DelegatedSessionRevokedEvent(
+        session.id,
+        organizationId,
+        userId,
+        durationSeconds,
+        session.integrationProvider ?? undefined,
+        'Access revoked by admin'
+      ),
     );
 
     return updated;

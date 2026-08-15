@@ -111,6 +111,8 @@ export class AuditListenerService {
       event.sessionId,
       {
         ...(event.durationSeconds !== undefined ? { durationSeconds: event.durationSeconds } : {}),
+        ...(event.platform ? { platform: event.platform } : {}),
+        ...(event.reason ? { reason: event.reason } : {}),
       },
     );
   }
