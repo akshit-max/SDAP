@@ -61,13 +61,11 @@ function LoginForm() {
 
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="mx-auto w-12 h-12 mb-4 flex items-center justify-center rounded-2xl bg-zinc-950 border border-zinc-800 shadow-sm">
-            <svg className="w-5 h-5 text-lime-400" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2l2.3 4.8 5.1-1.6-1.6 5.1 4.8 2.3-4.8 2.3 1.6 5.1-5.1-1.6-2.3 4.8-2.3-4.8-5.1 1.6 1.6-5.1-4.8-2.3 4.8-2.3-1.6-5.1 5.1 1.6L12 2z"/>
-            </svg>
+          <div className="mx-auto w-12 h-12 mb-4">
+            <img src="/logo.png" alt="WithUs Logo" className="w-full h-full object-contain" />
           </div>
-          <h1 className="text-lg font-bold tracking-tight text-premium-main uppercase tracking-wider">WithUs</h1>
-          <p className="text-[9px] text-premium-muted font-bold tracking-widest uppercase mt-1">Delegated Credential Access</p>
+          <h1 className="text-xl font-bold tracking-tight text-premium-main">WithUs</h1>
+          <p className="text-[10px] text-premium-muted font-bold tracking-wider uppercase mt-1.5">Delegated Credential Access</p>
         </div>
 
         {redirectParam?.includes('/invite') && (
