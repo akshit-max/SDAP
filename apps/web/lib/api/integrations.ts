@@ -27,7 +27,18 @@ export interface HealthCheckResult {
   checkedAt: string;
 }
 
+export interface AnalyzePortalResponse {
+  compatible: boolean;
+  provider: IntegrationProvider | null;
+  reason?: 'unrecognized_platform' | 'invalid_url' | 'not_https';
+}
+
 export const integrationsApi = {
+  analyzePortal: async (orgId: string, url: string): Promise<AnalyzePortalResponse> => {
+    const res = await apiClient.post(`/organizations/${orgId}/integrations/analyze-portal`, { url });
+    return res.data;
+  },
+
   listConnections: async (orgId: string): Promise<IntegrationConnection[]> => {
     const res = await apiClient.get(`/organizations/${orgId}/integrations`);
     return res.data;

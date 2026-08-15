@@ -9,6 +9,7 @@ import {
   useDisconnectIntegration,
   useHealthCheck,
   useOAuthUrl,
+  useAnalyzePortal,
 } from '../../../hooks/useIntegrations';
 import { useToast } from '../../../components/common/Toast';
 import { ConfirmModal } from '../../../components/common/ConfirmModal';
@@ -235,6 +236,11 @@ export default function IntegrationsPage() {
   const [connectingProvider, setConnectingProvider] = useState<typeof PROVIDERS[0] | null>(null);
   const [disconnectingProvider, setDisconnectingProvider] = useState<IntegrationProvider | null>(null);
 
+  // Custom Portal Analysis State
+  const [portalUrl, setPortalUrl] = useState('');
+  const [portalResult, setPortalResult] = useState<{ compatible: boolean; platform: string | null; reason?: string } | null>(null);
+  const { mutate: analyzePortal, isPending: isAnalyzing } = useAnalyzePortal(orgId);
+
   const handleInitiateConnect = (provider: typeof PROVIDERS[0]) => {
     if (provider.authenticationType === 'PAT') {
       setConnectingProvider(provider);
@@ -294,6 +300,19 @@ export default function IntegrationsPage() {
     });
   };
 
+  const handleAnalyzePortal = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!portalUrl.trim()) return;
+    analyzePortal(portalUrl, {
+      onSuccess: (data: any) => {
+        setPortalResult(data);
+      },
+      onError: () => {
+        setPortalResult({ compatible: false, platform: null, reason: 'error' });
+      },
+    });
+  };
+
   return (
     <DashboardShell>
       <div className="flex flex-col space-y-6">
@@ -303,6 +322,65 @@ export default function IntegrationsPage() {
           <p className="text-xs text-premium-muted mt-0.5">
             Connect external platforms to delegate access securely through WithUs.
           </p>
+        </div>
+
+        {/* Level 1 Custom Portal Analyzer */}
+        <div className="premium-card p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Globe className="w-5 h-5 text-premium-muted" />
+            <h2 className="text-lg font-bold text-premium">Add Custom Portal</h2>
+          </div>
+          <p className="text-sm text-premium-muted mb-4 max-w-3xl">
+            Paste a portal login URL to check if WITHUS supports delegated access for it. Currently, WITHUS matches submitted URLs against verified platforms in our integration registry.
+          </p>
+          <form onSubmit={handleAnalyzePortal} className="flex gap-3 max-w-xl">
+            <input
+              type="url"
+              className="premium-input flex-1"
+              placeholder="https://github.com/login"
+              value={portalUrl}
+              onChange={(e) => {
+                setPortalUrl(e.target.value);
+                setPortalResult(null); // Clear result on edit
+              }}
+              required
+            />
+            <button
+              type="submit"
+              disabled={isAnalyzing || !portalUrl}
+              className="premium-button-primary whitespace-nowrap min-w-[100px]"
+            >
+              {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Check URL'}
+            </button>
+          </form>
+
+          {portalResult && (
+            <div className="mt-4 pt-4 border-t border-premium">
+              {portalResult.compatible ? (
+                <div className="flex items-center gap-3 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20">
+                  <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                  <div>
+                    <div className="font-bold text-sm">Compatible ✅</div>
+                    <div className="text-xs opacity-90">{portalResult.platform} detected. Known WITHUS platform.</div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <div>
+                    <div className="font-bold text-sm">Unknown Portal ⚠️</div>
+                    <div className="text-xs opacity-90">
+                      {portalResult.reason === 'not_https'
+                        ? 'Custom portals must use HTTPS for secure connection.'
+                        : portalResult.reason === 'invalid_url'
+                        ? 'Invalid URL format.'
+                        : 'Not currently supported. This portal is not in the WITHUS verified registry.'}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Info Banner */}

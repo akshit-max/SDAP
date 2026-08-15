@@ -13,6 +13,15 @@ export function useIntegrations(orgId: string | null) {
   });
 }
 
+export function useAnalyzePortal(orgId: string | null) {
+  return useMutation({
+    mutationFn: (url: string) => {
+      if (!orgId) throw new Error('Organization required');
+      return integrationsApi.analyzePortal(orgId, url);
+    },
+  });
+}
+
 export function useConnectIntegration(orgId: string | null) {
   const qc = useQueryClient();
   return useMutation({

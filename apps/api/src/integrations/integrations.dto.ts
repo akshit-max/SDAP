@@ -13,8 +13,19 @@ export class ConnectIntegrationDto {
 export const OAuthCallbackSchema = z.object({
   code: z.string().min(1, 'Authorization code is required'),
 });
-export class OAuthCallbackDto {
-  code!: string;
+
+export type OAuthCallbackDto = z.infer<typeof OAuthCallbackSchema>;
+
+export const AnalyzePortalSchema = z.object({
+  url: z.string().url('Must be a valid URL'),
+});
+
+export type AnalyzePortalDto = z.infer<typeof AnalyzePortalSchema>;
+
+export interface AnalyzePortalResponseDto {
+  compatible: boolean;
+  provider: IntegrationProvider | null;
+  reason?: 'unrecognized_platform' | 'invalid_url' | 'not_https';
 }
 
 export const GrantIntegrationAccessSchema = z.object({
