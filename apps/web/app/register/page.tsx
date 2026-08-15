@@ -81,67 +81,69 @@ function RegisterForm() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-premium-bg p-6">
-      <div className="max-w-md w-full premium-card p-8 shadow-sm">
-
+    <div className="theme-light min-h-screen flex flex-col items-center justify-center bg-premium-bg p-6">
+      <div className="max-w-md w-full premium-card p-8 shadow-sm bg-premium-surface">
+ 
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="mx-auto w-12 h-12 mb-4">
-            <img src="/logo.png" alt="WithUs Logo" className="w-full h-full object-contain" />
+          <div className="mx-auto w-12 h-12 mb-3 flex items-center justify-center rounded-xl bg-zinc-950 dark:bg-zinc-900 border border-premium shadow-md">
+            <svg className="w-6 h-6 text-lime-400" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2l2.3 4.8 5.1-1.6-1.6 5.1 4.8 2.3-4.8 2.3 1.6 5.1-5.1-1.6-2.3 4.8-2.3-4.8-5.1 1.6 1.6-5.1-4.8-2.3 4.8-2.3-1.6-5.1 5.1 1.6L12 2z"/>
+            </svg>
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-premium-main">WithUs</h1>
-          <p className="text-xs text-premium-muted mt-1.5 font-medium">
+          <h1 className="text-xl font-extrabold tracking-tight text-premium-main">WithUs</h1>
+          <p className="text-[11px] text-premium-muted font-medium mt-1">
             {isInviteFlow
               ? (inviteDetails?.organizationName ? `Join ${inviteDetails.organizationName}` : 'Join the team')
               : 'Create your enterprise workspace'}
           </p>
         </div>
-
+ 
         {isInviteFlow && (
-          <div className="mb-6 p-4 bg-slate-50/50 dark:bg-zinc-900/30 border border-premium/50 rounded-lg text-center text-xs font-semibold leading-relaxed">
+          <div className="mb-6 p-4 bg-zinc-100/50 dark:bg-zinc-900/40 border border-premium rounded-xl text-center text-xs font-semibold leading-relaxed">
             <p className="text-premium-main font-bold mb-1">First time joining WithUs?</p>
             <p className="text-premium-muted text-[11px]">
               You are creating a new account using the invited email.
             </p>
             <p className="text-premium-muted text-[11px] mt-0.5">
               Already have an account? Click{' '}
-              <Link href={`/login?redirect=${encodeURIComponent(redirectParam)}`} className="text-premium-main font-bold underline">
+              <Link href={`/login?redirect=${encodeURIComponent(redirectParam)}`} className="text-premium-main font-bold underline hover:text-lime-500 transition-colors">
                 Sign In
               </Link>{' '}
               instead to join the team.
             </p>
           </div>
         )}
-
+ 
         {/* Form */}
-        <form onSubmit={handleRegister} className="space-y-5">
+        <form onSubmit={handleRegister} className="space-y-4">
           {/* Full Name */}
-          <div className="space-y-1.5">
-            <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wide">Full Name</label>
+          <div className="space-y-2">
+            <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wider">Full Name</label>
             <div className="relative">
               <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-premium-muted" />
               <input
                 type="text"
                 required
                 autoComplete="name"
-                className="w-full pl-10 pr-4 py-2.5 premium-input text-xs"
+                className="w-full pl-10 pr-4 py-2.5 premium-input text-xs font-medium focus:ring-1 focus:ring-lime-400"
                 placeholder="Jane Doe"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
               />
             </div>
           </div>
-
+ 
           {/* Company Name — only shown for normal signups */}
           {!isInviteFlow && (
-            <div className="space-y-1.5">
-              <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wide">Company Name</label>
+            <div className="space-y-2">
+              <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wider">Company Name</label>
               <div className="relative">
                 <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-premium-muted" />
                 <input
                   type="text"
                   required
-                  className="w-full pl-10 pr-4 py-2.5 premium-input text-xs"
+                  className="w-full pl-10 pr-4 py-2.5 premium-input text-xs font-medium focus:ring-1 focus:ring-lime-400"
                   placeholder="Acme Corp"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
@@ -149,10 +151,10 @@ function RegisterForm() {
               </div>
             </div>
           )}
-
+ 
           {/* Email */}
-          <div className="space-y-1.5">
-            <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wide">Email Address</label>
+          <div className="space-y-2">
+            <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wider">Email Address</label>
             <div className="relative">
               <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-premium-muted" />
               <input
@@ -160,7 +162,7 @@ function RegisterForm() {
                 required
                 autoComplete="email"
                 disabled={isInviteFlow}
-                className={`w-full pl-10 pr-4 py-2.5 premium-input text-xs ${isInviteFlow ? 'text-slate-500 cursor-not-allowed bg-slate-100 dark:bg-slate-900' : ''}`}
+                className={`w-full pl-10 pr-4 py-2.5 premium-input text-xs font-medium focus:ring-1 focus:ring-lime-400 ${isInviteFlow ? 'text-zinc-500 cursor-not-allowed bg-zinc-100 dark:bg-zinc-900/50' : ''}`}
                 placeholder="admin@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -170,28 +172,28 @@ function RegisterForm() {
               <p className="text-[10px] text-premium-muted mt-1 font-semibold">This is the email address that was invited.</p>
             )}
           </div>
-
+ 
           {/* Password */}
-          <div className="space-y-1.5">
-            <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wide">Password</label>
+          <div className="space-y-2">
+            <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wider">Password</label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-premium-muted" />
               <input
                 type="password"
                 required
                 autoComplete="new-password"
-                className="w-full pl-10 pr-4 py-2.5 premium-input text-xs"
+                className="w-full pl-10 pr-4 py-2.5 premium-input text-xs font-medium focus:ring-1 focus:ring-lime-400"
                 placeholder="Min. 8 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
           </div>
-
+ 
           <button
             type="submit"
             disabled={loading}
-            className="w-full premium-button-primary py-2.5 text-xs shadow-sm"
+            className="w-full premium-button-primary py-2.5 text-xs shadow-md font-bold mt-3"
           >
             {loading ? (
               <><Loader2 className="w-4 h-4 animate-spin mr-1.5" /> Creating Account...</>
@@ -199,12 +201,12 @@ function RegisterForm() {
               isInviteFlow ? 'Create Account & Join Team' : 'Create Workspace'
             )}
           </button>
-
-          <div className="text-center text-xs text-premium-muted pt-2 border-t border-premium">
+ 
+          <div className="text-center text-xs text-premium-muted pt-4 border-t border-premium mt-4">
             Already have an account?{' '}
             <Link
               href={isInviteFlow ? `/login?redirect=${encodeURIComponent(redirectParam)}` : '/login'}
-              className="text-premium-main font-semibold hover:underline"
+              className="text-premium-main font-bold hover:underline hover:text-lime-500 transition-colors"
             >
               Sign In
             </Link>
