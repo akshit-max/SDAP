@@ -3,16 +3,16 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f5f5f7; /* Soft grey background for all page canvases */
+  --foreground: #09090b; /* Deep zinc-950 for text readability */
 }
 
-@media (prefers-color-scheme: dark) {
+/* @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
   }
-}
+} */
 
 html,
 body {
@@ -35,7 +35,7 @@ a {
   display: none;
 }
 
-@media (prefers-color-scheme: dark) {
+/* @media (prefers-color-scheme: dark) {
   html {
     color-scheme: dark;
   }
@@ -46,7 +46,7 @@ a {
   .imgDark {
     display: unset;
   }
-}
+} */
 
 @keyframes shrink {
   from { width: 100%; }
@@ -56,26 +56,28 @@ a {
 /* UI Refactor Utility Classes */
 
 :root {
-  --bg-primary: #e5e5ea; /* Clean, flat soft gray background */
+  --bg-primary: #f5f5f7; /* Clean, flat soft gray background */
   --bg-surface: #ffffff; /* Crisp white card surface */
-  --border-subtle: #d1d5db; /* Defined neutral border */
+  --border-subtle: #e4e4e7; /* Defined neutral border */
   --text-main: #09090b; /* Deep text */
   --text-muted: #71717a; /* Muted text */
-  --primary-accent: #a3e635; /* Vibrant premium lime green */
-  --primary-accent-text: #09090b; /* Black text for contrast */
+  --primary-accent: #09090b; /* Sleek black accent */
+  --primary-accent-text: #ffffff; /* White text for contrast */
+  --accent-lime: #bef264; /* Lime green for success/active highlights */
+  --accent-lime-text: #09090b;
 }
 
-@media (prefers-color-scheme: dark) {
+/* @media (prefers-color-scheme: dark) {
   :root {
-    --bg-primary: #0e0e10; /* Flat deep dark background */
-    --bg-surface: #1c1c1f; /* Elevated dark card surface */
-    --border-subtle: #2c2c2f; /* Refined dark panel border */
-    --text-main: #f4f4f5; /* Off-white text */
-    --text-muted: #a1a1aa; /* Secondary slate text */
-    --primary-accent: #a3e635; /* Vibrant premium lime green */
-    --primary-accent-text: #09090b; /* Black text for contrast */
+    --bg-primary: #0e0e10; 
+    --bg-surface: #1c1c1f; 
+    --border-subtle: #2c2c2f; 
+    --text-main: #f4f4f5; 
+    --text-muted: #a1a1aa; 
+    --primary-accent: #a3e635; 
+    --primary-accent-text: #09090b; 
   }
-}
+} */
 
 .bg-premium-bg {
   background-color: var(--bg-primary);

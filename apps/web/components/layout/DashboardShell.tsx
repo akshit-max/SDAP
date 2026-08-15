@@ -103,18 +103,18 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                   href={item.href}
                   title={isCollapsed ? item.name : undefined}
                   className={clsx(
-                    'relative flex items-center py-2 text-xs font-semibold rounded-lg transition-all duration-150',
+                    'relative flex items-center py-2 text-[11px] font-bold rounded-lg transition-all duration-150',
                     isCollapsed ? 'justify-center px-0' : 'px-3',
                     isActive
-                      ? 'bg-slate-100 text-slate-950 dark:bg-zinc-800/60 dark:text-zinc-50'
-                      : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-zinc-900/30 hover:text-slate-900 dark:hover:text-zinc-100'
+                      ? 'bg-lime-400 text-zinc-950 shadow-sm'
+                      : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900'
                   )}
                 >
                   <item.icon
                     className={clsx(
                       'w-4 h-4 flex-shrink-0 transition-colors',
                       !isCollapsed && 'mr-3',
-                      isActive ? 'text-slate-950 dark:text-zinc-50' : 'text-slate-450 dark:text-slate-500'
+                      isActive ? 'text-zinc-950' : 'text-zinc-400'
                     )}
                   />
                   {!isCollapsed && <span className="truncate">{item.name}</span>}
@@ -132,13 +132,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             })}
           </nav>
         </div>
-
+ 
         <div className="p-3 border-t border-premium flex flex-col gap-1">
           <button
             onClick={handleLogout}
             title={isCollapsed ? "Logout" : undefined}
             className={clsx(
-              "flex items-center justify-center py-2 text-xs font-semibold rounded-lg transition-all duration-150 border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 text-red-500 hover:border-red-500/30",
+              "flex items-center justify-center py-2 text-[11px] font-bold rounded-lg transition-all duration-150 text-zinc-500 hover:text-red-600 hover:bg-red-50/50 border border-transparent hover:border-red-100",
               isCollapsed ? "w-10 h-10 mx-auto" : "px-3 w-full"
             )}
           >
