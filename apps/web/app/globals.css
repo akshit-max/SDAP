@@ -56,24 +56,24 @@ a {
 /* UI Refactor Utility Classes */
 
 :root {
-  --bg-primary: #f8f9fa; /* Soft light gray base */
-  --bg-surface: #ffffff; /* White surfaces */
-  --border-subtle: #e4e4e7; /* Clean borders */
-  --text-main: #09090b; /* Deep slate text */
-  --text-muted: #71717a; /* Muted secondary text */
+  --bg-primary: #e5e5ea; /* Clean, flat soft gray background */
+  --bg-surface: #ffffff; /* Crisp white card surface */
+  --border-subtle: #d1d5db; /* Defined neutral border */
+  --text-main: #09090b; /* Deep text */
+  --text-muted: #71717a; /* Muted text */
   --primary-accent: #a3e635; /* Vibrant premium lime green */
-  --primary-accent-text: #09090b; /* Black text for high contrast */
+  --primary-accent-text: #09090b; /* Black text for contrast */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg-primary: #09090b; /* Deep dark gray base */
-    --bg-surface: #121215; /* Elevated surface card color */
-    --border-subtle: #1f1f23; /* Subtle border for dark panels */
+    --bg-primary: #0e0e10; /* Flat deep dark background */
+    --bg-surface: #1c1c1f; /* Elevated dark card surface */
+    --border-subtle: #2c2c2f; /* Refined dark panel border */
     --text-main: #f4f4f5; /* Off-white text */
-    --text-muted: #a1a1aa; /* Slate gray secondary text */
+    --text-muted: #a1a1aa; /* Secondary slate text */
     --primary-accent: #a3e635; /* Vibrant premium lime green */
-    --primary-accent-text: #09090b; /* Black text for high contrast */
+    --primary-accent-text: #09090b; /* Black text for contrast */
   }
 }
 

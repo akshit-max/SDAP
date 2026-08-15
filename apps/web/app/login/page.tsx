@@ -56,12 +56,8 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen relative flex flex-col items-center justify-center bg-premium-bg p-6 overflow-hidden">
-      {/* Premium background blur accents */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-lime-400/10 rounded-full blur-3xl pointer-events-none dark:bg-lime-400/5"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-zinc-400/5 rounded-full blur-3xl pointer-events-none"></div>
-
-      <div className="max-w-md w-full premium-card p-8 shadow-lg relative z-10 backdrop-blur-sm bg-premium-surface/90">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-premium-bg p-6">
+      <div className="max-w-md w-full premium-card p-8 shadow-sm bg-premium-surface">
 
         {/* Header */}
         <div className="text-center mb-8">
