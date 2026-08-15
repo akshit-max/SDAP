@@ -81,7 +81,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       {/* Sidebar */}
       <div 
         className={clsx(
-          "bg-premium-surface border-r border-premium flex flex-col transition-all duration-150",
+          "bg-[#f4f4f6] border-r border-premium flex flex-col transition-all duration-150",
           isCollapsed ? "w-16" : "w-60"
         )}
       >
@@ -107,11 +107,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                   href={item.href}
                   title={isCollapsed ? item.name : undefined}
                   className={clsx(
-                    'relative flex items-center py-2 text-[11px] font-bold rounded-lg transition-all duration-150',
+                    'relative flex items-center py-2.5 text-[11px] font-bold rounded-lg transition-all duration-150',
                     isCollapsed ? 'justify-center px-0' : 'px-3',
                     isActive
-                      ? 'bg-lime-400 text-zinc-950 shadow-sm'
-                      : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900'
+                      ? 'bg-[#bef264] text-zinc-950 shadow-sm'
+                      : 'text-zinc-500 hover:bg-zinc-200/50 hover:text-zinc-900'
                   )}
                 >
                   <item.icon
@@ -142,7 +142,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             onClick={handleLogout}
             title={isCollapsed ? "Logout" : undefined}
             className={clsx(
-              "flex items-center justify-center py-2 text-[11px] font-bold rounded-lg transition-all duration-150 text-zinc-500 hover:text-red-600 hover:bg-red-50/50 border border-transparent hover:border-red-100",
+              "flex items-center justify-center py-2.5 text-[11px] font-bold rounded-lg transition-all duration-150 text-zinc-500 hover:text-red-600 hover:bg-red-50/50 border border-transparent hover:border-red-100",
               isCollapsed ? "w-10 h-10 mx-auto" : "px-3 w-full"
             )}
           >
