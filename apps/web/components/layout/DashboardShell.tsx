@@ -29,10 +29,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }
   
   const LogoSVG = () => (
-    <div className="w-7 h-7 flex items-center justify-center rounded-xl bg-zinc-950 border border-zinc-800 shadow-sm flex-shrink-0 select-none">
-      <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2l2.3 4.8 5.1-1.6-1.6 5.1 4.8 2.3-4.8 2.3 1.6 5.1-5.1-1.6-2.3 4.8-2.3-4.8-5.1 1.6 1.6-5.1-4.8-2.3 4.8-2.3-1.6-5.1 5.1 1.6L12 2z"/>
-      </svg>
+    <div className="w-7 h-7 flex items-center justify-center rounded-xl bg-zinc-950 border border-zinc-800 shadow-sm flex-shrink-0 select-none p-1.5">
+      <img src="/logo.png" alt="WithUs" className="w-full h-full object-contain" />
     </div>
   );
   
