@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useAuditEvents } from '../../hooks/useAudit';
 import { DashboardShell } from '../../components/layout/DashboardShell';
+import { useOrgMembers } from '../../hooks/useOrganization';
 import {
   ChevronDown,
   ChevronUp,
@@ -22,6 +23,10 @@ import {
   Activity,
   Clock,
   Timer,
+  UserX,
+  ShieldOff,
+  Link,
+  Link2Off,
 } from 'lucide-react';
 import { AuditEventDto } from '@repo/types';
 import { useAuth } from '../../lib/auth/AuthContext';
@@ -51,6 +56,11 @@ const ACTION_MAP: Record<string, ActionConfig> = {
   'user.login':         { label: 'Login',               icon: <LogIn className="w-3.5 h-3.5" />,     color: 'text-slate-700 dark:text-slate-300',   bg: 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700' },
   'user.logout':        { label: 'Logout',              icon: <LogOut className="w-3.5 h-3.5" />,    color: 'text-slate-700 dark:text-slate-300',   bg: 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700' },
   'mek.rotated':        { label: 'Key Rotated',         icon: <RefreshCw className="w-3.5 h-3.5" />, color: 'text-violet-700 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-950/30 border-violet-200/50 dark:border-violet-900/30' },
+  // ─── Phase 2 events ─────────────────────────────────────────────────────────
+  'session.revoke_all':         { label: 'Sessions Bulk Revoked',    icon: <ShieldOff className="w-3.5 h-3.5" />, color: 'text-red-700 dark:text-red-400',           bg: 'bg-red-50 dark:bg-red-950/30 border-red-200/50 dark:border-red-900/30' },
+  'member.offboarded':          { label: 'Member Offboarded',        icon: <UserX className="w-3.5 h-3.5" />,     color: 'text-orange-700 dark:text-orange-400',     bg: 'bg-orange-50 dark:bg-orange-950/30 border-orange-200/50 dark:border-orange-900/30' },
+  'integration.connected':      { label: 'Integration Connected',    icon: <Link className="w-3.5 h-3.5" />,      color: 'text-emerald-700 dark:text-emerald-400',  bg: 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200/50 dark:border-emerald-900/30' },
+  'integration.disconnected':   { label: 'Integration Disconnected', icon: <Link2Off className="w-3.5 h-3.5" />,  color: 'text-slate-600 dark:text-slate-400',       bg: 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700' },
 };
 
 const FALLBACK_ACTION: ActionConfig = {
@@ -93,9 +103,13 @@ const ACTION_OPTIONS = [
   { value: 'session.created', label: 'Session Granted' },
   { value: 'session.revoked', label: 'Session Revoked' },
   { value: 'session.expired', label: 'Session Expired' },
+  { value: 'session.revoke_all', label: 'Sessions Bulk Revoked' },
   { value: 'approval.requested', label: 'Approval Requested' },
   { value: 'approval.approved', label: 'Approval Granted' },
   { value: 'approval.rejected', label: 'Approval Rejected' },
+  { value: 'member.offboarded', label: 'Member Offboarded' },
+  { value: 'integration.connected', label: 'Integration Connected' },
+  { value: 'integration.disconnected', label: 'Integration Disconnected' },
 ];
 
 // ─── Duration formatter ───────────────────────────────────────────────────────
@@ -145,6 +159,14 @@ function AuditMetaDetails({ action, metadata }: { action: string; metadata: Reco
     if (platformLabel) rows.push({ label: 'Platform', value: platformLabel });
     if (durationLabel) rows.push({ label: 'Duration', value: durationLabel });
     rows.push({ label: 'Status', value: 'Expired — automatic' });
+  } else if (action === 'session.revoke_all') {
+    if (typeof metadata.revokedCount === 'number') rows.push({ label: 'Revoked', value: `${metadata.revokedCount} session${metadata.revokedCount !== 1 ? 's' : ''}` });
+    if (typeof metadata.skippedCount === 'number' && metadata.skippedCount > 0) rows.push({ label: 'Retrying', value: `${metadata.skippedCount} failed (scheduled retry)` });
+  } else if (action === 'member.offboarded') {
+    if (metadata.name || metadata.email) rows.push({ label: 'Member', value: String(metadata.name || metadata.email) });
+    if (typeof metadata.sessionsRevoked === 'number') rows.push({ label: 'Sessions', value: `${metadata.sessionsRevoked} revoked` });
+    if (typeof metadata.refreshTokensRevoked === 'number') rows.push({ label: 'Tokens', value: `${metadata.refreshTokensRevoked} invalidated` });
+    if (typeof metadata.approvalsCancelled === 'number' && metadata.approvalsCancelled > 0) rows.push({ label: 'Approvals', value: `${metadata.approvalsCancelled} cancelled` });
   }
 
   return (
@@ -192,14 +214,35 @@ export default function AuditPage() {
   const { organization } = useAuth();
   const orgId = organization?.id || '';
   const [actionFilter, setActionFilter] = useState('');
+  const [actorFilter, setActorFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [page, setPage] = useState(1);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
+  const { data: membersData = [] } = useOrgMembers(orgId);
+
   const { data, isLoading } = useAuditEvents(orgId, {
     action: actionFilter || undefined,
+    actorId: actorFilter || undefined,
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
     page: String(page),
     limit: '10',
   });
+
+  const handleFilterChange = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setter(e.target.value);
+    setPage(1);
+  };
+
+  const handleClearFilters = () => {
+    setActionFilter('');
+    setActorFilter('');
+    setStartDate('');
+    setEndDate('');
+    setPage(1);
+  };
 
   const toggleRow = (id: string) => {
     setExpandedRow(expandedRow === id ? null : id);
@@ -216,26 +259,73 @@ export default function AuditPage() {
           </p>
         </div>
 
-        {/* Filter */}
-        <div className="premium-card p-4 flex flex-col sm:flex-row gap-3 items-end shadow-none">
-          <div className="flex-1 space-y-1.5">
-            <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wide">Event Type</label>
-            <select
-              className="w-full premium-input text-xs"
-              value={actionFilter}
-              onChange={(e) => { setActionFilter(e.target.value); setPage(1); }}
-            >
-              {ACTION_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+        {/* Filters */}
+        <div className="premium-card p-4 shadow-none space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Event type */}
+            <div className="flex-1 space-y-1.5">
+              <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wide">Event Type</label>
+              <select
+                className="w-full premium-input text-xs"
+                value={actionFilter}
+                onChange={handleFilterChange(setActionFilter)}
+              >
+                {ACTION_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Actor / member */}
+            <div className="flex-1 space-y-1.5">
+              <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wide">Actor</label>
+              <select
+                className="w-full premium-input text-xs"
+                value={actorFilter}
+                onChange={handleFilterChange(setActorFilter)}
+              >
+                <option value="">All Members</option>
+                {membersData.map((m: any) => (
+                  <option key={m.userId} value={m.userId}>
+                    {m.user?.fullName || m.user?.email || m.userId}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-          <button
-            onClick={() => { setActionFilter(''); setPage(1); }}
-            className="premium-button-secondary py-1.5 px-4"
-          >
-            Clear
-          </button>
+
+          <div className="flex flex-col sm:flex-row gap-3 items-end">
+            {/* Start date */}
+            <div className="flex-1 space-y-1.5">
+              <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wide">From</label>
+              <input
+                type="date"
+                className="w-full premium-input text-xs"
+                value={startDate}
+                onChange={handleFilterChange(setStartDate)}
+                max={endDate || undefined}
+              />
+            </div>
+
+            {/* End date */}
+            <div className="flex-1 space-y-1.5">
+              <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wide">To</label>
+              <input
+                type="date"
+                className="w-full premium-input text-xs"
+                value={endDate}
+                onChange={handleFilterChange(setEndDate)}
+                min={startDate || undefined}
+              />
+            </div>
+
+            <button
+              onClick={handleClearFilters}
+              className="premium-button-secondary py-1.5 px-4 flex-shrink-0"
+            >
+              Clear All
+            </button>
+          </div>
         </div>
 
         {/* Table */}
