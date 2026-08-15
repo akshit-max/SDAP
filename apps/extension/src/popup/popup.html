@@ -7,32 +7,71 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --bg: #09090b;
+      --card-bg: #121215;
+      --card-border: #1f1f23;
+      --input-bg: #121215;
+      --input-border: #1f1f23;
+      --input-focus: #a3e635;
+      --text: #f4f4f5;
+      --text-muted: #a1a1aa;
+      --primary: #a3e635;
+      --primary-hover: #bef264;
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.08);
+      --danger-border: rgba(239, 68, 68, 0.15);
+    }
+
     body {
       width: 340px;
       min-height: 200px;
       font-family: system-ui, -apple-system, sans-serif;
-      background: #030303;
-      color: #f4f4f5;
+      background: var(--bg);
+      color: var(--text);
       font-size: 13px;
+      line-height: 1.5;
     }
 
     /* Header */
     .header {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 14px 16px 12px;
-      border-bottom: 1px solid #1f1f23;
+      gap: 12px;
+      padding: 16px 16px 14px;
+      border-bottom: 1px solid var(--card-border);
+      background: rgba(255, 255, 255, 0.01);
     }
-    .logo {
-      width: 28px;
-      height: 28px;
-      border-radius: 6px;
-      object-fit: contain;
-      flex-shrink: 0;
+    
+    .logo-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background: #18181b;
+      border: 1px solid var(--card-border);
+      color: #fff;
     }
-    .header-text h1 { font-size: 13px; font-weight: 700; color: #f4f4f5; }
-    .header-text p { font-size: 11px; color: #a1a1aa; margin-top: 1px; }
+    
+    .logo-star {
+      width: 18px;
+      height: 18px;
+    }
+
+    .header-text h1 { 
+      font-size: 13px; 
+      font-weight: 700; 
+      color: var(--text); 
+      letter-spacing: -0.015em;
+    }
+    
+    .header-text p { 
+      font-size: 11px; 
+      color: var(--text-muted); 
+      margin-top: 1px; 
+    }
 
     .status-dot {
       margin-left: auto;
@@ -40,39 +79,68 @@
       height: 8px;
       border-radius: 50%;
       background: #27272a;
+      transition: background 0.3s;
     }
-    .status-dot.connected { background: #22c55e; }
+    .status-dot.connected { 
+      background: #10b981; 
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+    }
 
     /* Content */
     .content { padding: 14px 16px; }
 
     /* Login form */
-    #login-view label {
-      display: block;
-      font-size: 11px;
-      font-weight: 600;
-      color: #a1a1aa;
-      margin-bottom: 4px;
-      margin-top: 10px;
+    .form-group {
+      margin-bottom: 12px;
     }
-    #login-view label:first-child { margin-top: 0; }
-    #login-view input {
+    
+    .form-group label {
+      display: block;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    
+    .input-icon {
+      position: absolute;
+      left: 10px;
+      width: 14px;
+      height: 14px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+    
+    .input-field {
       width: 100%;
-      padding: 8px 10px;
-      background: #09090b;
-      border: 1px solid #1f1f23;
+      padding: 8px 10px 8px 32px;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
       border-radius: 8px;
-      color: #f4f4f5;
+      color: var(--text);
       font-size: 13px;
       outline: none;
       transition: border-color 0.15s;
     }
-    #login-view input:focus { border-color: #ffffff; }
+    .input-field:focus { 
+      border-color: var(--input-focus); 
+    }
 
     .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
       width: 100%;
       padding: 9px;
-      margin-top: 14px;
       border: none;
       border-radius: 8px;
       font-size: 13px;
@@ -81,110 +149,236 @@
       transition: opacity 0.15s;
     }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-primary { background: #ffffff; color: #030303; }
-    .btn-primary:hover:not(:disabled) { background: #e4e4e7; }
-    .btn-danger { background: #09090b; color: #ef4444; border: 1px solid #3f0f0f; margin-top: 8px; }
+    
+    .btn-primary { 
+      background: var(--primary); 
+      color: #030303; 
+    }
+    .btn-primary:hover:not(:disabled) { 
+      background: var(--primary-hover); 
+    }
+    
+    .btn-secondary {
+      background: #ffffff;
+      color: #030303;
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background: #e4e4e7;
+    }
 
     /* Session list */
-    #sessions-view h2 {
-      font-size: 11px;
+    .section-title {
+      font-size: 10px;
       font-weight: 700;
-      color: #a1a1aa;
+      color: var(--text-muted);
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.05em;
       margin-bottom: 10px;
     }
 
     .session-card {
-      background: #09090b;
-      border: 1px solid #1f1f23;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
       border-radius: 10px;
-      padding: 10px 12px;
-      margin-bottom: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
+    
+    .session-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    
+    .platform-icon-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: #18181b;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      flex-shrink: 0;
+    }
+    
+    .platform-icon {
+      width: 18px;
+      height: 18px;
+    }
+    
+    .session-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    
     .session-name {
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 600;
-      color: #f4f4f5;
+      color: var(--text);
     }
-    .session-meta {
-      font-size: 10px;
-      color: #a1a1aa;
-      margin-top: 3px;
-    }
-    .session-meta span { margin-right: 8px; }
-    .badge-active {
+    
+    .session-status-badge {
       display: inline-block;
       padding: 1px 6px;
       border-radius: 99px;
-      background: rgba(34,197,94,0.1);
-      color: #4ade80;
-      font-size: 10px;
+      background: rgba(16, 185, 129, 0.1);
+      color: #10b981;
+      font-size: 9px;
       font-weight: 700;
-      border: 1px solid rgba(34,197,94,0.15);
-      margin-left: 6px;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+    
+    .session-details {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    
+    .detail-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+    
+    .detail-row span:last-child {
+      color: var(--text);
+      font-weight: 500;
     }
 
     .no-sessions {
       text-align: center;
-      padding: 24px 0;
-      color: #71717a;
+      padding: 24px 12px;
+      background: var(--card-bg);
+      border: 1px dashed var(--card-border);
+      border-radius: 10px;
+      color: var(--text-muted);
       font-size: 12px;
       line-height: 1.6;
     }
-    .no-sessions strong { display: block; color: #a1a1aa; margin-bottom: 4px; }
+    .no-sessions strong { 
+      display: block; 
+      color: var(--text); 
+      margin-bottom: 4px;
+      font-size: 12px;
+    }
 
     /* Error */
     .error-msg {
-      background: rgba(239,68,68,0.08);
-      border: 1px solid rgba(239,68,68,0.15);
+      background: var(--danger-bg);
+      border: 1px solid var(--danger-border);
       border-radius: 8px;
       padding: 8px 10px;
-      color: #f87171;
+      color: var(--danger);
       font-size: 11px;
       margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
     /* Current site */
-    .current-site {
-      font-size: 11px;
-      color: #a1a1aa;
+    .current-site-banner {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 8px 10px;
       margin-bottom: 12px;
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    .current-site span {
-      color: #f4f4f5;
+    .current-site-banner span {
+      color: var(--text);
       font-weight: 600;
     }
 
     /* Footer */
     .footer {
-      padding: 8px 16px 14px;
+      padding: 10px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-top: 1px solid #1f1f23;
+      border-top: 1px solid var(--card-border);
+      background: rgba(255, 255, 255, 0.005);
     }
-    .footer-email { font-size: 11px; color: #71717a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 220px;
+    }
+    
+    .user-avatar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    
+    .footer-email { 
+      font-size: 11px; 
+      color: var(--text-muted); 
+      overflow: hidden; 
+      text-overflow: ellipsis; 
+      white-space: nowrap; 
+    }
+    
     .logout-btn {
       font-size: 11px;
-      color: #a1a1aa;
+      font-weight: 600;
+      color: var(--text-muted);
       background: none;
       border: none;
       cursor: pointer;
       padding: 2px 6px;
       border-radius: 4px;
+      transition: color 0.15s;
     }
-    .logout-btn:hover { color: #ef4444; }
+    .logout-btn:hover { 
+      color: var(--danger); 
+    }
 
     .hidden { display: none !important; }
-    .spinner { display: inline-block; animation: spin 0.8s linear infinite; }
+    .spinner { 
+      display: inline-block; 
+      animation: spin 0.8s linear infinite; 
+      width: 12px;
+      height: 12px;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+    }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
   <!-- Header -->
   <div class="header">
-    <img src="../icons/icon48.png" alt="WithUs" class="logo" />
+    <div class="logo-container">
+      <svg class="logo-star" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2l2.3 4.8 5.1-1.6-1.6 5.1 4.8 2.3-4.8 2.3 1.6 5.1-5.1-1.6-2.3 4.8-2.3-4.8-5.1 1.6 1.6-5.1-4.8-2.3 4.8-2.3-1.6-5.1 5.1 1.6L12 2z"/>
+      </svg>
+    </div>
     <div class="header-text">
       <h1>WithUs Vault</h1>
       <p>Delegated Credential Access</p>
@@ -194,24 +388,46 @@
 
   <!-- Login View -->
   <div id="login-view" class="content hidden">
-    <label for="email">Email</label>
-    <input type="email" id="email" placeholder="you@company.com" autocomplete="email" />
-    <label for="password">Password</label>
-    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+    <div class="form-group">
+      <label for="email">Email</label>
+      <div class="input-wrapper">
+        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+        <input type="email" id="email" class="input-field" placeholder="you@company.com" autocomplete="email" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="password">Password</label>
+      <div class="input-wrapper">
+        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        <input type="password" id="password" class="input-field" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+    </div>
     <div class="error-msg hidden" id="login-error"></div>
-    <button class="btn btn-primary" id="login-btn">Sign in to WithUs</button>
+    <button class="btn btn-primary" id="login-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/></svg>
+      Sign in to WithUs
+    </button>
   </div>
 
   <!-- Sessions View -->
   <div id="sessions-view" class="content hidden">
-    <div class="current-site" id="current-site"></div>
-    <h2>Active Delegated Sessions</h2>
+    <div class="current-site-banner" id="current-site"></div>
+    <h2 class="section-title">Active Delegated Sessions</h2>
     <div id="sessions-list"></div>
   </div>
 
   <!-- Footer (when logged in) -->
   <div class="footer hidden" id="footer">
-    <span class="footer-email" id="user-email"></span>
+    <div class="user-info">
+      <div class="user-avatar" id="user-avatar">A</div>
+      <span class="footer-email" id="user-email"></span>
+    </div>
     <button class="logout-btn" id="logout-btn">Sign out</button>
   </div>
 
