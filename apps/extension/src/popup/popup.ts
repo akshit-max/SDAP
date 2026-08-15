@@ -123,6 +123,21 @@ function getPlatformBranding(resourceName: string): { svg: string; color: string
   };
 }
 
+function detectPlatform(hostname: string): string {
+  const host = hostname.toLowerCase();
+  if (host.includes('github.com')) return 'GitHub';
+  if (host.includes('vercel.com')) return 'Vercel';
+  if (host.includes('godaddy.com')) return 'GoDaddy';
+  if (host.includes('linkedin.com')) return 'LinkedIn';
+  if (host.includes('shopify.com')) return 'Shopify';
+  if (host.includes('stripe.com')) return 'Stripe';
+  if (host.includes('razorpay.com')) return 'Razorpay';
+  if (host.includes('mca.gov.in')) return 'MCA Portal';
+  if (host.includes('gst.gov.in')) return 'GST Portal';
+  if (host.includes('udyamregistration.gov.in')) return 'Udyam Portal';
+  return '';
+}
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 async function init() {
@@ -225,7 +240,22 @@ async function showSessions(email: string) {
   const hostname = tab?.url ? new URL(tab.url).hostname : '';
 
   if (hostname) {
-    currentSiteEl.innerHTML = `Current site <span>${escapeHtml(hostname)}</span>`;
+    const platformName = detectPlatform(hostname);
+    if (platformName) {
+      currentSiteEl.style.background = '#f0fdf4';
+      currentSiteEl.style.borderColor = '#bbf7d0';
+      currentSiteEl.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 6px; color: #166534; font-weight: 700;">
+          <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #22c55e;"></span>
+          ${escapeHtml(platformName)} detected
+        </div>
+        <span style="font-size: 10px; color: #166534; background: #dcfce7; padding: 2px 6px; border-radius: 99px; font-weight: 700; border: 1px solid #bbf7d0; line-height: 1;">Secure fill</span>
+      `;
+    } else {
+      currentSiteEl.style.background = '#ffffff';
+      currentSiteEl.style.borderColor = 'var(--card-border)';
+      currentSiteEl.innerHTML = `Current site <span style="font-weight: 700; color: var(--text);">${escapeHtml(hostname)}</span>`;
+    }
   }
 
   const response = await sendMessage<{ sessions: ExtensionSession[]; orgId: string }>({
