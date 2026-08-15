@@ -106,44 +106,55 @@ a {
 .premium-card {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 16px;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.01);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .premium-input {
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  background-color: #f3f4f6; /* Nest gray background inside white cards for modern depth */
+  border: 1px solid #e5e7eb;
   color: var(--text-main);
-  border-radius: 10px;
-  font-size: 0.8rem;
-  padding: 0.7rem 0.85rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  padding: 0.75rem 0.95rem;
   font-weight: 500;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: all 0.15s ease;
 }
 .premium-input:focus {
   outline: none;
-  border-color: var(--primary-accent);
-  box-shadow: 0 0 0 3px rgba(163, 230, 53, 0.12);
+  background-color: #ffffff;
+  border-color: #84cc16; /* Lime-500 */
+  box-shadow: 0 0 0 4px rgba(132, 204, 22, 0.15);
+}
+
+.theme-light .premium-input {
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+}
+.theme-light .premium-input:focus {
+  background-color: #ffffff;
+  border-color: #84cc16;
+  box-shadow: 0 0 0 4px rgba(132, 204, 22, 0.15);
 }
 
 .premium-button-primary {
   background-color: var(--primary-accent);
   color: var(--primary-accent-text);
   font-weight: 700;
-  font-size: 0.8rem;
-  padding: 0.75rem 1rem;
-  border-radius: 10px;
-  transition: all 0.15s ease;
+  font-size: 0.85rem;
+  padding: 0.8rem 1rem;
+  border-radius: 12px;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px -2px rgba(163, 230, 53, 0.25);
+  box-shadow: 0 4px 14px -2px rgba(163, 230, 53, 0.3);
 }
 .premium-button-primary:hover {
   opacity: 0.95;
-  transform: translateY(-0.5px);
-  box-shadow: 0 6px 16px -2px rgba(163, 230, 53, 0.35);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px -2px rgba(163, 230, 53, 0.45);
 }
 .premium-button-primary:active {
   transform: translateY(0.5px);
@@ -154,10 +165,10 @@ a {
   color: var(--text-main);
   border: 1px solid var(--border-subtle);
   font-weight: 600;
-  font-size: 0.8rem;
-  padding: 0.7rem 1.1rem;
-  border-radius: 10px;
-  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  font-size: 0.85rem;
+  padding: 0.75rem 1.2rem;
+  border-radius: 12px;
+  transition: all 0.15s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
