@@ -125,7 +125,7 @@ function LoginForm() {
                 type="email"
                 required
                 autoComplete="email"
-                className="w-full pl-10 pr-4 py-2.5 premium-input text-xs font-medium focus:ring-1 focus:ring-lime-400"
+                className="w-full pl-10 pr-4 py-2.5 premium-input text-xs font-medium"
                 placeholder="you@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -146,7 +146,7 @@ function LoginForm() {
                 type="password"
                 required
                 autoComplete="current-password"
-                className="w-full pl-10 pr-4 py-2.5 premium-input text-xs font-medium focus:ring-1 focus:ring-lime-400"
+                className="w-full pl-10 pr-4 py-2.5 premium-input text-xs font-medium"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

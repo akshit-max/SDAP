@@ -155,7 +155,7 @@ function RegisterForm() {
                 type="text"
                 required
                 autoComplete="name"
-                className="w-full pl-10 pr-4 py-2.5 premium-input text-xs font-medium focus:ring-1 focus:ring-lime-400"
+                className="w-full pl-10 pr-4 py-2.5 premium-input text-xs font-medium"
                 placeholder="Jane Doe"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
@@ -172,7 +172,7 @@ function RegisterForm() {
                 <input
                   type="text"
                   required
-                  className="w-full pl-10 pr-4 py-2.5 premium-input text-xs font-medium focus:ring-1 focus:ring-lime-400"
+                  className="w-full pl-10 pr-4 py-2.5 premium-input text-xs font-medium"
                   placeholder="Acme Corp"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
@@ -191,7 +191,7 @@ function RegisterForm() {
                 required
                 autoComplete="email"
                 disabled={isInviteFlow}
-                className={`w-full pl-10 pr-4 py-2.5 premium-input text-xs font-medium focus:ring-1 focus:ring-lime-400 ${isInviteFlow ? 'text-zinc-500 cursor-not-allowed bg-zinc-100 dark:bg-zinc-900/50' : ''}`}
+                className={`w-full pl-10 pr-4 py-2.5 premium-input text-xs font-medium ${isInviteFlow ? 'text-zinc-500 cursor-not-allowed bg-zinc-100 dark:bg-zinc-900/50' : ''}`}
                 placeholder="admin@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -211,7 +211,7 @@ function RegisterForm() {
                 type="password"
                 required
                 autoComplete="new-password"
-                className="w-full pl-10 pr-4 py-2.5 premium-input text-xs font-medium focus:ring-1 focus:ring-lime-400"
+                className="w-full pl-10 pr-4 py-2.5 premium-input text-xs font-medium"
                 placeholder="Min. 8 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
