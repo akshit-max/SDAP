@@ -87,7 +87,7 @@ function RegisterForm() {
         
         {/* Brand Header */}
         <div className="flex items-center gap-3 relative z-10">
-          <div className="w-8 h-8 flex items-center justify-center rounded-none bg-zinc-900 border border-zinc-800">
+          <div className="w-8 h-8 flex items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800">
             <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2l2.3 4.8 5.1-1.6-1.6 5.1 4.8 2.3-4.8 2.3 1.6 5.1-5.1-1.6-2.3 4.8-2.3-4.8-5.1 1.6 1.6-5.1-4.8-2.3 4.8-2.3-1.6-5.1 5.1 1.6L12 2z"/>
             </svg>
@@ -119,7 +119,7 @@ function RegisterForm() {
 
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="mx-auto w-12 h-12 mb-4 flex items-center justify-center rounded-none bg-zinc-950 border border-zinc-800 shadow-sm">
+          <div className="mx-auto w-12 h-12 mb-4 flex items-center justify-center rounded-2xl bg-zinc-950 border border-zinc-800 shadow-sm">
             <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2l2.3 4.8 5.1-1.6-1.6 5.1 4.8 2.3-4.8 2.3 1.6 5.1-5.1-1.6-2.3 4.8-2.3-4.8-5.1 1.6 1.6-5.1-4.8-2.3 4.8-2.3-1.6-5.1 5.1 1.6L12 2z"/>
             </svg>
@@ -133,7 +133,7 @@ function RegisterForm() {
         </div>
 
         {isInviteFlow && (
-          <div className="mb-6 p-4 bg-zinc-100/50 dark:bg-zinc-900/40 border border-premium rounded-none text-center text-xs font-semibold leading-relaxed">
+          <div className="mb-6 p-4 bg-zinc-100/50 dark:bg-zinc-900/40 border border-premium rounded-xl text-center text-xs font-semibold leading-relaxed">
             <p className="text-premium-main font-bold mb-1">First time joining WithUs?</p>
             <p className="text-premium-muted text-[11px]">
               You are creating a new account using the invited email.

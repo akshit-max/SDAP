@@ -29,7 +29,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }
   
   const LogoSVG = () => (
-    <div className="w-7 h-7 flex items-center justify-center rounded-none bg-zinc-950 border border-zinc-800 shadow-sm flex-shrink-0 select-none">
+    <div className="w-7 h-7 flex items-center justify-center rounded-xl bg-zinc-950 border border-zinc-800 shadow-sm flex-shrink-0 select-none">
       <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
         <path d="M12 2l2.3 4.8 5.1-1.6-1.6 5.1 4.8 2.3-4.8 2.3 1.6 5.1-5.1-1.6-2.3 4.8-2.3-4.8-5.1 1.6 1.6-5.1-4.8-2.3 4.8-2.3-1.6-5.1 5.1 1.6L12 2z"/>
       </svg>
@@ -107,7 +107,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                   href={item.href}
                   title={isCollapsed ? item.name : undefined}
                   className={clsx(
-                    'relative flex items-center py-2.5 text-[11px] font-bold rounded-none transition-all duration-150',
+                    'relative flex items-center py-2.5 text-[11px] font-bold rounded-xl transition-all duration-150',
                     isCollapsed ? 'justify-center px-0' : 'px-3',
                     isActive
                       ? 'bg-[#bef264] text-zinc-950 shadow-sm'
@@ -142,7 +142,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             onClick={handleLogout}
             title={isCollapsed ? "Logout" : undefined}
             className={clsx(
-              "flex items-center justify-center py-2.5 text-[11px] font-bold rounded-none transition-all duration-150 text-zinc-500 hover:text-red-600 hover:bg-red-50/50 border border-transparent hover:border-red-100",
+              "flex items-center justify-center py-2.5 text-[11px] font-bold rounded-xl transition-all duration-150 text-zinc-500 hover:text-red-600 hover:bg-red-50/50 border border-transparent hover:border-red-100",
               isCollapsed ? "w-10 h-10 mx-auto" : "px-3 w-full"
             )}
           >
@@ -157,7 +157,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <header className="h-14 bg-premium-surface border-b border-premium flex items-center px-8 shadow-none gap-4">
           <button 
             onClick={toggleSidebar} 
-            className="p-1.5 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 rounded-none hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+            className="p-1.5 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
             title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             <Menu className="w-4 h-4" />
