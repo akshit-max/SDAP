@@ -99,13 +99,12 @@ a {
   --border-subtle: #e4e4e7;
   --text-main: #09090b;
   --text-muted: #71717a;
-  --primary-accent: #a3e635;
-  --primary-accent-text: #09090b;
+  --primary-accent: #10b981; /* Premium emerald green */
+  --primary-accent-text: #ffffff; /* High contrast white text */
   
-  /* Subtle developer dot-matrix grid background */
+  /* Flat, clean soft-grey canvas background with no dot matrix pattern */
   background-color: #f5f5f7;
-  background-image: radial-gradient(rgba(9, 9, 11, 0.07) 1.5px, transparent 1.5px);
-  background-size: 24px 24px;
+  background-image: none;
 }
 
 .premium-card {
@@ -129,8 +128,8 @@ a {
 .premium-input:focus {
   outline: none;
   background-color: #ffffff;
-  border-color: #09090b; /* Sharp black border on focus for modern high-contrast aesthetic */
-  box-shadow: 0 0 0 1px #09090b;
+  border-color: var(--primary-accent); /* Premium green border on focus */
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
 }
 
 .theme-light .premium-input {
@@ -139,8 +138,8 @@ a {
 }
 .theme-light .premium-input:focus {
   background-color: #ffffff;
-  border-color: #09090b;
-  box-shadow: 0 0 0 1px #09090b;
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
 }
 
 .premium-button-primary {
@@ -155,12 +154,13 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 4px 14px -2px rgba(16, 185, 129, 0.25);
 }
 .premium-button-primary:hover {
-  background-color: #09090b; /* Swap to high-end black background on hover */
+  background-color: #059669; /* Richer green on hover */
   color: #ffffff;
   transform: translateY(-0.5px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
 }
 .premium-button-primary:active {
   transform: translateY(0.5px);

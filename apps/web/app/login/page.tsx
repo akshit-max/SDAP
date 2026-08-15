@@ -59,18 +59,13 @@ function LoginForm() {
     <div className="theme-light min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-premium-bg">
       {/* Brand Side (Left) */}
       <div className="hidden lg:flex lg:col-span-5 bg-zinc-950 text-white p-16 flex-col justify-between relative overflow-hidden border-r border-zinc-900 select-none">
-        {/* Subtle grid backdrop for the dark side */}
-        <div className="absolute inset-0 opacity-15 bg-[linear-gradient(to_right,#3f3f46_1px,transparent_1px),linear-gradient(to_bottom,#3f3f46_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-        <div className="absolute top-0 right-0 w-80 h-80 bg-lime-400/5 rounded-full blur-3xl"></div>
         
         {/* Brand Header */}
         <div className="flex items-center gap-3 relative z-10">
-          <div className="w-8 h-8 flex items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800">
-            <svg className="w-4 h-4 text-lime-400" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2l2.3 4.8 5.1-1.6-1.6 5.1 4.8 2.3-4.8 2.3 1.6 5.1-5.1-1.6-2.3 4.8-2.3-4.8-5.1 1.6 1.6-5.1-4.8-2.3 4.8-2.3-1.6-5.1 5.1 1.6L12 2z"/>
-            </svg>
+          <div className="w-8 h-8 flex items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800 p-1.5">
+            <img src="/logo.png" alt="WithUs" className="w-full h-full object-contain" />
           </div>
-          <span className="font-bold text-[11px] uppercase tracking-widest text-zinc-300">WithUs</span>
+          <span className="font-bold text-sm text-zinc-200">WithUs</span>
         </div>
 
         {/* Hero Text */}
