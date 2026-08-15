@@ -108,7 +108,7 @@ function LoginForm() {
             <p className="text-premium-main font-bold mb-1">First time joining WithUs?</p>
             <p className="text-premium-muted text-[11px]">
               If you don't have an account, click{' '}
-              <Link href={`/register?redirect=${encodeURIComponent(redirectParam)}`} className="text-premium-main font-bold underline hover:text-lime-500 transition-colors">
+              <Link href={`/register?redirect=${encodeURIComponent(redirectParam)}`} className="text-premium-main font-bold underline hover:text-zinc-800 transition-colors">
                 Create Account
               </Link>{' '}
               using your invited email.
@@ -172,7 +172,7 @@ function LoginForm() {
 
           <div className="text-center text-xs text-premium-muted pt-4 border-t border-premium mt-4">
             Don't have an account?{' '}
-            <Link href={redirectParam ? `/register?redirect=${encodeURIComponent(redirectParam)}` : '/register'} className="text-premium-main font-bold hover:underline hover:text-lime-500 transition-colors">
+            <Link href={redirectParam ? `/register?redirect=${encodeURIComponent(redirectParam)}` : '/register'} className="text-premium-main font-bold hover:underline hover:text-zinc-800 transition-colors">
               {redirectParam?.includes('/invite') ? 'Create Account' : 'Create Workspace'}
             </Link>
           </div>

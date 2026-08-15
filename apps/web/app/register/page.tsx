@@ -140,7 +140,7 @@ function RegisterForm() {
             </p>
             <p className="text-premium-muted text-[11px] mt-0.5">
               Already have an account? Click{' '}
-              <Link href={`/login?redirect=${encodeURIComponent(redirectParam)}`} className="text-premium-main font-bold underline hover:text-lime-500 transition-colors">
+              <Link href={`/login?redirect=${encodeURIComponent(redirectParam)}`} className="text-premium-main font-bold underline hover:text-zinc-800 transition-colors">
                 Sign In
               </Link>{' '}
               instead to join the team.
@@ -239,7 +239,7 @@ function RegisterForm() {
             Already have an account?{' '}
             <Link
               href={isInviteFlow ? `/login?redirect=${encodeURIComponent(redirectParam)}` : '/login'}
-              className="text-premium-main font-bold hover:underline hover:text-lime-500 transition-colors"
+              className="text-premium-main font-bold hover:underline hover:text-zinc-800 transition-colors"
             >
               Sign In
             </Link>
