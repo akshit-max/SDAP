@@ -56,23 +56,30 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-premium-bg p-6">
-      <div className="max-w-md w-full premium-card p-8 shadow-sm">
+    <div className="min-h-screen relative flex flex-col items-center justify-center bg-premium-bg p-6 overflow-hidden">
+      {/* Premium background blur accents */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-lime-400/10 rounded-full blur-3xl pointer-events-none dark:bg-lime-400/5"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-zinc-400/5 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div className="max-w-md w-full premium-card p-8 shadow-lg relative z-10 backdrop-blur-sm bg-premium-surface/90">
 
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="mx-auto w-12 h-12 mb-4">
-            <img src="/logo.png" alt="WithUs Logo" className="w-full h-full object-contain" />
+          <div className="mx-auto w-12 h-12 mb-3 flex items-center justify-center rounded-xl bg-zinc-950 dark:bg-zinc-900 border border-premium shadow-md">
+            <svg className="w-6 h-6 text-lime-400" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2l2.3 4.8 5.1-1.6-1.6 5.1 4.8 2.3-4.8 2.3 1.6 5.1-5.1-1.6-2.3 4.8-2.3-4.8-5.1 1.6 1.6-5.1-4.8-2.3 4.8-2.3-1.6-5.1 5.1 1.6L12 2z"/>
+            </svg>
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-premium-main">WithUs</h1>
+          <h1 className="text-xl font-extrabold tracking-tight text-premium-main">WithUs</h1>
+          <p className="text-[11px] text-premium-muted font-medium mt-1">Delegated Credential Access</p>
         </div>
 
         {redirectParam?.includes('/invite') && (
-          <div className="mb-6 p-4 bg-slate-50/50 dark:bg-zinc-900/30 border border-premium/50 rounded-lg text-center text-xs font-semibold leading-relaxed">
+          <div className="mb-6 p-4 bg-zinc-100/50 dark:bg-zinc-900/40 border border-premium rounded-xl text-center text-xs font-semibold leading-relaxed">
             <p className="text-premium-main font-bold mb-1">First time joining WithUs?</p>
             <p className="text-premium-muted text-[11px]">
               If you don't have an account, click{' '}
-              <Link href={`/register?redirect=${encodeURIComponent(redirectParam)}`} className="text-premium-main font-bold underline">
+              <Link href={`/register?redirect=${encodeURIComponent(redirectParam)}`} className="text-premium-main font-bold underline hover:text-lime-500 transition-colors">
                 Create Account
               </Link>{' '}
               using your invited email.
@@ -84,16 +91,16 @@ function LoginForm() {
         )}
 
         {/* Form */}
-        <form onSubmit={handleLogin} className="space-y-6">
-          <div className="space-y-1.5">
-            <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wide">Email Address</label>
+        <form onSubmit={handleLogin} className="space-y-5">
+          <div className="space-y-2">
+            <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wider">Email Address</label>
             <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-premium-muted" />
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-premium-muted transition-colors" />
               <input
                 type="email"
                 required
                 autoComplete="email"
-                className="w-full pl-10 pr-4 py-2.5 premium-input text-xs"
+                className="w-full pl-10 pr-4 py-2.5 premium-input text-xs font-medium focus:ring-1 focus:ring-lime-400"
                 placeholder="you@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -101,20 +108,20 @@ function LoginForm() {
             </div>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wide">Password</label>
-              <Link href="/forgot-password" className="text-xs text-premium-muted hover:text-premium-main transition-colors font-semibold">
+              <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wider">Password</label>
+              <Link href="/forgot-password" className="text-[11px] text-premium-muted hover:text-premium-main transition-colors font-medium">
                 Forgot password?
               </Link>
             </div>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-premium-muted" />
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-premium-muted transition-colors" />
               <input
                 type="password"
                 required
                 autoComplete="current-password"
-                className="w-full pl-10 pr-4 py-2.5 premium-input text-xs"
+                className="w-full pl-10 pr-4 py-2.5 premium-input text-xs font-medium focus:ring-1 focus:ring-lime-400"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -125,7 +132,7 @@ function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full premium-button-primary py-2.5 text-xs shadow-sm"
+            className="w-full premium-button-primary py-2.5 text-xs shadow-md font-bold mt-2"
           >
             {loading ? (
               <><Loader2 className="w-4 h-4 animate-spin mr-1.5" /> Authenticating...</>
@@ -134,9 +141,9 @@ function LoginForm() {
             )}
           </button>
 
-          <div className="text-center text-xs text-premium-muted pt-2 border-t border-premium">
+          <div className="text-center text-xs text-premium-muted pt-4 border-t border-premium mt-4">
             Don't have an account?{' '}
-            <Link href={redirectParam ? `/register?redirect=${encodeURIComponent(redirectParam)}` : '/register'} className="text-premium-main font-semibold hover:underline">
+            <Link href={redirectParam ? `/register?redirect=${encodeURIComponent(redirectParam)}` : '/register'} className="text-premium-main font-bold hover:underline hover:text-lime-500 transition-colors">
               {redirectParam?.includes('/invite') ? 'Create Account' : 'Create Workspace'}
             </Link>
           </div>

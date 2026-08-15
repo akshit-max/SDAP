@@ -56,24 +56,24 @@ a {
 /* UI Refactor Utility Classes */
 
 :root {
-  --bg-primary: #fafafa;
-  --bg-surface: #ffffff;
-  --border-subtle: #e4e4e7; /* zinc-200 */
-  --text-main: #09090b; /* zinc-950 */
-  --text-muted: #71717a; /* zinc-500 */
-  --primary-accent: #09090b;
-  --primary-accent-text: #ffffff;
+  --bg-primary: #f8f9fa; /* Soft light gray base */
+  --bg-surface: #ffffff; /* White surfaces */
+  --border-subtle: #e4e4e7; /* Clean borders */
+  --text-main: #09090b; /* Deep slate text */
+  --text-muted: #71717a; /* Muted secondary text */
+  --primary-accent: #a3e635; /* Vibrant premium lime green */
+  --primary-accent-text: #09090b; /* Black text for high contrast */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg-primary: #030303; /* pure dark background */
-    --bg-surface: #09090b; /* zinc-950 surface */
-    --border-subtle: #1f1f23; /* zinc-800/900 level */
-    --text-main: #f4f4f5; /* zinc-100 */
-    --text-muted: #a1a1aa; /* zinc-400 */
-    --primary-accent: #ffffff;
-    --primary-accent-text: #09090b;
+    --bg-primary: #09090b; /* Deep dark gray base */
+    --bg-surface: #121215; /* Elevated surface card color */
+    --border-subtle: #1f1f23; /* Subtle border for dark panels */
+    --text-main: #f4f4f5; /* Off-white text */
+    --text-muted: #a1a1aa; /* Slate gray secondary text */
+    --primary-accent: #a3e635; /* Vibrant premium lime green */
+    --primary-accent-text: #09090b; /* Black text for high contrast */
   }
 }
 
@@ -112,7 +112,7 @@ a {
 .premium-input:focus {
   outline: none;
   border-color: var(--primary-accent);
-  box-shadow: 0 0 0 2px rgba(9, 9, 11, 0.05);
+  box-shadow: 0 0 0 2px rgba(163, 230, 53, 0.15);
 }
 
 .premium-button-primary {
