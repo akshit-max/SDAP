@@ -24,7 +24,7 @@ export type AnalyzePortalDto = z.infer<typeof AnalyzePortalSchema>;
 
 export interface AnalyzePortalResponseDto {
   compatible: boolean;
-  provider: IntegrationProvider | null;
+  platform: string | null;
   reason?: 'unrecognized_platform' | 'invalid_url' | 'not_https';
 }
 

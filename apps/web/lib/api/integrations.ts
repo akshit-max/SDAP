@@ -29,7 +29,7 @@ export interface HealthCheckResult {
 
 export interface AnalyzePortalResponse {
   compatible: boolean;
-  provider: IntegrationProvider | null;
+  platform: string | null;
   reason?: 'unrecognized_platform' | 'invalid_url' | 'not_https';
 }
 

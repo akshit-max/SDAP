@@ -187,213 +187,28 @@ export class IntegrationsController {
     try {
       const urlObj = new URL(dto.url);
       
-import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Param,
-  Body,
-  UseGuards,
-  Request,
-} from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { IntegrationProvider } from '@prisma/client';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import { PermissionsGuard } from '../authorization/guards/permissions.guard';
-import { RequirePermissions } from '../authorization/decorators/require-permissions.decorator';
-import { Permission } from '@repo/types';
-import { OrganizationContext } from '../authorization/decorators/organization-context.decorator';
-import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
-import type { RequestWithUser } from '../common/interfaces/request-with-user.interface';
-import { IntegrationsService } from './integrations.service';
-import {
-  ConnectIntegrationSchema,
-  ConnectIntegrationDto,
-  GrantIntegrationAccessSchema,
-  GrantIntegrationAccessDto,
-  RevokeIntegrationAccessSchema,
-  RevokeIntegrationAccessDto,
-  OAuthCallbackSchema,
-  OAuthCallbackDto,
-  AnalyzePortalSchema,
-  AnalyzePortalDto,
-} from './integrations.dto';
-
-@ApiTags('Integrations')
-@ApiBearerAuth()
-@Controller('organizations/:orgId/integrations')
-@OrganizationContext('orgId')
-@UseGuards(JwtAuthGuard, PermissionsGuard)
-export class IntegrationsController {
-  constructor(private readonly integrationsService: IntegrationsService) {}
-
-  /**
-   * GET /organizations/:orgId/integrations
-   * List all supported providers and their connection status.
-   */
-  @Get()
-  @ApiOperation({ summary: 'List all integration connections for an organization' })
-  @RequirePermissions(Permission.INTEGRATION_READ)
-  listConnections(@Param('orgId') orgId: string) {
-    return this.integrationsService.listConnections(orgId);
-  }
-
-  /**
-   * POST /organizations/:orgId/integrations/connect
-   * Connect a provider using a PAT.
-   */
-  @Post('connect')
-  @ApiOperation({ summary: 'Connect an integration provider with a Personal Access Token' })
-  @RequirePermissions(Permission.INTEGRATION_CONNECT)
-  connect(
-    @Param('orgId') orgId: string,
-    @Request() req: RequestWithUser,
-    @Body(new ZodValidationPipe(ConnectIntegrationSchema)) dto: ConnectIntegrationDto,
-  ) {
-    return this.integrationsService.connect(orgId, req.user.id, dto);
-  }
-
-  /**
-   * GET /organizations/:orgId/integrations/:provider/oauth/url
-   * Get the OAuth authorization URL for a provider.
-   */
-  @Get(':provider/oauth/url')
-  @ApiOperation({ summary: 'Get the OAuth authorization URL for a provider' })
-  @RequirePermissions(Permission.INTEGRATION_CONNECT)
-  getOAuthUrl(
-    @Param('orgId') orgId: string,
-    @Param('provider') provider: IntegrationProvider,
-  ) {
-    // Generate a random state or CSRF token if needed, passing a dummy 'state' for now
-    const state = Buffer.from(JSON.stringify({ orgId, provider, ts: Date.now() })).toString('base64');
-    return this.integrationsService.getOAuthUrl(orgId, provider, state);
-  }
-
-  /**
-   * POST /organizations/:orgId/integrations/:provider/oauth/callback
-   * Handle the OAuth callback and complete the connection.
-   */
-  @Post(':provider/oauth/callback')
-  @ApiOperation({ summary: 'Complete an OAuth connection using the authorization code' })
-  @RequirePermissions(Permission.INTEGRATION_CONNECT)
-  handleOAuthCallback(
-    @Param('orgId') orgId: string,
-    @Param('provider') provider: IntegrationProvider,
-    @Request() req: RequestWithUser,
-    @Body(new ZodValidationPipe(OAuthCallbackSchema)) dto: OAuthCallbackDto,
-  ) {
-    return this.integrationsService.handleOAuthCallback(orgId, req.user.id, provider, dto.code);
-  }
-
-  /**
-   * DELETE /organizations/:orgId/integrations/:provider
-   * Disconnect a provider.
-   */
-  @Delete(':provider')
-  @ApiOperation({ summary: 'Disconnect an integration provider' })
-  @RequirePermissions(Permission.INTEGRATION_DISCONNECT)
-  disconnect(
-    @Param('orgId') orgId: string,
-    @Param('provider') provider: IntegrationProvider,
-    @Request() req: RequestWithUser,
-  ) {
-    return this.integrationsService.disconnect(orgId, req.user.id, provider);
-  }
-
-  /**
-   * GET /organizations/:orgId/integrations/:provider/health
-   * Run a health check against the provider API.
-   */
-  @Get(':provider/health')
-  @ApiOperation({ summary: 'Health check for a connected provider' })
-  @RequirePermissions(Permission.INTEGRATION_READ)
-  healthCheck(
-    @Param('orgId') orgId: string,
-    @Param('provider') provider: IntegrationProvider,
-  ) {
-    return this.integrationsService.healthCheck(orgId, provider);
-  }
-
-  /**
-   * GET /organizations/:orgId/integrations/:provider/resources
-   * List resources available to the connected provider account.
-   */
-  @Get(':provider/resources')
-  @ApiOperation({ summary: 'List provider resources (teams, orgs, domains)' })
-  @RequirePermissions(Permission.INTEGRATION_READ)
-  listResources(
-    @Param('orgId') orgId: string,
-    @Param('provider') provider: IntegrationProvider,
-  ) {
-    return this.integrationsService.listResources(orgId, provider);
-  }
-
-  /**
-   * POST /organizations/:orgId/integrations/:provider/grant
-   * Grant platform access to a principal via the provider.
-   */
-  @Post(':provider/grant')
-  @ApiOperation({ summary: 'Grant access to a resource on the integration provider' })
-  @RequirePermissions(Permission.SESSION_START)
-  grantAccess(
-    @Param('orgId') orgId: string,
-    @Param('provider') provider: IntegrationProvider,
-    @Body(new ZodValidationPipe(GrantIntegrationAccessSchema)) dto: GrantIntegrationAccessDto,
-    @Request() _req: RequestWithUser,
-  ) {
-    return this.integrationsService.grantAccess(orgId, provider, dto);
-  }
-
-  /**
-   * POST /organizations/:orgId/integrations/:provider/revoke
-   * Revoke platform access from a principal via the provider.
-   */
-  @Post(':provider/revoke')
-  @ApiOperation({ summary: 'Revoke access from a resource on the integration provider' })
-  @RequirePermissions(Permission.SESSION_REVOKE)
-  revokeAccess(
-    @Param('orgId') orgId: string,
-    @Param('provider') provider: IntegrationProvider,
-    @Body(new ZodValidationPipe(RevokeIntegrationAccessSchema)) dto: RevokeIntegrationAccessDto,
-    @Request() _req: RequestWithUser,
-  ) {
-    return this.integrationsService.revokeAccess(orgId, provider, dto);
-  }
-
-  /**
-   * POST /organizations/:orgId/integrations/analyze-portal
-   * Analyze a custom portal URL to see if it matches a known platform.
-   */
-  @Post('analyze-portal')
-  @ApiOperation({ summary: 'Analyze a custom portal URL for compatibility' })
-  // Using INTEGRATION_READ here since this is just a read-only compatibility check
-  @RequirePermissions(Permission.INTEGRATION_READ)
-  analyzePortal(
-    @Param('orgId') orgId: string,
-    @Body(new ZodValidationPipe(AnalyzePortalSchema)) dto: AnalyzePortalDto,
-  ) {
-    try {
-      const urlObj = new URL(dto.url);
-      
       if (urlObj.protocol !== 'https:') {
-        return { compatible: false, provider: null, reason: 'not_https' };
+        return { compatible: false, platform: null, reason: 'not_https' };
       }
 
       const hostname = urlObj.hostname.toLowerCase();
-
       const isMatch = (domain: string) => hostname === domain || hostname.endsWith(`.${domain}`);
 
-      if (isMatch('github.com')) return { compatible: true, provider: 'GITHUB' };
-      if (isMatch('vercel.com')) return { compatible: true, provider: 'VERCEL' };
-      if (isMatch('godaddy.com')) return { compatible: true, provider: 'GODADDY' };
-      if (isMatch('shopify.com')) return { compatible: true, provider: 'SHOPIFY' };
-      if (isMatch('razorpay.com')) return { compatible: true, provider: 'RAZORPAY' };
-      if (isMatch('google.com') && urlObj.pathname.startsWith('/ads')) return { compatible: true, provider: 'GOOGLE_ADS' };
+      if (isMatch('github.com')) return { compatible: true, platform: 'GitHub' };
+      if (isMatch('vercel.com')) return { compatible: true, platform: 'Vercel' };
+      if (isMatch('godaddy.com') || isMatch('sso.godaddy.com')) return { compatible: true, platform: 'GoDaddy' };
+      if (isMatch('linkedin.com') || isMatch('www.linkedin.com')) return { compatible: true, platform: 'LinkedIn' };
+      if (isMatch('shopify.com') || isMatch('accounts.shopify.com') || isMatch('admin.shopify.com')) return { compatible: true, platform: 'Shopify' };
+      if (isMatch('stripe.com') || isMatch('dashboard.stripe.com')) return { compatible: true, platform: 'Stripe' };
+      if (isMatch('accounts.razorpay.com')) return { compatible: true, platform: 'Razorpay' };
+      if (isMatch('www.mca.gov.in') || isMatch('mca.gov.in')) return { compatible: true, platform: 'MCA Portal' };
+      if (isMatch('gst.gov.in') || isMatch('services.gst.gov.in')) return { compatible: true, platform: 'GST Portal' };
+      if (isMatch('udyamregistration.gov.in')) return { compatible: true, platform: 'Udyam Portal' };
+      if (isMatch('ads.google.com') || isMatch('accounts.google.com')) return { compatible: true, platform: 'Google Ads' };
 
-      return { compatible: false, provider: null, reason: 'unrecognized_platform' };
+      return { compatible: false, platform: null, reason: 'unrecognized_platform' };
     } catch (e) {
-      return { compatible: false, provider: null, reason: 'invalid_url' };
+      return { compatible: false, platform: null, reason: 'invalid_url' };
     }
   }
 }
