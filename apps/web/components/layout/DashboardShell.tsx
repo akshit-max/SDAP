@@ -28,24 +28,28 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     approvalBadgeCount = myRequests?.filter((r: any) => r.status === 'PENDING')?.length || 0;
   }
   
-  const LogoSVG = ({ className }: { className?: string }) => (
-    <img src="/logo.png" alt="WithUs Logo" className={className} />
+  const LogoSVG = () => (
+    <div className="w-7 h-7 flex items-center justify-center rounded-lg bg-zinc-950 border border-zinc-800 shadow-sm flex-shrink-0 select-none">
+      <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2l2.3 4.8 5.1-1.6-1.6 5.1 4.8 2.3-4.8 2.3 1.6 5.1-5.1-1.6-2.3 4.8-2.3-4.8-5.1 1.6 1.6-5.1-4.8-2.3 4.8-2.3-1.6-5.1 5.1 1.6L12 2z"/>
+      </svg>
+    </div>
   );
   
   // Persist sidebar state in localStorage if possible, or just default to false
   const [isCollapsed, setIsCollapsed] = useState(false);
-
+ 
   useEffect(() => {
     const saved = localStorage.getItem('sidebar_collapsed');
     if (saved === 'true') setIsCollapsed(true);
   }, []);
-
+ 
   const toggleSidebar = () => {
     const nextState = !isCollapsed;
     setIsCollapsed(nextState);
     localStorage.setItem('sidebar_collapsed', String(nextState));
   };
-
+ 
   const handleLogout = async () => {
     try {
       const { apiClient } = await import('../../lib/api/client');
@@ -58,7 +62,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       router.push('/login');
     }
   };
-
+ 
   const navItems = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Vaults', href: '/vaults', icon: Key },
@@ -71,7 +75,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     { name: 'Team', href: '/settings/members', icon: Users },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
-
+ 
   return (
     <div className="flex h-screen bg-premium-bg font-premium">
       {/* Sidebar */}
@@ -82,10 +86,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         )}
       >
         <div className={clsx(
-          "h-14 flex items-center border-b border-premium",
-          isCollapsed ? "justify-center px-0" : "px-5"
+          "h-14 flex items-center border-b border-premium gap-2.5",
+          isCollapsed ? "justify-center px-0" : "px-4"
         )}>
-          <LogoSVG className={clsx("w-5 h-5 text-premium-main flex-shrink-0", !isCollapsed && "mr-2")} />
+          <LogoSVG />
           {!isCollapsed && (
             <span className="font-bold text-sm tracking-tight text-premium-main">WithUs</span>
           )}

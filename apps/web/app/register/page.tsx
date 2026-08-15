@@ -87,8 +87,10 @@ function RegisterForm() {
         
         {/* Brand Header */}
         <div className="flex items-center gap-3 relative z-10">
-          <div className="w-8 h-8 flex items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800 p-1.5">
-            <img src="/logo.png" alt="WithUs" className="w-full h-full object-contain" />
+          <div className="w-8 h-8 flex items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800">
+            <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2l2.3 4.8 5.1-1.6-1.6 5.1 4.8 2.3-4.8 2.3 1.6 5.1-5.1-1.6-2.3 4.8-2.3-4.8-5.1 1.6 1.6-5.1-4.8-2.3 4.8-2.3-1.6-5.1 5.1 1.6L12 2z"/>
+            </svg>
           </div>
           <span className="font-bold text-sm text-zinc-200">WithUs</span>
         </div>
@@ -114,11 +116,13 @@ function RegisterForm() {
       {/* Form Side (Right) */}
       <div className="lg:col-span-7 flex items-center justify-center p-8 relative">
         <div className="max-w-md w-full premium-card p-10 bg-premium-surface">
- 
+
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="mx-auto w-12 h-12 mb-4">
-            <img src="/logo.png" alt="WithUs Logo" className="w-full h-full object-contain" />
+          <div className="mx-auto w-12 h-12 mb-4 flex items-center justify-center rounded-2xl bg-zinc-950 border border-zinc-800 shadow-sm">
+            <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2l2.3 4.8 5.1-1.6-1.6 5.1 4.8 2.3-4.8 2.3 1.6 5.1-5.1-1.6-2.3 4.8-2.3-4.8-5.1 1.6 1.6-5.1-4.8-2.3 4.8-2.3-1.6-5.1 5.1 1.6L12 2z"/>
+            </svg>
           </div>
           <h1 className="text-xl font-bold tracking-tight text-premium-main">WithUs</h1>
           <p className="text-[10px] text-premium-muted font-bold tracking-wider uppercase mt-1.5">
