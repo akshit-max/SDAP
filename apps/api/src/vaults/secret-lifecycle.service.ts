@@ -121,7 +121,8 @@ export class SecretLifecycleService {
     const plaintextBuffer = Buffer.from(plaintext, 'utf8');
     const secretId = crypto.randomUUID(); // Predetermine ID for AAD
 
-    return this.prisma.$transaction(async (tx) => {
+    try {
+      return await this.prisma.$transaction(async (tx) => {
       const activeKey = await this.getActiveKeyMetadata(tx);
 
       const dek = this.encryption.generateDEK();
@@ -178,7 +179,18 @@ export class SecretLifecycleService {
       );
 
       return secret;
-    });
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException(
+          'A secret with this name already exists in the vault.',
+        );
+      }
+      throw error;
+    }
   }
 
   async getSecretsByVaultId(vaultId: string) {
