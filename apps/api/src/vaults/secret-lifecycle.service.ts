@@ -537,6 +537,7 @@ export class SecretLifecycleService {
       await tx.secret.update({
         where: { id: secretId },
         data: {
+          name: `${secret.name}_deleted_${secretId}`,
           status: SecretStatus.DELETED,
           deletedAt: now,
           deletedBy: userId,
