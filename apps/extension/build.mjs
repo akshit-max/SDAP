@@ -2,18 +2,23 @@ import * as esbuild from 'esbuild';
 import { watch, existsSync, readFileSync } from 'node:fs';
 import { argv } from 'node:process';
 
-if (existsSync('.env')) {
-  const envConfig = readFileSync('.env', 'utf-8');
-  envConfig.split('\n').forEach(line => {
-    const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
-    if (match) {
-      let val = match[2] || '';
-      if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
-      if (val.startsWith("'") && val.endsWith("'")) val = val.slice(1, -1);
-      process.env[match[1]] = val;
-    }
-  });
-}
+const loadEnv = (path) => {
+  if (existsSync(path)) {
+    const envConfig = readFileSync(path, 'utf-8');
+    envConfig.split('\n').forEach(line => {
+      const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+      if (match) {
+        let val = match[2] || '';
+        if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
+        if (val.startsWith("'") && val.endsWith("'")) val = val.slice(1, -1);
+        process.env[match[1]] = val;
+      }
+    });
+  }
+};
+
+loadEnv('.env');
+loadEnv('../../.env');
 
 const isWatch = argv.includes('--watch');
 
