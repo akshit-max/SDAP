@@ -242,11 +242,14 @@ async function showSessions(email: string) {
   if (hostname) {
     const platformName = detectPlatform(hostname);
     if (platformName) {
+      const branding = getPlatformBranding(platformName);
       currentSiteEl.style.background = '#f0fdf4';
       currentSiteEl.style.borderColor = '#bbf7d0';
       currentSiteEl.innerHTML = `
         <div style="display: flex; align-items: center; gap: 6px; color: #166534; font-weight: 700;">
-          <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #22c55e;"></span>
+          <div style="display: flex; align-items: center; justify-content: center; width: 14px; height: 14px; color: ${branding.color};">
+            ${branding.svg}
+          </div>
           ${escapeHtml(platformName)} detected
         </div>
         <span style="font-size: 10px; color: #166534; background: #dcfce7; padding: 2px 6px; border-radius: 99px; font-weight: 700; border: 1px solid #bbf7d0; line-height: 1;">Secure fill</span>
