@@ -456,12 +456,6 @@ export default function ActivityPage() {
 
                     <div className="flex items-center gap-3 flex-shrink-0">
                       
-                      {/* Platforms Badge Count */}
-                      {member.platforms.length > 0 && (
-                        <span className="text-[10px] font-bold text-premium-muted bg-premium-surface px-2.5 py-1 rounded-md border border-premium">
-                          {member.platforms.length} platform{member.platforms.length !== 1 ? 's' : ''}
-                        </span>
-                      )}
 
                       {/* Overall Status Pill */}
                       {member.isActive ? (
