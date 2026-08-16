@@ -370,7 +370,7 @@ export default function AuditPage() {
                       ? event.resourceType.charAt(0) + event.resourceType.slice(1).toLowerCase().replace('_', ' ')
                       : null;
                     const resourceLabel = typeLabel
-                      ? ((event as any).resourceName ? `${typeLabel}: ${(event as any).resourceName}` : typeLabel)
+                      ? ((event as any).resourceName ? `${typeLabel}: ${(event as any).resourceName.split('_deleted_')[0]}` : typeLabel)
                       : null;
 
                     return (

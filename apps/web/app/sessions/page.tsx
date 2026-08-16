@@ -149,7 +149,7 @@ export default function SessionsPage() {
                                   (session as any).integrationProvider === 'GODADDY' ? `Domain: ${(session as any).integrationResourceExternalId}` : 
                                   (session as any).integrationProvider === 'VERCEL' ? `Project: ${(session as any).integrationResourceExternalId}` : 
                                   `Repository: ${(session as any).integrationResourceExternalId}`
-                                ) : (session.resourceName || session.resourceId)}
+                                ) : (session.resourceName || session.resourceId).split('_deleted_')[0]}
                               </p>
                             </td>
                             <td className="px-5 py-3 whitespace-nowrap">
@@ -250,7 +250,7 @@ export default function SessionsPage() {
                                 (session as any).integrationProvider === 'GODADDY' ? 'Browser Extension' : 
                                 (session as any).integrationProvider === 'VERCEL' ? `Vercel · ${(session as any).integrationResourceExternalId}` :
                                 `GitHub · ${(session as any).integrationResourceExternalId}`
-                              ) : `${session.scope} · ${session.resourceName || session.resourceId}`}
+                              ) : `${session.scope} · ${(session.resourceName || session.resourceId).split('_deleted_')[0]}`}
                             </p>
                           </td>
                           <td className="px-5 py-3 whitespace-nowrap">

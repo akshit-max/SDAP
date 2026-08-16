@@ -117,7 +117,7 @@ export default function MemberSessionsPage() {
       
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        const resourceName = (session.resourceName || session.integrationProvider || 'Secret').toLowerCase();
+        const resourceName = ((session.resourceName || '').split('_deleted_')[0] || session.integrationProvider || 'Secret').toLowerCase();
         const caps = (session.capabilities || []).join(' ').toLowerCase();
         if (!resourceName.includes(query) && !caps.includes(query)) {
           return false;
@@ -277,7 +277,7 @@ export default function MemberSessionsPage() {
                           <div className="flex items-center gap-2.5">
                             <ResourceIcon provider={session.integrationProvider} />
                             <p className="text-xs font-bold text-premium-main">
-                              {session.resourceName || session.integrationProvider || 'Secret'}
+                              {(session.resourceName || '').split('_deleted_')[0] || session.integrationProvider || 'Secret'}
                             </p>
                           </div>
                         </td>
