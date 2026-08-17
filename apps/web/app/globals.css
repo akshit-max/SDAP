@@ -63,8 +63,8 @@ a {
   --text-muted: #71717a; /* Muted text */
   --primary-accent: #09090b; /* Sleek black accent */
   --primary-accent-text: #ffffff; /* White text for contrast */
-  --accent-lime: #e2f5b8; /* Premium soft lime green */
-  --accent-lime-text: #132502; /* Deep olive contrast text */
+  --accent-lime: #fde8eb; /* Premium soft crimson background */
+  --accent-lime-text: #a3001e; /* Deep crimson contrast text */
 }
 
 /* @media (prefers-color-scheme: dark) {

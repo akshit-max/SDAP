@@ -108,7 +108,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                     'relative flex items-center py-2.5 text-[11px] font-bold rounded-xl transition-all duration-150',
                     isCollapsed ? 'justify-center px-0' : 'px-3',
                     isActive
-                      ? 'bg-[#e2f5b8] text-[#132502] shadow-sm'
+                      ? 'bg-[var(--accent-lime)] text-[var(--accent-lime-text)] shadow-sm'
                       : 'text-zinc-500 hover:bg-zinc-200/50 hover:text-zinc-900'
                   )}
                 >
@@ -116,7 +116,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                     className={clsx(
                       'w-4 h-4 flex-shrink-0 transition-colors',
                       !isCollapsed && 'mr-3',
-                      isActive ? 'text-[#132502]' : 'text-zinc-400'
+                      isActive ? 'text-[var(--accent-lime-text)]' : 'text-zinc-400'
                     )}
                   />
                   {!isCollapsed && <span className="truncate">{item.name}</span>}

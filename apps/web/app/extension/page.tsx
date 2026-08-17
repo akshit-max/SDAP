@@ -75,7 +75,22 @@ export default function ExtensionPage() {
               Autofill credentials directly into target websites securely and dynamically through WithUs.
             </p>
           </div>
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 flex items-center gap-2">
+            <a
+              href="https://chromewebstore.google.com/detail/withus-vault/ccelghkaoejlmljlhcefnkbcbfmoge"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="premium-button-secondary inline-flex items-center gap-2 px-5 py-2.5 shadow-sm text-xs font-bold rounded-lg transition-colors border border-zinc-200"
+            >
+              <svg className="w-4 h-4 text-[var(--accent-lime-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="12" r="4" />
+                <line x1="21.17" y1="8" x2="12" y2="8" />
+                <line x1="3.95" y1="6.06" x2="8.54" y2="14" />
+                <line x1="10.88" y1="21.94" x2="15.46" y2="14" />
+              </svg>
+              Chrome Web Store
+            </a>
             <a
               href="/downloads/WITHUS-Extension.zip"
               className="premium-button-primary inline-flex items-center gap-2 px-5 py-2.5 shadow-sm text-xs font-bold rounded-lg transition-colors"
