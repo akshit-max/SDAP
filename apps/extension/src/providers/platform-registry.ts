@@ -43,6 +43,47 @@ platformRegistry.register({
   },
   principalType: 'GITHUB_USERNAME',
   supportsDelegation: true,
+  /**
+   * Module-level UI restrictions for GitHub.
+   *
+   * GitHub's repository navigation uses stable data-tab-item attributes
+   * that have been consistent across GitHub's design iterations.
+   * These are confirmed from the live GitHub repository <nav> outerHTML.
+   *
+   * Selector strategy:
+   *   a[data-tab-item="..."] — direct attribute match on the nav anchor.
+   *   These are semantic, non-generated attributes and extremely stable.
+   *
+   * Scope: Repository-level navigation only (the top tab bar on repo pages).
+   * Organisation-level restrictions (People, Org Settings, etc.) require
+   * separate outerHTML inspection and will be added as a second step.
+   */
+  capabilityRestrictions: {
+    'github.repo_actions': {
+      hideElementsCSS: ['a[data-tab-item="actions"]'],
+    },
+    'github.repo_projects': {
+      hideElementsCSS: ['a[data-tab-item="projects"]:not([href^="/orgs/"])'],
+    },
+    'github.repo_security': {
+      hideElementsCSS: ['a[data-tab-item="security-and-quality"]'],
+    },
+    'github.repo_wiki': {
+      hideElementsCSS: ['a[data-tab-item="wiki"]'],
+    },
+    'github.repo_insights': {
+      hideElementsCSS: ['a[data-tab-item="insights"]'],
+    },
+    'github.repo_settings': {
+      hideElementsCSS: ['a[data-tab-item="settings"]'],
+    },
+    'github.org_members': {
+      hideElementsCSS: ['a[data-tab-item="people"]'],
+    },
+    'github.org_projects': {
+      hideElementsCSS: ['a[data-tab-item="projects"][href^="/orgs/"]'],
+    },
+  },
 });
 
 platformRegistry.register({
@@ -61,6 +102,26 @@ platformRegistry.register({
   },
   principalType: 'EMAIL',
   supportsDelegation: true,
+  capabilityRestrictions: {
+    'vercel.domains': {
+      hideElementsCSS: ['a[data-sidebar-link-key="Domains"]'],
+    },
+    'vercel.analytics': {
+      hideElementsCSS: ['a[data-sidebar-link-key="Analytics"]'],
+    },
+    'vercel.env': {
+      hideElementsCSS: ['a[data-sidebar-link-key="Environment Variables"]'],
+    },
+    'vercel.storage': {
+      hideElementsCSS: ['a[data-sidebar-link-key="Storage"]'],
+    },
+    'vercel.integrations': {
+      hideElementsCSS: ['a[data-sidebar-link-key="Integrations"]'],
+    },
+    'vercel.settings': {
+      hideElementsCSS: ['a[data-sidebar-link-key="Settings"]'],
+    },
+  },
 });
 
 platformRegistry.register({
@@ -118,7 +179,42 @@ platformRegistry.register({
     'button[aria-controls="account_password"]',
     '#account_password',
     '.password-wrapper:has(#account_password)'
-  ]
+  ],
+  capabilityRestrictions: {
+    'shopify.orders': {
+      hideElementsCSS: ['a[href$="/orders"]'],
+    },
+    'shopify.products': {
+      hideElementsCSS: ['a[href$="/products"]'],
+    },
+    'shopify.customers': {
+      hideElementsCSS: ['a[href$="/customers"]'],
+    },
+    'shopify.growth': {
+      hideElementsCSS: ['a[href$="/growth"]'],
+    },
+    'shopify.discounts': {
+      hideElementsCSS: ['a[href$="/discounts"]'],
+    },
+    'shopify.content': {
+      hideElementsCSS: ['a[href*="/content"]'],
+    },
+    'shopify.markets': {
+      hideElementsCSS: ['a[href$="/markets"]'],
+    },
+    'shopify.analytics': {
+      hideElementsCSS: ['a[href$="/analytics"]'],
+    },
+    'shopify.sales_channels': {
+      hideElementsCSS: ['a[href*="/themes"]', 'a[href*="/pages"]', 'a[href*="/blogs"]', 'a[href*="/menus"]', 'a[href*="/preferences"]'],
+    },
+    'shopify.apps': {
+      hideElementsCSS: ['a[href*="/apps/"]'],
+    },
+    'shopify.settings': {
+      hideElementsCSS: ['a[href$="/settings"]'],
+    },
+  },
 });
 
 platformRegistry.register({
@@ -141,6 +237,29 @@ platformRegistry.register({
     type: 'EMAIL',
     inputSelector: 'input[name="otp"], input[autocomplete="one-time-code"], input[name="verification_code"]',
     submitSelector: 'button[type="submit"]',
+  },
+  capabilityRestrictions: {
+    'stripe.payments': {
+      hideElementsCSS: ['li[data-testid="core-nav-item-payments"]', 'a[data-testid="toggle-workload-payments"]'],
+    },
+    'stripe.customers': {
+      hideElementsCSS: ['li[data-testid="core-nav-item-customers"]'],
+    },
+    'stripe.products': {
+      hideElementsCSS: ['li[data-testid="core-nav-item-products"]'],
+    },
+    'stripe.balance': {
+      hideElementsCSS: ['li[data-testid="core-nav-item-balances"]'],
+    },
+    'stripe.billing': {
+      hideElementsCSS: ['a[data-testid="toggle-workload-billing"]'],
+    },
+    'stripe.reports': {
+      hideElementsCSS: ['a[data-testid="toggle-workload-reporting"]'],
+    },
+    'stripe.developers': {
+      hideElementsCSS: ['section#developer-nav'],
+    },
   },
 });
 
@@ -186,7 +305,21 @@ platformRegistry.register({
     'button[aria-label="Show password" i]',
     'button:has(svg#visibility-small)',
     'div:has(> input[type="password"][autocomplete="current-password"])'
-  ]
+  ],
+  capabilityRestrictions: {
+    'linkedin.my_network': {
+      hideElementsCSS: ['a[href^="https://www.linkedin.com/mynetwork"]'],
+    },
+    'linkedin.jobs': {
+      hideElementsCSS: ['a[href^="https://www.linkedin.com/jobs"]'], // Inferred from pattern
+    },
+    'linkedin.messaging': {
+      hideElementsCSS: ['a[href^="https://www.linkedin.com/messaging"]'],
+    },
+    'linkedin.notifications': {
+      hideElementsCSS: ['a[href^="https://www.linkedin.com/notifications"]'],
+    },
+  },
 });
 
 // ─── Phase 3: Government Portals ──────────────────────────────────────────────────────────────

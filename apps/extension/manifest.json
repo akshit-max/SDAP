@@ -69,6 +69,15 @@
     {
       "matches": [
         "https://*.mca.gov.in/*",
+        "https://github.com/*",
+        "https://vercel.com/*",
+        "https://*.vercel.com/*",
+        "https://stripe.com/*",
+        "https://*.stripe.com/*",
+        "https://linkedin.com/*",
+        "https://*.linkedin.com/*",
+        "https://shopify.com/*",
+        "https://*.shopify.com/*",
         "http://localhost:8080/*",
         "http://127.0.0.1:8080/*",
         "http://mca.localhost:8080/*"
