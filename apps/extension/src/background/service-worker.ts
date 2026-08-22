@@ -105,6 +105,22 @@ chrome.tabs.onRemoved.addListener((tabId) => {
   Storage.clearTabPresence(tabId).catch(() => {/* non-blocking */});
 });
 
+// ─── GET_ACTIVE_SESSION in-memory cache ────────────────────────────────────
+// Prevents backend rate-limiting (429) when multiple content scripts
+// (autofill + capability-enforcer) call GET_ACTIVE_SESSION simultaneously
+// on page load. TTL = 5 s — short enough that session revocations are
+// detected quickly, long enough to absorb a burst of frame-level calls.
+//
+// Only SUCCESSFUL results are cached. 401/429/network errors are never
+// cached — the next request will always retry the backend.
+//
+// In-flight deduplication: if a fetch is already in progress for a domain,
+// subsequent callers wait for the same Promise instead of firing a second
+// network call. The in-flight entry is deleted (success or failure) before
+// returning so the cache state is always consistent.
+const _sessionCache = new Map<string, { ts: number; data: any }>();
+const _inFlight    = new Map<string, Promise<ExtensionResponse>>();
+
 async function handleMessage(
   msg: ExtensionMessage,
   sender?: chrome.runtime.MessageSender,
@@ -122,53 +138,69 @@ async function handleMessage(
     // ─── GET_ACTIVE_SESSION ──────────────────────────────────────────────────
     case 'GET_ACTIVE_SESSION': {
       const { domain } = msg.payload as { domain: string };
-      const auth = await Storage.getAuth();
-      if (!auth) return { success: false, error: 'NOT_AUTHENTICATED' };
 
-      // Get user memberships to find orgs
-      const me = await WithusApi.getMe(auth.accessToken);
-      const memberships = me.organizationMemberships || [];
-      if (memberships.length === 0) return { success: false, error: 'NO_ORGANIZATION' };
+      // 1. Serve from 5-second in-memory cache if available
+      const hit = _sessionCache.get(domain);
+      if (hit && Date.now() - hit.ts < 5000) {
+        return { success: true, data: hit.data };
+      }
 
-      let allSessions: any[] = [];
-      const hostname = domain.replace(/^www\./, '');
+      // 2. If a fetch is already in progress for this domain, wait for it
+      const existing = _inFlight.get(domain);
+      if (existing) return existing;
 
-      // Fetch sessions for all orgs in parallel
-      await Promise.all(
-        memberships.map(async (m) => {
-          try {
-            const sessions = await WithusApi.getIncomingSessions(m.organizationId, auth.accessToken);
-            // Attach orgId so the extension knows which org to launch the session against
-            const matching = sessions.filter((s) => {
-              if (s.status !== 'ACTIVE') return false;
-              if (s.expiresAt && new Date(s.expiresAt) < new Date()) return false;
-              
-              const name = s.resourceName?.toLowerCase() || '';
-              if (!name) return false;
-              // Match sessions to the current domain bidirectionally:
-              //   1. A hostname segment is contained in the resourceName  (e.g. "github" ∈ "github")
-              //   2. The resourceName is contained in a hostname segment  (e.g. "udyam" ∈ "udyamregistration")
-              // Skip generic TLD/infrastructure tokens that would cause false positives.
-              // Floor of 3 chars keeps acronyms (mca, gst) while filtering "in", "co" etc.
-              const GENERIC = new Set(['gov', 'com', 'net', 'org', 'in', 'co', 'www', 'app', 'api']);
-              const parts = hostname.split('.').filter(p => p.length >= 3 && !GENERIC.has(p));
-              
+      // 3. Start a new fetch and register it as in-flight
+      const fetchPromise = (async (): Promise<ExtensionResponse> => {
+        try {
+          const auth = await Storage.getAuth();
+          if (!auth) return { success: false, error: 'NOT_AUTHENTICATED' };
 
-              return parts.some((part) => name.includes(part) || part.includes(name));
+          // Get user memberships to find orgs
+          const me = await WithusApi.getMe(auth.accessToken);
+          const memberships = me.organizationMemberships || [];
+          if (memberships.length === 0) return { success: false, error: 'NO_ORGANIZATION' };
 
-            }).map(s => ({ ...s, __orgId: m.organizationId }));
-            
-            allSessions = allSessions.concat(matching);
-          } catch (e) {
-            // Ignore errors for individual orgs
-          }
-        })
-      );
+          let allSessions: any[] = [];
+          const hostname = domain.replace(/^www\./, '');
 
-      return {
-        success: true,
-        data: { sessions: allSessions, orgId: memberships[0].organizationId }, // orgId kept for backwards compat
-      };
+          // Fetch sessions for all orgs in parallel
+          await Promise.all(
+            memberships.map(async (m) => {
+              try {
+                const sessions = await WithusApi.getIncomingSessions(m.organizationId, auth.accessToken);
+                const matching = sessions.filter((s) => {
+                  if (s.status !== 'ACTIVE') return false;
+                  if (s.expiresAt && new Date(s.expiresAt) < new Date()) return false;
+
+                  const name = s.resourceName?.toLowerCase() || '';
+                  if (!name) return false;
+
+                  // Match sessions to the current domain bidirectionally.
+                  // Floor of 3 chars keeps acronyms (mca, gst) while filtering "in", "co" etc.
+                  const GENERIC = new Set(['gov', 'com', 'net', 'org', 'in', 'co', 'www', 'app', 'api']);
+                  const parts = hostname.split('.').filter(p => p.length >= 3 && !GENERIC.has(p));
+                  return parts.some((part) => name.includes(part) || part.includes(name));
+                }).map(s => ({ ...s, __orgId: m.organizationId }));
+
+                allSessions = allSessions.concat(matching);
+              } catch (_) {
+                // Ignore per-org errors — other orgs still succeed
+              }
+            })
+          );
+
+          const data = { sessions: allSessions, orgId: memberships[0].organizationId };
+          // Only cache successful results — never cache 401/429/network errors
+          _sessionCache.set(domain, { ts: Date.now(), data });
+          return { success: true, data };
+        } finally {
+          // Always clean up the in-flight entry so the next caller retries cleanly
+          _inFlight.delete(domain);
+        }
+      })();
+
+      _inFlight.set(domain, fetchPromise);
+      return fetchPromise;
     }
 
     // ─── LAUNCH_SESSION ───────────────────────────────────────────────────────

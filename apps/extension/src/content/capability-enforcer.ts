@@ -94,10 +94,25 @@ async function initEnforcer() {
     }
     restrictionsToApply = mcaRestricted;
   } else {
+    // For all non-MCA platforms:
+    // session.capabilities = the modules the delegate IS ALLOWED to use.
+    // (The "Allowed Modules" checklist in the web dashboard sets this.)
+    // Restrictions = all capability keys defined for this platform MINUS the allowed ones.
     if (!session.capabilities || session.capabilities.length === 0) {
-      return; // Unrestricted session, do nothing
+      // No capability restrictions defined — full access, nothing to hide.
+      chrome.storage.session.remove(WITHUS_CACHE_KEY).catch(() => {});
+      document.getElementById('withus-capability-enforcer-css')?.remove();
+      return;
     }
-    restrictionsToApply = session.capabilities;
+    const allPlatformCaps = Object.keys(config.capabilityRestrictions!);
+    const restricted = allPlatformCaps.filter(cap => !session.capabilities!.includes(cap));
+    if (restricted.length === 0) {
+      // All modules are allowed — nothing to hide.
+      chrome.storage.session.remove(WITHUS_CACHE_KEY).catch(() => {});
+      document.getElementById('withus-capability-enforcer-css')?.remove();
+      return;
+    }
+    restrictionsToApply = restricted;
   }
 
   // Update cache for the next page load
