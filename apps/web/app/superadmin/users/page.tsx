@@ -1,11 +1,16 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { superAdminApi } from '../../../lib/api/superadmin';
-import { Search, CheckCircle, XCircle, Shield, Loader2, User, Calendar, Filter, RotateCcw } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Shield, Loader2, User, Calendar, Filter, RotateCcw, Activity, Clock } from 'lucide-react';
 import { formatDate } from '../../../lib/formatters';
 
+
 export default function SuperAdminUsersPage() {
+  const searchParams = useSearchParams();
+  const isActivityTab = searchParams?.get('tab') === 'activity';
+
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -15,12 +20,24 @@ export default function SuperAdminUsersPage() {
   const [toDate, setToDate] = useState<string>('');
   const [page, setPage] = useState(1);
 
+  // Activity tab: load audit events
+  const [activityData, setActivityData] = useState<any[]>([]);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [activityPage, setActivityPage] = useState(1);
+
   useEffect(() => {
+    if (isActivityTab) {
+      setActivityLoading(true);
+      superAdminApi.getGlobalAudit({ page: 1, limit: 100 })
+        .then((res) => setActivityData(res.data?.data || []))
+        .finally(() => setActivityLoading(false));
+      return;
+    }
     setLoading(true);
     superAdminApi.getUsers({ page: 1, limit: 100, search: search || undefined })
       .then((res) => setData(res.data))
       .finally(() => setLoading(false));
-  }, [search]);
+  }, [search, isActivityTab]);
 
   // Client-side filtering for high responsiveness
   const filteredUsers = useMemo(() => {
@@ -64,6 +81,98 @@ export default function SuperAdminUsersPage() {
   };
 
   const isFiltered = search || statusFilter !== 'ALL' || roleFilter !== 'ALL' || fromDate || toDate;
+
+  // ── Activity Tab early return ─────────────────────────────────────────────
+  if (isActivityTab) {
+    const ACTIVITY_LIMIT = 10;
+    const totalActivityPages = Math.max(1, Math.ceil(activityData.length / ACTIVITY_LIMIT));
+    const paginatedActivity = activityData.slice((activityPage - 1) * ACTIVITY_LIMIT, activityPage * ACTIVITY_LIMIT);
+
+    return (
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="pb-3 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <Activity className="w-5 h-5" /> User Activity
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+              Recent actions performed by users across all organisations.
+            </p>
+          </div>
+          <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 font-number bg-slate-100 dark:bg-zinc-800 px-3 py-1 rounded border border-slate-200 dark:border-zinc-700">
+            Total {activityData.length} activity events
+          </span>
+        </div>
+        <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg overflow-hidden shadow-sm">
+          {activityLoading ? (
+            <div className="px-5 py-12 text-center">
+              <Loader2 className="w-5 h-5 mx-auto mb-2 animate-spin text-slate-700 dark:text-slate-300" />
+              <p className="text-xs text-slate-500">Loading activity...</p>
+            </div>
+          ) : activityData.length === 0 ? (
+            <div className="px-5 py-12 text-center">
+              <Clock className="w-6 h-6 mx-auto mb-2 text-slate-400" />
+              <p className="text-xs text-slate-500">No recent user activity found.</p>
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-slate-200 dark:divide-zinc-800">
+                  <thead className="bg-slate-50 dark:bg-zinc-800/50">
+                    <tr>
+                      {['Action', 'Actor Email', 'Organisation', 'Resource', 'Timestamp'].map((h, i) => (
+                        <th key={h} scope="col" className={`px-5 py-3 text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider ${i === 4 ? 'text-right' : 'text-left'}`}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-zinc-800 bg-white dark:bg-zinc-900">
+                    {paginatedActivity.map((e: any) => (
+                      <tr key={e.id} className="hover:bg-slate-50/60 dark:hover:bg-zinc-800/40 transition-colors">
+                        <td className="px-5 py-3.5 whitespace-nowrap text-xs font-mono font-bold text-slate-900 dark:text-slate-100">{e.action}</td>
+                        <td className="px-5 py-3.5 whitespace-nowrap text-xs font-mono text-slate-800 dark:text-slate-200">
+                          {e.actor?.email ?? <span className="text-slate-400">System</span>}
+                        </td>
+                        <td className="px-5 py-3.5 whitespace-nowrap text-xs text-slate-700 dark:text-slate-300">
+                          {e.organization?.name ?? <span className="text-slate-400">—</span>}
+                        </td>
+                        <td className="px-5 py-3.5 whitespace-nowrap text-xs text-slate-700 dark:text-slate-300">
+                          {e.resourceType ?? <span className="text-slate-400">—</span>}
+                        </td>
+                        <td className="px-5 py-3.5 whitespace-nowrap text-xs text-slate-800 dark:text-slate-200 text-right font-number">{formatDate(e.createdAt)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {/* Pagination Controls */}
+              <div className="px-5 py-3 border-t border-slate-200 dark:border-zinc-800 flex items-center justify-between bg-slate-50/50 dark:bg-zinc-800/30">
+                <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                  Page <span className="font-bold text-slate-900 dark:text-slate-100 font-number">{activityPage}</span> of{' '}
+                  <span className="font-bold text-slate-900 dark:text-slate-100 font-number">{totalActivityPages}</span>
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    disabled={activityPage <= 1}
+                    onClick={() => setActivityPage(p => Math.max(1, p - 1))}
+                    className="px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded hover:bg-slate-50 dark:hover:bg-zinc-700 disabled:opacity-40 transition-colors"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    disabled={activityPage >= totalActivityPages}
+                    onClick={() => setActivityPage(p => Math.min(totalActivityPages, p + 1))}
+                    className="px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded hover:bg-slate-50 dark:hover:bg-zinc-700 disabled:opacity-40 transition-colors"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">

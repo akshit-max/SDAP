@@ -7,6 +7,7 @@ import {
   Req,
   NotFoundException,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { SuperAdminGuard } from './super-admin.guard';
 import { SuperAdminService } from './super-admin.service';
 import { Request } from 'express';
@@ -20,18 +21,89 @@ import { Request } from 'express';
  */
 @Controller('superadmin')
 @UseGuards(SuperAdminGuard)
+@Throttle({ default: { limit: 100, ttl: 60000 } })
 export class SuperAdminController {
   constructor(private readonly superAdminService: SuperAdminService) {}
 
   // ─── Overview / KPIs ───────────────────────────────────────────────────────
 
   @Get('overview')
-  async getOverview(@Req() req: Request) {
+  async getOverview(
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Req() req?: Request,
+  ) {
     await this.superAdminService.logPlatformAction(
-      (req.user as any).id,
+      (req!.user as any).id,
       'superadmin.viewed_overview',
     );
-    return this.superAdminService.getOverview();
+    return this.superAdminService.getOverview(
+      from ? new Date(from) : undefined,
+      to ? new Date(to) : undefined,
+    );
+  }
+
+  // ─── Growth Data (for charts) ───────────────────────────────────────────────
+
+  @Get('growth')
+  async getGrowthData(@Query('days') days?: string) {
+    return this.superAdminService.getGrowthData(days ? parseInt(days, 10) : 30);
+  }
+
+  // ─── Platform Analytics ────────────────────────────────────────────────────
+
+  @Get('platforms')
+  async getPlatformStats(@Req() req?: Request) {
+    await this.superAdminService.logPlatformAction(
+      (req!.user as any).id,
+      'superadmin.viewed_platforms',
+    );
+    return this.superAdminService.getPlatformStats();
+  }
+
+  // ─── System Health ──────────────────────────────────────────────────────────
+
+  @Get('health')
+  async getSystemHealth() {
+    return this.superAdminService.getSystemHealth();
+  }
+
+  // ─── Admin Management ──────────────────────────────────────────────────────
+
+  @Get('admins')
+  async getSuperAdmins(@Req() req?: Request) {
+    await this.superAdminService.logPlatformAction(
+      (req!.user as any).id,
+      'superadmin.viewed_admins',
+    );
+    return this.superAdminService.getSuperAdmins();
+  }
+
+  // ─── Product Analytics ─────────────────────────────────────────────────────
+
+  @Get('analytics')
+  async getProductAnalytics(
+    @Query('days') days?: string,
+    @Req() req?: Request,
+  ) {
+    await this.superAdminService.logPlatformAction(
+      (req!.user as any).id,
+      'superadmin.viewed_analytics',
+    );
+    return this.superAdminService.getProductAnalytics(
+      days ? parseInt(days, 10) : 30,
+    );
+  }
+
+  // ─── Notifications ─────────────────────────────────────────────────────────
+
+  @Get('notifications')
+  async getNotifications(@Req() req?: Request) {
+    await this.superAdminService.logPlatformAction(
+      (req!.user as any).id,
+      'superadmin.viewed_notifications',
+    );
+    return this.superAdminService.getNotifications();
   }
 
   // ─── Users ─────────────────────────────────────────────────────────────────
@@ -160,5 +232,45 @@ export class SuperAdminController {
       page ? parseInt(page, 10) : 1,
       limit ? parseInt(limit, 10) : 50,
     );
+  }
+
+  // ─── WITHUS Platform Ecosystem ─────────────────────────────────────────────
+  // Returns all 11 official WITHUS Vault platforms with real DB data.
+  // Google Ads is intentionally excluded.
+
+  @Get('platform-ecosystem')
+  async getPlatformEcosystem(@Req() req: Request) {
+    const actorId = (req as any).user?.userId;
+    if (actorId) {
+      await this.superAdminService.logPlatformAction(
+        actorId,
+        'superadmin.viewed_platform_ecosystem',
+        undefined,
+        undefined,
+        (req as any).ip,
+        req.headers['user-agent'],
+      );
+    }
+    return this.superAdminService.getPlatformEcosystem();
+  }
+
+  // ─── Vault Analytics ───────────────────────────────────────────────────────
+  // Returns real vault/secret/session analytics from existing Prisma models.
+  // No schema changes required.
+
+  @Get('vault-analytics')
+  async getVaultAnalytics(@Req() req: Request) {
+    const actorId = (req as any).user?.userId;
+    if (actorId) {
+      await this.superAdminService.logPlatformAction(
+        actorId,
+        'superadmin.viewed_vault_analytics',
+        undefined,
+        undefined,
+        (req as any).ip,
+        req.headers['user-agent'],
+      );
+    }
+    return this.superAdminService.getVaultAnalytics();
   }
 }

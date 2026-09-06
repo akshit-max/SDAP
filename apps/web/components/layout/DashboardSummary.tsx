@@ -8,6 +8,7 @@ import { usePendingApprovals } from '../../hooks/useApprovals';
 import { useIncomingSessions, useOutgoingSessions } from '../../hooks/useSessions';
 import { Shield, Key, CheckSquare, Users, ArrowRight, Plus } from 'lucide-react';
 import { formatDate } from '../../lib/formatters';
+import { SupportCard } from '../common/SupportCard';
 
 export function DashboardSummary() {
   const { user, organization } = useAuth();
@@ -191,6 +192,11 @@ export function DashboardSummary() {
             </Link>
           ))}
         </div>
+      </div>
+
+      {/* Support / Help Block */}
+      <div className="pt-2">
+        <SupportCard />
       </div>
     </div>
   );

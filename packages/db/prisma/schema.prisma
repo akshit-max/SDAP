@@ -59,6 +59,8 @@ model User {
   // separate from MembershipRole (OWNER/ADMIN/MEMBER).
   // Default false — zero behavioral change for all existing users.
   isSuperAdmin           Boolean   @default(false)
+  // ─── Login tracking — additive, nullable, zero behavioral change ─────────────
+  lastLoginAt            DateTime? // Updated on every successful login
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
   deletedAt              DateTime?

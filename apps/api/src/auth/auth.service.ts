@@ -234,7 +234,25 @@ export class AuthService {
       orderBy: { joinedAt: 'asc' },
     });
 
-    // Future: emit UserLoggedInEvent
+    // ─── Login tracking (Phase 1D) ────────────────────────────────────────────
+    // Write lastLoginAt — additive, fire-and-forget, non-blocking.
+    // Emit user.login to AuditEvent for security audit visibility.
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
+
+    if (firstMembership?.organizationId) {
+      this.eventEmitter.emit('audit.log', {
+        organizationId: firstMembership.organizationId,
+        action: 'user.login',
+        actorId: user.id,
+        resourceType: 'USER',
+        resourceId: user.id,
+        metadata: { ipAddress, userAgent },
+      });
+    }
+
     return {
       accessToken,
       refreshToken: rawToken,
