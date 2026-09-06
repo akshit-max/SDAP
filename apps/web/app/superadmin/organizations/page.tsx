@@ -15,6 +15,8 @@ export default function SuperAdminOrgsPage() {
   const [toDate, setToDate] = useState<string>('');
   const [page, setPage] = useState(1);
 
+  const THIRTY_DAYS_AGO = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
   useEffect(() => {
     setLoading(true);
     superAdminApi.getOrganizations({ page: 1, limit: 100, search: search || undefined })
@@ -29,6 +31,12 @@ export default function SuperAdminOrgsPage() {
       // Status filter
       if (statusFilter === 'ACTIVE' && !org.isActive) return false;
       if (statusFilter === 'INACTIVE' && org.isActive) return false;
+      // New = registered in last 30 days
+      if (statusFilter === 'NEW' && new Date(org.createdAt) < THIRTY_DAYS_AGO) return false;
+      // High usage = 5+ delegated sessions
+      if (statusFilter === 'HIGH_USAGE' && (org._count?.delegatedSessions ?? 0) < 5) return false;
+      // Low usage = 0 delegated sessions
+      if (statusFilter === 'LOW_USAGE' && (org._count?.delegatedSessions ?? 0) > 0) return false;
 
       // Date range filter
       if (fromDate) {
@@ -89,16 +97,23 @@ export default function SuperAdminOrgsPage() {
             />
           </div>
 
-          {/* Status Filter */}
+          {/* Status Filter — includes derivable filters + billing Coming Soon note */}
           <div className="md:col-span-3">
             <select
               value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
               className="w-full h-9 px-3 text-xs font-medium text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
             >
-              <option value="ALL">All Statuses</option>
-              <option value="ACTIVE">Active Organizations</option>
-              <option value="INACTIVE">Inactive Organizations</option>
+              <optgroup label="Status">
+                <option value="ALL">All Organizations</option>
+                <option value="ACTIVE">Active Organizations</option>
+                <option value="INACTIVE">Inactive Organizations</option>
+                <option value="NEW">New (Last 30 Days)</option>
+              </optgroup>
+              <optgroup label="Usage (from session data)">
+                <option value="HIGH_USAGE">High Usage (5+ Sessions)</option>
+                <option value="LOW_USAGE">Low Usage (0 Sessions)</option>
+              </optgroup>
             </select>
           </div>
 
@@ -147,6 +162,14 @@ export default function SuperAdminOrgsPage() {
               />
             </div>
           </div>
+        </div>
+
+        {/* Billing-gated filters note */}
+        <div className="pt-2 border-t border-slate-100 dark:border-zinc-800/80">
+          <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+            <span className="font-bold text-amber-600 dark:text-amber-500">Coming Soon (Billing Required):</span>
+            {' '}Free / Pro / Trial / Subscription Status filters will be available after payment gateway integration.
+          </p>
         </div>
       </div>
 

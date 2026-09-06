@@ -6,6 +6,7 @@ import { SupportCard } from '../../components/common/SupportCard';
 import {
   Users, Building2, Zap, Database, Activity, ShieldAlert, Loader2,
   KeyRound, Server, Wifi, WifiOff, RefreshCw, CreditCard, TrendingDown, AlertCircle,
+  Calendar,
 } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip,
@@ -35,6 +36,7 @@ const TIME_RANGES: { label: string; value: TimeRange; days: number | null }[] = 
   { label: '3 Months', value: '3m', days: 90 },
   { label: '6 Months', value: '6m', days: 180 },
   { label: '1 Year', value: '1y', days: 365 },
+  { label: 'Custom', value: 'custom', days: null },
 ];
 
 // ─── Components ──────────────────────────────────────────────────────────────
@@ -119,15 +121,25 @@ export default function SuperAdminOverview() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
+  // Custom date range state
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
 
   const getDateRange = useCallback((range: TimeRange) => {
+    if (range === 'custom') {
+      const from = customFrom ? new Date(customFrom) : new Date(Date.now() - 30 * 86400000);
+      const to = customTo ? new Date(customTo + 'T23:59:59') : new Date();
+      const days = Math.max(1, Math.ceil((to.getTime() - from.getTime()) / 86400000));
+      return { from: from.toISOString(), to: to.toISOString(), days };
+    }
     const now = new Date();
     const days = TIME_RANGES.find((r) => r.value === range)?.days || 30;
     const from = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
     return { from: from.toISOString(), to: now.toISOString(), days };
-  }, []);
+  }, [customFrom, customTo]);
 
   const fetchData = useCallback(async (range: TimeRange) => {
+    if (range === 'custom' && (!customFrom || !customTo)) return; // wait for both dates
     try {
       setLoading(true);
       setError(null);
@@ -143,11 +155,16 @@ export default function SuperAdminOverview() {
     } finally {
       setLoading(false);
     }
-  }, [getDateRange]);
+  }, [getDateRange, customFrom, customTo]);
 
   useEffect(() => {
-    fetchData(timeRange);
+    if (timeRange !== 'custom') fetchData(timeRange);
   }, [fetchData, timeRange]);
+
+  // Trigger fetch when custom dates are both set
+  useEffect(() => {
+    if (timeRange === 'custom' && customFrom && customTo) fetchData('custom');
+  }, [customFrom, customTo, timeRange, fetchData]);
 
   // Build chart data from growth response
   const chartData = growthData
@@ -160,42 +177,86 @@ export default function SuperAdminOverview() {
       }))
     : [];
 
+  // Build Platform Usage chart data from topPlatforms
+  const platformChartData = overview?.topPlatforms?.map((p) => ({
+    name: p.provider,
+    Sessions: p.activeSessions,
+  })) ?? [];
+
   return (
     <div className="max-w-7xl mx-auto space-y-8">
       {/* Page Header + Time Filter */}
-      <div className="pb-4 border-b border-premium flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-premium-main">Platform Dashboard</h1>
-          <p className="text-xs text-premium-muted mt-0.5">
-            Real-time analytics across WITHUS. Billing-dependent metrics are marked as Coming Soon.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Time filter */}
-          <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 rounded p-1">
-            {TIME_RANGES.map((r) => (
-              <button
-                key={r.value}
-                onClick={() => setTimeRange(r.value)}
-                className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide rounded transition-colors ${
-                  timeRange === r.value
-                    ? 'bg-white dark:bg-zinc-700 text-premium-main shadow-sm'
-                    : 'text-zinc-500 hover:text-premium-main'
-                }`}
-              >
-                {r.label}
-              </button>
-            ))}
+      <div className="pb-4 border-b border-premium flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-premium-main">Platform Dashboard</h1>
+            <p className="text-xs text-premium-muted mt-0.5">
+              Real-time analytics across WITHUS. Billing-dependent metrics are marked as Coming Soon.
+            </p>
           </div>
-          <button
-            onClick={() => fetchData(timeRange)}
-            disabled={loading}
-            className="flex items-center gap-1.5 premium-button-secondary py-1.5 px-3 text-xs font-semibold"
-          >
-            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Time filter */}
+            <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 rounded p-1">
+              {TIME_RANGES.map((r) => (
+                <button
+                  key={r.value}
+                  onClick={() => setTimeRange(r.value)}
+                  className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide rounded transition-colors ${
+                    timeRange === r.value
+                      ? 'bg-white dark:bg-zinc-700 text-premium-main shadow-sm'
+                      : 'text-zinc-500 hover:text-premium-main'
+                  }`}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => fetchData(timeRange)}
+              disabled={loading || (timeRange === 'custom' && (!customFrom || !customTo))}
+              className="flex items-center gap-1.5 premium-button-secondary py-1.5 px-3 text-xs font-semibold"
+            >
+              <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+          </div>
         </div>
+
+        {/* Custom date range picker — only shown when Custom is selected */}
+        {timeRange === 'custom' && (
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-3 border-t border-premium">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 min-w-fit">
+              <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+              <span>Custom Date Range:</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">From:</span>
+                <input
+                  type="date"
+                  value={customFrom}
+                  onChange={(e) => setCustomFrom(e.target.value)}
+                  className="h-8 px-2 text-xs font-medium text-zinc-900 dark:text-zinc-100 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:ring-1 focus:ring-zinc-400"
+                />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">To:</span>
+                <input
+                  type="date"
+                  value={customTo}
+                  onChange={(e) => setCustomTo(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
+                  className="h-8 px-2 text-xs font-medium text-zinc-900 dark:text-zinc-100 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:ring-1 focus:ring-zinc-400"
+                />
+              </div>
+            </div>
+            {(!customFrom || !customTo) && (
+              <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                Select both dates to load data
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {error && (
@@ -364,9 +425,9 @@ export default function SuperAdminOverview() {
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-premium-muted mb-4">Analytics Charts</p>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Organisation + User Growth */}
+              {/* Organisation Growth */}
               <div className="premium-card p-5 space-y-3">
-                <p className="text-[11px] font-bold text-premium-main uppercase tracking-wider">Organisation & User Growth</p>
+                <p className="text-[11px] font-bold text-premium-main uppercase tracking-wider">Organisation Growth</p>
                 {loading || !chartData.length ? (
                   <div className="h-44 animate-pulse bg-zinc-100 dark:bg-zinc-800 rounded" />
                 ) : (
@@ -376,27 +437,50 @@ export default function SuperAdminOverview() {
                       <XAxis dataKey="date" tick={{ fontSize: 9 }} tickLine={false} />
                       <YAxis tick={{ fontSize: 9 }} tickLine={false} width={28} />
                       <Tooltip content={<CustomTooltip />} />
-                      <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
                       <Line type="monotone" dataKey="Orgs" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+
+              {/* User Growth */}
+              <div className="premium-card p-5 space-y-3">
+                <p className="text-[11px] font-bold text-premium-main uppercase tracking-wider">User Growth</p>
+                {loading || !chartData.length ? (
+                  <div className="h-44 animate-pulse bg-zinc-100 dark:bg-zinc-800 rounded" />
+                ) : (
+                  <ResponsiveContainer width="100%" height={180}>
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.15)" />
+                      <XAxis dataKey="date" tick={{ fontSize: 9 }} tickLine={false} />
+                      <YAxis tick={{ fontSize: 9 }} tickLine={false} width={28} />
+                      <Tooltip content={<CustomTooltip />} />
                       <Line type="monotone" dataKey="Users" stroke="#8b5cf6" strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 )}
               </div>
 
-              {/* Session Activity */}
+              {/* Platform Usage — real data from active sessions per provider */}
               <div className="premium-card p-5 space-y-3">
-                <p className="text-[11px] font-bold text-premium-main uppercase tracking-wider">Session Activity</p>
-                {loading || !chartData.length ? (
+                <div>
+                  <p className="text-[11px] font-bold text-premium-main uppercase tracking-wider">Platform Usage</p>
+                  <p className="text-[9px] text-premium-muted mt-0.5">Active delegated sessions by integration provider</p>
+                </div>
+                {loading || !overview ? (
                   <div className="h-44 animate-pulse bg-zinc-100 dark:bg-zinc-800 rounded" />
+                ) : platformChartData.length === 0 ? (
+                  <div className="h-44 flex items-center justify-center">
+                    <p className="text-xs text-premium-muted">No active sessions on any platform.</p>
+                  </div>
                 ) : (
                   <ResponsiveContainer width="100%" height={180}>
-                    <BarChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.15)" />
-                      <XAxis dataKey="date" tick={{ fontSize: 9 }} tickLine={false} />
-                      <YAxis tick={{ fontSize: 9 }} tickLine={false} width={28} />
+                    <BarChart data={platformChartData} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.15)" horizontal={false} />
+                      <XAxis type="number" tick={{ fontSize: 9 }} tickLine={false} />
+                      <YAxis type="category" dataKey="name" tick={{ fontSize: 9 }} tickLine={false} width={56} />
                       <Tooltip content={<CustomTooltip />} />
-                      <Bar dataKey="Sessions" fill="#f59e0b" radius={[2, 2, 0, 0]} />
+                      <Bar dataKey="Sessions" fill="#06b6d4" radius={[0, 2, 2, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
@@ -442,6 +526,9 @@ export default function SuperAdminOverview() {
                   </ResponsiveContainer>
                 )}
               </div>
+
+              {/* Free → Pro Conversion — Coming Soon (billing-dependent) */}
+              <ComingSoonChart title="Free → Pro Conversion — Billing Integration Required" />
 
               {/* MRR Growth — Coming Soon */}
               <ComingSoonChart title="MRR Growth — Billing Integration Required" />

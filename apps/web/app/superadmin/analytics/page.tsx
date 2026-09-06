@@ -117,9 +117,9 @@ export default function AnalyticsPage() {
       {/* Acquisition */}
       <div>
         <p className="text-[10px] font-bold uppercase tracking-widest text-premium-muted mb-4">Acquisition</p>
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
           {loading ? (
-            [0, 1, 2, 3].map((i) => <div key={i} className="premium-card p-5 h-28 animate-pulse bg-zinc-100 dark:bg-zinc-800" />)
+            [0, 1, 2, 3, 4, 5].map((i) => <div key={i} className="premium-card p-5 h-28 animate-pulse bg-zinc-100 dark:bg-zinc-800" />)
           ) : (
             <>
               <MetricCard
@@ -136,8 +136,21 @@ export default function AnalyticsPage() {
                 note={`Last ${days} days`}
                 color="text-blue-600 dark:text-blue-400"
               />
-              <ComingSoonCard icon={TrendingUp} title="Registration Source" subtitle="Referral & campaign tracking" />
-              <ComingSoonCard icon={TrendingUp} title="Campaign Attribution" subtitle="Requires UTM tracking integration" />
+              <ComingSoonCard
+                icon={TrendingUp}
+                title="Registration Source"
+                subtitle="Source tracking requires UTM parameters stored at registration"
+              />
+              <ComingSoonCard
+                icon={TrendingUp}
+                title="Referral"
+                subtitle="Referral code tracking requires a referral system integrated at sign-up"
+              />
+              <ComingSoonCard
+                icon={TrendingUp}
+                title="Campaign Attribution"
+                subtitle="Campaign tracking requires UTM parameter capture at registration"
+              />
             </>
           )}
         </div>

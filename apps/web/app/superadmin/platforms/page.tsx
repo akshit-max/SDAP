@@ -493,6 +493,67 @@ function IntegrationConnectionsTab() {
         </div>
       ) : (
         <>
+          {/* Platform Analytics Summary */}
+          {stats.length > 0 && (() => {
+            const mostPopular = [...stats].sort((a, b) => b.sessions - a.sessions)[0];
+            const leastUsed = [...stats].sort((a, b) => a.sessions - b.sessions)[0];
+            const added = recentActivity.filter((e) => e.action === 'integration.connected').length;
+            const removed = recentActivity.filter((e) => e.action === 'integration.disconnected').length;
+            return (
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-3">Platform Analytics (15-Day Window)</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 space-y-1.5 shadow-sm">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-500">Most Popular</p>
+                    <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{mostPopular?.provider || '—'}</p>
+                    <p className="text-[10px] text-zinc-400 font-number">{mostPopular?.sessions ?? 0} sessions</p>
+                  </div>
+                  <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 space-y-1.5 shadow-sm">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-500">Least Used</p>
+                    <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{leastUsed?.provider || '—'}</p>
+                    <p className="text-[10px] text-zinc-400 font-number">{leastUsed?.sessions ?? 0} sessions</p>
+                  </div>
+                  <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/60 rounded-lg p-4 space-y-1.5 shadow-sm">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Platforms Added</p>
+                    <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300 font-number">{added}</p>
+                    <p className="text-[10px] text-emerald-600/70 dark:text-emerald-500">Last 15 days</p>
+                  </div>
+                  <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800/60 rounded-lg p-4 space-y-1.5 shadow-sm">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400">Platforms Removed</p>
+                    <p className="text-xl font-bold text-rose-700 dark:text-rose-300 font-number">{removed}</p>
+                    <p className="text-[10px] text-rose-600/70 dark:text-rose-500">Last 15 days</p>
+                  </div>
+                </div>
+                {/* Connection Success Rate per provider */}
+                <div className="mt-4">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-3">Connection Success Rate by Provider</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {stats.map((stat) => {
+                      const successRate = stat.total > 0 ? Math.round((stat.active / stat.total) * 100) : 100;
+                      return (
+                        <div key={stat.provider} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 shadow-sm space-y-2">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">{stat.provider}</p>
+                            <span className={`text-xs font-bold font-number ${successRate >= 80 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                              {successRate}%
+                            </span>
+                          </div>
+                          <div className="w-full h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${successRate >= 80 ? 'bg-emerald-500' : 'bg-rose-500'}`}
+                              style={{ width: `${successRate}%` }}
+                            />
+                          </div>
+                          <p className="text-[9px] text-zinc-400 font-number">{stat.active} active · {stat.failed} failed · {stat.total} total connections</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Provider Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             {stats.map((stat) => (

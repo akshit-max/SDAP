@@ -290,6 +290,7 @@ export default function SuperAdminUsersPage() {
                 <th scope="col" className="px-5 py-3 text-left text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Organization</th>
                 <th scope="col" className="px-5 py-3 text-left text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Org Role</th>
                 <th scope="col" className="px-5 py-3 text-left text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Account Status</th>
+                <th scope="col" className="px-5 py-3 text-left text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Last Login</th>
                 <th scope="col" className="px-5 py-3 text-left text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Joined Date</th>
                 <th scope="col" className="px-5 py-3 text-right text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Platform Access</th>
               </tr>
@@ -364,6 +365,13 @@ export default function SuperAdminUsersPage() {
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded text-[11px] font-semibold bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
                             <XCircle className="w-3 h-3 mr-1 text-rose-600 dark:text-rose-400" /> Inactive
                           </span>
+                        )}
+                      </td>
+
+                      {/* Last Login */}
+                      <td className="px-5 py-3.5 whitespace-nowrap text-xs font-semibold text-slate-800 dark:text-slate-200 font-number">
+                        {user.lastLoginAt ? formatDate(user.lastLoginAt) : (
+                          <span className="text-slate-400 dark:text-slate-500 italic text-[10px]">Never</span>
                         )}
                       </td>
 
