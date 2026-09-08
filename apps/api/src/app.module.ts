@@ -24,6 +24,7 @@ import { ApiKeysModule } from './api-keys/api-keys.module';
 import { ProgrammaticModule } from './programmatic/programmatic.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { SuperAdminModule } from './super-admin/super-admin.module';
+import { RedisThrottlerStorage } from './common/storage/redis-throttler.storage';
 
 import { validate } from './config/env.validation';
 
@@ -33,12 +34,19 @@ import { validate } from './config/env.validation';
       isGlobal: true,
       validate,
     }),
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000,
-        limit: 10,
-      },
-    ]),
+    ThrottlerModule.forRoot({
+      // Global default: 10 req / 60s per IP.
+      // Per-route overrides via @Throttle decorator are unaffected.
+      throttlers: [{ ttl: 60000, limit: 10 }],
+      // When REDIS_URL is set: use Redis-backed shared storage so counters
+      // are consistent across multiple Render instances (production).
+      // When REDIS_URL is absent: storage is undefined → ThrottlerModule uses
+      // its default in-memory ThrottlerStorageService (existing local dev behavior).
+      storage: process.env.REDIS_URL
+        ? new RedisThrottlerStorage(process.env.REDIS_URL)
+        : undefined,
+    }),
+
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
     UsersModule,

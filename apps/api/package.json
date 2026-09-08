@@ -16,6 +16,7 @@
     "rotate-mek": "ts-node scripts/rotate-mek.ts"
   },
   "dependencies": {
+    "@nestjs/cli": "^11.0.0",
     "@nestjs/common": "^11.1.28",
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.1",
@@ -31,7 +32,11 @@
     "@repo/db": "*",
     "@repo/security": "*",
     "@repo/types": "*",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/express": "^5.0.0",
+    "@types/node": "^24.0.0",
     "@types/nodemailer": "^8.0.1",
+    "@types/passport-jwt": "^4.0.1",
     "cookie-parser": "^1.4.7",
     "express-rate-limit": "^8.6.1",
     "helmet": "^8.3.0",
@@ -39,17 +44,13 @@
     "nodemailer": "^9.0.3",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
+    "rate-limit-redis": "6.0.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "swagger-ui-express": "^5.0.1",
-    "zod": "^3.25.76",
-    "zod-validation-error": "^5.0.0",
-    "@nestjs/cli": "^11.0.0",
     "typescript": "5.9.2",
-    "@types/cookie-parser": "^1.4.10",
-    "@types/express": "^5.0.0",
-    "@types/node": "^24.0.0",
-    "@types/passport-jwt": "^4.0.1"
+    "zod": "^3.25.76",
+    "zod-validation-error": "^5.0.0"
   },
   "devDependencies": {
     "@nestjs/schematics": "^11.0.0",

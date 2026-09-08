@@ -9,9 +9,12 @@ import { csrfMiddleware } from './common/middleware/csrf.middleware';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
-  const app = await NestFactory.create<import('@nestjs/platform-express').NestExpressApplication>(AppModule);
+  const app =
+    await NestFactory.create<
+      import('@nestjs/platform-express').NestExpressApplication
+    >(AppModule);
   app.setGlobalPrefix('api/v1');
-  
+
   // Trust proxy is required for express-rate-limit when hosted on platforms like Render/Vercel
   app.set('trust proxy', 1);
 
@@ -58,10 +61,19 @@ async function bootstrap() {
 
   // ─── CORS ──────────────────────────────────────────────────────────────────
   app.enableCors({
-    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      const allowedOrigins = (process.env.CORS_ORIGIN?.split(',') ?? ['http://localhost:3000']).map(o => o.trim().replace(/\/$/, ''));
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
+      const allowedOrigins = (
+        process.env.CORS_ORIGIN?.split(',') ?? ['http://localhost:3000']
+      ).map((o) => o.trim().replace(/\/$/, ''));
       const cleanOrigin = origin ? origin.trim().replace(/\/$/, '') : '';
-      if (!origin || origin.startsWith('chrome-extension://') || allowedOrigins.includes(cleanOrigin)) {
+      if (
+        !origin ||
+        origin.startsWith('chrome-extension://') ||
+        allowedOrigins.includes(cleanOrigin)
+      ) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
@@ -78,15 +90,40 @@ async function bootstrap() {
   const { rateLimit } = require('express-rate-limit');
   const ttl = parseInt(process.env.RATE_LIMIT_TTL || '60', 10);
   const limit = parseInt(process.env.RATE_LIMIT_LIMIT || '100', 10);
-  
+
+  // ── Redis shared store (production) ──────────────────────────────────────
+  // When REDIS_URL is set, rate-limit counters are shared across all Render
+  // instances so that the 100 req/60s limit is enforced globally, not per-instance.
+  // When REDIS_URL is absent (local dev), the default MemoryStore is used unchanged.
+  // passOnStoreError: false = fail-closed: if Redis becomes unavailable,
+  // requests are blocked (429) rather than silently bypassing the rate limit.
+  let expressRateLimitStore: object | undefined;
+  if (process.env.REDIS_URL) {
+    const { RedisStore } = require('rate-limit-redis');
+    const Redis = require('ioredis');
+    const redisClient = new Redis(process.env.REDIS_URL, {
+      maxRetriesPerRequest: 1,
+      connectTimeout: 2000,
+    });
+    expressRateLimitStore = new RedisStore({
+      sendCommand: (...args: string[]) => redisClient.call(...args),
+      prefix: 'erl:',
+    });
+  }
+
   app.use(
     rateLimit({
       windowMs: ttl * 1000,
       max: limit,
       standardHeaders: true,
       legacyHeaders: false,
-      message: { statusCode: 429, message: 'Too many requests, please try again later.' },
-    })
+      message: {
+        statusCode: 429,
+        message: 'Too many requests, please try again later.',
+      },
+      passOnStoreError: false,
+      ...(expressRateLimitStore ? { store: expressRateLimitStore } : {}),
+    }),
   );
 
   // ─── Request Size Limits ───────────────────────────────────────────────────

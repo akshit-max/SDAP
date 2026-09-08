@@ -55,7 +55,7 @@ export interface ExtensionResponse<T = unknown> {
 
 export interface CredentialFields {
   usernameSelector: string;
-  passwordSelector: string;
+  passwordSelector?: string;
   /** Optional: click this button after filling */
   submitSelector?: string;
 }

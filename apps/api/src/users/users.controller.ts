@@ -7,15 +7,26 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import type { RequestWithUser } from '../common/interfaces/request-with-user.interface';
 import { z } from 'zod';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
-import { ApiTags, ApiOperation, ApiProperty, ApiPropertyOptional, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiProperty,
+  ApiPropertyOptional,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 
 const UpdateProfileSchema = z.object({
-  fullName: z.string().min(2, 'Full name must be at least 2 characters').max(100).optional(),
+  fullName: z
+    .string()
+    .min(2, 'Full name must be at least 2 characters')
+    .max(100)
+    .optional(),
   githubUsername: z.string().optional(),
 });
 
@@ -25,10 +36,18 @@ const ChangePasswordSchema = z.object({
 });
 
 export class UpdateProfileDto {
-  @ApiPropertyOptional({ example: 'John Doe', description: 'The user full name', minLength: 2, maxLength: 100 })
+  @ApiPropertyOptional({
+    example: 'John Doe',
+    description: 'The user full name',
+    minLength: 2,
+    maxLength: 100,
+  })
   fullName?: string;
 
-  @ApiPropertyOptional({ example: 'octocat', description: 'GitHub username for integration' })
+  @ApiPropertyOptional({
+    example: 'octocat',
+    description: 'GitHub username for integration',
+  })
   githubUsername?: string;
 }
 
@@ -36,7 +55,11 @@ export class ChangePasswordDto {
   @ApiProperty({ example: 'old_password123', description: 'Current password' })
   currentPassword!: string;
 
-  @ApiProperty({ example: 'new_password123', description: 'New password (min 8 chars)', minLength: 8 })
+  @ApiProperty({
+    example: 'new_password123',
+    description: 'New password (min 8 chars)',
+    minLength: 8,
+  })
   newPassword!: string;
 }
 
@@ -73,6 +96,7 @@ export class UsersController {
 
   @Post('me/change-password')
   @ApiOperation({ summary: 'Change user password' })
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async changePassword(
     @Request() req: RequestWithUser,
     @Body(new ZodValidationPipe(ChangePasswordSchema)) dto: ChangePasswordDto,
