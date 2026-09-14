@@ -804,19 +804,17 @@ export default function PublicWithusPage() {
               </div>
               
               <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setIsDemoModalOpen(true)}
-                  className="px-3.5 py-1.5 rounded-lg bg-neutral-850 border border-neutral-750 text-xs font-semibold text-neutral-200 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer flex items-center gap-1.5"
+                <div
+                  className="px-3.5 py-1.5 rounded-lg bg-neutral-850 border border-neutral-750 text-xs font-semibold text-neutral-200 flex items-center gap-1.5 select-none"
                 >
                   <Globe className="w-3.5 h-3.5 text-neutral-400" />
                   <span>Browser Extension</span>
-                </button>
-                <button
-                  onClick={() => setIsDemoModalOpen(true)}
-                  className="px-4 py-1.5 rounded-lg bg-white text-neutral-950 text-xs font-bold hover:bg-neutral-100 transition-all cursor-pointer shadow-xs flex items-center gap-1.5"
+                </div>
+                <div
+                  className="px-4 py-1.5 rounded-lg bg-white text-neutral-950 text-xs font-bold shadow-xs flex items-center gap-1.5 select-none"
                 >
                   <span>+ New Vault</span>
-                </button>
+                </div>
               </div>
             </div>
 
@@ -875,10 +873,10 @@ export default function PublicWithusPage() {
               <div className="p-6 rounded-xl bg-neutral-900/60 border border-neutral-850 shadow-xs">
                 <div className="flex items-center justify-between mb-4 pb-3 border-b border-neutral-800">
                   <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono">Recent Vaults</h4>
-                  <button onClick={() => setIsDemoModalOpen(true)} className="text-[11px] font-semibold text-neutral-400 hover:text-white flex items-center gap-1 cursor-pointer">
+                  <div className="text-[11px] font-semibold text-neutral-400 flex items-center gap-1">
                     <span>VIEW ALL</span>
                     <ChevronRight className="w-3 h-3" />
-                  </button>
+                  </div>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -909,13 +907,10 @@ export default function PublicWithusPage() {
                           <td className="py-3 px-2 text-neutral-400">{vault.desc}</td>
                           <td className="py-3 px-2 text-neutral-500 font-mono text-[11px]">{vault.date}</td>
                           <td className="py-3 px-2 text-right">
-                            <button
-                              onClick={() => setIsDemoModalOpen(true)}
-                              className="text-[11px] font-semibold text-neutral-300 hover:text-white inline-flex items-center gap-1 cursor-pointer"
-                            >
+                            <span className="text-[11px] font-semibold text-neutral-300 inline-flex items-center gap-1">
                               <span>OPEN</span>
                               <ChevronRight className="w-3 h-3" />
-                            </button>
+                            </span>
                           </td>
                         </tr>
                       ))}
@@ -927,10 +922,9 @@ export default function PublicWithusPage() {
               {/* Quick Actions Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div
-                  onClick={() => setIsDemoModalOpen(true)}
-                  className="p-4 rounded-xl bg-neutral-900/60 border border-neutral-850 hover:border-neutral-750 transition-all cursor-pointer group"
+                  className="p-4 rounded-xl bg-neutral-900/60 border border-neutral-850 transition-all"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-neutral-850 border border-neutral-750 flex items-center justify-center text-neutral-200 mb-3 group-hover:scale-105 transition-transform">
+                  <div className="w-8 h-8 rounded-lg bg-neutral-850 border border-neutral-750 flex items-center justify-center text-neutral-200 mb-3">
                     <Key className="w-4 h-4" />
                   </div>
                   <h5 className="text-xs font-bold text-white">Manage Vaults</h5>
@@ -938,10 +932,9 @@ export default function PublicWithusPage() {
                 </div>
 
                 <div
-                  onClick={() => setIsDemoModalOpen(true)}
-                  className="p-4 rounded-xl bg-neutral-900/60 border border-neutral-850 hover:border-neutral-750 transition-all cursor-pointer group"
+                  className="p-4 rounded-xl bg-neutral-900/60 border border-neutral-850 transition-all"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-neutral-850 border border-neutral-750 flex items-center justify-center text-neutral-200 mb-3 group-hover:scale-105 transition-transform">
+                  <div className="w-8 h-8 rounded-lg bg-neutral-850 border border-neutral-750 flex items-center justify-center text-neutral-200 mb-3">
                     <Users className="w-4 h-4" />
                   </div>
                   <h5 className="text-xs font-bold text-white">Sessions</h5>
@@ -949,10 +942,9 @@ export default function PublicWithusPage() {
                 </div>
 
                 <div
-                  onClick={() => setIsDemoModalOpen(true)}
-                  className="p-4 rounded-xl bg-neutral-900/60 border border-neutral-850 hover:border-neutral-750 transition-all cursor-pointer group"
+                  className="p-4 rounded-xl bg-neutral-900/60 border border-neutral-850 transition-all"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-neutral-850 border border-neutral-750 flex items-center justify-center text-neutral-200 mb-3 group-hover:scale-105 transition-transform">
+                  <div className="w-8 h-8 rounded-lg bg-neutral-850 border border-neutral-750 flex items-center justify-center text-neutral-200 mb-3">
                     <FileCheck className="w-4 h-4" />
                   </div>
                   <h5 className="text-xs font-bold text-white">Approvals</h5>
@@ -960,10 +952,9 @@ export default function PublicWithusPage() {
                 </div>
 
                 <div
-                  onClick={() => setIsDemoModalOpen(true)}
-                  className="p-4 rounded-xl bg-neutral-900/60 border border-neutral-850 hover:border-neutral-750 transition-all cursor-pointer group"
+                  className="p-4 rounded-xl bg-neutral-900/60 border border-neutral-850 transition-all"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-neutral-850 border border-neutral-750 flex items-center justify-center text-neutral-200 mb-3 group-hover:scale-105 transition-transform">
+                  <div className="w-8 h-8 rounded-lg bg-neutral-850 border border-neutral-750 flex items-center justify-center text-neutral-200 mb-3">
                     <ShieldCheck className="w-4 h-4" />
                   </div>
                   <h5 className="text-xs font-bold text-white">Team Roles</h5>

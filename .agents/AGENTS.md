@@ -53,11 +53,10 @@ Maintain the existing WITHUS design system. Follow the current spacing, typograp
 Check whether an existing component already satisfies the requirement. Extend if appropriate. Create new only when no suitable reusable option exists.
 
 ## 15. Git Safety Rules & Commit Discipline (Mandatory)
-- NEVER commit directly to `main`.
-- NEVER push directly to `main`.
+- NEVER commit directly to `main` unless explicitly requested by the user.
+- NEVER push directly to `main` unless explicitly requested by the user.
 - NEVER push to `origin` unless explicitly requested by the user. Push ONLY to `personal`.
-- All development must happen exclusively on `feature/platform-integration-framework`.
-- Protect `stable-20260805` and `chrome-store-submitted-v1` tags. Do not rewrite their history.
+
 
 ## 16. Regression Rule
 After every runtime commit, never rely only on build, TypeScript, or lint success. A phase is considered complete ONLY when manual regression passes, extension behavior matches the stable baseline identically, no console/API errors exist, and all existing supported platforms behave identically.
