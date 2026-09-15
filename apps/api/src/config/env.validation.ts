@@ -4,10 +4,14 @@ export const envSchema = z.object({
   DATABASE_URL: z.string().url(),
   JWT_PRIVATE_KEY: z.string().min(1).optional(), // Optional locally, but should exist in prod. We will enforce via runtime checks.
   JWT_PUBLIC_KEY: z.string().min(1).optional(),
-  VAULT_ENCRYPTION_KEY: z.string().min(32, 'Vault encryption key must be at least 32 characters'),
+  VAULT_ENCRYPTION_KEY: z
+    .string()
+    .min(32, 'Vault encryption key must be at least 32 characters'),
   PORT: z.coerce.number().default(4000),
-  REDIS_URL: z.string().url().optional(), 
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  REDIS_URL: z.string().url().optional(),
+  NODE_ENV: z
+    .enum(['development', 'production', 'test'])
+    .default('development'),
   // SMTP Config
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.coerce.number().optional(),
@@ -17,6 +21,21 @@ export const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_REDIRECT_URI: z.string().optional(),
+  // ── HDFC Payment Gateway ────────────────────────────────────────────────────
+  // All optional — billing module will throw ConfigService.getOrThrow() at runtime
+  // if a billing operation is attempted without credentials set.
+  HDFC_BASE_URL: z.string().url().optional(),
+  HDFC_MERCHANT_ID: z.string().optional(),
+  HDFC_CLIENT_ID: z.string().optional(),
+  HDFC_RESELLER_ID: z.string().optional(),
+  HDFC_API_KEY: z.string().optional(),
+  HDFC_RESPONSE_KEY: z.string().optional(),
+  HDFC_WEBHOOK_USERNAME: z.string().optional(),
+  HDFC_WEBHOOK_PASSWORD: z.string().optional(),
+  HDFC_PAYMENT_PAGE_CLIENT_ID: z.string().optional(),
+  HDFC_RETURN_URL: z.string().url().optional(),
+  HDFC_MAX_AMOUNT_PRO: z.string().optional(),
+  HDFC_MAX_AMOUNT_BUSINESS: z.string().optional(),
 });
 
 export function validate(config: Record<string, unknown>) {

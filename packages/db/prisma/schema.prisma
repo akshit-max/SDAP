@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum InvitationStatus {
@@ -136,6 +137,7 @@ model Organization {
   apiKeys                ApiKey[]
   webhookSubscriptions   WebhookSubscription[]
   userPresences          UserPresence[]
+  subscription           Subscription? // Billing: one per org, null = FREE plan
 }
 
 model OrganizationMember {
@@ -556,4 +558,135 @@ model PlatformAuditEvent {
   @@index([actorId])
   @@index([action])
   @@index([createdAt(sort: Desc)])
+}
+
+// ─── Release F: Billing & Subscriptions ──────────────────────────────────────
+//
+// Architecture notes:
+//   - Subscription: long-lived entity per org (one row, UPSERT pattern)
+//   - Payment: immutable ledger — one row per transaction (registration, renewal, refund)
+//   - hdfcMandateId lives on Subscription (stable across all executions)
+//   - hdfcOrderId lives on Payment (unique per individual HDFC transaction)
+//   - amounts stored as integer INR (e.g. 499 = ₹499)
+//   - billing anchor: on renewal, newPeriodStart = previousPeriodEnd (not now)
+
+enum PlanTier {
+  FREE
+  PRO
+  BUSINESS
+}
+
+enum BillingCycle {
+  MONTHLY
+  ANNUAL
+}
+
+enum SubscriptionStatus {
+  FREE // No active paid plan; no mandate
+  PENDING // Session initiated, awaiting customer payment/consent
+  ACTIVE // Mandate active, recurring billing enabled
+  PAST_DUE // Execution failed; inside grace period (scheduler will retry)
+  CANCELLED // Owner requested cancel; service continues until currentPeriodEnd
+  EXPIRED // Period ended or grace expired; reverted to FREE
+}
+
+enum PaymentStatus {
+  PENDING // Execution initiated, not yet confirmed by HDFC
+  SUCCESS // Confirmed CHARGED by HDFC Order Status API
+  FAILED // Execution failed (insufficient funds, mandate issue, etc.)
+  REFUNDED // Refund successfully processed
+}
+
+enum PaymentType {
+  MANDATE_REGISTRATION // Initial payment that registers the mandate (via Session API)
+  RECURRING_EXECUTION // Subsequent auto-debit via Mandate Execute API
+  REFUND // Refund transaction
+}
+
+/// One subscription record per organization.
+/// Created lazily on first billing action; orgs without a record are treated as FREE.
+model Subscription {
+  id             String             @id @default(uuid())
+  organizationId String             @unique
+  plan           PlanTier           @default(FREE)
+  billingCycle   BillingCycle       @default(MONTHLY)
+  status         SubscriptionStatus @default(FREE)
+  currency       String             @default("INR")
+
+  // ── HDFC identifiers ──────────────────────────────────────────────────────
+  // hdfcMandateId: set once after mandate registration; stable across executions
+  // hdfcCustomerId: our generated customer ID sent to HDFC (e.g. "cust-<orgId8>")
+  hdfcMandateId  String?
+  hdfcCustomerId String?
+
+  // ── Amount snapshot at last billing calculation ───────────────────────────
+  // Recalculated server-side at each renewal; never trusted from client
+  baseAmount    Int @default(0) // Base plan price in INR
+  extraUsers    Int @default(0) // Extra seats beyond included base
+  extraUserRate Int @default(0) // Per-extra-user rate in INR
+  totalAmount   Int @default(0) // Total charged per cycle in INR
+
+  // ── Billing period (ANCHOR preserved on renewal) ──────────────────────────
+  // On successful renewal: newPeriodStart = previousPeriodEnd (NOT now)
+  // This prevents billing-date drift across cycles.
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+
+  // ── Cancellation state ────────────────────────────────────────────────────
+  cancelledAt  DateTime?
+  cancelReason String?
+
+  // ── Failure / grace period tracking ──────────────────────────────────────
+  failureCount      Int       @default(0)
+  lastFailureReason String?
+  graceUntil        DateTime? // Deadline before downgrade; null if not in PAST_DUE
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  payments     Payment[]
+
+  @@index([organizationId])
+  @@index([hdfcMandateId])
+  @@index([status])
+  @@index([currentPeriodEnd]) // Renewal scheduler: WHERE currentPeriodEnd < now + 26h
+}
+
+/// Immutable payment ledger — one row per HDFC transaction.
+model Payment {
+  id             String        @id @default(uuid())
+  subscriptionId String
+  type           PaymentType
+  status         PaymentStatus @default(PENDING)
+
+  // ── HDFC transaction identifiers ─────────────────────────────────────────
+  // hdfcOrderId: our generated unique order ID (max 21 chars, alphanumeric)
+  // hdfcTxnId:   HDFC's internal txn ID from Order Status response
+  hdfcOrderId String  @unique // Idempotency key — checked before processing
+  hdfcTxnId   String? // Set once HDFC confirms the transaction
+
+  // ── Amount snapshot at time of execution ─────────────────────────────────
+  amount        Int // Charged amount in INR
+  currency      String @default("INR")
+  seatsAtCharge Int // Snapshot of active org member count at execution time
+
+  // ── Failure details ───────────────────────────────────────────────────────
+  failureCode   String?
+  failureReason String?
+
+  // ── Refund details ────────────────────────────────────────────────────────
+  refundedAmount  Int?
+  refundRequestId String? // unique_request_id sent to HDFC Refund API (max 21 chars)
+
+  processedAt DateTime? // When HDFC status was confirmed
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+
+  @@index([subscriptionId])
+  @@index([hdfcOrderId]) // Return URL + webhook idempotency lookups
+  @@index([status])
+  @@index([type])
 }

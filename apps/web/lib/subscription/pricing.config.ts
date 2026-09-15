@@ -72,13 +72,12 @@ export const PRICING_CONFIG = {
  * Total supported platforms in the WITHUS product.
  * This is a PRODUCT concept, not the count of backend integration adapters.
  *
- * The 10 platforms supported by the WITHUS extension (from platform-registry.ts):
- * GitHub, Vercel, GoDaddy, LinkedIn, Shopify, Stripe, Razorpay, MCA Portal, GST Portal, Udyam Portal
+ * The 11 platforms supported by the WITHUS extension (platform-reconciliation confirmed 2026-09-15):
+ * GitHub, Vercel, GoDaddy, LinkedIn, Shopify, Stripe, Razorpay, MCA Portal, GST Portal, Udyam Portal, Gmail
  *
- * Note: Google Ads is also in the registry but is partial support (email-fill only).
- * The product team has confirmed 10 platforms. Adjust TOTAL_PLATFORM_COUNT if this changes.
+ * Gmail was added as the 11th platform (OAuth/extension autofill support confirmed).
  */
-export const TOTAL_PLATFORM_COUNT = 10;
+export const TOTAL_PLATFORM_COUNT = 11;
 
 export const PLATFORM_NAMES: Record<string, string> = {
   GITHUB: 'GitHub',
@@ -91,6 +90,7 @@ export const PLATFORM_NAMES: Record<string, string> = {
   MCA: 'MCA Portal',
   GST: 'GST Portal',
   UDYAM: 'Udyam Portal',
+  GMAIL: 'Gmail',
 };
 
 // ─── Free Plan Platform Restriction ──────────────────────────────────────────

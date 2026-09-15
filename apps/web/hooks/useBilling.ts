@@ -1,0 +1,101 @@
+﻿'use client';
+import { useState, useEffect, useCallback } from 'react';
+import { billingApi } from '../lib/api/billing';
+import type { SubscriptionStatusResponse, PlanTier, BillingCycle } from '../lib/api/billing';
+
+/**
+ * useOrgSubscription
+ *
+ * Fetches and returns the organization's current subscription status.
+ * Returns null subscription if the org is on FREE plan (no DB row).
+ * Refreshes when orgId changes.
+ */
+export function useOrgSubscription(orgId: string | null) {
+  const [subscription, setSubscription] = useState<SubscriptionStatusResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    if (!orgId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await billingApi.getStatus(orgId);
+      // If no subscription row, default to FREE
+      setSubscription(data ?? { plan: 'FREE', billingCycle: 'MONTHLY', status: 'FREE' });
+    } catch (err: unknown) {
+      setError((err as Error).message ?? 'Failed to load subscription');
+    } finally {
+      setLoading(false);
+    }
+  }, [orgId]);
+
+  useEffect(() => { void refresh(); }, [refresh]);
+
+  return { subscription, loading, error, refresh };
+}
+
+/**
+ * useInitiatePayment
+ *
+ * Handles the payment initiation flow:
+ * 1. Calls POST /billing/initiate with plan + billing cycle
+ * 2. Redirects the browser to the HDFC payment link
+ *
+ * Security: the backend calculates the actual amount — we only send plan/cycle.
+ */
+export function useInitiatePayment(orgId: string | null) {
+  const [initiating, setInitiating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const initiate = useCallback(
+    async (plan: PlanTier, billingCycle: BillingCycle) => {
+      if (!orgId) return;
+      setInitiating(true);
+      setError(null);
+      try {
+        const result = await billingApi.initiatePayment(orgId, plan, billingCycle);
+        // Redirect customer to HDFC checkout
+        window.location.href = result.paymentLink;
+      } catch (err: unknown) {
+        setError((err as Error).message ?? 'Failed to initiate payment');
+        setInitiating(false);
+      }
+      // Note: do not setInitiating(false) on success — browser is navigating away
+    },
+    [orgId],
+  );
+
+  return { initiate, initiating, error };
+}
+
+/**
+ * useCancelSubscription
+ *
+ * Handles cancellation — marks subscription as CANCELLED.
+ * Service continues until currentPeriodEnd.
+ */
+export function useCancelSubscription(orgId: string | null) {
+  const [cancelling, setCancelling] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const cancel = useCallback(
+    async (reason?: string): Promise<SubscriptionStatusResponse | null> => {
+      if (!orgId) return null;
+      setCancelling(true);
+      setError(null);
+      try {
+        const result = await billingApi.cancelSubscription(orgId, reason);
+        return result;
+      } catch (err: unknown) {
+        setError((err as Error).message ?? 'Failed to cancel subscription');
+        return null;
+      } finally {
+        setCancelling(false);
+      }
+    },
+    [orgId],
+  );
+
+  return { cancel, cancelling, error };
+}

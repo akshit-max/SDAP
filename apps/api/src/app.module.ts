@@ -25,6 +25,7 @@ import { ProgrammaticModule } from './programmatic/programmatic.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { SuperAdminModule } from './super-admin/super-admin.module';
 import { RedisThrottlerStorage } from './common/storage/redis-throttler.storage';
+import { BillingModule } from './billing/billing.module';
 
 import { validate } from './config/env.validation';
 
@@ -65,6 +66,7 @@ import { validate } from './config/env.validation';
     ProgrammaticModule,
     WebhooksModule,
     SuperAdminModule,
+    BillingModule,
   ],
   controllers: [AppController],
   providers: [
