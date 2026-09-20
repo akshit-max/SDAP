@@ -2,7 +2,11 @@ import { ForbiddenException } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import * as crypto from 'crypto';
 
-export function csrfMiddleware(req: Request, res: Response, next: NextFunction) {
+export function csrfMiddleware(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   // 1. Ensure a CSRF token exists for this session
   let csrfCookie = req.cookies['sdap_csrf'];
   if (!csrfCookie) {
@@ -27,7 +31,8 @@ export function csrfMiddleware(req: Request, res: Response, next: NextFunction) 
   // part of the auth flow; the extension calls them without a Bearer token.
   const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
   const isExtensionWithBearer =
-    req.header('X-Extension-Client') === 'withus-mv3' && !!req.header('Authorization');
+    req.header('X-Extension-Client') === 'withus-mv3' &&
+    !!req.header('Authorization');
   const isAuthEndpoint =
     req.path.includes('/auth/login') ||
     req.path.includes('/auth/logout') ||
@@ -36,7 +41,19 @@ export function csrfMiddleware(req: Request, res: Response, next: NextFunction) 
     req.path.includes('/auth/forgot-password') ||
     req.path.includes('/auth/reset-password');
 
-  if (safeMethods.includes(req.method) || isExtensionWithBearer || isAuthEndpoint) {
+  // HDFC return URL and webhook are public endpoints — HDFC never sends a CSRF token.
+  // billing/return: browser redirect from HDFC after payment.
+  // billing/webhook: server-to-server POST from HDFC (authenticated via Basic Auth separately).
+  const isHdfcEndpoint =
+    req.path.includes('/billing/return') ||
+    req.path.includes('/billing/webhook');
+
+  if (
+    safeMethods.includes(req.method) ||
+    isExtensionWithBearer ||
+    isAuthEndpoint ||
+    isHdfcEndpoint
+  ) {
     return next();
   }
 
@@ -50,8 +67,11 @@ export function csrfMiddleware(req: Request, res: Response, next: NextFunction) 
   try {
     const cookieBuffer = Buffer.from(csrfCookie, 'utf8');
     const headerBuffer = Buffer.from(csrfHeader, 'utf8');
-    
-    if (cookieBuffer.length !== headerBuffer.length || !crypto.timingSafeEqual(cookieBuffer, headerBuffer)) {
+
+    if (
+      cookieBuffer.length !== headerBuffer.length ||
+      !crypto.timingSafeEqual(cookieBuffer, headerBuffer)
+    ) {
       throw new Error();
     }
   } catch {

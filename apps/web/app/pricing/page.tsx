@@ -37,6 +37,8 @@ import {
   formatAnnual,
 } from '../../lib/subscription/billing';
 import type { BillingCycle, PlanTier } from '../../lib/subscription/types';
+import { useOrgSubscription, useInitiatePayment } from '../../hooks/useBilling';
+import { Loader2 } from 'lucide-react';
 
 // ─── Feature Matrix Value Renderer ───────────────────────────────────────────
 
@@ -83,21 +85,53 @@ export default function PricingPage() {
 
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('MONTHLY');
   const [showFeatureMatrix, setShowFeatureMatrix] = useState(true);
+  const [paymentFeedback, setPaymentFeedback] = useState<{ type: 'success' | 'error' | 'pending'; message: string } | null>(null);
 
   // Active users = members where removedAt IS NULL (admins included)
   const activeUsers: number = Array.isArray(membersData)
     ? membersData.filter((m: any) => !m.removedAt).length
     : 1;
 
-  // Current plan — Phase 1: always FREE (no billing backend yet)
-  const currentPlan: PlanTier = 'FREE';
+  const { subscription, loading: subLoading, refresh: refreshSub } = useOrgSubscription(orgId);
+  const { initiate, initiating } = useInitiatePayment(orgId);
 
-  // Pre-compute billing calculations for all plans
+  // Detect HDFC redirect result from URL params and refetch subscription
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const success = params.get('success');
+    const error = params.get('error');
+    const status = params.get('status');
+
+    if (success === 'true') {
+      setPaymentFeedback({ type: 'success', message: '✅ Payment successful! Your plan has been upgraded.' });
+      // Refetch subscription from backend to reflect new plan
+      void refreshSub();
+      // Clean URL
+      window.history.replaceState({}, '', '/pricing');
+    } else if (error) {
+      const messages: Record<string, string> = {
+        payment_failed: 'Payment failed or was declined. Please try again.',
+        payment_not_found: 'Payment record not found. Please contact support.',
+        internal_error: 'An internal error occurred. Please contact support.',
+      };
+      setPaymentFeedback({ type: 'error', message: `❌ ${messages[error] ?? 'Payment could not be processed.'}` });
+      window.history.replaceState({}, '', '/pricing');
+    } else if (status === 'pending') {
+      setPaymentFeedback({ type: 'pending', message: '⏳ Payment is being processed. Your plan will update shortly.' });
+      window.history.replaceState({}, '', '/pricing');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Current plan from backend
+  const currentPlan: PlanTier = subscription?.plan ?? 'FREE';
   const billing = {
     FREE: getBillingCalculation('FREE', billingCycle, activeUsers),
     PRO: getBillingCalculation('PRO', billingCycle, activeUsers),
     BUSINESS: getBillingCalculation('BUSINESS', billingCycle, activeUsers),
   };
+
 
   // ─── Categorized Feature Matrix ─────────────────────────────────────────────
 
@@ -244,6 +278,23 @@ export default function PricingPage() {
                 Scale your security infrastructure with flexible per-user billing. Seamlessly upgrade or adjust capacity at any time.
               </p>
             </div>
+
+            {/* Payment Feedback Banner — shown after returning from HDFC */}
+            {paymentFeedback && (
+              <div className={`flex items-center gap-3 px-4 py-3 rounded-none border text-sm font-medium ${
+                paymentFeedback.type === 'success'
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
+                  : paymentFeedback.type === 'error'
+                  ? 'bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-400'
+                  : 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400'
+              }`}>
+                {paymentFeedback.message}
+                <button
+                  onClick={() => setPaymentFeedback(null)}
+                  className="ml-auto text-current opacity-60 hover:opacity-100"
+                >×</button>
+              </div>
+            )}
 
             {/* Active Seats Summary Card */}
             <div className="flex items-center gap-4 px-4 py-3 bg-premium-surface border border-premium shadow-sm rounded-none">
@@ -472,16 +523,26 @@ export default function PricingPage() {
                         </button>
                       ) : (
                         <button
-                          disabled
-                          className={`w-full py-2.5 px-4 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-not-allowed ${
-                            isHighlighted
-                              ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-md'
-                              : 'bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100 border border-premium'
+                          disabled={initiating || calc.totalAmount === null}
+                          onClick={() => {
+                            if (plan.id === 'PRO' || plan.id === 'BUSINESS') {
+                              void initiate(plan.id, billingCycle);
+                            }
+                          }}
+                          className={`w-full py-2.5 px-4 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                            initiating || calc.totalAmount === null
+                              ? 'opacity-50 cursor-not-allowed bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500'
+                              : isHighlighted
+                                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-md hover:scale-[1.02]'
+                                : 'bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100 border border-premium hover:bg-zinc-200 dark:hover:bg-zinc-700'
                           }`}
                           id={`cta-upgrade-${plan.id.toLowerCase()}`}
-                          title="Payment Gateway Integration Pending"
                         >
-                          <Clock className="w-3.5 h-3.5" />
+                          {initiating ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          )}
                           <span>Upgrade to {plan.name}</span>
                         </button>
                       )}
@@ -492,23 +553,22 @@ export default function PricingPage() {
             })}
           </div>
 
-          {/* ─── Pending Gateway Status Banner ───────────────────────────────── */}
-          <div className="p-4 bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400">
-                <Clock className="w-4 h-4" />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-premium-main">Payment Gateway Setup in Progress</h4>
-                <p className="text-[11px] text-premium-muted font-medium mt-0.5">
-                  Subscriptions are currently running in evaluation mode. Once the banking gateway integration is authorized, automated upgrades will be unlocked.
-                </p>
+          {/* ─── Subscription Status Banner ───────────────────────────────── */}
+          {subscription && subscription.status !== 'FREE' && (
+            <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                  <Activity className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-premium-main">Subscription Status: {subscription.status}</h4>
+                  <p className="text-[11px] text-premium-muted font-medium mt-0.5">
+                    Plan: {subscription.plan} | Cycle: {subscription.billingCycle}
+                  </p>
+                </div>
               </div>
             </div>
-            <span className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 whitespace-nowrap">
-              Gateways Pending
-            </span>
-          </div>
+          )}
 
           {/* ─── Expandable Feature Comparison Table ───────────────────────────── */}
           <div className="bg-premium-surface border border-premium">

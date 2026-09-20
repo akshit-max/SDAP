@@ -1,4 +1,4 @@
-﻿import {
+import {
   Injectable,
   Logger,
   InternalServerErrorException,
@@ -82,7 +82,9 @@ export class HdfcGatewayService {
     body: HdfcSessionRequest,
   ): Promise<HdfcSessionResponse> {
     this.logger.log(`[SESSION] Creating session for order ${body.order_id}`);
-    return this.request<HdfcSessionResponse>('POST', '/session', body);
+    const res = await this.request<any>('POST', '/session', body);
+    this.logger.log(`[SESSION RAW RESPONSE] ${JSON.stringify(res)}`);
+    return res as HdfcSessionResponse;
   }
 
   async getOrderStatus(orderId: string): Promise<HdfcOrderStatusResponse> {

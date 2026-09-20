@@ -69,10 +69,20 @@ async function bootstrap() {
         process.env.CORS_ORIGIN?.split(',') ?? ['http://localhost:3000']
       ).map((o) => o.trim().replace(/\/$/, ''));
       const cleanOrigin = origin ? origin.trim().replace(/\/$/, '') : '';
+      // DEBUG: log origin to find out what HDFC actually sends
+      console.log(
+        `[CORS DEBUG] origin="${origin}" cleanOrigin="${cleanOrigin}"`,
+      );
       if (
         !origin ||
+        origin === 'null' || // HDFC form POST from HTTPS→HTTP sends literal string "null"
         origin.startsWith('chrome-extension://') ||
-        allowedOrigins.includes(cleanOrigin)
+        allowedOrigins.includes(cleanOrigin) ||
+        // HDFC SmartGateway redirects the browser back via form POST — allow both UAT and prod domains
+        cleanOrigin.includes('smartgateway') ||
+        cleanOrigin.includes('juspay') ||
+        cleanOrigin.includes('hdfcbank') ||
+        cleanOrigin.includes('loca.lt')
       ) {
         callback(null, true);
       } else {

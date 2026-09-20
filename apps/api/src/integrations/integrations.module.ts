@@ -15,9 +15,10 @@ import { GoDaddyAdapter } from './godaddy/godaddy.adapter';
 import { GmailAdapter } from './gmail/gmail.adapter';
 import { GmailOtpService } from './gmail/gmail-otp.service';
 import { ConfigModule } from '@nestjs/config';
+import { BillingModule } from '../billing/billing.module';
 
 @Module({
-  imports: [PrismaModule, VaultsModule, ConfigModule],
+  imports: [PrismaModule, VaultsModule, ConfigModule, BillingModule],
   providers: [
     // Core framework
     IntegrationRegistry,

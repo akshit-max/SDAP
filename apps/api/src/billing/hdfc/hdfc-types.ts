@@ -1,4 +1,4 @@
-﻿/**
+/**
  * HDFC SmartGateway — TypeScript Type Definitions
  *
  * All API request/response shapes for HdfcGatewayService.
@@ -34,8 +34,10 @@ export interface HdfcSessionRequest {
 }
 
 export interface HdfcSessionResponse {
-  status: string; // "SESSION_CREATED" on success
-  payment_link: string; // Redirect customer here
+  status: string; // e.g. "NEW"
+  payment_links?: {
+    web: string;
+  };
   order_id: string;
   id?: string;
 }

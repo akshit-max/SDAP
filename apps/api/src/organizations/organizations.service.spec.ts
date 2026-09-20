@@ -3,6 +3,8 @@ import { OrganizationsService } from './organizations.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ConflictException } from '@nestjs/common';
+import { SessionsService } from '../sessions/sessions.service';
+import { EntitlementService } from '../billing/subscription/entitlement.service';
 
 describe('OrganizationsService', () => {
   let service: OrganizationsService;
@@ -50,6 +52,15 @@ describe('OrganizationsService', () => {
         OrganizationsService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: EventEmitter2, useValue: mockEventEmitter },
+        // SessionsService and EntitlementService added as no-op mocks after injection was introduced
+        { provide: SessionsService, useValue: {} },
+        {
+          provide: EntitlementService,
+          useValue: {
+            assertCanAddUser: jest.fn().mockResolvedValue(undefined),
+            assertCanAddAdmin: jest.fn().mockResolvedValue(undefined),
+          },
+        },
       ],
     }).compile();
 

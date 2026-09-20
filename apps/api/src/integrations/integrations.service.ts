@@ -6,10 +6,18 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { IntegrationProvider, IntegrationStatus } from './core/integration-types';
+import {
+  IntegrationProvider,
+  IntegrationStatus,
+} from './core/integration-types';
 import { IntegrationRegistry } from './core/integration-registry.service';
 import { IntegrationEncryptionService } from './core/integration-encryption.service';
-import { ConnectIntegrationDto, GrantIntegrationAccessDto, RevokeIntegrationAccessDto } from './integrations.dto';
+import {
+  ConnectIntegrationDto,
+  GrantIntegrationAccessDto,
+  RevokeIntegrationAccessDto,
+} from './integrations.dto';
+import { EntitlementService } from '../billing/subscription/entitlement.service';
 
 @Injectable()
 export class IntegrationsService {
@@ -20,13 +28,20 @@ export class IntegrationsService {
     private readonly registry: IntegrationRegistry,
     private readonly encryption: IntegrationEncryptionService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly entitlements: EntitlementService,
   ) {}
 
   // ─── Identity Resolution ────────────────────────────────────────────────────
 
-  resolvePrincipalId(provider: IntegrationProvider, user: { id: string; email: string; providerProfiles?: unknown }): string {
+  resolvePrincipalId(
+    provider: IntegrationProvider,
+    user: { id: string; email: string; providerProfiles?: unknown },
+  ): string {
     const adapter = this.registry.getAdapter(provider);
-    if ('resolvePrincipalId' in adapter && typeof (adapter as any).resolvePrincipalId === 'function') {
+    if (
+      'resolvePrincipalId' in adapter &&
+      typeof (adapter as any).resolvePrincipalId === 'function'
+    ) {
       try {
         return (adapter as any).resolvePrincipalId(user);
       } catch (err: unknown) {
@@ -39,7 +54,26 @@ export class IntegrationsService {
 
   // ─── Connect ────────────────────────────────────────────────────────────────
 
-  async connect(organizationId: string, userId: string, dto: ConnectIntegrationDto) {
+  async connect(
+    organizationId: string,
+    userId: string,
+    dto: ConnectIntegrationDto,
+  ) {
+    // Subscription entitlement check — additive on top of existing RBAC.
+    // Only applies to NEW connections. Re-connecting an already-connected provider
+    // is an upsert (no new slot consumed) so we skip the limit check in that case.
+    const alreadyConnected = await this.prisma.integrationConnection.findUnique(
+      {
+        where: {
+          organizationId_provider: { organizationId, provider: dto.provider },
+        },
+        select: { id: true },
+      },
+    );
+    if (!alreadyConnected) {
+      await this.entitlements.assertCanConnectPlatform(organizationId);
+    }
+
     const adapter = this.registry.getAdapter(dto.provider);
 
     // 1. Validate token with the provider
@@ -49,15 +83,23 @@ export class IntegrationsService {
       ({ identity, meta } = await adapter.validateToken(dto.token));
     } catch (err: unknown) {
       const msg = (err as Error).message || 'Token validation failed';
-      throw new BadRequestException(`Cannot connect to ${dto.provider}: ${msg}`);
+      throw new BadRequestException(
+        `Cannot connect to ${dto.provider}: ${msg}`,
+      );
     }
 
     // 2. Encrypt and upsert
     const { encryptedToken, encryptedDek, keyMetadataId } =
-      await this.encryption.encryptToken(dto.token, organizationId, dto.provider);
+      await this.encryption.encryptToken(
+        dto.token,
+        organizationId,
+        dto.provider,
+      );
 
     const connection = await this.prisma.integrationConnection.upsert({
-      where: { organizationId_provider: { organizationId, provider: dto.provider } },
+      where: {
+        organizationId_provider: { organizationId, provider: dto.provider },
+      },
       update: {
         status: IntegrationStatus.ACTIVE,
         encryptedToken,
@@ -93,28 +135,54 @@ export class IntegrationsService {
       actorId: userId,
     });
 
-    return { id: connection.id, provider: connection.provider, identity, status: connection.status };
+    return {
+      id: connection.id,
+      provider: connection.provider,
+      identity,
+      status: connection.status,
+    };
   }
 
   // ─── OAuth Flow ─────────────────────────────────────────────────────────────
 
-  async getOAuthUrl(organizationId: string, provider: IntegrationProvider, state: string) {
+  async getOAuthUrl(
+    organizationId: string,
+    provider: IntegrationProvider,
+    state: string,
+  ) {
     const adapter = this.registry.getAdapter(provider);
-    
+
     // We import this inline or from the core types if available, but for now we'll cast.
     // Instead of importing the type guard, we can just check the methods.
-    if ('buildAuthorizationUrl' in adapter && typeof adapter.buildAuthorizationUrl === 'function') {
+    if (
+      'buildAuthorizationUrl' in adapter &&
+      typeof adapter.buildAuthorizationUrl === 'function'
+    ) {
       return { url: adapter.buildAuthorizationUrl(state) };
     }
-    throw new BadRequestException(`Provider ${provider} does not support OAuth`);
+    throw new BadRequestException(
+      `Provider ${provider} does not support OAuth`,
+    );
   }
 
-  async handleOAuthCallback(organizationId: string, userId: string, provider: IntegrationProvider, code: string) {
+  async handleOAuthCallback(
+    organizationId: string,
+    userId: string,
+    provider: IntegrationProvider,
+    code: string,
+  ) {
     const adapter = this.registry.getAdapter(provider);
-    
-    if ('exchangeCodeAndStore' in adapter && typeof adapter.exchangeCodeAndStore === 'function') {
+
+    if (
+      'exchangeCodeAndStore' in adapter &&
+      typeof adapter.exchangeCodeAndStore === 'function'
+    ) {
       try {
-        const { grantedEmail } = await adapter.exchangeCodeAndStore(organizationId, userId, code);
+        const { grantedEmail } = await adapter.exchangeCodeAndStore(
+          organizationId,
+          userId,
+          code,
+        );
         this.eventEmitter.emit('integration.connected', {
           organizationId,
           provider,
@@ -122,15 +190,23 @@ export class IntegrationsService {
         });
         return { identity: grantedEmail, status: IntegrationStatus.ACTIVE };
       } catch (err: unknown) {
-        throw new BadRequestException(`OAuth failed: ${(err as Error).message}`);
+        throw new BadRequestException(
+          `OAuth failed: ${(err as Error).message}`,
+        );
       }
     }
-    throw new BadRequestException(`Provider ${provider} does not support OAuth`);
+    throw new BadRequestException(
+      `Provider ${provider} does not support OAuth`,
+    );
   }
 
   // ─── Disconnect ──────────────────────────────────────────────────────────────
 
-  async disconnect(organizationId: string, userId: string, provider: IntegrationProvider) {
+  async disconnect(
+    organizationId: string,
+    userId: string,
+    provider: IntegrationProvider,
+  ) {
     const conn = await this.findConnection(organizationId, provider);
 
     await this.prisma.integrationConnection.update({
@@ -144,8 +220,14 @@ export class IntegrationsService {
       },
     });
 
-    this.logger.log(`[INTEGRATION] ${provider} disconnected for org ${organizationId}`);
-    this.eventEmitter.emit('integration.disconnected', { organizationId, provider, actorId: userId });
+    this.logger.log(
+      `[INTEGRATION] ${provider} disconnected for org ${organizationId}`,
+    );
+    this.eventEmitter.emit('integration.disconnected', {
+      organizationId,
+      provider,
+      actorId: userId,
+    });
   }
 
   // ─── Health Check ────────────────────────────────────────────────────────────
@@ -164,7 +246,11 @@ export class IntegrationsService {
     try {
       result = await adapter.healthCheck(token);
     } catch {
-      result = { healthy: false, error: 'Adapter threw during health check', checkedAt: new Date() };
+      result = {
+        healthy: false,
+        error: 'Adapter threw during health check',
+        checkedAt: new Date(),
+      };
     }
 
     await this.prisma.integrationConnection.update({
@@ -172,7 +258,9 @@ export class IntegrationsService {
       data: {
         lastCheckedAt: result.checkedAt,
         lastError: result.healthy ? null : (result.error ?? 'Unknown error'),
-        status: result.healthy ? IntegrationStatus.ACTIVE : IntegrationStatus.ERROR,
+        status: result.healthy
+          ? IntegrationStatus.ACTIVE
+          : IntegrationStatus.ERROR,
       },
     });
 
@@ -229,7 +317,6 @@ export class IntegrationsService {
     return adapter.revokeAccess(token, dto);
   }
 
-
   // ─── List Connections ────────────────────────────────────────────────────────
 
   async listConnections(organizationId: string) {
@@ -249,18 +336,36 @@ export class IntegrationsService {
     const supported = this.registry.getSupportedProviders();
 
     return supported.map((p: IntegrationProvider) => {
-      const conn = connections.find((c: { provider: string }) => c.provider === p);
+      const conn = connections.find(
+        (c: { provider: string }) => c.provider === p,
+      );
       return conn
         ? conn
-        : { id: null, provider: p, status: IntegrationStatus.DISCONNECTED, providerMeta: null, lastCheckedAt: null, lastError: null, createdAt: null };
+        : {
+            id: null,
+            provider: p,
+            status: IntegrationStatus.DISCONNECTED,
+            providerMeta: null,
+            lastCheckedAt: null,
+            lastError: null,
+            createdAt: null,
+          };
     });
   }
 
   // ─── Internal ────────────────────────────────────────────────────────────────
 
-  private async findConnection(organizationId: string, provider: IntegrationProvider) {
+  private async findConnection(
+    organizationId: string,
+    provider: IntegrationProvider,
+  ) {
     const conn = await this.prisma.integrationConnection.findFirst({
-      where: { organizationId, provider, deletedAt: null, status: { not: IntegrationStatus.DISCONNECTED } },
+      where: {
+        organizationId,
+        provider,
+        deletedAt: null,
+        status: { not: IntegrationStatus.DISCONNECTED },
+      },
     });
     if (!conn) {
       throw new NotFoundException(

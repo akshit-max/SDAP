@@ -84,11 +84,15 @@ export class BillingController {
    * Verifies HMAC, calls Order Status, then redirects the browser to the app.
    * Must be HTTPS — UAT uses the Render API URL.
    */
-  @Get('billing/return')
+  @Post('billing/return')
+  @Get('billing/return') // Some gateways fallback to GET
   async handleReturn(
-    @Query() params: HdfcReturnUrlParams,
+    @Body() bodyParams: HdfcReturnUrlParams,
+    @Query() queryParams: HdfcReturnUrlParams,
     @Res() res: Response,
   ) {
+    const params =
+      Object.keys(bodyParams || {}).length > 0 ? bodyParams : queryParams;
     const result = await this.billingService.handleReturn(params);
     // Redirect customer browser to frontend pricing page
     const appUrl = process.env.APP_URL ?? 'http://localhost:3000';

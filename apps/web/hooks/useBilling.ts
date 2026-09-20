@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { billingApi } from '../lib/api/billing';
 import type { SubscriptionStatusResponse, PlanTier, BillingCycle } from '../lib/api/billing';
@@ -55,8 +55,14 @@ export function useInitiatePayment(orgId: string | null) {
       setError(null);
       try {
         const result = await billingApi.initiatePayment(orgId, plan, billingCycle);
+        console.log('Initiate Payment Result:', result);
         // Redirect customer to HDFC checkout
-        window.location.href = result.paymentLink;
+        if (result && result.paymentLink) {
+          window.location.href = result.paymentLink;
+        } else {
+          console.error('No payment link found in result!', result);
+          setError('Could not get payment link from server.');
+        }
       } catch (err: unknown) {
         setError((err as Error).message ?? 'Failed to initiate payment');
         setInitiating(false);

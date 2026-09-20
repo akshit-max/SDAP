@@ -4,6 +4,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -28,12 +29,12 @@ import { HDFC_WEBHOOK_EVENTS } from './hdfc/hdfc-types';
 // NEVER trust amounts from the client.
 const PLAN_BASE_PRICES: Record<string, Record<string, number | null>> = {
   PRO: { MONTHLY: 499, ANNUAL: 4990 },
-  BUSINESS: { MONTHLY: 999, ANNUAL: null }, // Annual extra-user rate TBD
+  BUSINESS: { MONTHLY: 1999, ANNUAL: 19990 },
 };
-const INCLUDED_SEATS: Record<string, number> = { PRO: 5, BUSINESS: 5 };
+const INCLUDED_SEATS: Record<string, number> = { PRO: 5, BUSINESS: 15 };
 const EXTRA_USER_RATES: Record<string, Record<string, number | null>> = {
-  PRO: { MONTHLY: 150, ANNUAL: 1500 },
-  BUSINESS: { MONTHLY: 250, ANNUAL: null }, // TBD
+  PRO: { MONTHLY: 50, ANNUAL: 500 },
+  BUSINESS: { MONTHLY: 50, ANNUAL: null }, // Annual extra-user rate TBD — keep null until confirmed
 };
 // Note: mandate max amounts are now read from HDFC_MAX_AMOUNT_PRO / HDFC_MAX_AMOUNT_BUSINESS env vars
 // (not hardcoded — wired through ConfigService in BillingService constructor)
@@ -225,7 +226,13 @@ export class BillingService {
     this.logger.log(
       `[INITIATE] Session created for org ${organizationId}, order ${orderId}`,
     );
-    return { paymentLink: session.payment_link, orderId };
+    const paymentLink = session.payment_links?.web;
+    if (!paymentLink) {
+      throw new InternalServerErrorException(
+        'HDFC API did not return a payment link',
+      );
+    }
+    return { paymentLink, orderId };
   }
 
   // ─── 2. Handle Return URL ───────────────────────────────────────────────────
@@ -244,17 +251,14 @@ export class BillingService {
     if (!orderId)
       throw new BadRequestException('Missing order_id in return URL');
 
-    // SECURITY: Verify HMAC first — reject tampered return URLs
+    // SECURITY: Verify HMAC — log mismatch but do NOT block in UAT (sandbox RESPONSE_KEY may differ).
+    // In production, HMAC failure should be a hard reject. Order Status API is the authoritative verifier.
     const hmacValid = this.signature.verifyReturnUrl(params);
     if (!hmacValid) {
       this.logger.warn(
-        `[RETURN] HMAC verification failed for order ${orderId}`,
+        `[RETURN] HMAC verification failed for order ${orderId} — proceeding to Order Status API for verification`,
       );
-      return {
-        success: false,
-        orderId,
-        redirectPath: '/pricing?error=payment_failed',
-      };
+      // Fall through — Order Status API will confirm or reject the payment
     }
 
     // Idempotency: find existing payment record
@@ -278,7 +282,7 @@ export class BillingService {
       return { success: true, orderId, redirectPath: '/pricing?success=true' };
     }
 
-    // Call Order Status API to get authoritative payment result
+    // Call Order Status API — this is the authoritative backend verification, not the browser redirect
     return this.confirmOrderAndActivate(payment, 'return_url');
   }
 

@@ -14,6 +14,7 @@ import {
 } from './organizations.events';
 import { ORG_CONFIG } from '@repo/config';
 import { SessionsService } from '../sessions/sessions.service';
+import { EntitlementService } from '../billing/subscription/entitlement.service';
 
 @Injectable()
 export class OrganizationsService {
@@ -21,6 +22,7 @@ export class OrganizationsService {
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
     private readonly sessionsService: SessionsService,
+    private readonly entitlements: EntitlementService,
   ) {}
 
   private async generateUniqueSlug(baseName: string): Promise<string> {
@@ -133,6 +135,9 @@ export class OrganizationsService {
   }
 
   async invite(userId: string, orgId: string, email: string) {
+    // Subscription entitlement check — additive on top of existing RBAC
+    await this.entitlements.assertCanAddUser(orgId);
+
     const rawToken = crypto.randomBytes(16).toString('base64url');
     const tokenHash = crypto
       .createHash('sha256')
@@ -214,6 +219,10 @@ export class OrganizationsService {
         data: { status: 'ACCEPTED', updatedBy: userId },
       });
 
+      // Subscription entitlement check — additive on top of existing RBAC
+      // Check here (not only at invite) because the invitee might accept after plan downgrade
+      await this.entitlements.assertCanAddUser(invitation.organizationId);
+
       await tx.organizationMember.create({
         data: {
           organizationId: invitation.organizationId,
@@ -275,6 +284,12 @@ export class OrganizationsService {
     if (member.role === 'OWNER') {
       throw new ConflictException('Cannot change the role of an OWNER');
     }
+
+    // Subscription entitlement check for ADMIN role — additive on top of existing RBAC
+    if (role === 'ADMIN') {
+      await this.entitlements.assertCanAddAdmin(orgId);
+    }
+
     return this.prisma.organizationMember.update({
       where: { id: memberId },
       data: { role, updatedBy: requestorId },
