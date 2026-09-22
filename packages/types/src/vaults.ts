@@ -6,6 +6,9 @@ import { SecretType, SecretStatus } from "@repo/db";
 export const CreateVaultSchema = z.object({
   name: z.string().min(1, "Vault name is required").max(100),
   description: z.string().max(500).optional(),
+  // VaultPlatformId — optional. Server validates against the 11-platform catalog.
+  // null/undefined = generic vault (always accessible on PRO/BUSINESS; blocked for FREE).
+  platformId: z.string().optional(),
 });
 
 export type CreateVaultDto = z.infer<typeof CreateVaultSchema>;
@@ -23,13 +26,19 @@ export const CreateSecretSchema = z.object({
   name: z.string().min(1, "Secret name is required").max(200),
   description: z.string().max(500).optional(),
   type: z.nativeEnum(SecretType).optional().default(SecretType.OTHER),
-  plaintext: z.string().min(1, "Secret value cannot be empty").max(1024 * 64), // 64KB max payload
+  plaintext: z
+    .string()
+    .min(1, "Secret value cannot be empty")
+    .max(1024 * 64), // 64KB max payload
 });
 
 export type CreateSecretDto = z.infer<typeof CreateSecretSchema>;
 
 export const UpdateSecretSchema = z.object({
-  plaintext: z.string().min(1, "Secret value cannot be empty").max(1024 * 64), // A new version means a new plaintext
+  plaintext: z
+    .string()
+    .min(1, "Secret value cannot be empty")
+    .max(1024 * 64), // A new version means a new plaintext
 });
 
 export type UpdateSecretDto = z.infer<typeof UpdateSecretSchema>;
@@ -40,7 +49,9 @@ export const UpdateSecretMetadataSchema = z.object({
   status: z.nativeEnum(SecretStatus).optional(),
 });
 
-export type UpdateSecretMetadataDto = z.infer<typeof UpdateSecretMetadataSchema>;
+export type UpdateSecretMetadataDto = z.infer<
+  typeof UpdateSecretMetadataSchema
+>;
 
 export interface VaultResponse {
   id: string;

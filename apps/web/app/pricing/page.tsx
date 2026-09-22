@@ -37,8 +37,9 @@ import {
   formatAnnual,
 } from '../../lib/subscription/billing';
 import type { BillingCycle, PlanTier } from '../../lib/subscription/types';
-import { useOrgSubscription, useInitiatePayment } from '../../hooks/useBilling';
+import { useOrgSubscription, useInitiatePayment, useCancelSubscription } from '../../hooks/useBilling';
 import { Loader2 } from 'lucide-react';
+import { useToast } from '../../components/common/Toast';
 
 // ─── Feature Matrix Value Renderer ───────────────────────────────────────────
 
@@ -85,7 +86,8 @@ export default function PricingPage() {
 
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('MONTHLY');
   const [showFeatureMatrix, setShowFeatureMatrix] = useState(true);
-  const [paymentFeedback, setPaymentFeedback] = useState<{ type: 'success' | 'error' | 'pending'; message: string } | null>(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const { toast } = useToast();
 
   // Active users = members where removedAt IS NULL (admins included)
   const activeUsers: number = Array.isArray(membersData)
@@ -94,6 +96,7 @@ export default function PricingPage() {
 
   const { subscription, loading: subLoading, refresh: refreshSub } = useOrgSubscription(orgId);
   const { initiate, initiating } = useInitiatePayment(orgId);
+  const { cancel, cancelling } = useCancelSubscription(orgId);
 
   // Detect HDFC redirect result from URL params and refetch subscription
   React.useEffect(() => {
@@ -104,7 +107,7 @@ export default function PricingPage() {
     const status = params.get('status');
 
     if (success === 'true') {
-      setPaymentFeedback({ type: 'success', message: '✅ Payment successful! Your plan has been upgraded.' });
+      toast('success', '✅ Payment successful! Your plan has been upgraded.');
       // Refetch subscription from backend to reflect new plan
       void refreshSub();
       // Clean URL
@@ -115,17 +118,29 @@ export default function PricingPage() {
         payment_not_found: 'Payment record not found. Please contact support.',
         internal_error: 'An internal error occurred. Please contact support.',
       };
-      setPaymentFeedback({ type: 'error', message: `❌ ${messages[error] ?? 'Payment could not be processed.'}` });
+      toast('error', `❌ ${messages[error] ?? 'Payment could not be processed.'}`);
       window.history.replaceState({}, '', '/pricing');
     } else if (status === 'pending') {
-      setPaymentFeedback({ type: 'pending', message: '⏳ Payment is being processed. Your plan will update shortly.' });
+      toast('info', '⏳ Payment is being processed. Your plan will update shortly.');
       window.history.replaceState({}, '', '/pricing');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Current plan from backend
-  const currentPlan: PlanTier = subscription?.plan ?? 'FREE';
+  // Show a toast message if the subscription has expired
+  React.useEffect(() => {
+    if (subscription?.status === 'EXPIRED') {
+      toast('error', 'Your premium subscription has expired. You have been switched to the Free tier.');
+    }
+  }, [subscription?.status, toast]);
+
+  // Determine effective plan and cycle based on status
+  // If the plan is CANCELLED, we 'reset' the currentPlan to FREE in the UI
+  // so the user can freely upgrade/resubscribe, even though the backend maintains the grace period.
+  const isActive = subscription?.status === 'ACTIVE' || subscription?.status === 'PAST_DUE';
+  const currentPlan: PlanTier = isActive ? subscription.plan : 'FREE';
+  const currentBillingCycle: BillingCycle = isActive ? subscription.billingCycle : 'MONTHLY';
+
   const billing = {
     FREE: getBillingCalculation('FREE', billingCycle, activeUsers),
     PRO: getBillingCalculation('PRO', billingCycle, activeUsers),
@@ -279,22 +294,7 @@ export default function PricingPage() {
               </p>
             </div>
 
-            {/* Payment Feedback Banner — shown after returning from HDFC */}
-            {paymentFeedback && (
-              <div className={`flex items-center gap-3 px-4 py-3 rounded-none border text-sm font-medium ${
-                paymentFeedback.type === 'success'
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
-                  : paymentFeedback.type === 'error'
-                  ? 'bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-400'
-                  : 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400'
-              }`}>
-                {paymentFeedback.message}
-                <button
-                  onClick={() => setPaymentFeedback(null)}
-                  className="ml-auto text-current opacity-60 hover:opacity-100"
-                >×</button>
-              </div>
-            )}
+
 
             {/* Active Seats Summary Card */}
             <div className="flex items-center gap-4 px-4 py-3 bg-premium-surface border border-premium shadow-sm rounded-none">
@@ -359,7 +359,9 @@ export default function PricingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {plans.map((plan) => {
               const calc = billing[plan.id];
-              const isCurrent = plan.id === currentPlan;
+              const isCurrent = plan.id === currentPlan && billingCycle === currentBillingCycle;
+              const isOnDifferentCycleOfSamePlan = plan.id === currentPlan && billingCycle !== currentBillingCycle;
+              const hasActiveSubscription = currentPlan !== 'FREE';
               const isHighlighted = plan.highlighted;
 
               return (
@@ -506,12 +508,51 @@ export default function PricingPage() {
                     {/* Action Button */}
                     <div className="pt-2">
                       {isCurrent ? (
+                        <div className="flex flex-col gap-2">
+                          <button
+                            disabled={subscription?.status === 'ACTIVE' || initiating}
+                            onClick={() => {
+                              if (subscription?.status === 'PAST_DUE') {
+                                void initiate(plan.id, billingCycle);
+                              }
+                            }}
+                            className={`w-full py-2.5 px-4 text-xs font-black uppercase tracking-wider text-center transition-colors shadow-sm ${
+                              subscription?.status === 'PAST_DUE' && !initiating
+                                ? 'bg-rose-600 text-white hover:bg-rose-700 border border-transparent animate-pulse'
+                                : 'bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500 border border-premium cursor-not-allowed'
+                            }`}
+                            id={`cta-current-${plan.id.toLowerCase()}`}
+                          >
+                            {initiating ? (
+                              <div className="flex items-center justify-center gap-2">
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                Processing...
+                              </div>
+                            ) : subscription?.status === 'PAST_DUE' ? (
+                              'Retry Payment'
+                            ) : (
+                              'Active Subscription'
+                            )}
+                          </button>
+                          {subscription?.currentPeriodEnd && subscription.status === 'ACTIVE' && (
+                            <p className="text-[10px] font-bold text-center text-premium-muted">
+                              {(() => {
+                                const end = new Date(subscription.currentPeriodEnd);
+                                const now = new Date();
+                                const diffTime = end.getTime() - now.getTime();
+                                const daysLeft = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+                                return `Renews in ${daysLeft} days (${end.toLocaleDateString()})`;
+                              })()}
+                            </p>
+                          )}
+                        </div>
+                      ) : isOnDifferentCycleOfSamePlan ? (
                         <button
                           disabled
                           className="w-full py-2.5 px-4 text-xs font-black uppercase tracking-wider bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500 border border-premium cursor-not-allowed text-center"
-                          id={`cta-current-${plan.id.toLowerCase()}`}
+                          id={`cta-switch-cycle-${plan.id.toLowerCase()}`}
                         >
-                          Active Subscription
+                          Active on {currentBillingCycle === 'MONTHLY' ? 'Monthly' : 'Annual'}
                         </button>
                       ) : plan.id === 'FREE' ? (
                         <button
@@ -523,14 +564,14 @@ export default function PricingPage() {
                         </button>
                       ) : (
                         <button
-                          disabled={initiating || calc.totalAmount === null}
+                          disabled={initiating || calc.totalAmount === null || hasActiveSubscription}
                           onClick={() => {
                             if (plan.id === 'PRO' || plan.id === 'BUSINESS') {
                               void initiate(plan.id, billingCycle);
                             }
                           }}
                           className={`w-full py-2.5 px-4 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
-                            initiating || calc.totalAmount === null
+                            initiating || calc.totalAmount === null || hasActiveSubscription
                               ? 'opacity-50 cursor-not-allowed bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500'
                               : isHighlighted
                                 ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-md hover:scale-[1.02]'
@@ -543,18 +584,19 @@ export default function PricingPage() {
                           ) : (
                             <ArrowRight className="w-3.5 h-3.5" />
                           )}
-                          <span>Upgrade to {plan.name}</span>
+                          <span>{hasActiveSubscription ? 'Requires Cancellation' : `Upgrade to ${plan.name}`}</span>
                         </button>
                       )}
                     </div>
                   </div>
                 </div>
               );
+
             })}
           </div>
 
           {/* ─── Subscription Status Banner ───────────────────────────────── */}
-          {subscription && subscription.status !== 'FREE' && (
+          {subscription && (subscription.status === 'ACTIVE' || subscription.status === 'PAST_DUE') && (
             <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
@@ -565,8 +607,34 @@ export default function PricingPage() {
                   <p className="text-[11px] text-premium-muted font-medium mt-0.5">
                     Plan: {subscription.plan} | Cycle: {subscription.billingCycle}
                   </p>
+                  {subscription.currentPeriodEnd && (
+                    <p className="text-[10px] font-bold text-premium-muted mt-1">
+                      {(() => {
+                        const isPastDue = subscription.status === 'PAST_DUE';
+                        const graceUntil = (subscription as any).graceUntil;
+                        const targetDateStr = isPastDue && graceUntil ? graceUntil : subscription.currentPeriodEnd;
+                        const end = new Date(targetDateStr);
+                        const now = new Date();
+                        const diffTime = end.getTime() - now.getTime();
+                        const daysLeft = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+                        return `${isPastDue ? 'Grace period ends' : 'Renews'} in ${daysLeft} days (${end.toLocaleDateString()})`;
+                      })()}
+                    </p>
+                  )}
                 </div>
               </div>
+
+              {/* Cancel Subscription Action */}
+              {(subscription.status === 'ACTIVE' || subscription.status === 'PAST_DUE') && (
+                <button
+                  onClick={() => setShowCancelModal(true)}
+                  disabled={cancelling}
+                  className="px-4 py-2 text-[11px] font-black uppercase tracking-wider text-rose-600 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 rounded-sm transition-colors flex items-center gap-2"
+                >
+                  {cancelling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
+                  <span>Cancel Plan</span>
+                </button>
+              )}
             </div>
           )}
 
@@ -672,6 +740,74 @@ export default function PricingPage() {
               </p>
             </div>
           </div>
+
+          {/* ─── Cancel Plan Modal ──────────────────────────────────────────────── */}
+          {showCancelModal && subscription && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm">
+              <div className="bg-premium-surface border border-premium max-w-md w-full shadow-2xl overflow-hidden flex flex-col">
+                <div className="p-6 pb-0 flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-rose-500/10 text-rose-600 rounded-full">
+                      <AlertCircle className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-black text-premium-main tracking-tight">Cancel Subscription</h3>
+                      <p className="text-xs font-semibold text-premium-muted mt-1">
+                        Are you sure you want to cancel your {subscription.plan} plan?
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6 space-y-4">
+                  <div className="bg-zinc-100/50 dark:bg-zinc-900/50 border border-premium p-4 rounded-sm">
+                    <p className="text-sm font-semibold text-premium-main">
+                      Your subscription will remain active until the end of the current billing cycle.
+                    </p>
+                    {subscription.currentPeriodEnd && (
+                      <div className="mt-3 flex items-center justify-between text-xs font-bold font-number">
+                        <span className="text-premium-muted">Billing Cycle Ends:</span>
+                        <span className="text-rose-600 dark:text-rose-400">
+                          {(() => {
+                            const end = new Date(subscription.currentPeriodEnd);
+                            const now = new Date();
+                            const diffTime = end.getTime() - now.getTime();
+                            const daysLeft = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+                            return `${daysLeft} days remaining (${end.toLocaleDateString()})`;
+                          })()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-premium-muted font-medium">
+                    After cancellation, your organization will be downgraded to the FREE tier, and excess users or platforms will lose access.
+                  </p>
+                </div>
+
+                <div className="p-4 bg-zinc-50 dark:bg-zinc-900/30 border-t border-premium flex justify-end gap-3">
+                  <button
+                    onClick={() => setShowCancelModal(false)}
+                    disabled={cancelling}
+                    className="px-4 py-2 text-xs font-bold text-premium-main hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors border border-transparent rounded-sm"
+                  >
+                    Keep My Plan
+                  </button>
+                  <button
+                    onClick={async () => {
+                      await cancel();
+                      void refreshSub();
+                      setShowCancelModal(false);
+                    }}
+                    disabled={cancelling}
+                    className="px-4 py-2 text-xs font-black uppercase tracking-wider text-white bg-rose-600 hover:bg-rose-700 transition-colors rounded-sm flex items-center gap-2 shadow-sm"
+                  >
+                    {cancelling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                    Confirm Cancellation
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
         </div>
       </div>

@@ -1,7 +1,10 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { SessionsController } from './controllers/sessions.controller';
 import { GlobalSessionsController } from './controllers/global-sessions.controller';
-import { SessionsService, INTEGRATIONS_SERVICE_TOKEN } from './sessions.service';
+import {
+  SessionsService,
+  INTEGRATIONS_SERVICE_TOKEN,
+} from './sessions.service';
 import { SessionValidationService } from './session-validation.service';
 import { SessionExpiryScheduler } from './session-expiry.scheduler';
 import { PresenceService } from './presence.service';
@@ -12,7 +15,8 @@ import { AuthorizationModule } from '../authorization/authorization.module';
 import { ApprovalsModule } from '../approvals/approvals.module';
 import { IntegrationsModule } from '../integrations/integrations.module';
 import { IntegrationsService } from '../integrations/integrations.service';
-
+import { BillingModule } from '../billing/billing.module';
+import { EntitlementService } from '../billing/subscription/entitlement.service';
 
 @Module({
   imports: [
@@ -21,8 +25,13 @@ import { IntegrationsService } from '../integrations/integrations.service';
     AuthorizationModule,
     forwardRef(() => ApprovalsModule),
     forwardRef(() => IntegrationsModule),
+    forwardRef(() => BillingModule),
   ],
-  controllers: [SessionsController, GlobalSessionsController, PresenceController],
+  controllers: [
+    SessionsController,
+    GlobalSessionsController,
+    PresenceController,
+  ],
   providers: [
     SessionsService,
     SessionValidationService,
@@ -38,4 +47,3 @@ import { IntegrationsService } from '../integrations/integrations.service';
   exports: [SessionsService, SessionValidationService],
 })
 export class SessionsModule {}
-

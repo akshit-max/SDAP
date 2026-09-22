@@ -8,6 +8,7 @@ import {
   Param,
   UseGuards,
   Request,
+  Optional,
 } from '@nestjs/common';
 import { SecretLifecycleService } from '../secret-lifecycle.service';
 import {
@@ -28,6 +29,8 @@ import { RequirePermissions } from '../../authorization/decorators/require-permi
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import type { RequestWithUser } from '../../common/interfaces/request-with-user.interface';
 import { OrganizationContext } from '../../authorization/decorators/organization-context.decorator';
+import { EntitlementService } from '../../billing/subscription/entitlement.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @ApiTags('Secrets')
 @ApiBearerAuth()
@@ -35,7 +38,11 @@ import { OrganizationContext } from '../../authorization/decorators/organization
 @OrganizationContext('orgId')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class SecretsController {
-  constructor(private readonly secretService: SecretLifecycleService) {}
+  constructor(
+    private readonly secretService: SecretLifecycleService,
+    private readonly prisma: PrismaService,
+    @Optional() private readonly entitlementService: EntitlementService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new secret in a vault' })
@@ -80,6 +87,26 @@ export class SecretsController {
     @Request() req: RequestWithUser,
     @Body('reason') reason?: string,
   ) {
+    // ── Vault platform entitlement check (before decryption) ──
+    // Load Secret→Vault→platformId from trusted DB state only.
+    // Existing RBAC (SECRET_REVEAL permission) already ran above via PermissionsGuard.
+    if (this.entitlementService) {
+      const secret = await this.prisma.secret.findUnique({
+        where: { id: secretId },
+        include: {
+          vault: { select: { platformId: true, organizationId: true } },
+        },
+      });
+      // Org ownership already enforced by PermissionsGuard + OrganizationContext.
+      // assertVaultPlatformAllowed handles PRO/BUSINESS bypass automatically.
+      if (secret) {
+        await this.entitlementService.assertVaultPlatformAllowed(
+          orgId,
+          secret.vault.platformId ?? null,
+        );
+      }
+    }
+
     const plaintext = await this.secretService.revealSecret({
       secretId,
       organizationId: orgId,

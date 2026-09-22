@@ -123,62 +123,62 @@ export class SecretLifecycleService {
 
     try {
       return await this.prisma.$transaction(async (tx) => {
-      const activeKey = await this.getActiveKeyMetadata(tx);
+        const activeKey = await this.getActiveKeyMetadata(tx);
 
-      const dek = this.encryption.generateDEK();
-      const encryptedDekResult = this.encryption.encryptDEK(dek);
-      const serializedDek = this.serializeDek(encryptedDekResult);
+        const dek = this.encryption.generateDEK();
+        const encryptedDekResult = this.encryption.encryptDEK(dek);
+        const serializedDek = this.serializeDek(encryptedDekResult);
 
-      const version = 1;
-      const context = { organizationId, vaultId, secretId, version };
-      const encryptedPayload = this.encryption.encryptPayload(
-        plaintextBuffer,
-        dek,
-        context,
-      );
+        const version = 1;
+        const context = { organizationId, vaultId, secretId, version };
+        const encryptedPayload = this.encryption.encryptPayload(
+          plaintextBuffer,
+          dek,
+          context,
+        );
 
-      this.logger.log(
-        `[AUDIT INTENT] User ${userId} creating Secret ${secretId} (v1) in Vault ${vaultId}`,
-      );
+        this.logger.log(
+          `[AUDIT INTENT] User ${userId} creating Secret ${secretId} (v1) in Vault ${vaultId}`,
+        );
 
-      const secret = await tx.secret.create({
-        data: {
-          id: secretId,
-          vaultId,
-          name,
-          description,
-          type: type || SecretType.OTHER,
-          status: SecretStatus.ACTIVE,
-          encryptedDek: serializedDek,
-          keyMetadataId: activeKey.id,
-          createdBy: userId,
-          updatedBy: userId,
-        },
-      });
+        const secret = await tx.secret.create({
+          data: {
+            id: secretId,
+            vaultId,
+            name,
+            description,
+            type: type || SecretType.OTHER,
+            status: SecretStatus.ACTIVE,
+            encryptedDek: serializedDek,
+            keyMetadataId: activeKey.id,
+            createdBy: userId,
+            updatedBy: userId,
+          },
+        });
 
-      await tx.secretVersion.create({
-        data: {
-          secretId: secret.id,
-          version,
-          ciphertext: encryptedPayload.ciphertext.toString('base64'),
-          iv: encryptedPayload.iv.toString('base64'),
-          authTag: encryptedPayload.authTag.toString('base64'),
-          fingerprint: encryptedPayload.fingerprint,
-          keyMetadataId: activeKey.id,
-          createdBy: userId,
-        },
-      });
+        await tx.secretVersion.create({
+          data: {
+            secretId: secret.id,
+            version,
+            ciphertext: encryptedPayload.ciphertext.toString('base64'),
+            iv: encryptedPayload.iv.toString('base64'),
+            authTag: encryptedPayload.authTag.toString('base64'),
+            fingerprint: encryptedPayload.fingerprint,
+            keyMetadataId: activeKey.id,
+            createdBy: userId,
+          },
+        });
 
-      this.logger.log(
-        `[AUDIT SUCCESS] User ${userId} successfully created Secret ${secret.id} (v1)`,
-      );
+        this.logger.log(
+          `[AUDIT SUCCESS] User ${userId} successfully created Secret ${secret.id} (v1)`,
+        );
 
-      this.eventEmitter.emit(
-        SecretCreatedEvent.EVENT_NAME,
-        new SecretCreatedEvent(organizationId, vaultId, secret.id, userId),
-      );
+        this.eventEmitter.emit(
+          SecretCreatedEvent.EVENT_NAME,
+          new SecretCreatedEvent(organizationId, vaultId, secret.id, userId),
+        );
 
-      return secret;
+        return secret;
       });
     } catch (error) {
       if (
@@ -233,7 +233,7 @@ export class SecretLifecycleService {
         // Required for org-scope enforcement in ProgrammaticController.
         // Without this, result.vault was always undefined and the check
         // (result.vault.organizationId !== callerOrgId) always threw — endpoint was broken.
-        vault: { select: { organizationId: true } },
+        vault: { select: { organizationId: true, platformId: true } },
       },
     });
 

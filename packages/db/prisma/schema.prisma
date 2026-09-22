@@ -202,6 +202,7 @@ model Vault {
   organizationId String
   name           String
   description    String?
+  platformId     String? // VaultPlatformId — null = generic vault. Free plan: must be in selectedPlatforms.
   defaultTTL     Int? // Future: Default session TTL in seconds
   rotationPolicy Json? // Future: Auto-rotation configuration
   createdAt      DateTime  @default(now())
@@ -590,6 +591,13 @@ enum SubscriptionStatus {
   EXPIRED // Period ended or grace expired; reverted to FREE
 }
 
+enum ComplianceState {
+  COMPLIANT // Org has met all Free-plan requirements
+  PLATFORM_SELECTION_REQUIRED // New Free org or lock expired — must select 2 platforms
+  TEAM_CLEANUP_REQUIRED // Exceeded member limit after downgrade — must remove members
+  UPGRADE_PROMPT // Paid plan expired — offer upgrade before enforcing Free limits
+}
+
 enum PaymentStatus {
   PENDING // Execution initiated, not yet confirmed by HDFC
   SUCCESS // Confirmed CHARGED by HDFC Order Status API
@@ -640,6 +648,13 @@ model Subscription {
   failureCount      Int       @default(0)
   lastFailureReason String?
   graceUntil        DateTime? // Deadline before downgrade; null if not in PAST_DUE
+
+  // ── Platform Entitlement (Free plan) ─────────────────────────────────────
+  // complianceState: COMPLIANT default protects existing rows during migration.
+  // New FREE subscriptions explicitly set PLATFORM_SELECTION_REQUIRED in getOrCreate().
+  complianceState      ComplianceState @default(COMPLIANT)
+  selectedPlatforms    String[] // e.g. ["GITHUB","VERCEL"] — always exactly 2 for FREE
+  selectionLockedUntil DateTime? // null = not locked; set for 15 days on confirmation
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

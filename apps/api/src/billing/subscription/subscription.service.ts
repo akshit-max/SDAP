@@ -1,4 +1,4 @@
-﻿import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { BillingCycle, PlanTier, Subscription } from '@prisma/client';
 
@@ -39,6 +39,11 @@ export class SubscriptionService {
         plan: 'FREE',
         billingCycle: 'MONTHLY',
         status: 'FREE',
+        // New FREE orgs must select 2 platforms before accessing Vault features.
+        // The Prisma @default(COMPLIANT) protects existing migrated rows — only
+        // newly created rows from this path start as PLATFORM_SELECTION_REQUIRED.
+        complianceState: 'PLATFORM_SELECTION_REQUIRED',
+        selectedPlatforms: [],
       },
     });
   }

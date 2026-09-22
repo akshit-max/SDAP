@@ -17,6 +17,7 @@ const inter = Inter({
 import { QueryProvider } from "../providers/QueryProvider";
 import { AuthProvider } from "../lib/auth/AuthContext";
 import { ToastProvider } from "../components/common/Toast";
+import ComplianceGate from "../components/compliance/ComplianceGate";
 
 export const metadata: Metadata = {
   title: "WithUs",
@@ -39,6 +40,9 @@ export default function RootLayout({
             <ToastProvider>
               <QueryProvider>
                 {children}
+                {/* ComplianceGate: blocks FREE orgs that haven't selected 2 platforms yet.
+                    Renders as null for PRO/BUSINESS orgs and already-compliant FREE orgs. */}
+                <ComplianceGate />
               </QueryProvider>
             </ToastProvider>
           </AuthProvider>

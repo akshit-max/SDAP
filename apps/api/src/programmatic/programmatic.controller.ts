@@ -6,10 +6,12 @@ import {
   Body,
   UseGuards,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiSecurity } from '@nestjs/swagger';
 import { ApiKeyGuard } from '../common/guards/api-key.guard';
 import { SecretLifecycleService } from '../vaults/secret-lifecycle.service';
+import { EntitlementService } from '../billing/subscription/entitlement.service';
 import type { Request as Req } from 'express';
 import { Request } from '@nestjs/common';
 import { z } from 'zod';
@@ -36,7 +38,10 @@ class RevealSecretDto {
 @Controller('programmatic')
 @UseGuards(ApiKeyGuard)
 export class ProgrammaticController {
-  constructor(private readonly secretLifecycle: SecretLifecycleService) {}
+  constructor(
+    private readonly secretLifecycle: SecretLifecycleService,
+    @Optional() private readonly entitlementService: EntitlementService,
+  ) {}
 
   /**
    * GET /programmatic/secrets/:secretId
@@ -44,10 +49,7 @@ export class ProgrammaticController {
    */
   @Get('secrets/:secretId')
   @ApiOperation({ summary: 'Get secret metadata by ID (no plaintext)' })
-  async getSecret(
-    @Request() req: Req,
-    @Param('secretId') secretId: string,
-  ) {
+  async getSecret(@Request() req: Req, @Param('secretId') secretId: string) {
     const { organizationId } = (req as any).apiKeyContext;
 
     // Fetch secret metadata; vault.organizationId is now selected so the org check below works.
@@ -64,7 +66,9 @@ export class ProgrammaticController {
    * Reveal secret plaintext. Requires a reason (audit logged).
    */
   @Post('secrets/:secretId/reveal')
-  @ApiOperation({ summary: 'Reveal secret plaintext (API key auth, audit logged)' })
+  @ApiOperation({
+    summary: 'Reveal secret plaintext (API key auth, audit logged)',
+  })
   async revealSecret(
     @Request() req: Req,
     @Param('secretId') secretId: string,
@@ -72,10 +76,27 @@ export class ProgrammaticController {
   ) {
     const { organizationId } = (req as any).apiKeyContext;
 
+    // ── Vault platform entitlement check ──
+    // getSecretMetadataById includes vault.organizationId for the org-scope check below.
+    // We also need platformId for the entitlement check.
+    const secretMeta =
+      await this.secretLifecycle.getSecretMetadataById(secretId);
+    if (secretMeta.vault.organizationId !== organizationId) {
+      throw new NotFoundException('Secret not found in your organization.');
+    }
+
+    if (this.entitlementService) {
+      // Use the Vault's platformId from trusted DB state — never client-supplied.
+      const vaultPlatformId = (secretMeta.vault as any).platformId ?? null;
+      await this.entitlementService.assertVaultPlatformAllowed(
+        organizationId,
+        vaultPlatformId,
+      );
+    }
+
     const result = await this.secretLifecycle.revealSecret({
       secretId,
       organizationId,
-      // Use a synthetic userId representing the API key caller
       userId: `apikey:${(req as any).apiKeyContext.id}`,
       reason: dto.reason,
     });

@@ -1,6 +1,6 @@
 ﻿import { apiClient } from './client';
 
-// ─── Types (mirroring backend Prisma enums) ───────────────────────────────────
+// â”€â”€â”€ Types (mirroring backend Prisma enums) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type PlanTier = 'FREE' | 'PRO' | 'BUSINESS';
 export type BillingCycle = 'MONTHLY' | 'ANNUAL';
@@ -11,6 +11,32 @@ export type SubscriptionStatus =
   | 'PAST_DUE'
   | 'CANCELLED'
   | 'EXPIRED';
+
+export type ComplianceState =
+  | 'COMPLIANT'
+  | 'PLATFORM_SELECTION_REQUIRED'
+  | 'TEAM_CLEANUP_REQUIRED'
+  | 'UPGRADE_PROMPT';
+
+export const WITHUS_VAULT_PLATFORMS = [
+  'GITHUB', 'VERCEL', 'GODADDY', 'LINKEDIN', 'SHOPIFY',
+  'STRIPE', 'RAZORPAY', 'MCA', 'GST', 'UDYAM', 'GMAIL',
+] as const;
+export type VaultPlatformId = typeof WITHUS_VAULT_PLATFORMS[number];
+
+export const PLATFORM_LABELS: Record<VaultPlatformId, string> = {
+  GITHUB: 'GitHub',
+  VERCEL: 'Vercel',
+  GODADDY: 'GoDaddy',
+  LINKEDIN: 'LinkedIn',
+  SHOPIFY: 'Shopify',
+  STRIPE: 'Stripe',
+  RAZORPAY: 'Razorpay',
+  MCA: 'MCA Portal',
+  GST: 'GST Portal',
+  UDYAM: 'Udyam',
+  GMAIL: 'Gmail',
+};
 
 export interface SubscriptionStatusResponse {
   id?: string;
@@ -24,12 +50,19 @@ export interface SubscriptionStatusResponse {
   graceUntil?: string;
 }
 
+export interface ComplianceStatusResponse {
+  complianceState: ComplianceState;
+  selectedPlatforms: string[];
+  selectionLockedUntil: string | null;
+  plan: PlanTier;
+}
+
 export interface InitiatePaymentResponse {
   paymentLink: string;
   orderId: string;
 }
 
-// ─── API Client Functions ─────────────────────────────────────────────────────
+// â”€â”€â”€ API Client Functions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const billingApi = {
   /**
@@ -38,13 +71,34 @@ export const billingApi = {
    */
   getStatus: async (orgId: string): Promise<SubscriptionStatusResponse | null> => {
     const response = await apiClient.get(`/organizations/${orgId}/billing/status`);
-    return response.data?.data ?? null;
+    // NestJS returns the object directly, not wrapped in a data field.
+    // However, if the subscription is totally null (e.g., 204 No Content), response.data might be empty.
+    if (!response.data) return null;
+    return response.data;
+  },
+
+  /**
+   * Fetch the compliance status for a FREE org.
+   * Returns complianceState, selectedPlatforms, and plan.
+   * PRO/BUSINESS orgs always return COMPLIANT.
+   */
+  getComplianceStatus: async (orgId: string): Promise<ComplianceStatusResponse> => {
+    const response = await apiClient.get(`/organizations/${orgId}/billing/compliance`);
+    return response.data;
+  },
+
+  /**
+   * Submit exactly 2 platform selections for a FREE org.
+   * Sets complianceState=COMPLIANT and locks the selection for 15 days.
+   */
+  confirmPlatformSelection: async (orgId: string, platforms: string[]): Promise<void> => {
+    await apiClient.post(`/organizations/${orgId}/billing/compliance/confirm`, { platforms });
   },
 
   /**
    * Initiate a payment session. Returns a HDFC payment link.
    * The frontend redirects the customer to this link.
-   * Amount is calculated server-side — client only sends plan and billing cycle.
+   * Amount is calculated server-side â€” client only sends plan and billing cycle.
    */
   initiatePayment: async (
     orgId: string,
@@ -55,7 +109,7 @@ export const billingApi = {
       plan,
       billingCycle,
     });
-    return response.data?.data ?? response.data;
+    return response.data;
   },
 
   /**
@@ -66,6 +120,6 @@ export const billingApi = {
     const response = await apiClient.post(`/organizations/${orgId}/billing/cancel`, {
       reason: reason ?? 'User requested cancellation',
     });
-    return response.data?.data ?? response.data;
+    return response.data;
   },
 };

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateVaultDto, UpdateVaultDto } from '@repo/types';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -7,7 +7,7 @@ import {
   VaultUpdatedEvent,
   VaultDeletedEvent,
 } from './vaults.events';
-
+import { EntitlementService } from '../billing/subscription/entitlement.service';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
@@ -15,14 +15,27 @@ export class VaultsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
+    @Optional() private readonly entitlementService: EntitlementService,
   ) {}
 
   async createVault(orgId: string, userId: string, dto: CreateVaultDto) {
+    // ── Vault platform entitlement check BEFORE DB creation (Option A) ──
+    // Uses trusted dto.platformId validated against the 11-catalog.
+    // PRO/BUSINESS: returns immediately. FREE: checks selectedPlatforms.
+    // If entitlement fails, the Vault is never written to the DB.
+    if (this.entitlementService) {
+      await this.entitlementService.assertVaultPlatformAllowed(
+        orgId,
+        dto.platformId ?? null,
+      );
+    }
+
     const vault = await this.prisma.vault.create({
       data: {
         organizationId: orgId,
         name: dto.name,
         description: dto.description,
+        platformId: dto.platformId ?? null,
       },
     });
 

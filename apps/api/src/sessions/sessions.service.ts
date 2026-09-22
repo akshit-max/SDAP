@@ -16,6 +16,7 @@ import { SecretLifecycleService } from '../vaults/secret-lifecycle.service';
 import { DelegatedSessionCreatedEvent } from './events/session-created.event';
 import { DelegatedSessionRevokedEvent } from './events/session-revoked.event';
 import { CreateSessionDto } from './dto/sessions.dto';
+import { EntitlementService } from '../billing/subscription/entitlement.service';
 
 export const INTEGRATIONS_SERVICE_TOKEN = 'INTEGRATIONS_SERVICE';
 
@@ -45,6 +46,9 @@ export class SessionsService {
     @Optional()
     @Inject(INTEGRATIONS_SERVICE_TOKEN)
     private readonly integrationsService: any,
+    // Injected optionally: BillingModule may not be available in test contexts.
+    @Optional()
+    private readonly entitlementService: EntitlementService,
   ) {}
 
   async createSession(
@@ -71,12 +75,31 @@ export class SessionsService {
       if (!secret || secret.vault.organizationId !== organizationId) {
         throw new NotFoundException('Secret not found in your organization.');
       }
+
+      // ── Vault platform entitlement check (additive, before session creation) ──
+      // Uses trusted DB value (secret.vault.platformId) — never client-supplied data.
+      // PRO/BUSINESS returns immediately. FREE checks selectedPlatforms.
+      if (this.entitlementService) {
+        await this.entitlementService.assertVaultPlatformAllowed(
+          organizationId,
+          secret.vault.platformId ?? null,
+        );
+      }
     } else if (dto.scope === 'VAULT' && dto.resourceId) {
       const vault = await db.vault.findUnique({
         where: { id: dto.resourceId },
       });
       if (!vault || vault.organizationId !== organizationId) {
         throw new NotFoundException('Vault not found in your organization.');
+      }
+
+      // ── Vault platform entitlement check for VAULT-scoped sessions ──
+      // resourceId IS the vaultId here — load platformId directly from trusted DB.
+      if (this.entitlementService) {
+        await this.entitlementService.assertVaultPlatformAllowed(
+          organizationId,
+          vault.platformId ?? null,
+        );
       }
     } else if (dto.scope === 'INTEGRATION') {
       // Integration access bypasses vault verification

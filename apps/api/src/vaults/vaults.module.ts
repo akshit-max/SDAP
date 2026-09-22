@@ -5,9 +5,10 @@ import { SecretLifecycleService } from './secret-lifecycle.service';
 import { VaultsService } from './vaults.service';
 import { VaultsController } from './controllers/vaults.controller';
 import { SecretsController } from './controllers/secrets.controller';
+import { BillingModule } from '../billing/billing.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, BillingModule],
   providers: [EncryptionService, SecretLifecycleService, VaultsService],
   controllers: [VaultsController, SecretsController],
   exports: [VaultsService, SecretLifecycleService, EncryptionService],

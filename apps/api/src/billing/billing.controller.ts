@@ -16,6 +16,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { BillingService } from './billing.service';
 import { HdfcWebhookGuard } from './hdfc/hdfc-webhook.guard';
 import { InitiateBillingDto, CancelSubscriptionDto } from './dto/billing.dto';
+import { EntitlementService } from './subscription/entitlement.service';
 import type {
   HdfcReturnUrlParams,
   HdfcWebhookPayload,
@@ -39,7 +40,10 @@ import type {
  */
 @Controller()
 export class BillingController {
-  constructor(private readonly billingService: BillingService) {}
+  constructor(
+    private readonly billingService: BillingService,
+    private readonly entitlementService: EntitlementService,
+  ) {}
 
   // ─── Org-scoped routes (JWT protected) ─────────────────────────────────────
 
@@ -74,6 +78,36 @@ export class BillingController {
       orgId,
       dto.reason ?? 'User requested cancellation',
     );
+  }
+
+  /**
+   * GET /organizations/:orgId/billing/compliance
+   * Returns the current complianceState, selectedPlatforms, and plan.
+   * Called by the frontend ComplianceGate on every authenticated page load.
+   */
+  @UseGuards(JwtAuthGuard)
+  @Get('organizations/:orgId/billing/compliance')
+  async getComplianceStatus(@Param('orgId') orgId: string) {
+    return this.entitlementService.getComplianceStatus(orgId);
+  }
+
+  /**
+   * POST /organizations/:orgId/billing/compliance/confirm
+   * Validates and stores exactly 2 platform selections for a FREE org.
+   * Sets complianceState=COMPLIANT and selectionLockedUntil=now+15days.
+   * Body: { platforms: ["GITHUB", "VERCEL"] }
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('organizations/:orgId/billing/compliance/confirm')
+  async confirmPlatformSelection(
+    @Param('orgId') orgId: string,
+    @Body() body: { platforms: string[] },
+  ) {
+    await this.entitlementService.confirmPlatformSelection(
+      orgId,
+      body.platforms ?? [],
+    );
+    return { success: true };
   }
 
   // ─── Public routes (no JWT — HDFC server-to-server) ────────────────────────

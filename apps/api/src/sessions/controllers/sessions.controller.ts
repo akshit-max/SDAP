@@ -7,6 +7,7 @@ import {
   UseGuards,
   Request,
   ServiceUnavailableException,
+  Optional,
 } from '@nestjs/common';
 import { SessionsService } from '../sessions.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -26,6 +27,7 @@ import { GmailAdapter } from '../../integrations/gmail/gmail.adapter';
 import { GmailOtpService } from '../../integrations/gmail/gmail-otp.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../prisma/prisma.service';
+import { EntitlementService } from '../../billing/subscription/entitlement.service';
 
 const RevealSessionSchema = z.object({
   reason: z.string().min(1, 'Reason is required for auditing purposes'),
@@ -45,6 +47,7 @@ export class SessionsController {
     private readonly gmailOtpService: GmailOtpService,
     private readonly eventEmitter: EventEmitter2,
     private readonly prisma: PrismaService,
+    @Optional() private readonly entitlementService: EntitlementService,
   ) {}
 
   @Post()
@@ -198,6 +201,14 @@ export class SessionsController {
     @Request() req: RequestWithUser,
     @Body() body: { platform?: string; loginStartTime?: number },
   ) {
+    // ── OTP Plan Gate ──
+    // FREE plans cannot use OTP. PRO and BUSINESS can.
+    // This check runs BEFORE session validation, Gmail access, or any OTP extraction.
+    // GmailOtpService and GmailAdapter are NOT modified.
+    if (this.entitlementService) {
+      await this.entitlementService.assertCanUseOtp(orgId);
+    }
+
     // ── Validate session ─────────────────────────────────────────────────────
     const session = await this.prisma.delegatedSession.findUnique({
       where: { id: sessionId },
