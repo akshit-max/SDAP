@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { useAuth } from "../../lib/auth/AuthContext";
 import {
   billingApi,
@@ -9,6 +10,20 @@ import {
   ComplianceStatusResponse,
   VaultPlatformId,
 } from "../../lib/api/billing";
+import { AlertTriangle, Lock, Check, Clock, Crown, ArrowRight, Loader2 } from "lucide-react";
+import clsx from "clsx";
+
+/**
+ * Returns how many days remain until selectionLockedUntil expires.
+ * Returns null if no lock exists or lock has already expired.
+ * Backend is authoritative — this is display-only.
+ */
+function getDaysUntilUnlock(lockedUntil: string | null): number | null {
+  if (!lockedUntil) return null;
+  const diff = new Date(lockedUntil).getTime() - Date.now();
+  if (diff <= 0) return null;
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
 
 /**
  * ComplianceGate
@@ -22,53 +37,127 @@ import {
  */
 export default function ComplianceGate() {
   const { organization, user, isLoading } = useAuth();
+  const pathname = usePathname();
   const [status, setStatus] = useState<ComplianceStatusResponse | null>(null);
   const [selected, setSelected] = useState<VaultPlatformId[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     if (!organization?.id || !user || isLoading) return;
-
-    // Check if user dismissed this session
-    const dismissKey = `compliance_dismissed_${organization.id}`;
-    if (sessionStorage.getItem(dismissKey) === '1') {
-      setDismissed(true);
-      return;
-    }
-
     billingApi
       .getComplianceStatus(organization.id)
       .then(setStatus)
       .catch(() => setFetchError(true));
   }, [organization?.id, user, isLoading]);
 
-  const handleDismiss = () => {
-    // Store session dismiss — modal re-appears on next browser session
-    if (organization?.id) {
-      sessionStorage.setItem(`compliance_dismissed_${organization.id}`, '1');
-    }
-    setDismissed(true);
-  };
+  // Exempt pages — these are always accessible regardless of compliance state.
+  // /pricing   → escape route to upgrade
+  // /settings/members → owner manages cleanup here; detailed banner already shown
+  const isExemptPage = pathname === "/pricing" || pathname === "/settings/members";
 
-  // Escape key to dismiss
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') handleDismiss(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  });
+  // ── Member-over-limit blocking gate ─────────────────────────────────────────
+  // Shown before the platform-selection gate so a downgraded org with BOTH issues
+  // sees member cleanup first (it is the harder blocker — platform selection can
+  // happen immediately, member removal requires human action).
+  // Skipped on /pricing and /settings/members.
+  const isOverMemberLimit =
+    status !== null &&
+    status.activeUserCount > status.userLimit &&
+    !isLoading &&
+    !!organization?.id &&
+    !!user &&
+    !fetchError &&
+    !isExemptPage;
 
-  // Not shown: loading, unauthenticated, fetch failure, PRO/BUSINESS, already COMPLIANT, or dismissed
+  if (isOverMemberLimit && status) {
+    const overage = status.activeUserCount - status.userLimit;
+    return (
+      <div
+        className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-zinc-900/80 dark:bg-black/85 backdrop-blur-sm"
+        aria-modal="true"
+        role="dialog"
+        aria-labelledby="member-limit-title"
+      >
+        <div className="relative w-full max-w-md bg-white dark:bg-zinc-950 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 p-6 flex flex-col animate-in fade-in zoom-in-95 duration-150">
+          {/* Badge + Header */}
+          <div className="flex items-start gap-3.5 mb-4">
+            <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200/60 dark:border-red-900/40 flex items-center justify-center">
+              <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+            </div>
+            <div>
+              <p
+                id="member-limit-title"
+                className="text-sm font-bold text-slate-900 dark:text-slate-100"
+              >
+                Action Required — Plan Limit Exceeded
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Your {status.plan} plan limit has been reached
+              </p>
+            </div>
+          </div>
+
+          {/* Details */}
+          <div className="p-4 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 text-xs text-slate-600 dark:text-slate-300 leading-relaxed space-y-1">
+            <p>
+              Your <strong className="font-semibold text-slate-900 dark:text-slate-100">FREE plan</strong> allows up to{" "}
+              <strong className="font-semibold text-slate-900 dark:text-slate-100">
+                {status.userLimit} active member{status.userLimit !== 1 ? "s" : ""}
+              </strong>.
+            </p>
+            <p>
+              Your organization currently has{" "}
+              <strong className="font-semibold text-red-600 dark:text-red-400">
+                {status.activeUserCount} active members
+              </strong>.
+            </p>
+            <p className="pt-1.5 text-slate-500 dark:text-slate-400 border-t border-slate-200/60 dark:border-zinc-800/80 mt-2">
+              Please remove <strong className="font-semibold text-red-600 dark:text-red-400">{overage} member{overage !== 1 ? "s" : ""}</strong> to restore access.
+            </p>
+          </div>
+
+          {/* Owner protection notice */}
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 my-4 font-medium">
+            <Crown className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+            <span>Owner account is protected and cannot be removed.</span>
+          </div>
+
+          {/* CTA */}
+          <a
+            href="/settings/members"
+            className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-950 font-semibold text-xs rounded-xl shadow-sm transition-all text-center flex items-center justify-center gap-1.5"
+          >
+            <span>Manage Members</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </a>
+
+          <p className="text-center mt-3 text-[11px] text-slate-500 dark:text-slate-400">
+            Or{" "}
+            <a
+              href="/pricing"
+              className="font-semibold text-slate-900 dark:text-slate-100 hover:underline"
+            >
+              upgrade to PRO
+            </a>{" "}
+            to increase your member limit.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Platform-selection gate ──────────────────────────────────────────────────
+  // Not shown: loading, unauthenticated, fetch failure, PRO/BUSINESS, already COMPLIANT, or exempt pages.
   if (
     isLoading ||
     !organization?.id ||
     !user ||
     fetchError ||
-    dismissed ||
     !status ||
-    status.complianceState !== "PLATFORM_SELECTION_REQUIRED"
+    status.complianceState !== "PLATFORM_SELECTION_REQUIRED" ||
+    isExemptPage
   ) {
     return null;
   }
@@ -104,220 +193,133 @@ export default function ComplianceGate() {
   };
 
   return (
-    <div
-      onClick={(e) => { if (e.target === e.currentTarget) handleDismiss(); }}
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 9999,
-        background: "rgba(0,0,0,0.72)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "1rem",
-      }}
-    >
-      <div
-        style={{
-          background: "var(--modal-bg, #181c25)",
-          borderRadius: "16px",
-          border: "1px solid rgba(255,255,255,0.08)",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
-          padding: "2rem 2.5rem",
-          maxWidth: "560px",
-          width: "100%",
-          color: "#e8eaf0",
-          position: "relative",
-        }}
-      >
-        {/* Close ✕ button */}
-        <button
-          onClick={handleDismiss}
-          aria-label="Close platform selection"
-          style={{
-            position: "absolute",
-            top: "1rem",
-            right: "1rem",
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: "8px",
-            color: "#64748b",
-            cursor: "pointer",
-            fontSize: "1rem",
-            width: "2rem",
-            height: "2rem",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontFamily: "inherit",
-          }}
-        >
-          ✕
-        </button>
-
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-zinc-900/80 dark:bg-black/85 backdrop-blur-sm cursor-default">
+      <div className="relative w-full max-w-lg bg-white dark:bg-zinc-950 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 p-6 sm:p-7 flex flex-col animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
-        <div style={{ marginBottom: "1.5rem" }}>
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              background: "rgba(99,102,241,0.15)",
-              border: "1px solid rgba(99,102,241,0.3)",
-              borderRadius: "8px",
-              padding: "0.35rem 0.75rem",
-              fontSize: "0.72rem",
-              letterSpacing: "0.06em",
-              color: "#a5b4fc",
-              textTransform: "uppercase",
-              marginBottom: "1rem",
-              fontWeight: 600,
-            }}
-          >
-            <span>🔒</span> Free Plan Setup
+        <div className="mb-5">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wider uppercase bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-900/40 mb-3">
+            <Lock className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
+            <span>Free Plan Setup</span>
           </div>
-          <h2
-            style={{
-              margin: 0,
-              fontSize: "1.4rem",
-              fontWeight: 700,
-              color: "#f1f5f9",
-              lineHeight: 1.3,
-            }}
-          >
+          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
             Choose Your 2 Platforms
           </h2>
-          <p
-            style={{
-              margin: "0.6rem 0 0",
-              fontSize: "0.875rem",
-              color: "#94a3b8",
-              lineHeight: 1.6,
-            }}
-          >
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
             Your Free plan includes access to{" "}
-            <strong style={{ color: "#e2e8f0" }}>2 platforms</strong>. Select
-            the ones you want to store credentials for. You can change this once
-            every 15 days.
+            <strong className="font-semibold text-slate-900 dark:text-slate-200">2 platforms</strong>.
+            Select the ones you want to store credentials for. You can change this selection once every 15 days.
           </p>
+
+          {/* 15-day countdown banner — shown when selectionLockedUntil is present */}
+          {(() => {
+            const daysLeft = getDaysUntilUnlock(status?.selectionLockedUntil ?? null);
+            if (daysLeft === null) return null;
+            return (
+              <div className="mt-3.5 p-3 rounded-xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-300">
+                <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <span className="leading-relaxed">
+                  You can re-select platforms again in{" "}
+                  <strong className="font-semibold">{daysLeft} day{daysLeft !== 1 ? "s" : ""}</strong>.
+                  Your current selection is locked until{" "}
+                  {new Date(status!.selectionLockedUntil!).toLocaleDateString(
+                    "en-IN",
+                    { day: "numeric", month: "short", year: "numeric" }
+                  )}.
+                </span>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Platform Grid */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "0.65rem",
-            marginBottom: "1.5rem",
-          }}
-        >
+        <div className="grid grid-cols-3 gap-2.5 mb-4">
           {WITHUS_VAULT_PLATFORMS.map((pid) => {
             const isSelected = selected.includes(pid);
             const isDisabled = !isSelected && selected.length === 2;
             return (
               <button
                 key={pid}
+                type="button"
                 onClick={() => togglePlatform(pid)}
                 disabled={isDisabled || submitting}
-                style={{
-                  padding: "0.7rem 0.5rem",
-                  borderRadius: "10px",
-                  border: isSelected
-                    ? "2px solid #6366f1"
-                    : "1px solid rgba(255,255,255,0.1)",
-                  background: isSelected
-                    ? "rgba(99,102,241,0.18)"
+                className={clsx(
+                  "py-2.5 px-3 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer font-semibold",
+                  isSelected
+                    ? "border-2 border-slate-900 dark:border-slate-100 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950 shadow-sm"
                     : isDisabled
-                    ? "rgba(255,255,255,0.02)"
-                    : "rgba(255,255,255,0.04)",
-                  color: isSelected
-                    ? "#a5b4fc"
-                    : isDisabled
-                    ? "#4b5563"
-                    : "#cbd5e1",
-                  fontSize: "0.78rem",
-                  fontWeight: isSelected ? 700 : 500,
-                  cursor: isDisabled || submitting ? "not-allowed" : "pointer",
-                  transition: "all 0.15s ease",
-                  textAlign: "center",
-                  opacity: isDisabled ? 0.45 : 1,
-                  fontFamily: "inherit",
-                }}
+                    ? "opacity-40 cursor-not-allowed border border-slate-200 dark:border-zinc-800/60 bg-slate-50 dark:bg-zinc-900/20 text-slate-400 dark:text-zinc-600"
+                    : "border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-900"
+                )}
               >
-                {PLATFORM_LABELS[pid]}
+                {isSelected && <Check className="w-3.5 h-3.5 flex-shrink-0" />}
+                <span className="truncate">{PLATFORM_LABELS[pid]}</span>
               </button>
             );
           })}
         </div>
 
         {/* Selection count */}
-        <p
-          style={{
-            fontSize: "0.8rem",
-            color: selected.length === 2 ? "#86efac" : "#64748b",
-            marginBottom: "1rem",
-            transition: "color 0.2s",
-          }}
-        >
-          {selected.length === 2
-            ? `✓ ${PLATFORM_LABELS[selected[0] as VaultPlatformId]} & ${PLATFORM_LABELS[selected[1] as VaultPlatformId]} selected`
-            : `${selected.length}/2 selected`}
-        </p>
+        <div className="flex items-center justify-between text-xs font-medium mb-4">
+          <span
+            className={clsx(
+              "transition-colors",
+              selected.length === 2
+                ? "text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1"
+                : "text-slate-500 dark:text-slate-400"
+            )}
+          >
+            {selected.length === 2 ? (
+              <>
+                <Check className="w-3.5 h-3.5" />
+                <span>
+                  {PLATFORM_LABELS[selected[0] as VaultPlatformId]} &{" "}
+                  {PLATFORM_LABELS[selected[1] as VaultPlatformId]} selected
+                </span>
+              </>
+            ) : (
+              <span>{selected.length}/2 selected</span>
+            )}
+          </span>
+        </div>
 
         {/* Error */}
         {error && (
-          <p
-            style={{
-              fontSize: "0.82rem",
-              color: "#f87171",
-              marginBottom: "1rem",
-              background: "rgba(248,113,113,0.1)",
-              borderRadius: "8px",
-              padding: "0.6rem 0.85rem",
-              border: "1px solid rgba(248,113,113,0.2)",
-            }}
-          >
+          <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/40 text-xs text-red-600 dark:text-red-400 font-medium">
             {error}
-          </p>
+          </div>
         )}
 
         {/* CTA */}
         <button
+          type="button"
           onClick={handleConfirm}
           disabled={selected.length !== 2 || submitting}
-          style={{
-            width: "100%",
-            padding: "0.85rem",
-            borderRadius: "10px",
-            border: "none",
-            background:
-              selected.length === 2 && !submitting
-                ? "linear-gradient(135deg, #6366f1, #4f46e5)"
-                : "rgba(99,102,241,0.25)",
-            color: selected.length === 2 ? "#fff" : "#6366f1",
-            fontSize: "0.9rem",
-            fontWeight: 700,
-            cursor: selected.length !== 2 || submitting ? "not-allowed" : "pointer",
-            transition: "all 0.2s ease",
-            letterSpacing: "0.02em",
-            fontFamily: "inherit",
-          }}
+          className={clsx(
+            "w-full py-2.5 px-4 rounded-xl font-semibold text-xs transition-all shadow-sm flex items-center justify-center gap-2",
+            selected.length === 2 && !submitting
+              ? "bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-950 cursor-pointer"
+              : "bg-slate-100 dark:bg-zinc-900 text-slate-400 dark:text-zinc-600 cursor-not-allowed border border-slate-200 dark:border-zinc-800"
+          )}
         >
-          {submitting ? "Confirming…" : "Confirm Platform Selection"}
+          {submitting ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Confirming...</span>
+            </>
+          ) : (
+            <span>Confirm Platform Selection</span>
+          )}
         </button>
 
         {/* Upgrade nudge */}
-        <p
-          style={{
-            textAlign: "center",
-            fontSize: "0.75rem",
-            color: "#475569",
-            marginTop: "1rem",
-          }}
-        >
+        <p className="text-center text-xs text-slate-500 dark:text-slate-400 mt-4">
           Want all 11 platforms?{" "}
-          <a href="/pricing" style={{ color: "#818cf8", textDecoration: "none" }}>
-            Upgrade to Pro →
+          <a
+            href="/pricing"
+            className="font-semibold text-slate-900 dark:text-slate-100 hover:underline inline-flex items-center gap-0.5"
+          >
+            <span>Upgrade to Pro</span>
+            <ArrowRight className="w-3 h-3" />
           </a>
         </p>
       </div>

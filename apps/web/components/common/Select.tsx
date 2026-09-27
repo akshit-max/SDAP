@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Lock } from 'lucide-react';
 import clsx from 'clsx';
 
 export interface SelectOption {
   value: string;
   label: string;
+  locked?: boolean;      // If true, option is shown but cannot be selected
+  lockedReason?: string; // Tooltip / sub-label shown under the option
 }
 
 interface SelectProps {
@@ -64,18 +66,30 @@ export function CustomSelect({
               <button
                 key={opt.value}
                 type="button"
+                disabled={opt.locked}
                 onClick={() => {
+                  if (opt.locked) return;
                   onChange(opt.value);
                   setIsOpen(false);
                 }}
                 className={clsx(
-                  "w-full text-left px-3.5 py-2 text-xs font-semibold transition-colors truncate block",
-                  opt.value === value
-                    ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950"
-                    : "text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-900"
+                  "w-full text-left px-3.5 py-2 text-xs font-semibold transition-colors block",
+                  opt.locked
+                    ? "opacity-60 cursor-not-allowed text-slate-400 dark:text-zinc-500 hover:bg-slate-50/50 dark:hover:bg-zinc-900/50"
+                    : opt.value === value
+                      ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950"
+                      : "text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-900"
                 )}
               >
-                {opt.label}
+                <span className="flex items-center justify-between gap-2">
+                  <span className="truncate">{opt.label}</span>
+                  {opt.locked && (
+                    <span className="flex-shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/40 uppercase tracking-wide">
+                      <Lock className="w-2.5 h-2.5" />
+                      <span>{opt.lockedReason ?? 'PRO only'}</span>
+                    </span>
+                  )}
+                </span>
               </button>
             ))
           )}
