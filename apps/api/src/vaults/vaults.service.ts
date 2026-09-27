@@ -19,11 +19,16 @@ export class VaultsService {
   ) {}
 
   async createVault(orgId: string, userId: string, dto: CreateVaultDto) {
-    // ── Vault platform entitlement check BEFORE DB creation (Option A) ──
-    // Uses trusted dto.platformId validated against the 11-catalog.
-    // PRO/BUSINESS: returns immediately. FREE: checks selectedPlatforms.
-    // If entitlement fails, the Vault is never written to the DB.
     if (this.entitlementService) {
+      // ── Over-limit downgrade check (additive) ──────────────────────────
+      // If this org has expired from PRO/BUSINESS and now has > 2 active
+      // members, block all Vault operations until cleanup is complete.
+      await this.entitlementService.assertNotOverUserLimit(orgId);
+
+      // ── Vault platform entitlement check BEFORE DB creation ────────────
+      // Uses trusted dto.platformId validated against the 11-catalog.
+      // PRO/BUSINESS: returns immediately. FREE: checks selectedPlatforms.
+      // If entitlement fails, the Vault is never written to the DB.
       await this.entitlementService.assertVaultPlatformAllowed(
         orgId,
         dto.platformId ?? null,

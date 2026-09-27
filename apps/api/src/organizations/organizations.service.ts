@@ -78,6 +78,20 @@ export class OrganizationsService {
         },
       });
 
+      // Seed a FREE Subscription row immediately so that:
+      // 1. ComplianceGate shows the mandatory platform-selection popup on first load.
+      // 2. confirmPlatformSelection (which calls subscription.update) never hits "Record not found".
+      // complianceState starts as PLATFORM_SELECTION_REQUIRED — overrides the schema @default(COMPLIANT)
+      // which exists only to protect existing rows during past migrations.
+      await tx.subscription.create({
+        data: {
+          organizationId: org.id,
+          plan: 'FREE',
+          status: 'FREE',
+          complianceState: 'PLATFORM_SELECTION_REQUIRED',
+        },
+      });
+
       return org;
     });
 

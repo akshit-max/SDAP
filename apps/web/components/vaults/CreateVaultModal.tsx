@@ -8,6 +8,8 @@ import { useCreateSecret } from '../../hooks/useSecrets';
 import { useToast } from '../common/Toast';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Key, FileText } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { billingApi, WITHUS_VAULT_PLATFORMS, PLATFORM_LABELS } from '../../lib/api/billing';
 
 interface CreateVaultModalProps {
   orgId: string;
@@ -22,6 +24,22 @@ export function CreateVaultModal({ orgId, isOpen, onClose }: CreateVaultModalPro
   const router = useRouter();
   const { toast } = useToast();
 
+  // ── Compliance / entitlement data ─────────────────────────────────────────
+  // This query is already cached by ComplianceGate — zero extra network cost.
+  const { data: compliance } = useQuery({
+    queryKey: ['compliance', orgId],
+    queryFn: () => billingApi.getComplianceStatus(orgId),
+    enabled: !!orgId && isOpen,
+    staleTime: 30_000,
+  });
+
+  const isFree = compliance?.plan === 'FREE';
+  // FREE: only the 2 selected platforms are available.
+  // PRO/BUSINESS: all 11 platforms are available (optional).
+  const availablePlatforms: string[] = isFree
+    ? (compliance?.selectedPlatforms ?? [])
+    : [...WITHUS_VAULT_PLATFORMS];
+
   // ── Step tracker ──────────────────────────────────────────────────────────
   const [step, setStep] = useState<Step>('details');
   const [newVaultId, setNewVaultId] = useState<string | null>(null);
@@ -30,6 +48,7 @@ export function CreateVaultModal({ orgId, isOpen, onClose }: CreateVaultModalPro
   // ── Step 1: Vault details ──────────────────────────────────────────────────
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [platformId, setPlatformId] = useState('');
   const { mutate: createVault, isPending: isCreatingVault } = useCreateVault(orgId);
 
   // ── Step 2: Add secret ────────────────────────────────────────────────────
@@ -50,6 +69,7 @@ export function CreateVaultModal({ orgId, isOpen, onClose }: CreateVaultModalPro
     setNewVaultName('');
     setName('');
     setDescription('');
+    setPlatformId('');
     setSecretName('');
     setSecretDescription('');
     setUsername('');
@@ -69,12 +89,21 @@ export function CreateVaultModal({ orgId, isOpen, onClose }: CreateVaultModalPro
   const handleVaultSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+    // FREE orgs must pick a platform
+    if (isFree && !platformId) {
+      toast('error', 'Please select a platform for this vault.');
+      return;
+    }
 
     createVault(
-      { name: name.trim(), description: description.trim() || undefined },
+      {
+        name: name.trim(),
+        description: description.trim() || undefined,
+        // Send platformId for FREE (required) and PRO/BUSINESS if chosen
+        platformId: platformId || undefined,
+      },
       {
         onSuccess: (vault) => {
-          // Vault is persisted. Store its id and advance to Step 2.
           setNewVaultId(vault.id);
           setNewVaultName(vault.name);
           toast('success', `Vault "${vault.name}" created. Now add your first credential.`);
@@ -152,6 +181,39 @@ export function CreateVaultModal({ orgId, isOpen, onClose }: CreateVaultModalPro
               className="w-full px-3.5 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 dark:focus:border-slate-100 dark:focus:ring-slate-100/10 outline-none transition-all text-slate-950 dark:text-slate-50 text-sm"
             />
           </div>
+
+          {/* ── Platform picker ── */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+              Platform {isFree ? <span className="text-red-500">*</span> : <span className="text-slate-400">(optional)</span>}
+            </label>
+            {isFree && availablePlatforms.length === 0 ? (
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                No platforms selected yet. Please complete platform selection first.
+              </p>
+            ) : (
+              <select
+                value={platformId}
+                onChange={e => setPlatformId(e.target.value)}
+                required={isFree}
+                className="w-full px-3.5 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-slate-900/10 outline-none transition-all text-slate-950 dark:text-slate-50 text-sm"
+              >
+                {!isFree && <option value="">— No platform (generic vault) —</option>}
+                {isFree && <option value="">Select a platform...</option>}
+                {availablePlatforms.map(pid => (
+                  <option key={pid} value={pid}>
+                    {PLATFORM_LABELS[pid as keyof typeof PLATFORM_LABELS] ?? pid}
+                  </option>
+                ))}
+              </select>
+            )}
+            {isFree && (
+              <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                FREE plan: vault must belong to one of your 2 selected platforms.
+              </p>
+            )}
+          </div>
+
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
               Description <span className="text-slate-400">(optional)</span>
@@ -169,7 +231,7 @@ export function CreateVaultModal({ orgId, isOpen, onClose }: CreateVaultModalPro
               className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50">
               Cancel
             </button>
-            <button type="submit" disabled={isCreatingVault || !name.trim()}
+            <button type="submit" disabled={isCreatingVault || !name.trim() || (isFree && !platformId)}
               className="flex items-center px-4 py-2 text-xs font-semibold bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 rounded-lg transition-colors disabled:opacity-50">
               {isCreatingVault
                 ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />Creating...</>
@@ -195,18 +257,18 @@ export function CreateVaultModal({ orgId, isOpen, onClose }: CreateVaultModalPro
             </button>
           </div>
 
-          {/* Secret name */}
+          {/* Credential name */}
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Secret Key / Name <span className="text-red-500">*</span>
+              Credential Name <span className="text-red-500">*</span>
             </label>
             <input type="text" required value={secretName}
               onChange={e => setSecretName(e.target.value)}
-              placeholder={secretMode === 'credential' ? 'e.g. GoDaddy or GitHub' : 'e.g. API_KEY'}
+              placeholder={secretMode === 'credential' ? 'e.g. My Personal Account' : 'e.g. API_KEY'}
               className="w-full px-3.5 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-slate-900/10 outline-none transition-all text-slate-950 dark:text-slate-50 text-sm font-mono"
             />
             {secretMode === 'credential' && (
-              <p className="text-[10px] text-slate-500">Tip: Include the website name so the extension can auto-detect it.</p>
+              <p className="text-[10px] text-slate-500">Platform is identified by your selection above, not this name.</p>
             )}
           </div>
 
@@ -295,3 +357,4 @@ export function CreateVaultModal({ orgId, isOpen, onClose }: CreateVaultModalPro
     </Modal>
   );
 }
+

@@ -149,7 +149,10 @@ apiClient.interceptors.response.use(
       if (status === 401) {
         message = 'Invalid credentials. Please check your email and password.';
       } else if (status === 403) {
-        message = 'You do not have permission to perform this action.';
+        const serverMsg = Array.isArray(data?.message) ? data.message[0] : data?.message;
+        message = serverMsg && serverMsg !== 'Forbidden resource' && serverMsg !== 'Forbidden'
+          ? serverMsg
+          : 'You do not have permission to perform this action.';
       } else if (status === 404) {
         message = 'The requested resource could not be found.';
       } else if (status === 409) {

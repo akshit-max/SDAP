@@ -66,7 +66,14 @@ export class SessionsService {
       throw new BadRequestException('maxReveals must be strictly positive.');
     }
 
-    // Verify resource ownership
+    // ── Over-limit downgrade check (additive, before resource lookup) ───
+    // If this org has expired from PRO/BUSINESS and now has > 2 active
+    // members, block session creation until the owner removes excess members.
+    // This also protects the approval→session path (ApprovalsService calls here).
+    if (this.entitlementService) {
+      await this.entitlementService.assertNotOverUserLimit(organizationId);
+    }
+
     if (dto.scope === 'SECRET' && dto.resourceId) {
       const secret = await db.secret.findUnique({
         where: { id: dto.resourceId },
@@ -352,39 +359,69 @@ export class SessionsService {
       .filter((s) => s.scope === 'VAULT')
       .map((s) => s.resourceId);
 
+    // Secrets: fetch name + parent vault's platformId (for authoritative extension matching)
+    // Vaults:  fetch name + platformId directly
     const [secrets, vaults] = await Promise.all([
       secretIds.length > 0
         ? this.prisma.secret.findMany({
             where: { id: { in: secretIds } },
-            select: { id: true, name: true },
+            select: {
+              id: true,
+              name: true,
+              vault: { select: { platformId: true } },
+            },
           })
         : [],
       vaultIds.length > 0
         ? this.prisma.vault.findMany({
             where: { id: { in: vaultIds } },
-            select: { id: true, name: true },
+            select: { id: true, name: true, platformId: true },
           })
         : [],
     ]);
 
-    const secretMap = new Map<string, string>(
-      secrets.map((s) => [s.id, s.name] as [string, string]),
+    const secretMap = new Map<
+      string,
+      { name: string; platformId: string | null }
+    >(
+      secrets.map((s) => [
+        s.id,
+        { name: s.name, platformId: (s as any).vault?.platformId ?? null },
+      ]),
     );
-    const vaultMap = new Map<string, string>(
-      vaults.map((v) => [v.id, v.name] as [string, string]),
+    const vaultMap = new Map<
+      string,
+      { name: string; platformId: string | null }
+    >(
+      vaults.map((v) => [
+        v.id,
+        { name: v.name, platformId: (v as any).platformId ?? null },
+      ]),
     );
 
-    return sessions.map((s) => ({
-      ...s,
-      resourceName:
-        s.scope === 'SECRET'
-          ? (secretMap.get(s.resourceId) ?? null)
-          : s.scope === 'VAULT'
-            ? (vaultMap.get(s.resourceId) ?? null)
-            : s.scope === 'INTEGRATION'
-              ? ((s as any).integrationProvider ?? null)
+    return sessions.map((s) => {
+      const secretEntry = secretMap.get(s.resourceId);
+      const vaultEntry = vaultMap.get(s.resourceId);
+      return {
+        ...s,
+        resourceName:
+          s.scope === 'SECRET'
+            ? (secretEntry?.name ?? null)
+            : s.scope === 'VAULT'
+              ? (vaultEntry?.name ?? null)
+              : s.scope === 'INTEGRATION'
+                ? ((s as any).integrationProvider ?? null)
+                : null,
+        // Authoritative Vault platform identity — distinct from integrationProvider.
+        // Populated for SECRET and VAULT scope sessions only.
+        platformId:
+          s.scope === 'SECRET'
+            ? (secretEntry?.platformId ?? null)
+            : s.scope === 'VAULT'
+              ? (vaultEntry?.platformId ?? null)
               : null,
-    }));
+      };
+    });
   }
 
   async revokeSession(

@@ -328,7 +328,13 @@ function renderSessions(sessions: ExtensionSession[], orgId: string, tabId: numb
       ? `${session.maxReveals - session.revealCount} reveals left`
       : 'Unlimited reveals';
       
-    const platform = (session as any).integrationProvider || (session as any).resourceName || 'Unknown';
+    // Prefer integrationProvider (native integration sessions), then platformId
+    // (Vault-based sessions with the new authoritative platform identity), then
+    // resourceName (legacy text fallback) for icon/branding display.
+    const platform = (session as any).integrationProvider
+      || (session as any).platformId
+      || (session as any).resourceName
+      || 'Unknown';
     const branding = getPlatformBranding(platform);
 
     card.innerHTML = `

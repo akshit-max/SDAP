@@ -87,10 +87,14 @@ export class SecretsController {
     @Request() req: RequestWithUser,
     @Body('reason') reason?: string,
   ) {
-    // ── Vault platform entitlement check (before decryption) ──
+    // ── Entitlement checks (before decryption) ────────────────────────────
     // Load Secret→Vault→platformId from trusted DB state only.
     // Existing RBAC (SECRET_REVEAL permission) already ran above via PermissionsGuard.
     if (this.entitlementService) {
+      // Check 1: org must not be over the FREE user limit (downgrade cleanup).
+      await this.entitlementService.assertNotOverUserLimit(orgId);
+
+      // Check 2: vault platform must be allowed for this org's plan.
       const secret = await this.prisma.secret.findUnique({
         where: { id: secretId },
         include: {

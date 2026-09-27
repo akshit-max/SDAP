@@ -58,6 +58,7 @@ export interface VaultResponse {
   organizationId: string;
   name: string;
   description: string | null;
+  platformId: string | null; // null for generic vaults, e.g. 'GITHUB' for platform vaults
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;

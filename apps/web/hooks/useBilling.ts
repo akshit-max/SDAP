@@ -105,3 +105,40 @@ export function useCancelSubscription(orgId: string | null) {
 
   return { cancel, cancelling, error };
 }
+
+/**
+ * useComplianceStatus
+ *
+ * Fetches the compliance status for an org.
+ * Returns complianceState, selectedPlatforms, selectionLockedUntil, plan,
+ * activeUserCount, and userLimit.
+ *
+ * Used by:
+ *  - ComplianceGate (platform selection gate)
+ *  - DowngradeCleanupBanner (over-limit downgrade cleanup)
+ *
+ * Both read-only, no mutations.
+ */
+export function useComplianceStatus(orgId: string | null) {
+  const [status, setStatus] = useState<import('../lib/api/billing').ComplianceStatusResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    if (!orgId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await (await import('../lib/api/billing')).billingApi.getComplianceStatus(orgId);
+      setStatus(data);
+    } catch (err: unknown) {
+      setError((err as Error).message ?? 'Failed to load compliance status');
+    } finally {
+      setLoading(false);
+    }
+  }, [orgId]);
+
+  useEffect(() => { void refresh(); }, [refresh]);
+
+  return { status, loading, error, refresh };
+}

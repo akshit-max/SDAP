@@ -1,4 +1,4 @@
-﻿import { Test, TestingModule } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException } from '@nestjs/common';
 import { EntitlementService } from './entitlement.service';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -276,7 +276,7 @@ describe('EntitlementService.assertVaultPlatformAllowed()', () => {
         complianceState: 'PLATFORM_SELECTION_REQUIRED',
         selectedPlatforms: [],
       });
-      (prisma.subscription as any).update = jest.fn().mockResolvedValue({});
+      (prisma.subscription as any).upsert = jest.fn().mockResolvedValue({});
     });
 
     it('rejects if fewer than 2 platforms selected', async () => {
@@ -311,6 +311,121 @@ describe('EntitlementService.assertVaultPlatformAllowed()', () => {
       await expect(
         service.confirmPlatformSelection('org1', ['GITHUB', 'VERCEL']),
       ).resolves.toBeUndefined();
+    });
+  });
+
+  // ── Downgrade cleanup: assertNotOverUserLimit ─────────────────────────────
+  // Verifies the expire() → complianceState reset → cleanup enforcement chain.
+
+  describe('Downgrade cleanup — assertNotOverUserLimit()', () => {
+    it('blocks a PRO→EXPIRED org with 5 members (over FREE limit of 2)', async () => {
+      (prisma.subscription.findUnique as jest.Mock).mockResolvedValue({
+        plan: 'PRO',
+        status: 'EXPIRED',
+        currentPeriodEnd: null,
+        complianceState: 'PLATFORM_SELECTION_REQUIRED', // reset by expire()
+        selectedPlatforms: [], // cleared by expire()
+      });
+      (prisma.organizationMember.count as jest.Mock).mockResolvedValue(5);
+
+      await expect(service.assertNotOverUserLimit('org1')).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it('unblocks the same org after owner removes excess (2 members remain)', async () => {
+      (prisma.subscription.findUnique as jest.Mock).mockResolvedValue({
+        plan: 'PRO',
+        status: 'EXPIRED',
+        currentPeriodEnd: null,
+        complianceState: 'PLATFORM_SELECTION_REQUIRED',
+        selectedPlatforms: [],
+      });
+      (prisma.organizationMember.count as jest.Mock).mockResolvedValue(2);
+
+      await expect(
+        service.assertNotOverUserLimit('org1'),
+      ).resolves.not.toThrow();
+    });
+
+    it('never blocks a PRO ACTIVE org with 5 members (paid plan, not downgraded)', async () => {
+      (prisma.subscription.findUnique as jest.Mock).mockResolvedValue({
+        plan: 'PRO',
+        status: 'ACTIVE',
+        currentPeriodEnd: new Date(Date.now() + 86400000),
+        complianceState: 'COMPLIANT',
+        selectedPlatforms: [],
+      });
+      (prisma.organizationMember.count as jest.Mock).mockResolvedValue(5);
+
+      await expect(
+        service.assertNotOverUserLimit('org1'),
+      ).resolves.not.toThrow();
+    });
+
+    it('blocks a BUSINESS→EXPIRED org with 15 members (over FREE limit)', async () => {
+      (prisma.subscription.findUnique as jest.Mock).mockResolvedValue({
+        plan: 'BUSINESS',
+        status: 'EXPIRED',
+        currentPeriodEnd: null,
+        complianceState: 'PLATFORM_SELECTION_REQUIRED',
+        selectedPlatforms: [],
+      });
+      (prisma.organizationMember.count as jest.Mock).mockResolvedValue(15);
+
+      await expect(service.assertNotOverUserLimit('org1')).rejects.toThrow(
+        ForbiddenException,
+      );
+      await expect(service.assertNotOverUserLimit('org1')).rejects.toThrow(
+        'Please remove 13 member(s)',
+      );
+    });
+  });
+
+  // ── Reconnect: platform slot not double-counted ───────────────────────────
+  // Verifies the existing behavior documented in integrations.service.ts:
+  // reconnecting an already-connected platform is handled upstream by an
+  // alreadyConnected check — assertCanConnectPlatform is never called for
+  // reconnects. Here we verify the entitlement logic itself is idempotent.
+
+  describe('Reconnect — platform slot not double-counted', () => {
+    it('FREE org at exactly 2 connections: assertCanConnectPlatform blocks a 3rd NEW platform', async () => {
+      (prisma.subscription.findUnique as jest.Mock).mockResolvedValue({
+        plan: 'FREE',
+        status: 'FREE',
+        currentPeriodEnd: null,
+        complianceState: 'COMPLIANT',
+        selectedPlatforms: ['GITHUB', 'VERCEL'],
+      });
+      (prisma.integrationConnection.count as jest.Mock).mockResolvedValue(2);
+
+      await expect(service.assertCanConnectPlatform('org1')).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it('FREE org at exactly 2 connections: reconnecting same platform is skipped upstream (count stays 2)', async () => {
+      // Upstream integrations.service.ts already gates reconnects:
+      //   if (alreadyConnected) → skip assertCanConnectPlatform entirely.
+      // This test confirms the count-check itself does not block at exactly the limit
+      // when called without the upstream skip — it blocks (count >= limit).
+      // The reconnect safety is enforced by the caller, not this method.
+      (prisma.subscription.findUnique as jest.Mock).mockResolvedValue({
+        plan: 'FREE',
+        status: 'FREE',
+        currentPeriodEnd: null,
+        complianceState: 'COMPLIANT',
+        selectedPlatforms: ['GITHUB', 'VERCEL'],
+      });
+      // Simulate: 2 connections, trying to "reconnect" would NOT call assertCanConnectPlatform
+      // (handled by alreadyConnected guard in IntegrationsService). So count stays at 2.
+      (prisma.integrationConnection.count as jest.Mock).mockResolvedValue(2);
+
+      // If assertCanConnectPlatform IS called at exactly 2, it blocks (>= limit). This is
+      // the correct behavior — the upstream guard is what makes reconnects safe.
+      await expect(service.assertCanConnectPlatform('org1')).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 });

@@ -86,7 +86,10 @@ export class ProgrammaticController {
     }
 
     if (this.entitlementService) {
-      // Use the Vault's platformId from trusted DB state — never client-supplied.
+      // Check 1: org must not be over the FREE user limit (downgrade cleanup).
+      await this.entitlementService.assertNotOverUserLimit(organizationId);
+
+      // Check 2: Use the Vault's platformId from trusted DB state — never client-supplied.
       const vaultPlatformId = (secretMeta.vault as any).platformId ?? null;
       await this.entitlementService.assertVaultPlatformAllowed(
         organizationId,

@@ -12,11 +12,13 @@ import {
   useRemoveMember,
   useOffboardMember,
 } from '../../../hooks/useOrganization';
+import { useComplianceStatus } from '../../../hooks/useBilling';
 import { Loading } from '../../../components/common/Loading';
 import { formatDate } from '../../../lib/formatters';
 import { useToast } from '../../../components/common/Toast';
 import { ConfirmModal } from '../../../components/common/ConfirmModal';
 import { CreateSessionModal } from '../../../components/sessions/CreateSessionModal';
+import { DowngradeCleanupBanner } from '../../../components/compliance/DowngradeCleanupBanner';
 import {
   UserPlus,
   Users,
@@ -95,6 +97,10 @@ export default function MembersPage() {
   const { mutate: removeMember, isPending: isRemoving } = useRemoveMember(orgId);
   const { mutate: offboardMember, isPending: isOffboarding } = useOffboardMember(orgId);
   const { toast } = useToast();
+
+  // ── Downgrade cleanup: fetch compliance status to detect over-limit state
+  // Only fires when orgId is available. Lightweight read-only call.
+  const { status: complianceStatus } = useComplianceStatus(orgId || null);
 
   const [email, setEmail] = useState('');
   const [inviteToken, setInviteToken] = useState<string | null>(null);
@@ -222,6 +228,18 @@ export default function MembersPage() {
             Manage who has access to <span className="font-semibold">{organization?.name}</span>.
           </p>
         </div>
+
+        {/* ── Downgrade cleanup banner — only visible to OWNER when over limit ── */}
+        {canRemove && complianceStatus && complianceStatus.activeUserCount > complianceStatus.userLimit && (
+          <DowngradeCleanupBanner
+            activeUserCount={complianceStatus.activeUserCount}
+            userLimit={complianceStatus.userLimit}
+            members={members}
+            currentUserId={currentUserId}
+            isOffboarding={isOffboarding}
+            onOffboardMember={handleOffboardMember}
+          />
+        )}
 
         {/* ── Invite Form ──────────────────────────────────────────────── */}
         {canInvite && (

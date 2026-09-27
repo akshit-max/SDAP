@@ -5,6 +5,7 @@ import { useCreateSession } from '../../hooks/useSessions';
 import { useOrgMembers } from '../../hooks/useOrganization';
 import { useVaults, useSecretsByVault } from '../../hooks/useVaults';
 import { useIntegrations, useIntegrationResources } from '../../hooks/useIntegrations';
+import { useComplianceStatus } from '../../hooks/useBilling';
 import { IntegrationProvider } from '../../lib/api/integrations';
 import { SessionScope, SessionPermission } from '@repo/types';
 import { Modal } from '../common/Modal';
@@ -151,10 +152,18 @@ const PLATFORM_CAPABILITY_MAP: Record<string, { key: string; label: string; desc
   ],
 };
 
-function getCapabilitiesForSecret(secretName: string): { key: string; label: string; description: string }[] {
-  const lower = secretName.toLowerCase();
-  for (const [keyword, caps] of Object.entries(PLATFORM_CAPABILITY_MAP)) {
-    if (lower.includes(keyword)) return caps;
+function getCapabilitiesForSecret(
+  secretName: string,
+  vaultName?: string,
+): { key: string; label: string; description: string }[] {
+  // Check secret name first, then fall back to vault name.
+  // Users often name secrets like "my-git-r" rather than "github-token",
+  // so the vault name is a more reliable platform identifier.
+  const candidates = [secretName.toLowerCase(), (vaultName ?? '').toLowerCase()];
+  for (const candidate of candidates) {
+    for (const [keyword, caps] of Object.entries(PLATFORM_CAPABILITY_MAP)) {
+      if (candidate.includes(keyword)) return caps;
+    }
   }
   return [];
 }
@@ -197,6 +206,10 @@ export function CreateSessionModal({
   const { data: vaultsData } = useVaults(orgId);
   const vaults = vaultsData?.items || [];
 
+  // Compliance status — used to lock non-entitled vault options for FREE orgs.
+  // Does NOT change any entitlement logic; backend 403 remains the final guard.
+  const { status: complianceStatus } = useComplianceStatus(orgId);
+
   const [granteeId, setGranteeId] = useState(preselectedGranteeId || '');
   const [selectedAccessType, setSelectedAccessType] = useState<'GITHUB' | 'VERCEL' | 'GODADDY' | 'VAULT' | ''>('');
   
@@ -230,9 +243,11 @@ export function CreateSessionModal({
     selectedVaultId || null,
   );
 
-  // Resolve available capabilities for the currently selected secret (after secrets are loaded)
+  // Resolve available capabilities: check secret name first, then vault name as fallback.
+  // Users often name secrets like "my-git-r" — the vault name is the reliable platform identifier.
   const selectedSecretName = secrets.find(s => s.id === selectedSecretId)?.name ?? '';
-  const availableCapabilities = getCapabilitiesForSecret(selectedSecretName);
+  const selectedVaultName = vaults.find(v => v.id === selectedVaultId)?.name ?? '';
+  const availableCapabilities = getCapabilitiesForSecret(selectedSecretName, selectedVaultName);
 
   // Fetch Integrations
   const { data: connections = [] } = useIntegrations(orgId);
@@ -470,10 +485,22 @@ export function CreateSessionModal({
               <CustomSelect
                 value={selectedVaultId}
                 onChange={handleVaultChange}
-                options={vaults.map((v) => ({
-                  value: v.id,
-                  label: v.name,
-                }))}
+                options={vaults.map((v) => {
+                  // For FREE orgs, lock vaults whose platformId is not in the 2 selected platforms.
+                  // PRO/BUSINESS: complianceStatus.plan !== 'FREE' → no locking.
+                  const isFree = complianceStatus?.plan === 'FREE';
+                  const selectedPlatforms = complianceStatus?.selectedPlatforms ?? [];
+                  const isLocked =
+                    isFree &&
+                    !!v.platformId &&
+                    !selectedPlatforms.includes(v.platformId);
+                  return {
+                    value: v.id,
+                    label: v.name,
+                    locked: isLocked,
+                    lockedReason: isLocked ? 'PRO only' : undefined,
+                  };
+                })}
                 placeholder="Select a vault…"
               />
             </div>

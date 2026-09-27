@@ -1,4 +1,4 @@
-﻿import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
+import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { PlanTier } from '@prisma/client';
 import {
@@ -6,7 +6,7 @@ import {
   isValidVaultPlatformId,
 } from './platform-catalog';
 
-// â”€â”€â”€ Plan Limits (server-side source of truth) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Plan Limits (server-side source of truth) ───────────────────────────────
 // Must stay in sync with apps/web/lib/subscription/pricing.config.ts
 const USER_LIMITS: Record<PlanTier, number> = {
   FREE: 2,
@@ -60,7 +60,7 @@ export class EntitlementService {
       case 'ACTIVE':
         return sub.plan;
       case 'CANCELLED': {
-        // Still within paid period â€” honour the plan
+        // Still within paid period — honour the plan
         const now = new Date();
         if (sub.currentPeriodEnd && sub.currentPeriodEnd > now) {
           return sub.plan;
@@ -68,7 +68,7 @@ export class EntitlementService {
         return 'FREE';
       }
       case 'PAST_DUE':
-        // Still within grace period â€” keep plan access
+        // Still within grace period — keep plan access
         return sub.plan;
       case 'FREE':
       case 'PENDING':
@@ -86,12 +86,12 @@ export class EntitlementService {
     return plan === 'PRO' || plan === 'BUSINESS';
   }
 
-  // â”€â”€â”€ Limit Checks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Limit Checks ─────────────────────────────────────────────────────────
 
   /**
    * Throws ForbiddenException if adding a new active member would exceed the plan's user limit.
    * Call this BEFORE creating an OrganizationMember or accepting an invitation.
-   * Does not affect existing RBAC â€” purely an additive subscription limit.
+   * Does not affect existing RBAC — purely an additive subscription limit.
    */
   async assertCanAddUser(organizationId: string): Promise<void> {
     const plan = await this.getEffectivePlan(organizationId);
@@ -113,15 +113,54 @@ export class EntitlementService {
   }
 
   /**
+   * Throws ForbiddenException if the org currently has MORE active members
+   * than the FREE plan allows (limit = 2). Used to enforce the downgrade-cleanup
+   * flow: when a PRO/BUSINESS subscription expires, all Vault/session/reveal
+   * operations are blocked until the owner removes excess members.
+   *
+   * Rules:
+   *  - This NEVER deletes members automatically.
+   *  - Only enforced when getEffectivePlan() returns FREE (EXPIRED/CANCELLED orgs).
+   *  - PRO/BUSINESS ACTIVE/PAST_DUE orgs are never blocked by this check.
+   *  - This is ADDITIVE — existing RBAC checks still run first.
+   *  - Call this at the start of sensitive operations (Vault create, Secret reveal,
+   *    Session create) alongside the existing assertVaultPlatformAllowed().
+   */
+  async assertNotOverUserLimit(organizationId: string): Promise<void> {
+    const plan = await this.getEffectivePlan(organizationId);
+
+    // Only FREE-equivalent plan orgs are subject to the cleanup block.
+    // Paid plans in ACTIVE / PAST_DUE states have higher limits and are exempt.
+    if (plan !== 'FREE') return;
+
+    const limit = USER_LIMITS['FREE']; // 2
+    const current = await this.prisma.organizationMember.count({
+      where: { organizationId, removedAt: null },
+    });
+
+    if (current > limit) {
+      this.logger.warn(
+        `[ENTITLEMENT] Org ${organizationId} over FREE user limit: ` +
+          `${current} active members (limit ${limit}). Blocking until cleanup.`,
+      );
+      throw new ForbiddenException(
+        `Your organization has ${current} active members but the Free plan allows only ${limit}. ` +
+          `Please remove ${current - limit} member(s) before continuing. ` +
+          `Visit Settings → Members to manage your team.`,
+      );
+    }
+  }
+
+  /**
    * Throws ForbiddenException if assigning ADMIN role would exceed the plan's admin limit.
    * Call this BEFORE changing a member's role to ADMIN.
-   * Does not affect existing RBAC â€” purely an additive subscription limit.
+   * Does not affect existing RBAC — purely an additive subscription limit.
    */
   async assertCanAddAdmin(organizationId: string): Promise<void> {
     const plan = await this.getEffectivePlan(organizationId);
     const limit = ADMIN_LIMITS[plan];
 
-    if (limit === null) return; // BUSINESS â€” unlimited admins
+    if (limit === null) return; // BUSINESS — unlimited admins
 
     const currentAdmins = await this.prisma.organizationMember.count({
       where: {
@@ -145,13 +184,13 @@ export class EntitlementService {
   /**
    * Throws ForbiddenException if connecting a new platform would exceed the plan's platform limit.
    * Call this BEFORE creating an IntegrationConnection.
-   * Does not affect existing RBAC â€” purely an additive subscription limit.
+   * Does not affect existing RBAC — purely an additive subscription limit.
    */
   async assertCanConnectPlatform(organizationId: string): Promise<void> {
     const plan = await this.getEffectivePlan(organizationId);
     const limit = PLATFORM_LIMITS[plan];
 
-    if (limit === null) return; // PRO/BUSINESS â€” unlimited platforms
+    if (limit === null) return; // PRO/BUSINESS — unlimited platforms
 
     const current = await this.prisma.integrationConnection.count({
       where: { organizationId, deletedAt: null },
@@ -168,7 +207,7 @@ export class EntitlementService {
     }
   }
 
-  // â”€â”€â”€ Vault Platform Entitlement â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Vault Platform Entitlement ──────────────────────────────────────────
 
   /**
    * Asserts the org is entitled to use the given Vault platform.
@@ -178,7 +217,7 @@ export class EntitlementService {
    *  - FREE: platformId must be non-null, must be in the 11-catalog, org must be
    *    COMPLIANT, and the platform must be in selectedPlatforms.
    *
-   * Authorization uses trusted DB state only â€” never client-supplied platform values.
+   * Authorization uses trusted DB state only — never client-supplied platform values.
    * Call this BEFORE creating a Vault, a Session, or performing a Secret reveal.
    */
   async assertVaultPlatformAllowed(
@@ -214,7 +253,7 @@ export class EntitlementService {
 
     if (!sub || sub.complianceState !== 'COMPLIANT') {
       this.logger.warn(
-        `[ENTITLEMENT] Org ${organizationId} (FREE): compliance state is ${sub?.complianceState ?? 'MISSING'} â€” blocking Vault operation`,
+        `[ENTITLEMENT] Org ${organizationId} (FREE): compliance state is ${sub?.complianceState ?? 'MISSING'} — blocking Vault operation`,
       );
       throw new ForbiddenException('SUBSCRIPTION_COMPLIANCE_REQUIRED');
     }
@@ -227,7 +266,7 @@ export class EntitlementService {
     }
   }
 
-  // â”€â”€â”€ OTP Entitlement â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── OTP Entitlement ─────────────────────────────────────────────────────
 
   /**
    * Asserts the org is entitled to use the OTP retrieval feature.
@@ -247,7 +286,7 @@ export class EntitlementService {
     }
   }
 
-  // â”€â”€â”€ Compliance State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Compliance State ────────────────────────────────────────────────────
 
   /**
    * Returns the current compliance status for the org.
@@ -258,23 +297,40 @@ export class EntitlementService {
     selectedPlatforms: string[];
     selectionLockedUntil: Date | null;
     plan: PlanTier;
+    activeUserCount: number;
+    userLimit: number;
   }> {
     const plan = await this.getEffectivePlan(organizationId);
 
-    const sub = await this.prisma.subscription.findUnique({
-      where: { organizationId },
-      select: {
-        complianceState: true,
-        selectedPlatforms: true,
-        selectionLockedUntil: true,
-      },
-    });
+    const [sub, activeUserCount] = await Promise.all([
+      this.prisma.subscription.findUnique({
+        where: { organizationId },
+        select: {
+          complianceState: true,
+          selectedPlatforms: true,
+          selectionLockedUntil: true,
+        },
+      }),
+      this.prisma.organizationMember.count({
+        where: { organizationId, removedAt: null },
+      }),
+    ]);
+
+    // USER_LIMITS is module-scoped const; replicate the relevant value here.
+    const USER_LIMIT_MAP: Record<PlanTier, number> = {
+      FREE: 2,
+      PRO: 5,
+      BUSINESS: 15,
+    };
+    const userLimit = USER_LIMIT_MAP[plan];
 
     return {
       complianceState: sub?.complianceState ?? 'PLATFORM_SELECTION_REQUIRED',
       selectedPlatforms: sub?.selectedPlatforms ?? [],
       selectionLockedUntil: sub?.selectionLockedUntil ?? null,
       plan,
+      activeUserCount,
+      userLimit,
     };
   }
 
@@ -288,7 +344,7 @@ export class EntitlementService {
     organizationId: string,
     platforms: string[],
   ): Promise<void> {
-    // Server-side validation â€” never trust client
+    // Server-side validation — never trust client
     if (platforms.length !== 2) {
       throw new ForbiddenException(
         'Exactly 2 platforms must be selected for the Free plan.',
@@ -310,9 +366,17 @@ export class EntitlementService {
 
     const lockedUntil = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000); // 15 days
 
-    await this.prisma.subscription.update({
+    await this.prisma.subscription.upsert({
       where: { organizationId },
-      data: {
+      create: {
+        organizationId,
+        plan: 'FREE',
+        status: 'FREE',
+        selectedPlatforms: platforms,
+        selectionLockedUntil: lockedUntil,
+        complianceState: 'COMPLIANT',
+      },
+      update: {
         selectedPlatforms: platforms,
         selectionLockedUntil: lockedUntil,
         complianceState: 'COMPLIANT',

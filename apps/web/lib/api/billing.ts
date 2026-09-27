@@ -1,6 +1,6 @@
-﻿import { apiClient } from './client';
+import { apiClient } from './client';
 
-// â”€â”€â”€ Types (mirroring backend Prisma enums) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Types (mirroring backend Prisma enums) ───────────────────────────────────
 
 export type PlanTier = 'FREE' | 'PRO' | 'BUSINESS';
 export type BillingCycle = 'MONTHLY' | 'ANNUAL';
@@ -55,6 +55,10 @@ export interface ComplianceStatusResponse {
   selectedPlatforms: string[];
   selectionLockedUntil: string | null;
   plan: PlanTier;
+  /** Number of currently active (non-removed) members in the org. */
+  activeUserCount: number;
+  /** Maximum members allowed by the effective plan (2 / 5 / 15). */
+  userLimit: number;
 }
 
 export interface InitiatePaymentResponse {
@@ -62,7 +66,7 @@ export interface InitiatePaymentResponse {
   orderId: string;
 }
 
-// â”€â”€â”€ API Client Functions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── API Client Functions ─────────────────────────────────────────────────────
 
 export const billingApi = {
   /**
@@ -98,7 +102,7 @@ export const billingApi = {
   /**
    * Initiate a payment session. Returns a HDFC payment link.
    * The frontend redirects the customer to this link.
-   * Amount is calculated server-side â€” client only sends plan and billing cycle.
+   * Amount is calculated server-side — client only sends plan and billing cycle.
    */
   initiatePayment: async (
     orgId: string,

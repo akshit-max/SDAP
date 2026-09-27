@@ -185,7 +185,18 @@ async function handleMessage(
                     if (config && config.id === provider) return true;
                   }
 
-                  // ── Path 2: resourceName text-match (existing logic for all other sessions) ──
+                  // ── Path 1b: Vault platformId authoritative match ──────────────────────
+                  // platformId is the stored Vault platform identity (GITHUB, VERCEL, etc.).
+                  // Distinct from integrationProvider — used for plain Vault credential sessions.
+                  // Introduced alongside the Credential Name UI change so the extension no
+                  // longer relies on the user typing the website name in the Secret name field.
+                  const vaultPlatformId = (s as any).platformId as string | undefined;
+                  if (vaultPlatformId) {
+                    const config = platformRegistry.getForHost(hostname);
+                    if (config && config.id === vaultPlatformId) return true;
+                  }
+
+                  // ── Path 2: resourceName text-match (existing fallback, unchanged) ──────
                   const name = (s as any).resourceName?.toLowerCase() || '';
                   if (!name) return false;
 

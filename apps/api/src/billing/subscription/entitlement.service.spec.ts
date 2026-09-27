@@ -319,4 +319,155 @@ describe('EntitlementService', () => {
       ).resolves.not.toThrow();
     });
   });
+
+  // ── assertNotOverUserLimit — downgrade cleanup enforcement ────────────────
+
+  describe('assertNotOverUserLimit()', () => {
+    describe('FREE plan (limit = 2) — ACTIVE', () => {
+      beforeEach(() => {
+        mockPrisma.subscription.findUnique.mockResolvedValue({
+          plan: 'FREE',
+          status: 'FREE',
+          currentPeriodEnd: null,
+        });
+      });
+
+      it('allows org with exactly 2 members (at limit)', async () => {
+        mockPrisma.organizationMember.count.mockResolvedValue(2);
+        await expect(
+          service.assertNotOverUserLimit('org-1'),
+        ).resolves.not.toThrow();
+      });
+
+      it('allows org with 1 member (under limit)', async () => {
+        mockPrisma.organizationMember.count.mockResolvedValue(1);
+        await expect(
+          service.assertNotOverUserLimit('org-1'),
+        ).resolves.not.toThrow();
+      });
+
+      it('blocks org with 3 members (over limit after downgrade)', async () => {
+        mockPrisma.organizationMember.count.mockResolvedValue(3);
+        await expect(service.assertNotOverUserLimit('org-1')).rejects.toThrow(
+          ForbiddenException,
+        );
+        await expect(service.assertNotOverUserLimit('org-1')).rejects.toThrow(
+          '3 active members',
+        );
+      });
+
+      it('blocks org with 10 members (PRO→FREE downgrade scenario)', async () => {
+        mockPrisma.organizationMember.count.mockResolvedValue(10);
+        await expect(service.assertNotOverUserLimit('org-1')).rejects.toThrow(
+          ForbiddenException,
+        );
+        await expect(service.assertNotOverUserLimit('org-1')).rejects.toThrow(
+          'Please remove 8 member(s)',
+        );
+      });
+    });
+
+    describe('EXPIRED plan (effective FREE — over-limit after downgrade)', () => {
+      beforeEach(() => {
+        mockPrisma.subscription.findUnique.mockResolvedValue({
+          plan: 'PRO',
+          status: 'EXPIRED',
+          currentPeriodEnd: null,
+        });
+      });
+
+      it('blocks org with 5 members that was PRO (now EXPIRED→FREE)', async () => {
+        mockPrisma.organizationMember.count.mockResolvedValue(5);
+        await expect(service.assertNotOverUserLimit('org-1')).rejects.toThrow(
+          ForbiddenException,
+        );
+      });
+
+      it('allows EXPIRED org with exactly 2 members (under FREE limit)', async () => {
+        mockPrisma.organizationMember.count.mockResolvedValue(2);
+        await expect(
+          service.assertNotOverUserLimit('org-1'),
+        ).resolves.not.toThrow();
+      });
+    });
+
+    describe('PRO plan — ACTIVE (exempt from over-limit check)', () => {
+      beforeEach(() => {
+        mockPrisma.subscription.findUnique.mockResolvedValue({
+          plan: 'PRO',
+          status: 'ACTIVE',
+          currentPeriodEnd: new Date(Date.now() + 86400000),
+        });
+      });
+
+      it('never blocks PRO ACTIVE orgs regardless of member count', async () => {
+        // PRO allows 5 — even passing count=5 should not block
+        mockPrisma.organizationMember.count.mockResolvedValue(5);
+        await expect(
+          service.assertNotOverUserLimit('org-1'),
+        ).resolves.not.toThrow();
+      });
+    });
+
+    describe('BUSINESS plan — ACTIVE (exempt from over-limit check)', () => {
+      beforeEach(() => {
+        mockPrisma.subscription.findUnique.mockResolvedValue({
+          plan: 'BUSINESS',
+          status: 'ACTIVE',
+          currentPeriodEnd: new Date(Date.now() + 86400000),
+        });
+      });
+
+      it('never blocks BUSINESS ACTIVE orgs regardless of member count', async () => {
+        mockPrisma.organizationMember.count.mockResolvedValue(15);
+        await expect(
+          service.assertNotOverUserLimit('org-1'),
+        ).resolves.not.toThrow();
+      });
+    });
+  });
+
+  // ── assertCanUseOtp ───────────────────────────────────────────────────────
+
+  describe('assertCanUseOtp()', () => {
+    it('allows PRO plan to use OTP', async () => {
+      mockPrisma.subscription.findUnique.mockResolvedValue({
+        plan: 'PRO',
+        status: 'ACTIVE',
+        currentPeriodEnd: new Date(Date.now() + 86400000),
+      });
+      await expect(service.assertCanUseOtp('org-1')).resolves.not.toThrow();
+    });
+
+    it('allows BUSINESS plan to use OTP', async () => {
+      mockPrisma.subscription.findUnique.mockResolvedValue({
+        plan: 'BUSINESS',
+        status: 'ACTIVE',
+        currentPeriodEnd: new Date(Date.now() + 86400000),
+      });
+      await expect(service.assertCanUseOtp('org-1')).resolves.not.toThrow();
+    });
+
+    it('blocks FREE plan from using OTP', async () => {
+      mockPrisma.subscription.findUnique.mockResolvedValue({
+        plan: 'FREE',
+        status: 'FREE',
+        currentPeriodEnd: null,
+      });
+      await expect(service.assertCanUseOtp('org-1')).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it('blocks EXPIRED plan from using OTP (effective FREE)', async () => {
+      mockPrisma.subscription.findUnique.mockResolvedValue({
+        plan: 'PRO',
+        status: 'EXPIRED',
+        currentPeriodEnd: null,
+      });
+      await expect(service.assertCanUseOtp('org-1')).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+  });
 });

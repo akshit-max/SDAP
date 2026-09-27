@@ -152,6 +152,12 @@ export class SubscriptionService {
   /**
    * Expire subscription — called when grace period exhausted or mandate revoked.
    * Resets to FREE-equivalent state.
+   *
+   * IMPORTANT: complianceState is reset to PLATFORM_SELECTION_REQUIRED so that
+   * a downgraded org must re-confirm their 2 allowed platforms before accessing
+   * Vault features again. selectedPlatforms is cleared so no stale paid-plan
+   * platforms remain accessible. The 15-day lock is also cleared so re-selection
+   * can begin immediately. This closes the downgrade compliance-reset gap.
    */
   async expire(organizationId: string): Promise<Subscription> {
     return this.prisma.subscription.update({
@@ -161,6 +167,12 @@ export class SubscriptionService {
         hdfcMandateId: null, // Mandate has been revoked
         currentPeriodEnd: null,
         graceUntil: null,
+        // ── Downgrade compliance reset ─────────────────────────────────────
+        // Reset platform selection so FREE restrictions re-apply correctly.
+        // Owner must re-select exactly 2 platforms before Vault access resumes.
+        complianceState: 'PLATFORM_SELECTION_REQUIRED',
+        selectedPlatforms: [],
+        selectionLockedUntil: null,
       },
     });
   }

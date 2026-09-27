@@ -81,6 +81,18 @@ export class BillingController {
   }
 
   /**
+   * POST /organizations/:orgId/billing/dev/force-expire
+   * DEV/UAT ONLY: Immediately expires a paid or cancelled subscription.
+   * This is used to test the FREE downgrade and compliance popup flows
+   * without waiting for the actual billing cycle to end.
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('organizations/:orgId/billing/dev/force-expire')
+  async forceExpireSubscription(@Param('orgId') orgId: string) {
+    return this.billingService.forceExpireSubscription(orgId);
+  }
+
+  /**
    * GET /organizations/:orgId/billing/compliance
    * Returns the current complianceState, selectedPlatforms, and plan.
    * Called by the frontend ComplianceGate on every authenticated page load.

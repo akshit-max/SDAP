@@ -5,6 +5,7 @@ import {
   Logger,
   NotFoundException,
   InternalServerErrorException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -503,6 +504,39 @@ export class BillingService {
 
     this.logger.log(
       `[CANCEL] Org ${organizationId} subscription cancelled — active until ${sub.currentPeriodEnd?.toISOString()}`,
+    );
+    return updated;
+  }
+
+  // ─── 6b. Force Expire (Dev/UAT only) ────────────────────────────────────────
+
+  async forceExpireSubscription(organizationId: string): Promise<Subscription> {
+    if (process.env.NODE_ENV === 'production') {
+      throw new ForbiddenException(
+        'Force expire is disabled in production environments',
+      );
+    }
+
+    const sub = await this.subscriptions.findByOrgId(organizationId);
+    if (!sub || sub.status === 'FREE' || sub.status === 'EXPIRED') {
+      throw new NotFoundException(
+        'No active or cancelled subscription to expire',
+      );
+    }
+
+    const updated = await this.subscriptions.expire(organizationId);
+
+    this.eventEmitter.emit('audit.log', {
+      organizationId,
+      actorId: null,
+      action: 'billing.subscription_expired',
+      resourceType: 'SUBSCRIPTION',
+      resourceId: sub.id,
+      metadata: { reason: 'Dev-forced expiration' },
+    });
+
+    this.logger.log(
+      `[DEV EXPIRE] Org ${organizationId} subscription forcefully expired for testing.`,
     );
     return updated;
   }

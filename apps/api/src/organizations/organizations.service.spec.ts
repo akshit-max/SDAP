@@ -37,6 +37,9 @@ describe('OrganizationsService', () => {
     user: {
       findUniqueOrThrow: jest.fn(),
     },
+    subscription: {
+      create: jest.fn().mockResolvedValue({}),
+    },
     $transaction: jest.fn((fn) => fn(mockPrismaService)),
   };
 
