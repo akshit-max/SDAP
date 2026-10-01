@@ -28,9 +28,12 @@ import {
   ShieldOff,
   Link,
   Link2Off,
+  Lock,
+  Download,
 } from 'lucide-react';
 import { AuditEventDto } from '@repo/types';
 import { useAuth } from '../../lib/auth/AuthContext';
+import { auditApi } from '../../lib/api/audit';
 
 // ─── Human-readable action config ───────────────────────────────────────────
 
@@ -220,10 +223,11 @@ export default function AuditPage() {
   const [endDate, setEndDate] = useState('');
   const [page, setPage] = useState(1);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const { data: membersData = [] } = useOrgMembers(orgId);
 
-  const { data, isLoading } = useAuditEvents(orgId, {
+  const { data, isLoading, isError } = useAuditEvents(orgId, {
     action: actionFilter || undefined,
     actorId: actorFilter || undefined,
     startDate: startDate || undefined,
@@ -231,6 +235,40 @@ export default function AuditPage() {
     page: String(page),
     limit: '10',
   });
+
+  // Plan is returned by the backend alongside audit data — no second API call needed.
+  const plan = (data as any)?.plan ?? null;
+  const isFree = plan === 'FREE';
+  const isBusiness = plan === 'BUSINESS';
+
+  // Calculate the minimum allowed date (7 days ago) for Free plan to restrict UI date picker
+  const minAllowedDate = isFree
+    ? new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    : undefined;
+
+  const handleExport = async () => {
+    if (!orgId) return;
+    setIsExporting(true);
+    try {
+      const blob = await auditApi.exportAuditCsv(orgId, {
+        action: actionFilter || undefined,
+        actorId: actorFilter || undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `withus-audit-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      // Backend returns 403 for non-Business — UI already hides the button,
+      // but this guard prevents any edge-case error from being unhandled.
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const handleFilterChange = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setter(e.target.value);
@@ -253,12 +291,40 @@ export default function AuditPage() {
     <DashboardShell>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="pb-2 border-b border-premium">
-          <h1 className="text-lg font-bold tracking-tight text-premium-main">Audit Log</h1>
-          <p className="text-xs text-premium-muted mt-0.5">
-            Security and operational events across <span className="font-semibold">{organization?.name}</span>.
-          </p>
+        <div className="pb-2 border-b border-premium flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-lg font-bold tracking-tight text-premium-main">Audit Log</h1>
+            <p className="text-xs text-premium-muted mt-0.5">
+              Security and operational events across <span className="font-semibold">{organization?.name}</span>.
+            </p>
+          </div>
+          {/* BUSINESS: Export CSV button */}
+          {isBusiness && (
+            <button
+              onClick={handleExport}
+              disabled={isExporting}
+              className="premium-button-secondary flex items-center gap-1.5 py-1.5 px-3 text-xs flex-shrink-0"
+            >
+              <Download className="w-3.5 h-3.5" />
+              {isExporting ? 'Exporting…' : 'Export CSV'}
+            </button>
+          )}
         </div>
+
+        {/* FREE: 7-day history restriction banner */}
+        {isFree && (
+          <div className="flex items-start gap-3 px-4 py-3 rounded-xl border border-amber-200/70 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-950/20">
+            <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-bold text-amber-800 dark:text-amber-300">Recent Events Only — Free Plan</p>
+              <p className="text-[11px] text-amber-700/80 dark:text-amber-400/80 mt-0.5">
+                Your plan shows the last 7 days of audit history.
+                {' '}<a href="/pricing" className="underline font-semibold hover:text-amber-900 dark:hover:text-amber-200 transition-colors">Upgrade to Pro or Business</a>
+                {' '}for full history and CSV export.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="premium-card p-4 shadow-none space-y-3">
@@ -305,6 +371,7 @@ export default function AuditPage() {
                 value={startDate}
                 onChange={handleFilterChange(setStartDate)}
                 max={endDate || undefined}
+                min={minAllowedDate}
               />
             </div>
 
@@ -350,7 +417,17 @@ export default function AuditPage() {
                       Loading events...
                     </td>
                   </tr>
-                ) : data?.data?.length === 0 ? (
+                ) : isError ? (
+                  <tr>
+                    <td colSpan={5} className="px-5 py-12 text-center">
+                      <ShieldOff className="w-8 h-8 mx-auto mb-3 text-red-300 dark:text-red-900/50" />
+                      <p className="text-sm font-semibold text-red-500 dark:text-red-400">Failed to load audit events</p>
+                      <p className="text-xs text-red-400/80 mt-1 font-semibold">
+                        Please try refreshing the page.
+                      </p>
+                    </td>
+                  </tr>
+                ) : !data?.data?.length ? (
                   <tr>
                     <td colSpan={5} className="px-5 py-12 text-center">
                       <Shield className="w-8 h-8 mx-auto mb-3 text-slate-200 dark:text-slate-700" />
@@ -361,7 +438,7 @@ export default function AuditPage() {
                     </td>
                   </tr>
                 ) : (
-                  data?.data?.map((event: AuditEventDto) => {
+                  data.data.map((event: AuditEventDto) => {
                     const cfg = getActionConfig(event.action);
                     const actorName = (event.actor as any)?.fullName || (event.actor as any)?.email || 'System';
                     const actorEmail = (event.actor as any)?.fullName ? (event.actor as any)?.email : null;

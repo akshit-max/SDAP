@@ -167,8 +167,8 @@ export default function ComplianceGate() {
       prev.includes(pid)
         ? prev.filter((p: VaultPlatformId) => p !== pid)
         : prev.length < 2
-        ? [...prev, pid]
-        : prev
+          ? [...prev, pid]
+          : prev
     );
     setError(null);
   };
@@ -247,8 +247,8 @@ export default function ComplianceGate() {
                   isSelected
                     ? "border-2 border-slate-900 dark:border-slate-100 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950 shadow-sm"
                     : isDisabled
-                    ? "opacity-40 cursor-not-allowed border border-slate-200 dark:border-zinc-800/60 bg-slate-50 dark:bg-zinc-900/20 text-slate-400 dark:text-zinc-600"
-                    : "border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-900"
+                      ? "opacity-40 cursor-not-allowed border border-slate-200 dark:border-zinc-800/60 bg-slate-50 dark:bg-zinc-900/20 text-slate-400 dark:text-zinc-600"
+                      : "border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-900"
                 )}
               >
                 {isSelected && <Check className="w-3.5 h-3.5 flex-shrink-0" />}

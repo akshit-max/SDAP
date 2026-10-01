@@ -19,9 +19,14 @@ import {
   ArrowUpDown,
   Clock,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Lock,
+  Check,
+  Crown,
 } from 'lucide-react';
+import { useOrgSubscription } from '../../hooks/useBilling';
 import { PresenceRecord } from '../../lib/api/presence';
+import { Modal } from '../../components/common/Modal';
 
 // Presence is considered active within this window (mirrors backend: 90 seconds)
 const ACTIVE_WINDOW_MS = 90_000;
@@ -52,6 +57,10 @@ export default function ActivityPage() {
   const orgId = organization?.id ?? null;
   const isAdmin =
     hasPermission(organization?.role, 'PRESENCE_READ');
+
+  // Plan-based gate: Activity monitoring is PRO+ only
+  const { subscription } = useOrgSubscription(orgId);
+  const isFree = !subscription || subscription.plan === 'FREE';
 
   // ─── Real-time tick ─────────────────────────────────────────────────────────
   const [now, setNow] = useState(Date.now());
@@ -274,6 +283,74 @@ export default function ActivityPage() {
             <p className="text-xs text-premium-muted mt-0.5">Monitor delegated platform activity in near-real-time.</p>
           </div>
         </div>
+
+        {/* FREE plan gate: Activity monitoring is PRO+ only */}
+        {isFree ? (
+          <Modal 
+            isOpen={true} 
+            onClose={() => router.push('/dashboard')} 
+            title="Feature Locked"
+            maxWidth="max-w-md"
+          >
+            <div className="space-y-5">
+              {/* Icon & Description */}
+              <div className="flex flex-col items-center justify-center text-center pt-2">
+                <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-900/50 flex items-center justify-center mb-4 shadow-sm">
+                  <Lock className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                </div>
+                <h3 className="text-base font-bold text-premium-main tracking-tight">
+                  Activity Monitoring
+                </h3>
+                <p className="text-xs text-premium-muted mt-2 max-w-sm leading-relaxed">
+                  Real-time platform activity monitoring is available on <span className="font-semibold text-premium-main">Pro</span> and <span className="font-semibold text-premium-main">Business</span> plans. Upgrade to monitor your team's live platform usage.
+                </p>
+              </div>
+
+              {/* Feature Highlights Card */}
+              <div className="bg-premium-surface border border-premium p-3.5 space-y-2.5">
+                <p className="text-[11px] font-bold text-premium-muted uppercase tracking-wider">Included in Pro & Business:</p>
+                <div className="space-y-2 text-xs text-premium-main font-medium">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-4 h-4 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 border border-emerald-200/60 dark:border-emerald-900/50">
+                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                    </span>
+                    <span>Real-time member presence & activity status</span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-4 h-4 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 border border-emerald-200/60 dark:border-emerald-900/50">
+                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                    </span>
+                    <span>Platform-specific connection tracking</span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-4 h-4 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 border border-emerald-200/60 dark:border-emerald-900/50">
+                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                    </span>
+                    <span>Live status updates & activity filtering</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-premium">
+                <button 
+                  onClick={() => router.push('/dashboard')} 
+                  className="premium-button-secondary text-xs px-4 py-2"
+                >
+                  Go Back
+                </button>
+                <button 
+                  onClick={() => router.push('/pricing')} 
+                  className="premium-button-primary text-xs px-4 py-2 flex items-center gap-1.5"
+                >
+                  <Crown className="w-3.5 h-3.5" />
+                  Upgrade Plan
+                </button>
+              </div>
+            </div>
+          </Modal>
+        ) : (
+          <>
 
         {/* ─── Metric Stats (Consistent with Dashboard Cards) ─────────── */}
         {!isLoading && (
@@ -612,6 +689,9 @@ export default function ActivityPage() {
           </p>
 
         </div>
+
+          </>
+        )}
 
       </div>
     </DashboardShell>
