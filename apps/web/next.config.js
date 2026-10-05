@@ -24,7 +24,9 @@ const CSP = [
   // API + Sentry + WebSocket (dev HMR)
   isDev
     ? "connect-src 'self' http://localhost:4000 ws://localhost:3000 https://sentry.io https://*.sentry.io"
-    : `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL ? new URL(process.env.NEXT_PUBLIC_API_URL.startsWith('http') ? process.env.NEXT_PUBLIC_API_URL : `https://${process.env.NEXT_PUBLIC_API_URL}`).origin : 'https://withus-yy5i.onrender.com'} https://sentry.io https://*.sentry.io`,
+    // Note: Replaced old backend (withus-yy5i.onrender.com) with new backend (sdap.onrender.com) per user request
+    // : `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL ? new URL(process.env.NEXT_PUBLIC_API_URL.startsWith('http') ? process.env.NEXT_PUBLIC_API_URL : `https://${process.env.NEXT_PUBLIC_API_URL}`).origin : 'https://withus-yy5i.onrender.com'} https://sentry.io https://*.sentry.io`,
+    : `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL ? new URL(process.env.NEXT_PUBLIC_API_URL.startsWith('http') ? process.env.NEXT_PUBLIC_API_URL : `https://${process.env.NEXT_PUBLIC_API_URL}`).origin : 'https://sdap.onrender.com'} https://sentry.io https://*.sentry.io`,
   // No iframes
   "frame-src 'none'",
   // No plugins
@@ -106,7 +108,9 @@ const nextConfig = {
   async rewrites() {
     // Proxy requests through Next.js so cookies become 1st-party.
     // This bypasses Safari/Chrome strict 3rd-party cookie blocking!
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://withus-yy5i.onrender.com/api/v1';
+    // Note: Replaced old backend (withus-yy5i.onrender.com) with new backend (sdap.onrender.com) per user request
+    // const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://withus-yy5i.onrender.com/api/v1';
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://sdap.onrender.com/api/v1';
     return [
       {
         source: '/api/v1/:path*',
