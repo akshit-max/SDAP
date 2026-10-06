@@ -12,11 +12,16 @@ import type { SubscriptionStatusResponse, PlanTier, BillingCycle } from '../lib/
  */
 export function useOrgSubscription(orgId: string | null) {
   const [subscription, setSubscription] = useState<SubscriptionStatusResponse | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false); // true only after first real fetch with an orgId
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    if (!orgId) return;
+    if (!orgId) {
+      // No orgId yet — stay in loading state; don't mark as initialized
+      setLoading(true);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -27,12 +32,13 @@ export function useOrgSubscription(orgId: string | null) {
       setError((err as Error).message ?? 'Failed to load subscription');
     } finally {
       setLoading(false);
+      setInitialized(true);
     }
   }, [orgId]);
 
   useEffect(() => { void refresh(); }, [refresh]);
 
-  return { subscription, loading, error, refresh };
+  return { subscription, loading, initialized, error, refresh };
 }
 
 /**

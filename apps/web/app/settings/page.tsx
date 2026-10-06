@@ -160,7 +160,7 @@ export default function SettingsPage() {
             </div>
 
             {/* ── Workspace Section ── */}
-            {canUpdateOrg && (
+            {canUpdateOrg ? (
             <div className={sectionClass}>
               <div className={headerClass}>
                 <h2 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
@@ -193,6 +193,29 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </form>
+            </div>
+            ) : (
+            // Read-only Workspace section for non-Owner members.
+            // Matches the same visual design as the Owner's editable version
+            // but all inputs are read-only and no Save button is shown.
+            <div className={sectionClass}>
+              <div className={headerClass}>
+                <h2 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-slate-400" /> Workspace
+                </h2>
+              </div>
+              <div className="p-6 space-y-5">
+                <div>
+                  <label className={labelClass}>Workspace Name</label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={organization?.name || ''}
+                    className="w-full px-3.5 py-2 bg-slate-50/50 dark:bg-zinc-900/50 border border-premium rounded-lg text-premium-muted text-xs cursor-not-allowed"
+                  />
+                </div>
+
+              </div>
             </div>
             )}
           </div>

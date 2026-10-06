@@ -52,15 +52,18 @@ interface GroupedMember {
 }
 
 export default function ActivityPage() {
-  const { organization } = useAuth();
+  const { organization, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
   const orgId = organization?.id ?? null;
   const isAdmin =
     hasPermission(organization?.role, 'PRESENCE_READ');
 
   // Plan-based gate: Activity monitoring is PRO+ only
-  const { subscription } = useOrgSubscription(orgId);
-  const isFree = !subscription || subscription.plan === 'FREE';
+  const { subscription, loading: isSubLoading, initialized: isSubInitialized } = useOrgSubscription(orgId);
+  // Guard: treat as "not free" until BOTH auth AND subscription have fully settled.
+  // `initialized` is only true after at least one real fetch completed with a real orgId,
+  // which eliminates the race window between auth hydration and the billing fetch starting.
+  const isFree = !isAuthLoading && isSubInitialized && (!subscription || subscription.plan === 'FREE');
 
   // ─── Real-time tick ─────────────────────────────────────────────────────────
   const [now, setNow] = useState(Date.now());

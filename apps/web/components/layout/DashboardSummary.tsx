@@ -77,8 +77,7 @@ export function DashboardSummary() {
             href="/vaults"
             className="premium-button-primary text-xs"
           >
-            <Plus className="w-3.5 h-3.5 mr-1.5" />
-            New Vault
+            Vault
           </Link>
         </div>
       </div>

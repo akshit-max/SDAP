@@ -80,7 +80,7 @@ function PlanBadge({ plan, currentPlan }: { plan: PlanTier; currentPlan: PlanTie
 // ─── Main Pricing Page Component ──────────────────────────────────────────────
 
 export default function PricingPage() {
-  const { organization } = useAuth();
+  const { organization, isLoading: isAuthLoading } = useAuth();
   const orgId = organization?.id ?? '';
   const { data: membersData } = useOrgMembers(orgId);
 
@@ -94,7 +94,7 @@ export default function PricingPage() {
     ? membersData.filter((m: any) => !m.removedAt).length
     : 1;
 
-  const { subscription, loading: subLoading, refresh: refreshSub } = useOrgSubscription(orgId);
+  const { subscription, loading: subLoading, initialized: subInitialized, refresh: refreshSub } = useOrgSubscription(orgId);
   const { initiate, initiating } = useInitiatePayment(orgId);
   const { cancel, cancelling } = useCancelSubscription(orgId);
 
@@ -269,6 +269,16 @@ export default function PricingPage() {
       highlighted: false,
     },
   ];
+
+  if (isAuthLoading || !subInitialized) {
+    return (
+      <DashboardShell>
+        <div className="flex h-[50vh] items-center justify-center">
+          <Loader2 className="w-8 h-8 text-premium-muted animate-spin" />
+        </div>
+      </DashboardShell>
+    );
+  }
 
   return (
     <DashboardShell>

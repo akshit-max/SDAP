@@ -57,6 +57,57 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [navSearch, setNavSearch] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(false);
 
+  // ── Inactivity Auto-Logout ───────────────────────────────────────────────────
+  // Single stable interval + refs — effect runs ONCE, no stale closures.
+  // 10 min total idle → logout. Last 1 min shows the countdown warning modal.
+  const INACTIVITY_MS = 10 * 60 * 1000;  // 10 minutes total
+  const WARNING_MS    =  1 * 60 * 1000;  //  1 minute warning before logout
+  const [showIdleWarning, setShowIdleWarning] = useState(false);
+  const [idleCountdown, setIdleCountdown] = useState(60);
+  const lastActivityRef = React.useRef<number>(Date.now());
+  const warningShownRef = React.useRef<boolean>(false);
+  const handleLogoutRef = React.useRef<() => void>(() => {});
+
+  // Keep handleLogoutRef always pointing at the latest handleLogout
+  useEffect(() => { handleLogoutRef.current = handleLogout; });
+
+  // Single stable interval — runs ONCE on mount only (empty deps).
+  useEffect(() => {
+    const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'] as const;
+    const onActivity = () => {
+      if (!warningShownRef.current) {
+        lastActivityRef.current = Date.now();
+      }
+    };
+    events.forEach(e => window.addEventListener(e, onActivity, { passive: true }));
+
+    const tick = setInterval(() => {
+      const idleMs = Date.now() - lastActivityRef.current;
+
+      if (!warningShownRef.current && idleMs >= INACTIVITY_MS - WARNING_MS) {
+        warningShownRef.current = true;
+        setShowIdleWarning(true);
+        setIdleCountdown(Math.ceil(WARNING_MS / 1000));
+      }
+
+      if (warningShownRef.current) {
+        const remaining = Math.ceil((INACTIVITY_MS - idleMs) / 1000);
+        if (remaining <= 0) {
+          clearInterval(tick);
+          handleLogoutRef.current();
+          return;
+        }
+        setIdleCountdown(remaining);
+      }
+    }, 1000);
+
+    return () => {
+      clearInterval(tick);
+      events.forEach(e => window.removeEventListener(e, onActivity));
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     setMounted(true);
     const saved = localStorage.getItem('sidebar_collapsed');
@@ -125,7 +176,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       items: [
         { name: 'Team', href: '/settings/members', icon: Users, permission: null },
         { name: 'Permission Matrix', href: '/permissions', icon: Shield, permission: null },
-        { name: 'Billing', href: '/pricing', icon: CreditCard, permission: null },
+        { name: 'Billing', href: '/pricing', icon: CreditCard, permission: 'ORGANIZATION_UPDATE' },
         { name: 'Settings', href: '/settings', icon: Settings, permission: null },
       ],
     },
@@ -346,6 +397,42 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 className="px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded transition-colors"
               >
                 Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Inactivity Warning Modal ─────────────────────────────────────────── */}
+      {showIdleWarning && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center">
+            <div className="w-14 h-14 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl font-extrabold text-amber-500">{idleCountdown}</span>
+            </div>
+            <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 mb-2">Still there?</h2>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-6">
+              You&apos;ve been inactive. For your security, you&apos;ll be logged out in{' '}
+              <span className="font-bold text-amber-500">{idleCountdown} second{idleCountdown !== 1 ? 's' : ''}</span>.
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => {
+                  console.log('[IdleTimer] 🟢 User clicked Stay Logged In — resetting timer');
+                  lastActivityRef.current = Date.now();
+                  warningShownRef.current = false;
+                  setShowIdleWarning(false);
+                  setIdleCountdown(Math.ceil(WARNING_MS / 1000));
+                }}
+                className="px-5 py-2 text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+              >
+                Stay Logged In
+              </button>
+              <button
+                onClick={() => { setShowIdleWarning(false); handleLogout(); }}
+                className="px-5 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition-colors"
+              >
+                Log Out Now
               </button>
             </div>
           </div>

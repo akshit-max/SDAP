@@ -813,7 +813,7 @@ export default function PublicWithusPage() {
                 <div
                   className="px-4 py-1.5 rounded-lg bg-white text-neutral-950 text-xs font-bold shadow-xs flex items-center gap-1.5 select-none"
                 >
-                  <span>+ New Vault</span>
+                  <span>Vault</span>
                 </div>
               </div>
             </div>
