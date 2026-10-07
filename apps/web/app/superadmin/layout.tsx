@@ -26,7 +26,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
 
   if (isLoading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-[#07070a]">
+      <div className="h-[100dvh] flex items-center justify-center bg-[#07070a]">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-[#7c6dfa] border-t-transparent rounded-full animate-spin" />
           <p className="text-xs text-[#6b6b80] font-medium tracking-widest uppercase">Loading</p>
@@ -38,7 +38,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
   if (!user || !user.isSuperAdmin) {
     // Don't render anything while the redirect is in progress
     return (
-      <div className="h-screen flex items-center justify-center bg-[#07070a]">
+      <div className="h-[100dvh] flex items-center justify-center bg-[#07070a]">
         <div className="text-xs text-[#6b6b80]">Redirecting...</div>
       </div>
     );

@@ -7,7 +7,7 @@ import { PublicFooter } from '../../components/layout/PublicFooter';
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="h-screen overflow-y-auto bg-premium-bg py-16 px-6 flex flex-col items-center">
+    <div className="h-[100dvh] overflow-y-auto bg-premium-bg py-16 px-6 flex flex-col items-center">
       <div className="w-full max-w-4xl space-y-10">
         
         {/* Header */}

@@ -68,7 +68,7 @@ export default function PublicWithusPage() {
   return (
     <div
       ref={mainScrollRef}
-      className="dark h-screen overflow-y-auto bg-neutral-950 text-neutral-100 font-sans antialiased selection:bg-neutral-800 selection:text-neutral-100 scroll-smooth"
+      className="dark h-[100dvh] overflow-y-auto bg-neutral-950 text-neutral-100 font-sans antialiased selection:bg-neutral-800 selection:text-neutral-100 scroll-smooth"
     >
       {/* Top Navigation Bar with Active Module Indicator */}
       <PublicNavbar

@@ -86,7 +86,7 @@ function RegisterForm() {
   };
 
   return (
-    <div className="h-screen overflow-y-auto lg:overflow-hidden grid grid-cols-1 lg:grid-cols-12 bg-premium-bg text-premium-main">
+    <div className="h-[100dvh] overflow-y-auto lg:overflow-hidden grid grid-cols-1 lg:grid-cols-12 bg-premium-bg text-premium-main">
       {/* Brand Side (Left) */}
       <div className="hidden lg:flex lg:col-span-5 bg-zinc-950 text-white p-16 flex-col justify-between relative overflow-hidden border-r border-zinc-900 select-none h-full">
 

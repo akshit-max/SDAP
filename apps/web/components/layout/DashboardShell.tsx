@@ -220,7 +220,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="flex h-screen bg-premium-bg font-premium overflow-hidden relative">
+    <div className="flex h-[100dvh] bg-premium-bg font-premium overflow-hidden relative">
       {/* Mobile Drawer Overlay Backdrop */}
       {isMobileOpen && (
         <div
