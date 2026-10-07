@@ -94,11 +94,11 @@ function LoginForm() {
       </div>
 
       {/* Form Side (Right) */}
-      <div className="lg:col-span-7 flex flex-col justify-between h-full p-8 relative overflow-y-auto">
+      <div className="lg:col-span-7 flex flex-col justify-between h-full p-4 sm:p-8 relative overflow-y-auto">
         <div className="h-8 hidden lg:block"></div>
 
         <div className="flex-1 flex items-center justify-center py-6 w-full">
-          <div className="max-w-md w-full premium-card p-10 bg-premium-surface">
+          <div className="max-w-md w-full premium-card p-6 sm:p-10 bg-premium-surface">
 
             {/* Header */}
             <div className="text-center mb-8">

@@ -56,57 +56,67 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [navSearch, setNavSearch] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [pathname]);
 
   // ── Inactivity Auto-Logout ───────────────────────────────────────────────────
-  // Single stable interval + refs — effect runs ONCE, no stale closures.
-  // 10 min total idle → logout. Last 1 min shows the countdown warning modal.
-  const INACTIVITY_MS = 10 * 60 * 1000;  // 10 minutes total
-  const WARNING_MS    =  1 * 60 * 1000;  //  1 minute warning before logout
+  // 10 min total: 9 min silent, last 1 min shows countdown modal.
+  const INACTIVITY_MS = 10 * 60 * 1000;   // 10 minutes
+  const WARNING_MS = 60 * 1000;   //  1 minute warning before logout
   const [showIdleWarning, setShowIdleWarning] = useState(false);
-  const [idleCountdown, setIdleCountdown] = useState(60);
-  const lastActivityRef = React.useRef<number>(Date.now());
-  const warningShownRef = React.useRef<boolean>(false);
-  const handleLogoutRef = React.useRef<() => void>(() => {});
+  const [idleCountdown, setIdleCountdown] = useState(60); // seconds remaining
+  const idleTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const warningTimerRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Keep handleLogoutRef always pointing at the latest handleLogout
-  useEffect(() => { handleLogoutRef.current = handleLogout; });
+  const clearIdleTimers = React.useCallback(() => {
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    if (warningTimerRef.current) clearInterval(warningTimerRef.current);
+  }, []);
 
-  // Single stable interval — runs ONCE on mount only (empty deps).
+  const startWarningCountdown = React.useCallback(() => {
+    setShowIdleWarning(true);
+    setIdleCountdown(60);
+    warningTimerRef.current = setInterval(() => {
+      setIdleCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(warningTimerRef.current!);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  const resetIdleTimer = React.useCallback(() => {
+    // If warning is already showing, a user interaction dismisses it
+    if (showIdleWarning) return;
+    clearIdleTimers();
+    idleTimerRef.current = setTimeout(() => {
+      startWarningCountdown();
+      // After the 1-minute countdown, force logout
+      setTimeout(() => {
+        handleLogout();
+      }, WARNING_MS);
+    }, INACTIVITY_MS - WARNING_MS);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showIdleWarning, clearIdleTimers, startWarningCountdown]);
+
+  // Attach/detach activity event listeners
   useEffect(() => {
     const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'] as const;
-    const onActivity = () => {
-      if (!warningShownRef.current) {
-        lastActivityRef.current = Date.now();
-      }
-    };
-    events.forEach(e => window.addEventListener(e, onActivity, { passive: true }));
-
-    const tick = setInterval(() => {
-      const idleMs = Date.now() - lastActivityRef.current;
-
-      if (!warningShownRef.current && idleMs >= INACTIVITY_MS - WARNING_MS) {
-        warningShownRef.current = true;
-        setShowIdleWarning(true);
-        setIdleCountdown(Math.ceil(WARNING_MS / 1000));
-      }
-
-      if (warningShownRef.current) {
-        const remaining = Math.ceil((INACTIVITY_MS - idleMs) / 1000);
-        if (remaining <= 0) {
-          clearInterval(tick);
-          handleLogoutRef.current();
-          return;
-        }
-        setIdleCountdown(remaining);
-      }
-    }, 1000);
-
+    const handler = () => resetIdleTimer();
+    events.forEach(e => window.addEventListener(e, handler, { passive: true }));
+    resetIdleTimer(); // kick off timer on mount
     return () => {
-      clearInterval(tick);
-      events.forEach(e => window.removeEventListener(e, onActivity));
+      events.forEach(e => window.removeEventListener(e, handler));
+      clearIdleTimers();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showIdleWarning]);
 
   useEffect(() => {
     setMounted(true);
@@ -118,6 +128,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     const nextState = !isCollapsed;
     setIsCollapsed(nextState);
     localStorage.setItem('sidebar_collapsed', String(nextState));
+  };
+
+  const handleMenuClick = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setIsMobileOpen((prev) => !prev);
+    } else {
+      toggleSidebar();
+    }
   };
 
   const cycleTheme = () => {
@@ -202,12 +220,22 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="flex h-screen bg-premium-bg font-premium overflow-hidden">
+    <div className="flex h-screen bg-premium-bg font-premium overflow-hidden relative">
+      {/* Mobile Drawer Overlay Backdrop */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden transition-opacity"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
       {/* ── Single Compact Premium SaaS User Portal Sidebar ─────────────────── */}
       <aside
         className={clsx(
           'flex flex-col transition-all duration-200 select-none overflow-hidden border-r border-zinc-200/80 dark:border-zinc-800/80 bg-white dark:bg-[#121214]',
-          isCollapsed ? 'w-[60px]' : 'w-[230px]',
+          'fixed inset-y-0 left-0 z-50 md:static md:z-auto',
+          isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
+          isCollapsed ? 'md:w-[60px]' : 'w-[240px] md:w-[230px]',
         )}
       >
         {/* Sidebar Top Header (Logo + Org Name + Collapse Toggle) */}
@@ -215,9 +243,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <Link
             href="/dashboard"
             className="flex items-center gap-2.5 min-w-0 hover:opacity-85 transition-opacity"
+            onClick={() => setIsMobileOpen(false)}
           >
             <CustomAsterisk className="w-6 h-6 flex-shrink-0" strokeWidth={10} />
-            {!isCollapsed && (
+            {(!isCollapsed || isMobileOpen) && (
               <span className="text-xs font-bold tracking-tight text-zinc-900 dark:text-zinc-100 truncate">
                 {organization?.name || 'WithUs Vault'}
               </span>
@@ -226,9 +255,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
           {!isCollapsed && (
             <button
-              onClick={toggleSidebar}
+              onClick={handleMenuClick}
               className="p-1 rounded text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-              title="Collapse sidebar"
+              title="Close/Collapse sidebar"
             >
               <Menu className="w-3.5 h-3.5" />
             </button>
@@ -240,7 +269,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           {navGroups.map((group, groupIdx) => (
             <div key={group.category} className="space-y-1">
               {/* Category Header Label */}
-              {!isCollapsed ? (
+              {(!isCollapsed || isMobileOpen) ? (
                 <div className="pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 select-none">
                   {group.category}
                 </div>
@@ -254,7 +283,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                   const isActive = item.href === '/settings' ? pathname === '/settings' : pathname.startsWith(item.href);
                   const IconComponent = item.icon;
 
-                  if (isCollapsed) {
+                  if (isCollapsed && !isMobileOpen) {
                     return (
                       <Link
                         key={item.name}
@@ -281,6 +310,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                     <Link
                       key={item.name}
                       href={item.href}
+                      onClick={() => setIsMobileOpen(false)}
                       className={clsx(
                         'group flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition-colors select-none',
                         isActive
@@ -322,31 +352,34 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         {/* Bottom Logout Row */}
         <div className="p-3 border-t border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-[#09090b]/50 flex-shrink-0">
           <button
-            onClick={() => setShowLogoutConfirm(true)}
+            onClick={() => {
+              setIsMobileOpen(false);
+              setShowLogoutConfirm(true);
+            }}
             className={clsx(
               'w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors',
-              isCollapsed && 'px-0',
+              isCollapsed && !isMobileOpen && 'px-0',
             )}
             title="Log Out"
           >
             <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
-            {!isCollapsed && <span>Log Out</span>}
+            {(!isCollapsed || isMobileOpen) && <span>Log Out</span>}
           </button>
         </div>
       </aside>
 
       {/* ── Main Content Area ─────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-14 bg-premium-bg border-b border-zinc-200 dark:border-zinc-800 flex items-center px-8 shadow-none gap-4 justify-between pt-1">
-          <div className="flex items-center gap-4">
+        <header className="h-14 bg-premium-bg border-b border-zinc-200 dark:border-zinc-800 flex items-center px-4 sm:px-6 md:px-8 shadow-none gap-4 justify-between pt-1 flex-shrink-0">
+          <div className="flex items-center gap-3">
             <button
-              onClick={toggleSidebar}
+              onClick={handleMenuClick}
               className="p-1.5 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 transition-colors rounded"
-              title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              title="Toggle sidebar"
             >
-              <Menu className="w-4 h-4" />
+              <Menu className="w-5 h-5 md:w-4 md:h-4" />
             </button>
-            <h1 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+            <h1 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate max-w-[160px] sm:max-w-xs md:max-w-none">
               {activeItem?.name || 'Vaults'}
             </h1>
           </div>
@@ -367,7 +400,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           )}
         </header>
 
-        <main className="flex-1 overflow-y-auto p-8 bg-premium-bg">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-premium-bg">
           {children}
         </main>
       </div>
@@ -417,19 +450,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             </p>
             <div className="flex gap-3 justify-center">
               <button
-                onClick={() => {
-                  console.log('[IdleTimer] 🟢 User clicked Stay Logged In — resetting timer');
-                  lastActivityRef.current = Date.now();
-                  warningShownRef.current = false;
-                  setShowIdleWarning(false);
-                  setIdleCountdown(Math.ceil(WARNING_MS / 1000));
-                }}
+                onClick={() => { setShowIdleWarning(false); clearIdleTimers(); resetIdleTimer(); }}
                 className="px-5 py-2 text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
               >
                 Stay Logged In
               </button>
               <button
-                onClick={() => { setShowIdleWarning(false); handleLogout(); }}
+                onClick={() => { setShowIdleWarning(false); clearIdleTimers(); handleLogout(); }}
                 className="px-5 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition-colors"
               >
                 Log Out Now

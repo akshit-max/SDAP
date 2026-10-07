@@ -88,7 +88,7 @@ export function VaultDetailsPage({ vaultId }: { vaultId: string }) {
     <>
       <div className="space-y-5">
         {/* Header */}
-        <div className="flex justify-between items-start pb-2 border-b border-premium">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-2 border-b border-premium">
           <div>
             <div className="flex items-center text-[10px] text-premium-muted font-bold uppercase tracking-wider mb-1.5">
               <Link href="/vaults" className="hover:text-premium-main transition-colors">Vaults</Link>
@@ -101,7 +101,7 @@ export function VaultDetailsPage({ vaultId }: { vaultId: string }) {
             </h2>
             <p className="text-xs text-premium-muted mt-1">{vault.description || 'No description provided.'}</p>
           </div>
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 flex-wrap">
             {canUpdateVault && (
               <button
                 onClick={() => setIsEditVaultOpen(true)}
@@ -155,7 +155,7 @@ export function VaultDetailsPage({ vaultId }: { vaultId: string }) {
             ) : (
               <div className="divide-y divide-slate-100 dark:divide-zinc-800/60">
                 {secrets.map((secret) => (
-                  <div key={secret.id} className="py-3 flex items-center justify-between hover:bg-slate-50/30 dark:hover:bg-zinc-900/10 px-3 -mx-3 rounded-lg transition-colors">
+                  <div key={secret.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-slate-50/30 dark:hover:bg-zinc-900/10 px-3 -mx-3 rounded-lg transition-colors">
                     <div>
                       <h4 className="text-xs font-bold text-premium-main font-mono">{secret.name}</h4>
                       <p className="text-[10px] text-premium-muted mt-0.5">{secret.description || 'No description'}</p>

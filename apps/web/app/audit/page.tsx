@@ -291,7 +291,7 @@ export default function AuditPage() {
     <DashboardShell>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="pb-2 border-b border-premium flex items-start justify-between gap-4">
+        <div className="pb-2 border-b border-premium flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-lg font-bold tracking-tight text-premium-main">Audit Log</h1>
             <p className="text-xs text-premium-muted mt-0.5">

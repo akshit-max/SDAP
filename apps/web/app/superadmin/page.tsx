@@ -275,7 +275,7 @@ export default function SuperAdminOverview() {
           {/* ─── Row 1: All 12 KPI Cards — Available + Coming Soon ──────────── */}
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-premium-muted mb-4">Key Performance Indicators</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {/* 🟢 AVAILABLE */}
               <StatCard
                 icon={Building2}

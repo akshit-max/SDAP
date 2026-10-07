@@ -63,7 +63,7 @@ export function VaultListPage() {
   return (
     <>
       <div className="space-y-6">
-        <div className="flex justify-between items-center pb-2 border-b border-premium">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-2 border-b border-premium">
           <div>
             <h2 className="text-lg font-bold text-premium-main tracking-tight">Secure Vaults</h2>
             <p className="text-xs text-premium-muted mt-0.5">

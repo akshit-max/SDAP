@@ -75,7 +75,7 @@ export default function ExtensionPage() {
               Autofill credentials directly into target websites securely and dynamically through WithUs.
             </p>
           </div>
-          <div className="flex-shrink-0 flex items-center gap-2">
+          <div className="flex-shrink-0 flex items-center gap-2 flex-wrap">
             <a
               href="https://chromewebstore.google.com/detail/withus-vault/ccelghkaoejlmljlhcefnkbcbfmoge"
               target="_blank"

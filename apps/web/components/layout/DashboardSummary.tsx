@@ -54,7 +54,7 @@ export function DashboardSummary() {
   return (
     <div className="space-y-8">
       {/* Greeting */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{organization?.name}</span>
@@ -66,7 +66,7 @@ export function DashboardSummary() {
             Secure Delegated Access Platform — Manage repositories, credentials, and temporary access securely.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap sm:flex-nowrap">
           <Link
             href="/extension"
             className="premium-button-secondary text-xs"

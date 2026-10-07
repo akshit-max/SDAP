@@ -41,7 +41,7 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
   );
 
   const Card = ({ children }: { children: React.ReactNode }) => (
-    <div className="max-w-md w-full premium-card p-10 text-center shadow-2xl">
+    <div className="max-w-md w-full premium-card p-6 sm:p-10 text-center shadow-2xl">
       {children}
     </div>
   );

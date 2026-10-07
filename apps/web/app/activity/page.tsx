@@ -357,7 +357,7 @@ export default function ActivityPage() {
 
         {/* ─── Metric Stats (Consistent with Dashboard Cards) ─────────── */}
         {!isLoading && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             
             <div className="premium-card p-5 flex flex-col justify-between shadow-none min-h-[105px]">
               <div className="flex items-center justify-between mb-2">

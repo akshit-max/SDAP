@@ -94,7 +94,7 @@ export default function SessionsPage() {
   return (
     <DashboardShell>
       <div className="max-w-5xl mx-auto space-y-6">
-        <div className="flex justify-between items-center pb-2 border-b border-premium">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-2 border-b border-premium">
           <div>
             <h1 className="text-lg font-bold tracking-tight text-premium-main">Delegated Sessions</h1>
             <p className="text-xs text-premium-muted mt-0.5">Manage time-bound access delegations.</p>

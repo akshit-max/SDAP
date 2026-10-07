@@ -248,7 +248,7 @@ export default function MembersPage() {
               <UserPlus className="w-4 h-4 text-premium-muted" />
               Invite a Member
             </h2>
-            <form onSubmit={handleInvite} className="flex gap-3">
+            <form onSubmit={handleInvite} className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1 relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-premium-muted" />
                 <input
