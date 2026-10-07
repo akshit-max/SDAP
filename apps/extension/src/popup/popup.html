@@ -149,6 +149,11 @@
       box-shadow: 0 0 0 1px var(--input-focus);
     }
     
+    /* Hide native Edge password reveal icon to prevent double icons */
+    .input-field::-ms-reveal {
+      display: none;
+    }
+    
     .password-toggle {
       position: absolute;
       right: 10px;
