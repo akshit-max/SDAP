@@ -66,7 +66,7 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen min-h-[100dvh] lg:h-screen overflow-y-auto lg:overflow-hidden grid grid-cols-1 lg:grid-cols-12 bg-premium-bg text-premium-main">
+    <div className="h-screen overflow-y-auto lg:overflow-hidden grid grid-cols-1 lg:grid-cols-12 bg-premium-bg text-premium-main">
       {/* Brand Side (Left) */}
       <div className="hidden lg:flex lg:col-span-5 bg-zinc-950 text-white p-16 flex-col justify-between relative overflow-hidden border-r border-zinc-900 select-none h-full">
 
@@ -94,7 +94,7 @@ function LoginForm() {
       </div>
 
       {/* Form Side (Right) */}
-      <div className="lg:col-span-7 flex flex-col justify-between min-h-full p-4 sm:p-8 pb-20 sm:pb-8 relative overflow-y-auto">
+      <div className="lg:col-span-7 flex flex-col justify-between h-full p-4 sm:p-8 relative overflow-y-auto">
         <div className="h-8 hidden lg:block"></div>
 
         <div className="flex-1 flex items-center justify-center py-6 w-full">

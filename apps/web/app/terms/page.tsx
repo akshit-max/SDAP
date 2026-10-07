@@ -6,7 +6,7 @@ import { PublicFooter } from '../../components/layout/PublicFooter';
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen min-h-[100dvh] overflow-y-auto bg-premium-bg py-12 sm:py-16 px-4 sm:px-6 pb-24 sm:pb-16 flex flex-col items-center">
+    <div className="h-screen overflow-y-auto bg-premium-bg py-16 px-6 flex flex-col items-center">
       <div className="w-full max-w-4xl space-y-10">
         
         {/* Header */}

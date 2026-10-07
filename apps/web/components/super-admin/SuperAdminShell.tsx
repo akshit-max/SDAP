@@ -279,7 +279,7 @@ export function SuperAdminShell({ children }: { children: React.ReactNode }) {
   }, [navSearch]);
 
   return (
-    <div className="flex h-screen h-[100dvh] bg-premium-bg font-premium overflow-hidden">
+    <div className="flex h-screen bg-premium-bg font-premium overflow-hidden">
       {/* ── Single Compact Premium SaaS Sidebar ─────────────────────────── */}
       <aside
         className={clsx(
@@ -505,7 +505,7 @@ export function SuperAdminShell({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Page Main Content Area */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 pb-24 sm:pb-8 bg-premium-bg">
+        <main className="flex-1 overflow-y-auto p-8 bg-premium-bg">
           {children}
         </main>
       </div>

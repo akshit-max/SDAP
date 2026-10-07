@@ -35,7 +35,7 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
   // Loading state for fetching invite details
   // Reusable wrappers for consistency
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
-    <div className="min-h-screen min-h-[100dvh] overflow-y-auto flex items-center justify-center bg-premium-background p-4 pb-24 sm:pb-4">
+    <div className="h-screen overflow-y-auto flex items-center justify-center bg-premium-background p-4">
       {children}
     </div>
   );
