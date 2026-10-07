@@ -173,6 +173,12 @@ async function handleMessage(
                   if (s.status !== 'ACTIVE') return false;
                   if (s.expiresAt && new Date(s.expiresAt) < new Date()) return false;
 
+                  // ── Permission guard ───────────────────────────────────────────────────
+                  // Only EXTENSION-permission sessions are shown in the popup.
+                  // REVEAL-only sessions are for web portal raw secret access and must
+                  // never appear in the extension UI.
+                  if ((s as any).permission !== 'EXTENSION') return false;
+
                   // ── Path 1: Provider-based match ──────────────────────────────────────
                   // For extension-based platforms (GMAIL, GODADDY, etc.), the session has
                   // integrationProvider set. Check if the current hostname belongs to any
