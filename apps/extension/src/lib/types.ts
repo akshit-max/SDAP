@@ -22,6 +22,7 @@ export interface ExtensionSession {
   revealCount: number;
   maxReveals: number | null;
   status?: string;
+  permission?: string; // 'EXTENSION' | 'REVEAL' — only EXTENSION sessions appear in popup
   capabilities?: string[];
   mcaRestrictedModules?: string[];
 }

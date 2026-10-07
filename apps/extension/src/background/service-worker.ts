@@ -177,7 +177,7 @@ async function handleMessage(
                   // Only EXTENSION-permission sessions are shown in the popup.
                   // REVEAL-only sessions are for web portal raw secret access and must
                   // never appear in the extension UI.
-                  if ((s as any).permission !== 'EXTENSION') return false;
+                  if (s.permission !== 'EXTENSION') return false;
 
                   // ── Path 1: Provider-based match ──────────────────────────────────────
                   // For extension-based platforms (GMAIL, GODADDY, etc.), the session has
