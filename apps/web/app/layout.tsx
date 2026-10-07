@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Space_Mono, Inter } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
@@ -18,6 +18,13 @@ import { QueryProvider } from "../providers/QueryProvider";
 import { AuthProvider } from "../lib/auth/AuthContext";
 import { ToastProvider } from "../components/common/Toast";
 import ComplianceGate from "../components/compliance/ComplianceGate";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   title: "WithUs",

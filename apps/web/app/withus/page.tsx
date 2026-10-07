@@ -68,7 +68,7 @@ export default function PublicWithusPage() {
   return (
     <div
       ref={mainScrollRef}
-      className="dark h-screen overflow-y-auto bg-neutral-950 text-neutral-100 font-sans antialiased selection:bg-neutral-800 selection:text-neutral-100 scroll-smooth"
+      className="dark min-h-screen min-h-[100dvh] h-screen h-[100dvh] overflow-y-auto bg-neutral-950 text-neutral-100 font-sans antialiased selection:bg-neutral-800 selection:text-neutral-100 scroll-smooth"
     >
       {/* Top Navigation Bar with Active Module Indicator */}
       <PublicNavbar
@@ -77,7 +77,7 @@ export default function PublicWithusPage() {
       />
 
       {/* Main Content Hub */}
-      <main className="relative pt-24 pb-24 space-y-32 sm:space-y-40">
+      <main className="relative pt-24 pb-36 sm:pb-24 space-y-32 sm:space-y-40">
 
         {/* SECTION 1: HERO & TRUST STRIP */}
         <section id="hero" className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pt-20 pb-16 text-center relative overflow-hidden scroll-mt-28">
