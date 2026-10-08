@@ -270,7 +270,20 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               Your WITHUS account is now active on another device. Sign in again to continue here.
             </p>
             <button
-              onClick={() => { AuthSession.clear(); router.push('/login?reason=displaced'); }}
+              onClick={async () => {
+                try {
+                  // Must call backend logout to clear httpOnly sdap_token cookie via Set-Cookie.
+                  // Without this, the Next.js middleware sees the cookie and redirects back to /dashboard.
+                  const { apiClient } = await import('../../lib/api/client');
+                  await apiClient.post('/auth/logout', {});
+                } catch {
+                  // Ignore — cookies may already be invalid, but server still clears them
+                } finally {
+                  AuthSession.clear();
+                  // Full page reload (not router.push) so middleware re-evaluates cleared cookies
+                  window.location.href = '/login?reason=displaced';
+                }
+              }}
               className="w-full premium-button-primary py-2.5 text-sm font-semibold rounded-xl"
             >
               Sign in again

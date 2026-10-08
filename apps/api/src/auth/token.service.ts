@@ -13,7 +13,10 @@ export class TokenService {
     try {
       this.privateKey =
         process.env.JWT_PRIVATE_KEY ||
-        fs.readFileSync(path.join(process.cwd(), 'keys', 'private.pem'), 'utf8');
+        fs.readFileSync(
+          path.join(process.cwd(), 'keys', 'private.pem'),
+          'utf8',
+        );
       this.publicKey =
         process.env.JWT_PUBLIC_KEY ||
         fs.readFileSync(path.join(process.cwd(), 'keys', 'public.pem'), 'utf8');
@@ -23,15 +26,21 @@ export class TokenService {
       // and keys/public.pem (local dev) before starting the server.
       throw new Error(
         'JWT keys are not configured. Set JWT_PRIVATE_KEY and JWT_PUBLIC_KEY environment variables, ' +
-        'or generate keys/private.pem and keys/public.pem for local development. ' +
-        `Original error: ${(e as Error).message}`,
+          'or generate keys/private.pem and keys/public.pem for local development. ' +
+          `Original error: ${(e as Error).message}`,
       );
     }
   }
 
-  generateAccessToken(userId: string, email: string): string {
+  generateAccessToken(
+    userId: string,
+    email: string,
+    familyId?: string,
+  ): string {
     return this.jwtService.sign(
-      { sub: userId, email },
+      // familyId is embedded so session-status polling can verify the exact
+      // token family is still active — prevents false-positive displacement.
+      { sub: userId, email, ...(familyId ? { fid: familyId } : {}) },
       {
         secret: this.privateKey,
         expiresIn: AUTH_CONFIG.accessTTL,

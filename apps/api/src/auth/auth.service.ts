@@ -170,9 +170,11 @@ export class AuthService {
       );
     }
 
+    const newFamilyId = randomUUID();
     const accessToken = this.tokenService.generateAccessToken(
       user.id,
       user.email,
+      newFamilyId,
     );
     const { refreshToken, rawToken } = this.generateRefreshToken();
 
@@ -180,7 +182,7 @@ export class AuthService {
       data: {
         userId: user.id,
         tokenHash: refreshToken.hash,
-        familyId: randomUUID(),
+        familyId: newFamilyId,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         ipAddress,
         userAgent,
@@ -210,11 +212,8 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const accessToken = this.tokenService.generateAccessToken(
-      user.id,
-      user.email,
-    );
     const { refreshToken, rawToken } = this.generateRefreshToken();
+    const newLoginFamilyId = randomUUID();
 
     // ── One Active Session Per User ──────────────────────────────────────────
     // Revoke all existing non-expired refresh tokens for this user before
@@ -237,12 +236,18 @@ export class AuthService {
       data: {
         userId: user.id,
         tokenHash: refreshToken.hash,
-        familyId: randomUUID(),
+        familyId: newLoginFamilyId,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         ipAddress,
         userAgent,
       },
     });
+
+    const accessToken = this.tokenService.generateAccessToken(
+      user.id,
+      user.email,
+      newLoginFamilyId, // Embed familyId so session-status can verify this exact session
+    );
 
     // Fetch the user's first/default organization
     const firstMembership = await this.prisma.organizationMember.findFirst({
@@ -358,6 +363,7 @@ export class AuthService {
     const accessToken = this.tokenService.generateAccessToken(
       oldTokenRecord.user.id,
       oldTokenRecord.user.email,
+      oldTokenRecord.familyId, // Preserve familyId across token rotation
     );
     // Fetch the user's first/default organization
     const firstMembership = await this.prisma.organizationMember.findFirst({
@@ -536,30 +542,29 @@ export class AuthService {
       // Decode without full verify — we just need the claims, not a security check here
       const payload = this.tokenService.verifyAccessToken(accessToken);
       const userId: string = payload.sub;
-      const iatMs = payload.iat * 1000; // JWT iat is seconds, convert to ms
+      const familyId: string | undefined = payload.fid;
 
-      // Find the newest active (non-revoked, non-expired) refresh token for this user
-      const newestToken = await this.prisma.refreshToken.findFirst({
+      // Backward compat: old access tokens (before this change) don't have fid.
+      // Safe default: return not displaced so existing sessions aren't disrupted.
+      if (!familyId) {
+        return { displaced: false };
+      }
+
+      // Check if this session's exact token family still has an active refresh token.
+      // If it was displaced by a new login, the family will have been revoked.
+      const activeToken = await this.prisma.refreshToken.findFirst({
         where: {
-          userId,
+          familyId,
           isRevoked: false,
           expiresAt: { gt: new Date() },
         },
-        orderBy: { createdAt: 'desc' },
-        select: { createdAt: true },
+        select: { id: true },
       });
 
-      if (!newestToken) {
-        // No active tokens at all — session is effectively dead
-        return { displaced: true };
-      }
-
-      // If the newest active token was created AFTER this access token was issued,
-      // it means a new login occurred after us → we are displaced.
-      const displaced = newestToken.createdAt.getTime() > iatMs;
-      return { displaced };
+      // No active token for this family → this session was displaced
+      return { displaced: activeToken === null };
     } catch {
-      // If token is expired or invalid, treat as not displaced (let normal 401 handle it)
+      // If token is expired or invalid, return not displaced — let the normal 401 handle it
       return { displaced: false };
     }
   }
