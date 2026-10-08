@@ -49,13 +49,18 @@ async function attemptSilentRefresh(): Promise<boolean> {
   }
 }
 
-function forceLogout() {
+function forceLogout(reason?: 'session_displaced' | 'expired') {
   clearAuthStorage();
   
-  // We must hit the backend logout endpoint to clear the httpOnly cookies.
-  // Otherwise, Next.js middleware will see the old cookie and redirect us back to /dashboard,
-  // causing an infinite redirect loop when the API returns 401.
   if (typeof window !== 'undefined') {
+    // Notify the UI before redirecting so it can show a contextual message
+    if (reason === 'session_displaced') {
+      window.dispatchEvent(new CustomEvent('withus:session_displaced'));
+      // Small delay to allow the event listener to show the banner before redirect
+      setTimeout(() => { window.location.href = '/login?reason=displaced'; }, 1500);
+      return;
+    }
+
     const csrfMatch = document.cookie.match(new RegExp('(^| )sdap_csrf=([^;]+)'));
     const csrfToken = csrfMatch && csrfMatch[2] ? csrfMatch[2] : '';
     
@@ -109,6 +114,12 @@ apiClient.interceptors.response.use(
 
       if (!isAuthEndpoint && !isAuthPage) {
         if (originalConfig._retry) {
+          // Check if the refresh itself returned SESSION_DISPLACED
+          const errMsg = (error.response?.data as any)?.message;
+          if (errMsg === 'SESSION_DISPLACED') {
+            forceLogout('session_displaced');
+            return Promise.reject(new Error('SESSION_DISPLACED'));
+          }
           forceLogout();
           return Promise.reject(new Error('Session expired. Please log in again.'));
         }

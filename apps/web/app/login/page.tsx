@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Shield, Loader2, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Shield, Loader2, Mail, Lock, Eye, EyeOff, MonitorSmartphone } from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '../../lib/api/client';
 import { AuthSession } from '../../lib/auth/session';
@@ -21,6 +21,7 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
 
   const redirectParam = searchParams.get('redirect') || '';
+  const isDisplaced = searchParams.get('reason') === 'displaced';
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,6 +122,23 @@ function LoginForm() {
                 <p className="text-premium-muted text-[11px] mt-0.5">
                   Already have an account? Simply sign in below.
                 </p>
+              </div>
+            )}
+
+            {/* ── Session Displaced Banner ─────────────────────────────────── */}
+            {isDisplaced && (
+              <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl text-xs leading-relaxed">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-8 h-8 bg-amber-100 dark:bg-amber-900/50 rounded-lg flex items-center justify-center mt-0.5">
+                    <MonitorSmartphone className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-amber-800 dark:text-amber-300 mb-0.5">New login detected</p>
+                    <p className="text-amber-700 dark:text-amber-400/80">
+                      Your WITHUS account is now active on another device. Please sign in again to continue here.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 

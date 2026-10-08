@@ -216,6 +216,23 @@ export class AuthService {
     );
     const { refreshToken, rawToken } = this.generateRefreshToken();
 
+    // ── One Active Session Per User ──────────────────────────────────────────
+    // Revoke all existing non-expired refresh tokens for this user before
+    // creating the new one. This ensures only one browser session is active
+    // at a time. Old sessions will receive SESSION_DISPLACED on next refresh.
+    await this.prisma.refreshToken.updateMany({
+      where: {
+        userId: user.id,
+        isRevoked: false,
+        expiresAt: { gt: new Date() },
+      },
+      data: {
+        isRevoked: true,
+        revokedAt: new Date(),
+        replacedByTokenId: 'SESSION_DISPLACED', // Sentinel — not a family replay
+      },
+    });
+
     await this.prisma.refreshToken.create({
       data: {
         userId: user.id,
@@ -283,6 +300,17 @@ export class AuthService {
     }
 
     if (oldTokenRecord.isRevoked) {
+      // ── Distinguish: Login Displacement vs. Replay Attack ─────────────────
+      // If replacedByTokenId === 'SESSION_DISPLACED', this token was revoked
+      // because the user logged in on another device — not a security breach.
+      // Show a friendly "new login detected" message instead of security alert.
+      if (oldTokenRecord.replacedByTokenId === 'SESSION_DISPLACED') {
+        this.logger.log(
+          `Session displaced for user ${oldTokenRecord.userId} — new device login`,
+        );
+        throw new UnauthorizedException('SESSION_DISPLACED');
+      }
+
       this.logger.warn(
         `Refresh token reuse detected for user ${oldTokenRecord.userId} in family ${oldTokenRecord.familyId}`,
       );
