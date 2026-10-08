@@ -54,6 +54,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showDisplacedModal, setShowDisplacedModal] = useState(false);
   const [navSearch, setNavSearch] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -62,6 +63,32 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setIsMobileOpen(false);
   }, [pathname]);
+
+  // ── Session Displacement Polling ──────────────────────────────────────────
+  // Poll /auth/session-status every 30s to detect real-time session displacement.
+  // If another device logs in, this session becomes displaced and the modal shows.
+  useEffect(() => {
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const { apiClient } = await import('../../lib/api/client');
+        const res = await apiClient.get('/auth/session-status');
+        if (!cancelled && res.data?.displaced) {
+          setShowDisplacedModal(true);
+        }
+      } catch {
+        // Ignore network/auth errors — handled by global interceptor
+      }
+    };
+    // Initial check after a short delay, then every 30s
+    const initialDelay = setTimeout(poll, 5000);
+    const interval = setInterval(poll, 30000);
+    return () => {
+      cancelled = true;
+      clearTimeout(initialDelay);
+      clearInterval(interval);
+    };
+  }, []);
 
   // ── Inactivity Auto-Logout ───────────────────────────────────────────────────
   // 10 min total: 9 min silent, last 1 min shows countdown modal.
@@ -227,6 +254,29 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden transition-opacity"
           onClick={() => setIsMobileOpen(false)}
         />
+      )}
+
+      {/* ── Session Displaced Modal ───────────────────────────────────────── */}
+      {showDisplacedModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-md">
+          <div className="bg-white dark:bg-[#18181b] rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 p-8 max-w-sm w-full mx-4 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center mx-auto mb-5">
+              <svg className="w-7 h-7 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 mb-2">New login detected</h2>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed mb-6">
+              Your WITHUS account is now active on another device. Sign in again to continue here.
+            </p>
+            <button
+              onClick={() => { AuthSession.clear(); router.push('/login?reason=displaced'); }}
+              className="w-full premium-button-primary py-2.5 text-sm font-semibold rounded-xl"
+            >
+              Sign in again
+            </button>
+          </div>
+        </div>
       )}
 
       {/* ── Single Compact Premium SaaS User Portal Sidebar ─────────────────── */}

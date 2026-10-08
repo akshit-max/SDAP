@@ -9,6 +9,8 @@ import {
   UnauthorizedException,
   Get,
   Param,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
@@ -186,5 +188,28 @@ export class AuthController {
   async getInvitationDetails(@Param('token') token: string) {
     const result = await this.authService.getInvitationDetails(token);
     return { success: true, data: result };
+  }
+
+  /**
+   * GET /api/v1/auth/session-status
+   * Lightweight polling endpoint to detect session displacement in real-time.
+   * Reads the sdap_token (access token) cookie, decodes userId + iat, then checks
+   * if a newer active refresh token exists for that user — indicating a new login
+   * on another device has displaced this session.
+   *
+   * Returns: { displaced: false } | { displaced: true }
+   * No authentication guard needed — we read the cookie ourselves.
+   */
+  @Get('session-status')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Check if the current session has been displaced by a new login',
+  })
+  async sessionStatus(@Req() req: Request) {
+    const token = (req as any).cookies?.['sdap_token'];
+    if (!token) {
+      return { displaced: false };
+    }
+    return this.authService.checkSessionStatus(token);
   }
 }

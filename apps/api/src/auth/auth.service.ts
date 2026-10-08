@@ -518,6 +518,52 @@ export class AuthService {
 </html>`;
   }
 
+  /**
+   * Checks if the current access token session has been displaced by a new login.
+   *
+   * Strategy (no new DB columns, no migration):
+   *  1. Decode the access token to read userId and iat (issued-at timestamp).
+   *  2. Find the newest non-revoked refresh token for that user.
+   *  3. If that token was created AFTER the access token's iat → a newer login
+   *     occurred after this access token was issued → this session is displaced.
+   *
+   * This is called by the frontend every 30s to give near-real-time displacement detection.
+   */
+  async checkSessionStatus(
+    accessToken: string,
+  ): Promise<{ displaced: boolean }> {
+    try {
+      // Decode without full verify — we just need the claims, not a security check here
+      const payload = this.tokenService.verifyAccessToken(accessToken);
+      const userId: string = payload.sub;
+      const iatMs = payload.iat * 1000; // JWT iat is seconds, convert to ms
+
+      // Find the newest active (non-revoked, non-expired) refresh token for this user
+      const newestToken = await this.prisma.refreshToken.findFirst({
+        where: {
+          userId,
+          isRevoked: false,
+          expiresAt: { gt: new Date() },
+        },
+        orderBy: { createdAt: 'desc' },
+        select: { createdAt: true },
+      });
+
+      if (!newestToken) {
+        // No active tokens at all — session is effectively dead
+        return { displaced: true };
+      }
+
+      // If the newest active token was created AFTER this access token was issued,
+      // it means a new login occurred after us → we are displaced.
+      const displaced = newestToken.createdAt.getTime() > iatMs;
+      return { displaced };
+    } catch {
+      // If token is expired or invalid, treat as not displaced (let normal 401 handle it)
+      return { displaced: false };
+    }
+  }
+
   private generateRefreshToken() {
     const rawToken = crypto.randomBytes(32).toString('hex');
     const hash = crypto.createHash('sha256').update(rawToken).digest('hex');
