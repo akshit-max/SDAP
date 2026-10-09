@@ -108,10 +108,12 @@ export const billingApi = {
     orgId: string,
     plan: PlanTier,
     billingCycle: BillingCycle,
+    phone: string,
   ): Promise<InitiatePaymentResponse> => {
     const response = await apiClient.post(`/organizations/${orgId}/billing/initiate`, {
       plan,
       billingCycle,
+      phone,
     });
     return response.data;
   },

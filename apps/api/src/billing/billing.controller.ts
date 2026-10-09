@@ -59,6 +59,7 @@ export class BillingController {
       req.user.email,
       dto.plan,
       dto.billingCycle,
+      dto.phone,
     );
   }
 

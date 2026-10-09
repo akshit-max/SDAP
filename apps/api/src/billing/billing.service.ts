@@ -144,7 +144,17 @@ export class BillingService {
     ownerEmail: string,
     plan: PlanTier,
     billingCycle: BillingCycle,
+    customerPhone: string,
   ): Promise<{ paymentLink: string; orderId: string }> {
+    // Guard: phone must be exactly 10 digits — validated server-side (F-003)
+    // Frontend validation is a UX aid only; we do not trust it.
+    // Never log the phone value.
+    if (!customerPhone || !/^\d{10}$/.test(customerPhone)) {
+      throw new BadRequestException(
+        'A valid 10-digit mobile number is required for payment processing',
+      );
+    }
+
     // Guard: no duplicate active subscriptions
     const existing = await this.subscriptions.findByOrgId(organizationId);
     if (existing?.status === 'ACTIVE') {
@@ -208,7 +218,7 @@ export class BillingService {
       amount: formatAmount(totalAmount),
       customer_id: customerId,
       customer_email: ownerEmail,
-      customer_phone: '9999999999', // Placeholder — TODO: store phone on User
+      customer_phone: customerPhone, // Validated 10-digit number from customer — not persisted
       payment_page_client_id: this.paymentPageClientId,
       action: 'paymentPage',
       currency: 'INR',

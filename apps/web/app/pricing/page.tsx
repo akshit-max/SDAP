@@ -98,6 +98,27 @@ export default function PricingPage() {
   const { initiate, initiating } = useInitiatePayment(orgId);
   const { cancel, cancelling } = useCancelSubscription(orgId);
 
+  // ─── Phone collection modal state ────────────────────────────────────────────
+  const [phoneModal, setPhoneModal] = useState<{ plan: PlanTier; billingCycle: BillingCycle } | null>(null);
+  const [phoneInput, setPhoneInput] = useState('');
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+
+  const openPhoneModal = (plan: PlanTier, cycle: BillingCycle) => {
+    setPhoneInput('');
+    setPhoneError(null);
+    setPhoneModal({ plan, billingCycle: cycle });
+  };
+
+  const handlePhoneSubmit = () => {
+    if (!/^\d{10}$/.test(phoneInput)) {
+      setPhoneError('Please enter a valid 10-digit mobile number (no country code)');
+      return;
+    }
+    if (!phoneModal) return;
+    setPhoneModal(null);
+    void initiate(phoneModal.plan, phoneModal.billingCycle, phoneInput);
+  };
+
   // Detect HDFC redirect result from URL params and refetch subscription
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -523,7 +544,7 @@ export default function PricingPage() {
                             disabled={subscription?.status === 'ACTIVE' || initiating}
                             onClick={() => {
                               if (subscription?.status === 'PAST_DUE') {
-                                void initiate(plan.id, billingCycle);
+                                openPhoneModal(plan.id, billingCycle);
                               }
                             }}
                             className={`w-full py-2.5 px-4 text-xs font-black uppercase tracking-wider text-center transition-colors shadow-sm ${
@@ -577,7 +598,7 @@ export default function PricingPage() {
                           disabled={initiating || calc.totalAmount === null || hasActiveSubscription}
                           onClick={() => {
                             if (plan.id === 'PRO' || plan.id === 'BUSINESS') {
-                              void initiate(plan.id, billingCycle);
+                              openPhoneModal(plan.id, billingCycle);
                             }
                           }}
                           className={`w-full py-2.5 px-4 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
@@ -818,6 +839,73 @@ export default function PricingPage() {
               </div>
             </div>
           )}
+
+        {/* ─── Phone Number Collection Modal ─────────────────────────────── */}
+        {phoneModal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-zinc-900 border border-premium w-full max-w-md p-6 space-y-5 shadow-2xl">
+              <div className="space-y-1">
+                <h3 className="text-sm font-black uppercase tracking-wider text-premium-main flex items-center gap-2">
+                  <CreditCard className="w-4 h-4" />
+                  Billing Phone Number
+                </h3>
+                <p className="text-xs font-semibold text-premium-muted leading-relaxed">
+                  Your mobile number is required by HDFC to authorize the recurring payment mandate.
+                  It will be used only for this transaction and will not be stored.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="billing-phone-input" className="text-[10px] font-black uppercase tracking-wider text-premium-muted">
+                  10-Digit Mobile Number
+                </label>
+                <input
+                  id="billing-phone-input"
+                  type="tel"
+                  inputMode="numeric"
+                  pattern="\d{10}"
+                  maxLength={10}
+                  placeholder="e.g. 9876543210"
+                  value={phoneInput}
+                  onChange={(e) => {
+                    setPhoneInput(e.target.value.replace(/\D/g, '').slice(0, 10));
+                    setPhoneError(null);
+                  }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handlePhoneSubmit(); }}
+                  className="w-full px-3 py-2.5 text-sm font-bold bg-zinc-50 dark:bg-zinc-800 border border-premium text-premium-main placeholder:text-premium-muted focus:outline-none focus:border-zinc-500 dark:focus:border-zinc-400 transition-colors font-number tracking-wider"
+                  autoFocus
+                />
+                {phoneError && (
+                  <p className="text-[11px] font-bold text-rose-500 flex items-center gap-1.5">
+                    <AlertCircle className="w-3 h-3 shrink-0" />
+                    {phoneError}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setPhoneModal(null)}
+                  disabled={initiating}
+                  className="px-4 py-2 text-xs font-bold text-premium-main hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors border border-transparent rounded-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  id="billing-phone-submit"
+                  onClick={handlePhoneSubmit}
+                  disabled={initiating || phoneInput.length !== 10}
+                  className="px-5 py-2 text-xs font-black uppercase tracking-wider text-white bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-colors rounded-sm flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {initiating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
+                  Proceed to Payment
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         </div>
       </div>

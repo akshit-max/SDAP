@@ -55,18 +55,16 @@ export function useInitiatePayment(orgId: string | null) {
   const [error, setError] = useState<string | null>(null);
 
   const initiate = useCallback(
-    async (plan: PlanTier, billingCycle: BillingCycle) => {
+    async (plan: PlanTier, billingCycle: BillingCycle, phone: string) => {
       if (!orgId) return;
       setInitiating(true);
       setError(null);
       try {
-        const result = await billingApi.initiatePayment(orgId, plan, billingCycle);
-        console.log('Initiate Payment Result:', result);
+        const result = await billingApi.initiatePayment(orgId, plan, billingCycle, phone);
         // Redirect customer to HDFC checkout
         if (result && result.paymentLink) {
           window.location.href = result.paymentLink;
         } else {
-          console.error('No payment link found in result!', result);
           setError('Could not get payment link from server.');
         }
       } catch (err: unknown) {
