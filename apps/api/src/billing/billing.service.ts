@@ -252,14 +252,20 @@ export class BillingService {
     if (!orderId)
       throw new BadRequestException('Missing order_id in return URL');
 
-    // SECURITY: Verify HMAC — log mismatch but do NOT block in UAT (sandbox RESPONSE_KEY may differ).
-    // In production, HMAC failure should be a hard reject. Order Status API is the authoritative verifier.
+    // SECURITY: Verify HMAC — hard reject on failure (F-001).
+    // Invalid or missing signature means the return URL was not issued by HDFC.
+    // We do NOT fall through to Order Status API on signature failure — that path
+    // could allow a tampered redirect to influence payment processing timing.
     const hmacValid = this.signature.verifyReturnUrl(params);
     if (!hmacValid) {
       this.logger.warn(
-        `[RETURN] HMAC verification failed for order ${orderId} — proceeding to Order Status API for verification`,
+        `[RETURN] HMAC verification failed for order ${orderId} — rejecting return URL`,
       );
-      // Fall through — Order Status API will confirm or reject the payment
+      return {
+        success: false,
+        orderId,
+        redirectPath: '/pricing?error=signature_invalid',
+      };
     }
 
     // Idempotency: find existing payment record
@@ -376,6 +382,42 @@ export class BillingService {
     this.logger.log(
       `[CONFIRM] Order ${orderId} HDFC status: ${orderStatus.status} (source: ${source})`,
     );
+
+    // F-002: Cross-validate the Order Status response against our stored payment record.
+    // The returned order_id, amount, and currency must match exactly.
+    // A mismatch means the response does not belong to this payment — reject immediately.
+    if (orderStatus.order_id !== orderId) {
+      this.logger.error(
+        `[CONFIRM] Order ID mismatch — expected ${orderId}, got ${orderStatus.order_id} (source: ${source})`,
+      );
+      return {
+        success: false,
+        orderId,
+        redirectPath: '/pricing?error=payment_validation_failed',
+      };
+    }
+    // HDFC returns amount as a number (e.g. 499 or 499.00). Our DB stores it as an integer (INR).
+    // Strict numeric equality prevents fractional mismatches (e.g. 499.49 !== 499).
+    if (Number(orderStatus.amount) !== payment.amount) {
+      this.logger.error(
+        `[CONFIRM] Amount mismatch — expected ${payment.amount}, got ${orderStatus.amount} (source: ${source})`,
+      );
+      return {
+        success: false,
+        orderId,
+        redirectPath: '/pricing?error=payment_validation_failed',
+      };
+    }
+    if (orderStatus.currency !== 'INR') {
+      this.logger.error(
+        `[CONFIRM] Currency mismatch — expected INR, got ${orderStatus.currency} (source: ${source})`,
+      );
+      return {
+        success: false,
+        orderId,
+        redirectPath: '/pricing?error=payment_validation_failed',
+      };
+    }
 
     if (orderStatus.status !== 'CHARGED') {
       // Non-terminal: still pending — don't change state
