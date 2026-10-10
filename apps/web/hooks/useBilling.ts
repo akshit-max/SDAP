@@ -146,3 +146,35 @@ export function useComplianceStatus(orgId: string | null) {
 
   return { status, loading, error, refresh };
 }
+
+/**
+ * usePaymentReceipt
+ *
+ * Fetches the payment receipt for a successful HDFC order.
+ */
+export function usePaymentReceipt(orgId: string | null, orderId: string | null) {
+  const [receipt, setReceipt] = useState<import('../lib/api/billing').PaymentReceipt | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchReceipt = useCallback(async () => {
+    if (!orgId || !orderId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const { billingApi } = await import('../lib/api/billing');
+      const data = await billingApi.getPaymentReceipt(orgId, orderId);
+      setReceipt(data);
+    } catch (err: unknown) {
+      setError((err as Error).message ?? 'Failed to load payment receipt');
+    } finally {
+      setLoading(false);
+    }
+  }, [orgId, orderId]);
+
+  useEffect(() => {
+    void fetchReceipt();
+  }, [fetchReceipt]);
+
+  return { receipt, loading, error, fetchReceipt };
+}

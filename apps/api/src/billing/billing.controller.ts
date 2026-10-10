@@ -70,6 +70,20 @@ export class BillingController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('organizations/:orgId/billing/payments/:orderId')
+  async getPaymentReceipt(
+    @Param('orgId') orgId: string,
+    @Param('orderId') orderId: string,
+    @Req() req: Request & { user: { userId: string } },
+  ) {
+    return this.billingService.getPaymentReceipt(
+      orgId,
+      req.user.userId,
+      orderId,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post('organizations/:orgId/billing/cancel')
   async cancelSubscription(
     @Param('orgId') orgId: string,

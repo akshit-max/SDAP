@@ -61,6 +61,14 @@ export interface ComplianceStatusResponse {
   userLimit: number;
 }
 
+export interface PaymentReceipt {
+  hdfcOrderId: string;
+  hdfcTxnId: string | null;
+  amount: number;
+  currency: string;
+  processedAt: string | null;
+}
+
 export interface InitiatePaymentResponse {
   paymentLink: string;
   orderId: string;
@@ -126,6 +134,16 @@ export const billingApi = {
     const response = await apiClient.post(`/organizations/${orgId}/billing/cancel`, {
       reason: reason ?? 'User requested cancellation',
     });
+    return response.data;
+  },
+
+  /**
+   * Fetch the payment receipt for a successful HDFC order.
+   * Returns null if the payment is pending, failed, or does not belong to the org.
+   */
+  getPaymentReceipt: async (orgId: string, orderId: string): Promise<PaymentReceipt | null> => {
+    const response = await apiClient.get(`/organizations/${orgId}/billing/payments/${orderId}`);
+    if (!response.data) return null;
     return response.data;
   },
 };

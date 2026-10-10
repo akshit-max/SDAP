@@ -296,7 +296,11 @@ export class BillingService {
       this.logger.log(
         `[RETURN] Order ${orderId} already processed — idempotent return`,
       );
-      return { success: true, orderId, redirectPath: '/pricing?success=true' };
+      return {
+        success: true,
+        orderId,
+        redirectPath: `/pricing?success=true&order_id=${orderId}`,
+      };
     }
 
     // Call Order Status API — this is the authoritative backend verification, not the browser redirect
@@ -520,7 +524,44 @@ export class BillingService {
     this.logger.log(
       `[CONFIRM] Subscription activated for org ${sub.organizationId}, plan ${sub.plan}`,
     );
-    return { success: true, orderId, redirectPath: '/pricing?success=true' };
+    return {
+      success: true,
+      orderId,
+      redirectPath: `/pricing?success=true&order_id=${orderId}`,
+    };
+  }
+
+  // ─── 4b. Get Payment Receipt (Safeguard 1 & 3) ──────────────────────────────
+  async getPaymentReceipt(
+    organizationId: string,
+    userId: string,
+    hdfcOrderId: string,
+  ) {
+    // Ensure the requesting user actually belongs to this organization
+    const member = await this.prisma.organizationMember.findUnique({
+      where: { organizationId_userId: { organizationId, userId } },
+    });
+    if (!member) {
+      throw new ForbiddenException('User is not a member of this organization');
+    }
+
+    const sub = await this.subscriptions.findByOrgId(organizationId);
+    if (!sub) return null;
+
+    return this.prisma.payment.findFirst({
+      where: {
+        subscriptionId: sub.id,
+        hdfcOrderId,
+        status: 'SUCCESS',
+      },
+      select: {
+        hdfcOrderId: true,
+        hdfcTxnId: true,
+        amount: true,
+        currency: true,
+        processedAt: true,
+      },
+    });
   }
 
   // ─── 5. Get Subscription Status ─────────────────────────────────────────────

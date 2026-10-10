@@ -37,7 +37,7 @@ import {
   formatAnnual,
 } from '../../lib/subscription/billing';
 import type { BillingCycle, PlanTier } from '../../lib/subscription/types';
-import { useOrgSubscription, useInitiatePayment, useCancelSubscription } from '../../hooks/useBilling';
+import { useOrgSubscription, useInitiatePayment, useCancelSubscription, usePaymentReceipt } from '../../hooks/useBilling';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '../../components/common/Toast';
 
@@ -77,6 +77,71 @@ function PlanBadge({ plan, currentPlan }: { plan: PlanTier; currentPlan: PlanTie
   );
 }
 
+// ─── Payment Confirmation Panel ─────────────────────────────────────────────
+
+function PaymentConfirmationPanel({
+  orderId,
+  receipt,
+  loading,
+}: {
+  orderId: string | null;
+  receipt: import('../../lib/api/billing').PaymentReceipt | null;
+  loading: boolean;
+}) {
+  if (!orderId) return null;
+
+  return (
+    <div className="mb-6 p-5 bg-emerald-500/10 border border-emerald-500/30 rounded-sm">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="p-2 bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-full">
+          <CheckCircle2 className="w-5 h-5" />
+        </div>
+        <div>
+          <h3 className="text-sm font-black text-emerald-800 dark:text-emerald-200">
+            Payment Processing
+          </h3>
+          <p className="text-xs font-semibold text-emerald-700/80 dark:text-emerald-300/80">
+            Retrieving transaction receipt from the bank...
+          </p>
+        </div>
+      </div>
+
+      <div className="bg-emerald-500/5 border border-emerald-500/20 p-4 space-y-3 font-number text-xs">
+        {loading ? (
+          <div className="flex items-center gap-2 text-emerald-600">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>Loading receipt details...</span>
+          </div>
+        ) : receipt ? (
+          <>
+            <div className="flex justify-between">
+              <span className="text-emerald-700 dark:text-emerald-300 font-bold">Order Number</span>
+              <span className="font-black text-emerald-900 dark:text-emerald-100">{receipt.hdfcOrderId}</span>
+            </div>
+            <div className="flex justify-between border-t border-emerald-500/10 pt-2">
+              <span className="text-emerald-700 dark:text-emerald-300 font-bold">Amount Paid</span>
+              <span className="font-black text-emerald-900 dark:text-emerald-100">
+                {receipt.currency} {receipt.amount}
+              </span>
+            </div>
+            <div className="flex justify-between border-t border-emerald-500/10 pt-2">
+              <span className="text-emerald-700 dark:text-emerald-300 font-bold">Transaction ID</span>
+              <span className="font-black text-emerald-900 dark:text-emerald-100">
+                {receipt.hdfcTxnId ?? 'Pending confirmation'}
+              </span>
+            </div>
+          </>
+        ) : (
+          <div className="text-amber-600 dark:text-amber-400 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4" />
+            <span>Could not retrieve a successful payment receipt for this order.</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Pricing Page Component ──────────────────────────────────────────────
 
 export default function PricingPage() {
@@ -102,6 +167,9 @@ export default function PricingPage() {
   const [phoneModal, setPhoneModal] = useState<{ plan: PlanTier; billingCycle: BillingCycle } | null>(null);
   const [phoneInput, setPhoneInput] = useState('');
   const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [successOrderId, setSuccessOrderId] = useState<string | null>(null);
+
+  const { receipt, loading: receiptLoading } = usePaymentReceipt(orgId, successOrderId);
 
   const openPhoneModal = (plan: PlanTier, cycle: BillingCycle) => {
     setPhoneInput('');
@@ -124,11 +192,12 @@ export default function PricingPage() {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
     const success = params.get('success');
+    const orderId = params.get('order_id');
     const error = params.get('error');
     const status = params.get('status');
 
-    if (success === 'true') {
-      toast('success', '✅ Payment successful! Your plan has been upgraded.');
+    if (success === 'true' && orderId) {
+      setSuccessOrderId(orderId);
       // Refetch subscription from backend to reflect new plan
       void refreshSub();
       // Clean URL
@@ -305,6 +374,7 @@ export default function PricingPage() {
     <DashboardShell>
       <div className="flex flex-col h-full overflow-y-auto bg-[#f5f5f7] dark:bg-[#09090b]">
         <div className="max-w-6xl mx-auto w-full px-6 py-8 space-y-8">
+          <PaymentConfirmationPanel orderId={successOrderId} receipt={receipt} loading={receiptLoading} />
 
           {/* ─── Hero Header & Status Banner ─────────────────────────────────── */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-premium pb-6">

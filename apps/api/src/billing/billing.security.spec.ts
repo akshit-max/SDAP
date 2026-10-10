@@ -305,7 +305,9 @@ describe('BillingService — Security Regression Tests', () => {
       });
 
       expect(result.success).toBe(true);
-      expect(result.redirectPath).toBe('/pricing?success=true');
+      expect(result.redirectPath).toBe(
+        '/pricing?success=true&order_id=wPMABC123DEF456',
+      );
       expect(mockHdfc.getOrderStatus).toHaveBeenCalledWith('wPMABC123DEF456');
     });
 
@@ -485,7 +487,9 @@ describe('BillingService — Security Regression Tests', () => {
       const result = await callReturnUrl({}); // all values match chargedOrderStatus
 
       expect(result.success).toBe(true);
-      expect(result.redirectPath).toBe('/pricing?success=true');
+      expect(result.redirectPath).toBe(
+        '/pricing?success=true&order_id=wPMABC123DEF456',
+      );
       expect(mockSubscriptions.activate).toHaveBeenCalledWith(
         'org-uuid-001',
         expect.objectContaining({ totalAmount: 499 }),
