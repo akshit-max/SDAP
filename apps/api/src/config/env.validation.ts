@@ -55,6 +55,28 @@ export function validate(config: Record<string, unknown>) {
     // if (!data.SMTP_PASS) throw new Error('SMTP_PASS is required in production');
     // For JWT, we need either keys mounted from file or from env
     // TokenService falls back to keys/private.pem, which is fine, but we can't easily validate the file's presence here.
+
+    const requiredHdfcVariables = [
+      'HDFC_BASE_URL',
+      'HDFC_MERCHANT_ID',
+      'HDFC_CLIENT_ID',
+      'HDFC_RESELLER_ID',
+      'HDFC_API_KEY',
+      'HDFC_RESPONSE_KEY',
+      'HDFC_WEBHOOK_USERNAME',
+      'HDFC_WEBHOOK_PASSWORD',
+      'HDFC_PAYMENT_PAGE_CLIENT_ID',
+      'HDFC_RETURN_URL',
+      'HDFC_MAX_AMOUNT_PRO',
+      'HDFC_MAX_AMOUNT_BUSINESS',
+    ] as const;
+
+    for (const key of requiredHdfcVariables) {
+      const val = data[key];
+      if (typeof val !== 'string' || !val.trim()) {
+        throw new Error(`${key} is required in production`);
+      }
+    }
   }
 
   return data;
