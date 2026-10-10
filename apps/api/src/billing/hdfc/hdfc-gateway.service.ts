@@ -60,12 +60,28 @@ export class HdfcGatewayService {
     method: 'GET' | 'POST',
     path: string,
     body?: object,
+    isFormEncoded = false,
   ): Promise<T> {
     const url = `${this.baseUrl}${path}`;
+
+    const requestHeaders = { ...this.headers };
+    let requestBody: string | undefined = undefined;
+
+    if (body) {
+      if (isFormEncoded) {
+        requestHeaders['Content-Type'] = 'application/x-www-form-urlencoded';
+        requestBody = new URLSearchParams(
+          body as Record<string, string>,
+        ).toString();
+      } else {
+        requestBody = JSON.stringify(body);
+      }
+    }
+
     const res = await fetch(url, {
       method,
-      headers: this.headers,
-      body: body ? JSON.stringify(body) : undefined,
+      headers: requestHeaders,
+      body: requestBody,
     });
 
     if (!res.ok) {
@@ -102,10 +118,18 @@ export class HdfcGatewayService {
     this.logger.log(
       `[MANDATE EXECUTE] Mandate ${mandateId}, order ${body.order_id}, amount ${body.amount}`,
     );
+    const formBody = {
+      'order.order_id': body.order_id,
+      'order.amount': body.amount,
+      'order.currency': body.currency,
+      'customer.id': body.customer_id,
+      mandate_id: mandateId,
+    };
     return this.request<HdfcMandateExecuteResponse>(
       'POST',
-      `/mandates/v2/execute/${encodeURIComponent(mandateId)}`,
-      body,
+      `/txns`,
+      formBody,
+      true,
     );
   }
 
@@ -115,8 +139,9 @@ export class HdfcGatewayService {
     this.logger.log(`[MANDATE STATUS] Checking ${mandateId}`);
     return this.request<HdfcMandateStatusResponse>(
       'POST',
-      `/mandates/v2/status/${encodeURIComponent(mandateId)}`,
-      {},
+      `/mandates/${encodeURIComponent(mandateId)}`,
+      { command: 'check_status' },
+      true,
     );
   }
 
@@ -124,8 +149,9 @@ export class HdfcGatewayService {
     this.logger.log(`[MANDATE REVOKE] Revoking ${mandateId}`);
     return this.request<HdfcMandateRevokeResponse>(
       'POST',
-      `/mandates/v2/revoke/${encodeURIComponent(mandateId)}`,
-      {},
+      `/mandates/${encodeURIComponent(mandateId)}`,
+      { command: 'revoke' },
+      true,
     );
   }
 
