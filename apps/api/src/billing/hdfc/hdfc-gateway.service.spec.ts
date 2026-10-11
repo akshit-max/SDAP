@@ -168,6 +168,42 @@ describe('HdfcGatewayService', () => {
       const bodyData = JSON.parse(options.body as string);
       expect(bodyData.order_id).toBe('ord_123');
     });
+
+    it('P4-5: logs sanitized session status without exposing raw response bodies or tokens', async () => {
+      const loggerSpy = jest.spyOn((service as any).logger, 'log');
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          status: 'NEW',
+          payment_links: {
+            web: 'https://sensitive.payment.link?token=secret123',
+          },
+          sdk_payload: { token: 'super-secret-token' },
+        }),
+      });
+
+      await service.createSessionWithMandate({
+        order_id: 'ord_safe_123',
+        amount: '500',
+        customer_id: 'cust_abc',
+      } as any);
+
+      expect(loggerSpy).toHaveBeenCalledWith(
+        '[SESSION] Session created for order ord_safe_123, status: NEW',
+      );
+      const calls = loggerSpy.mock.calls.map((c) => c[0]);
+      expect(
+        calls.some(
+          (msg) => typeof msg === 'string' && msg.includes('secret123'),
+        ),
+      ).toBe(false);
+      expect(
+        calls.some(
+          (msg) =>
+            typeof msg === 'string' && msg.includes('[SESSION RAW RESPONSE]'),
+        ),
+      ).toBe(false);
+    });
   });
 
   describe('HTTP error handling', () => {

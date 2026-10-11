@@ -140,7 +140,15 @@ export interface HdfcWebhookPayload {
   event_name: string; // e.g. "ORDER_SUCCEEDED"
   date_created: string; // ISO 8601
   content: {
-    order: HdfcOrderStatusResponse;
+    order?: HdfcOrderStatusResponse;
+    mandate?: {
+      mandate_id?: string;
+      id?: string;
+      status?: string;
+      customer_id?: string;
+      [key: string]: any;
+    };
+    [key: string]: any;
   };
 }
 

@@ -99,7 +99,9 @@ export class HdfcGatewayService {
   ): Promise<HdfcSessionResponse> {
     this.logger.log(`[SESSION] Creating session for order ${body.order_id}`);
     const res = await this.request<any>('POST', '/session', body);
-    this.logger.log(`[SESSION RAW RESPONSE] ${JSON.stringify(res)}`);
+    this.logger.log(
+      `[SESSION] Session created for order ${body.order_id}, status: ${res?.status ?? 'UNKNOWN'}`,
+    );
     return res as HdfcSessionResponse;
   }
 

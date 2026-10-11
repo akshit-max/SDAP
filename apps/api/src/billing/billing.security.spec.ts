@@ -65,11 +65,14 @@ const mockSubscriptions = {
 const mockPrisma = {
   payment: {
     findUnique: jest.fn(),
+    findFirst: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
   },
   subscription: {
     findUnique: jest.fn(),
+    findFirst: jest.fn(),
+    update: jest.fn(),
   },
   $transaction: jest.fn(
     (ops: unknown[]) => Promise.all(ops) as Promise<unknown[]>,
@@ -572,6 +575,575 @@ describe('BillingService — Security Regression Tests', () => {
           data: expect.objectContaining({ hdfcTxnId: null }),
         }),
       );
+    });
+  });
+
+  // ── P4: Recurring Renewal Verification & Failure Handling ───────────────────
+
+  describe('P4: Recurring Renewal Verification & Failure Handling', () => {
+    const baseSubscription = {
+      id: 'sub-uuid-renewal',
+      organizationId: 'org-uuid-renewal',
+      plan: 'PRO' as const,
+      billingCycle: 'MONTHLY' as const,
+      status: 'ACTIVE' as const,
+      hdfcMandateId: 'mandate-12345',
+      hdfcCustomerId: 'cust-org-12345',
+      baseAmount: 499,
+      extraUsers: 0,
+      extraUserRate: 50,
+      totalAmount: 499,
+      failureCount: 0,
+      currentPeriodStart: new Date('2026-09-10T00:00:00Z'),
+      currentPeriodEnd: new Date('2026-10-10T00:00:00Z'),
+    };
+
+    const renewalPayment = {
+      id: 'pay-uuid-renewal-001',
+      hdfcOrderId: 'rPMABC123DEF456',
+      subscriptionId: 'sub-uuid-renewal',
+      amount: 499,
+      status: 'PENDING',
+      type: 'RECURRING_EXECUTION',
+      seatsAtCharge: 1,
+    };
+
+    beforeEach(() => {
+      mockPrisma.$transaction.mockImplementation(
+        (ops: unknown[]) => Promise.all(ops) as Promise<unknown[]>,
+      );
+    });
+
+    it('P4-1: leaves renewal payment PENDING when mandate execution is not yet charged', async () => {
+      mockSubscriptions.countActiveSeats.mockResolvedValue(1);
+      mockPrisma.payment.findFirst.mockResolvedValue(null);
+      mockPrisma.payment.create.mockResolvedValue(renewalPayment);
+      mockHdfc.executeMandateCharge.mockResolvedValue({
+        status: 'PENDING',
+        order_id: renewalPayment.hdfcOrderId,
+      });
+
+      await service.processRenewal(baseSubscription as any);
+
+      expect(mockPrisma.payment.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            type: 'RECURRING_EXECUTION',
+            status: 'PENDING',
+            amount: 499,
+          }),
+        }),
+      );
+      expect(mockHdfc.executeMandateCharge).toHaveBeenCalledWith(
+        'mandate-12345',
+        expect.objectContaining({ order_id: expect.stringMatching(/^rPM/) }),
+      );
+      expect(mockPrisma.payment.update).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: 'SUCCESS' }),
+        }),
+      );
+      expect(mockSubscriptions.activate).not.toHaveBeenCalled();
+    });
+
+    it('P4-1 & P4-2: confirms order, records hdfcTxnId, and activates subscription with preserved anchor date when charge returns CHARGED', async () => {
+      mockSubscriptions.countActiveSeats.mockResolvedValue(1);
+      mockPrisma.payment.findFirst.mockResolvedValue(null);
+      mockPrisma.payment.create.mockResolvedValue(renewalPayment);
+      mockHdfc.executeMandateCharge.mockResolvedValue({
+        status: 'CHARGED',
+        order_id: renewalPayment.hdfcOrderId,
+      });
+      mockHdfc.getOrderStatus.mockResolvedValue({
+        ...chargedOrderStatus,
+        order_id: renewalPayment.hdfcOrderId,
+        txn_id: 'txn-hdfc-renewal-confirmed',
+      });
+      mockPrisma.subscription.findUnique.mockResolvedValue(baseSubscription);
+
+      await service.processRenewal(baseSubscription as any);
+
+      expect(mockHdfc.getOrderStatus).toHaveBeenCalledWith(
+        renewalPayment.hdfcOrderId,
+      );
+      expect(mockPrisma.payment.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            status: 'SUCCESS',
+            hdfcTxnId: 'txn-hdfc-renewal-confirmed',
+          }),
+        }),
+      );
+      expect(mockSubscriptions.activate).toHaveBeenCalledWith(
+        baseSubscription.organizationId,
+        expect.objectContaining({
+          periodStart: baseSubscription.currentPeriodEnd,
+        }),
+      );
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        'audit.log',
+        expect.objectContaining({
+          action: 'billing.renewal_success',
+        }),
+      );
+    });
+
+    it('marks renewal payment FAILED and sets subscription PAST_DUE when mandate execution returns FAILED', async () => {
+      mockSubscriptions.countActiveSeats.mockResolvedValue(1);
+      mockPrisma.payment.findFirst.mockResolvedValue(null);
+      mockPrisma.payment.create.mockResolvedValue(renewalPayment);
+      mockHdfc.executeMandateCharge.mockResolvedValue({
+        status: 'FAILED',
+        order_id: renewalPayment.hdfcOrderId,
+      });
+
+      await service.processRenewal(baseSubscription as any);
+
+      expect(mockPrisma.payment.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            status: 'FAILED',
+          }),
+        }),
+      );
+      expect(mockSubscriptions.markPastDue).toHaveBeenCalledWith(
+        baseSubscription.organizationId,
+        expect.stringContaining('FAILED'),
+      );
+      expect(mockSubscriptions.activate).not.toHaveBeenCalled();
+    });
+
+    it('marks renewal payment FAILED and sets subscription PAST_DUE on network or gateway exception', async () => {
+      mockSubscriptions.countActiveSeats.mockResolvedValue(1);
+      mockPrisma.payment.findFirst.mockResolvedValue(null);
+      mockPrisma.payment.create.mockResolvedValue(renewalPayment);
+      mockHdfc.executeMandateCharge.mockRejectedValue(
+        new Error('HDFC connection timed out'),
+      );
+
+      await service.processRenewal(baseSubscription as any);
+
+      expect(mockPrisma.payment.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            status: 'FAILED',
+            failureReason: 'HDFC connection timed out',
+          }),
+        }),
+      );
+      expect(mockSubscriptions.markPastDue).toHaveBeenCalledWith(
+        baseSubscription.organizationId,
+        'HDFC connection timed out',
+      );
+      expect(mockSubscriptions.activate).not.toHaveBeenCalled();
+    });
+
+    it('polls existing PENDING payment instead of creating a duplicate charge', async () => {
+      mockPrisma.payment.findFirst.mockResolvedValue(renewalPayment);
+      mockHdfc.getOrderStatus.mockResolvedValue({
+        ...chargedOrderStatus,
+        order_id: renewalPayment.hdfcOrderId,
+        txn_id: 'txn-existing-pending-confirmed',
+      });
+      mockPrisma.subscription.findUnique.mockResolvedValue(baseSubscription);
+
+      await service.processRenewal(baseSubscription as any);
+
+      expect(mockPrisma.payment.create).not.toHaveBeenCalled();
+      expect(mockHdfc.executeMandateCharge).not.toHaveBeenCalled();
+      expect(mockHdfc.getOrderStatus).toHaveBeenCalledWith(
+        renewalPayment.hdfcOrderId,
+      );
+      expect(mockSubscriptions.activate).toHaveBeenCalled();
+    });
+
+    it('handleWebhook ORDER_SUCCEEDED confirms PENDING renewal, persists hdfcTxnId, and preserves anchor', async () => {
+      mockPrisma.payment.findUnique.mockResolvedValue(renewalPayment);
+      mockHdfc.getOrderStatus.mockResolvedValue({
+        ...chargedOrderStatus,
+        order_id: renewalPayment.hdfcOrderId,
+        txn_id: 'txn-hdfc-webhook-009',
+      });
+      mockPrisma.subscription.findUnique.mockResolvedValue(baseSubscription);
+
+      await service.handleWebhook({
+        id: 'evt-succ-1',
+        date_created: new Date().toISOString(),
+        event_name: 'ORDER_SUCCEEDED',
+        content: {
+          order: { order_id: renewalPayment.hdfcOrderId } as any,
+        },
+      });
+
+      expect(mockPrisma.payment.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            status: 'SUCCESS',
+            hdfcTxnId: 'txn-hdfc-webhook-009',
+          }),
+        }),
+      );
+      expect(mockSubscriptions.activate).toHaveBeenCalledWith(
+        baseSubscription.organizationId,
+        expect.objectContaining({
+          periodStart: baseSubscription.currentPeriodEnd,
+        }),
+      );
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        'audit.log',
+        expect.objectContaining({
+          action: 'billing.renewal_success',
+        }),
+      );
+    });
+
+    it('handleWebhook ORDER_SUCCEEDED is idempotent for already-SUCCESS payment', async () => {
+      mockPrisma.payment.findUnique.mockResolvedValue({
+        ...renewalPayment,
+        status: 'SUCCESS',
+      });
+
+      await service.handleWebhook({
+        id: 'evt-succ-idemp',
+        date_created: new Date().toISOString(),
+        event_name: 'ORDER_SUCCEEDED',
+        content: {
+          order: { order_id: renewalPayment.hdfcOrderId } as any,
+        },
+      });
+
+      expect(mockHdfc.getOrderStatus).not.toHaveBeenCalled();
+      expect(mockSubscriptions.activate).not.toHaveBeenCalled();
+    });
+
+    it('P4-3: handleWebhook ORDER_FAILED transitions an already-SUCCESS renewal payment to FAILED and marks PAST_DUE when HDFC confirms failure', async () => {
+      mockPrisma.payment.findUnique.mockResolvedValue({
+        ...renewalPayment,
+        status: 'SUCCESS',
+      });
+      mockHdfc.getOrderStatus.mockResolvedValue({
+        ...chargedOrderStatus,
+        status: 'FAILED',
+        order_id: renewalPayment.hdfcOrderId,
+      });
+      mockPrisma.subscription.findUnique.mockResolvedValue(baseSubscription);
+
+      await service.handleWebhook({
+        id: 'evt-fail-post-succ',
+        date_created: new Date().toISOString(),
+        event_name: 'ORDER_FAILED',
+        content: {
+          order: {
+            order_id: renewalPayment.hdfcOrderId,
+            bank_error_message: 'Debit failed at clearing house',
+          } as any,
+        },
+      });
+
+      expect(mockPrisma.payment.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            status: 'FAILED',
+            failureReason: 'Debit failed at clearing house',
+          }),
+        }),
+      );
+      expect(mockSubscriptions.markPastDue).toHaveBeenCalledWith(
+        baseSubscription.organizationId,
+        'Debit failed at clearing house',
+      );
+    });
+
+    it('P4-3: handleWebhook ORDER_FAILED ignores contradictory failure event when HDFC confirms CHARGED', async () => {
+      mockPrisma.payment.findUnique.mockResolvedValue({
+        ...renewalPayment,
+        status: 'SUCCESS',
+      });
+      mockHdfc.getOrderStatus.mockResolvedValue({
+        ...chargedOrderStatus,
+        status: 'CHARGED',
+        order_id: renewalPayment.hdfcOrderId,
+      });
+      mockPrisma.subscription.findUnique.mockResolvedValue(baseSubscription);
+
+      await service.handleWebhook({
+        id: 'evt-fail-contradictory',
+        date_created: new Date().toISOString(),
+        event_name: 'ORDER_FAILED',
+        content: {
+          order: {
+            order_id: renewalPayment.hdfcOrderId,
+            bank_error_message: 'Delayed failure notice',
+          } as any,
+        },
+      });
+
+      expect(mockPrisma.payment.update).not.toHaveBeenCalled();
+      expect(mockSubscriptions.markPastDue).not.toHaveBeenCalled();
+    });
+
+    it('P4-3: handleWebhook ORDER_FAILED transitions a PENDING renewal payment to FAILED and marks PAST_DUE', async () => {
+      mockPrisma.payment.findUnique.mockResolvedValue(renewalPayment);
+      mockPrisma.subscription.findUnique.mockResolvedValue(baseSubscription);
+
+      await service.handleWebhook({
+        id: 'evt-fail-pending',
+        date_created: new Date().toISOString(),
+        event_name: 'ORDER_FAILED',
+        content: {
+          order: {
+            order_id: renewalPayment.hdfcOrderId,
+            bank_error_message: 'Insufficient balance',
+          } as any,
+        },
+      });
+
+      expect(mockPrisma.payment.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            status: 'FAILED',
+            failureReason: 'Insufficient balance',
+          }),
+        }),
+      );
+      expect(mockSubscriptions.markPastDue).toHaveBeenCalledWith(
+        baseSubscription.organizationId,
+        'Insufficient balance',
+      );
+    });
+
+    it('handleWebhook ORDER_FAILED is idempotent for already-FAILED payment', async () => {
+      mockPrisma.payment.findUnique.mockResolvedValue({
+        ...renewalPayment,
+        status: 'FAILED',
+      });
+
+      await service.handleWebhook({
+        id: 'evt-fail-idemp',
+        date_created: new Date().toISOString(),
+        event_name: 'ORDER_FAILED',
+        content: {
+          order: {
+            order_id: renewalPayment.hdfcOrderId,
+          } as any,
+        },
+      });
+
+      expect(mockPrisma.payment.update).not.toHaveBeenCalled();
+      expect(mockSubscriptions.markPastDue).not.toHaveBeenCalled();
+    });
+
+    it('does not activate renewal subscription when order amount mismatches in HDFC response', async () => {
+      mockPrisma.payment.findUnique.mockResolvedValue(renewalPayment);
+      mockHdfc.getOrderStatus.mockResolvedValue({
+        ...chargedOrderStatus,
+        order_id: renewalPayment.hdfcOrderId,
+        amount: 9999,
+      });
+
+      await service.handleWebhook({
+        id: 'evt-mismatch',
+        date_created: new Date().toISOString(),
+        event_name: 'ORDER_SUCCEEDED',
+        content: {
+          order: { order_id: renewalPayment.hdfcOrderId } as any,
+        },
+      });
+
+      expect(mockPrisma.payment.update).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: 'SUCCESS' }),
+        }),
+      );
+      expect(mockSubscriptions.activate).not.toHaveBeenCalled();
+    });
+
+    it('confirmOrderAndActivate entry guard prevents double-extending an already-SUCCESS payment', async () => {
+      mockPrisma.payment.findUnique.mockResolvedValue({
+        ...renewalPayment,
+        status: 'SUCCESS',
+      });
+
+      const result = await (service as any).confirmOrderAndActivate(
+        { ...renewalPayment, status: 'SUCCESS' },
+        'scheduler',
+      );
+
+      expect(result.success).toBe(true);
+      expect(mockHdfc.getOrderStatus).not.toHaveBeenCalled();
+      expect(mockSubscriptions.activate).not.toHaveBeenCalled();
+    });
+
+    it('processRenewal skips concurrent execution for the same subscription ID', async () => {
+      // Simulate active renewal in progress by adding the subscription ID to the internal Set
+      (service as any).activeRenewalSubIds.add(baseSubscription.id);
+
+      await service.processRenewal(baseSubscription as any);
+
+      expect(mockPrisma.payment.create).not.toHaveBeenCalled();
+      expect(mockHdfc.executeMandateCharge).not.toHaveBeenCalled();
+
+      // Clean up Set
+      (service as any).activeRenewalSubIds.delete(baseSubscription.id);
+    });
+
+    it('P4-4: handleWebhook MANDATE_REVOKED transitions ACTIVE subscription to CANCELLED without premature expiry when period is active', async () => {
+      const futurePeriodEnd = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
+      mockPrisma.subscription.findFirst.mockResolvedValue({
+        ...baseSubscription,
+        status: 'ACTIVE',
+        currentPeriodEnd: futurePeriodEnd,
+      });
+
+      await service.handleWebhook({
+        id: 'evt-mandate-revoked-active',
+        date_created: new Date().toISOString(),
+        event_name: 'MANDATE_REVOKED',
+        content: {
+          mandate: {
+            mandate_id: 'mandate-12345',
+            status: 'REVOKED',
+          },
+        },
+      });
+
+      // Cancels subscription so it does not auto-renew
+      expect(mockSubscriptions.cancel).toHaveBeenCalledWith(
+        baseSubscription.organizationId,
+        'Mandate revoked by bank',
+      );
+      // Clears mandate ID on the database record
+      expect(mockPrisma.subscription.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: baseSubscription.id },
+          data: { hdfcMandateId: null },
+        }),
+      );
+      // Does NOT expire prematurely
+      expect(mockSubscriptions.expire).not.toHaveBeenCalled();
+      // Emits audit log
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        'audit.log',
+        expect.objectContaining({
+          action: 'billing.mandate_revoked',
+          metadata: expect.objectContaining({
+            mandateId: 'mandate-12345',
+            reconciliation: 'CANCELLED_UNTIL_PERIOD_END',
+          }),
+        }),
+      );
+    });
+
+    it('P4-4: handleWebhook MANDATE_REVOKED expires PAST_DUE subscription immediately', async () => {
+      mockPrisma.subscription.findFirst.mockResolvedValue({
+        ...baseSubscription,
+        status: 'PAST_DUE',
+      });
+
+      await service.handleWebhook({
+        id: 'evt-mandate-revoked-pastdue',
+        date_created: new Date().toISOString(),
+        event_name: 'MANDATE_REVOKED',
+        content: {
+          mandate: {
+            mandate_id: 'mandate-12345',
+            status: 'REVOKED',
+          },
+        },
+      });
+
+      // Expires immediately
+      expect(mockSubscriptions.expire).toHaveBeenCalledWith(
+        baseSubscription.organizationId,
+      );
+      expect(mockSubscriptions.cancel).not.toHaveBeenCalled();
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        'audit.log',
+        expect.objectContaining({
+          action: 'billing.mandate_revoked',
+          metadata: expect.objectContaining({
+            mandateId: 'mandate-12345',
+            reconciliation: 'EXPIRED_IMMEDIATELY',
+          }),
+        }),
+      );
+    });
+
+    it('P4-4: handleWebhook MANDATE_REVOKED is idempotent for already EXPIRED or FREE subscription', async () => {
+      mockPrisma.subscription.findFirst.mockResolvedValue({
+        ...baseSubscription,
+        status: 'EXPIRED',
+      });
+
+      await service.handleWebhook({
+        id: 'evt-mandate-revoked-idemp',
+        date_created: new Date().toISOString(),
+        event_name: 'MANDATE_REVOKED',
+        content: {
+          mandate: {
+            mandate_id: 'mandate-12345',
+          },
+        },
+      });
+
+      expect(mockSubscriptions.cancel).not.toHaveBeenCalled();
+      expect(mockSubscriptions.expire).not.toHaveBeenCalled();
+      expect(mockPrisma.subscription.update).not.toHaveBeenCalled();
+    });
+
+    it('P4-4: handleWebhook MANDATE_REVOKED clears mandate ID on already CANCELLED subscription', async () => {
+      mockPrisma.subscription.findFirst.mockResolvedValue({
+        ...baseSubscription,
+        status: 'CANCELLED',
+      });
+
+      await service.handleWebhook({
+        id: 'evt-mandate-revoked-cancelled',
+        date_created: new Date().toISOString(),
+        event_name: 'MANDATE_REVOKED',
+        content: {
+          mandate: {
+            mandate_id: 'mandate-12345',
+          },
+        },
+      });
+
+      expect(mockSubscriptions.cancel).not.toHaveBeenCalled();
+      expect(mockSubscriptions.expire).not.toHaveBeenCalled();
+      expect(mockPrisma.subscription.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: baseSubscription.id },
+          data: { hdfcMandateId: null },
+        }),
+      );
+    });
+
+    it('P4-4: handleWebhook MANDATE_REVOKED safely ignores unknown mandate ID or missing ID', async () => {
+      // Missing mandate ID
+      await service.handleWebhook({
+        id: 'evt-mandate-revoked-noid',
+        date_created: new Date().toISOString(),
+        event_name: 'MANDATE_REVOKED',
+        content: {},
+      });
+
+      expect(mockPrisma.subscription.findFirst).not.toHaveBeenCalled();
+
+      // Unknown mandate ID
+      mockPrisma.subscription.findFirst.mockResolvedValue(null);
+      await service.handleWebhook({
+        id: 'evt-mandate-revoked-unknown',
+        date_created: new Date().toISOString(),
+        event_name: 'MANDATE_REVOKED',
+        content: {
+          mandate: {
+            mandate_id: 'mandate-unknown',
+          },
+        },
+      });
+
+      expect(mockSubscriptions.cancel).not.toHaveBeenCalled();
+      expect(mockSubscriptions.expire).not.toHaveBeenCalled();
     });
   });
 });

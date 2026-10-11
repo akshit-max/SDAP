@@ -110,6 +110,7 @@ export class BillingService {
   private readonly paymentPageClientId: string;
   private readonly returnUrl: string;
   private readonly mandateMaxAmounts: Record<string, string>;
+  private readonly activeRenewalSubIds = new Set<string>();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -316,6 +317,27 @@ export class BillingService {
    */
   async handleWebhook(payload: HdfcWebhookPayload): Promise<void> {
     const { event_name, content } = payload;
+
+    // Handle bank-initiated mandate events (P4-4)
+    if (event_name === HDFC_WEBHOOK_EVENTS.MANDATE_REVOKED) {
+      const mandateId =
+        content?.mandate?.mandate_id ??
+        content?.mandate?.id ??
+        (content?.order as any)?.mandate_id ??
+        (content as any)?.mandate_id;
+
+      if (!mandateId) {
+        this.logger.warn(
+          `[WEBHOOK] Received MANDATE_REVOKED with no mandate ID`,
+        );
+        return;
+      }
+
+      this.logger.log(`[WEBHOOK] ${event_name} for mandate ${mandateId}`);
+      await this.handleMandateRevokedWebhook(mandateId);
+      return;
+    }
+
     const order = content?.order;
     if (!order?.order_id) {
       this.logger.warn(
@@ -365,7 +387,26 @@ export class BillingService {
     const payment = await this.prisma.payment.findUnique({
       where: { hdfcOrderId: orderId },
     });
-    if (!payment || payment.status !== 'PENDING') return;
+    if (!payment) {
+      this.logger.warn(`[WEBHOOK] No payment for order ${orderId}`);
+      return;
+    }
+    if (payment.status === 'FAILED') {
+      this.logger.log(`[WEBHOOK] Order ${orderId} already FAILED — idempotent`);
+      return;
+    }
+
+    // Protection against delayed/contradictory failure webhooks reversing a genuinely settled payment
+    if (payment.status === 'SUCCESS') {
+      const orderStatus = await this.hdfc.getOrderStatus(orderId);
+      if (orderStatus.status === 'CHARGED') {
+        this.logger.warn(
+          `[WEBHOOK] Received ORDER_FAILED for settled order ${orderId}, but HDFC reports CHARGED — ignoring contradictory webhook`,
+        );
+        return;
+      }
+    }
+
     await this.prisma.payment.update({
       where: { id: payment.id },
       data: {
@@ -378,9 +419,114 @@ export class BillingService {
       where: { id: payment.subscriptionId },
     });
     if (sub) {
-      await this.subscriptions.markPastDue(sub.organizationId, reason);
+      const newFailureCount = (sub.failureCount ?? 0) + 1;
+      if (newFailureCount >= MAX_FAILURES_BEFORE_EXPIRE) {
+        await this.revokeAndExpire(
+          sub,
+          `Payment failed ${newFailureCount} times — grace period exhausted`,
+        );
+      } else {
+        await this.subscriptions.markPastDue(sub.organizationId, reason);
+        this.logger.warn(
+          `[WEBHOOK] Org ${sub.organizationId} renewal failed (attempt ${newFailureCount}) → PAST_DUE`,
+        );
+      }
     }
     this.logger.log(`[WEBHOOK] Order ${orderId} marked FAILED`);
+  }
+
+  private async handleMandateRevokedWebhook(mandateId: string): Promise<void> {
+    const sub = await this.prisma.subscription.findFirst({
+      where: { hdfcMandateId: mandateId },
+    });
+
+    if (!sub) {
+      this.logger.warn(
+        `[WEBHOOK] Received MANDATE_REVOKED for unknown mandate ${mandateId}`,
+      );
+      return;
+    }
+
+    // Idempotency: if already EXPIRED or FREE, mandate revocation is already settled
+    if (sub.status === 'EXPIRED' || sub.status === 'FREE') {
+      this.logger.log(
+        `[WEBHOOK] Mandate ${mandateId} revoked for org ${sub.organizationId}, but subscription already ${sub.status} — idempotent`,
+      );
+      return;
+    }
+
+    // If subscription is already CANCELLED, clear mandate ID to prevent renewal attempts
+    if (sub.status === 'CANCELLED') {
+      if (sub.hdfcMandateId) {
+        await this.prisma.subscription.update({
+          where: { id: sub.id },
+          data: { hdfcMandateId: null },
+        });
+      }
+      this.logger.log(
+        `[WEBHOOK] Mandate ${mandateId} revoked for already CANCELLED subscription ${sub.id}`,
+      );
+      return;
+    }
+
+    const now = new Date();
+    // If ACTIVE and customer already paid for current cycle:
+    // Do NOT cut off access prematurely. Mark CANCELLED, nullify mandate ID so no future debits occur.
+    // The subscription will run until currentPeriodEnd, where Sweep 4 (expireCancelledPeriodEnded)
+    // will expire it and trigger downgrade compliance reset.
+    if (
+      sub.status === 'ACTIVE' &&
+      sub.currentPeriodEnd &&
+      sub.currentPeriodEnd > now
+    ) {
+      await this.subscriptions.cancel(
+        sub.organizationId,
+        'Mandate revoked by bank',
+      );
+      await this.prisma.subscription.update({
+        where: { id: sub.id },
+        data: { hdfcMandateId: null },
+      });
+
+      this.eventEmitter.emit('audit.log', {
+        organizationId: sub.organizationId,
+        actorId: null,
+        action: 'billing.mandate_revoked',
+        resourceType: 'SUBSCRIPTION',
+        resourceId: sub.id,
+        metadata: {
+          mandateId,
+          reason: 'Bank-initiated mandate revocation',
+          reconciliation: 'CANCELLED_UNTIL_PERIOD_END',
+          currentPeriodEnd: sub.currentPeriodEnd.toISOString(),
+        },
+      });
+
+      this.logger.log(
+        `[WEBHOOK] Mandate ${mandateId} revoked — org ${sub.organizationId} subscription marked CANCELLED until period end ${sub.currentPeriodEnd.toISOString()}`,
+      );
+      return;
+    }
+
+    // If PAST_DUE or period has already lapsed, no valid paid cycle remains. Expire immediately.
+    await this.subscriptions.expire(sub.organizationId);
+
+    this.eventEmitter.emit('audit.log', {
+      organizationId: sub.organizationId,
+      actorId: null,
+      action: 'billing.mandate_revoked',
+      resourceType: 'SUBSCRIPTION',
+      resourceId: sub.id,
+      metadata: {
+        mandateId,
+        reason: 'Bank-initiated mandate revocation',
+        reconciliation: 'EXPIRED_IMMEDIATELY',
+      },
+    });
+
+    this.logger.log(
+      `[WEBHOOK] Mandate ${mandateId} revoked — org ${sub.organizationId} subscription expired immediately (status was ${sub.status})`,
+    );
   }
 
   // ─── 4. Confirm Order and Activate (shared by return URL + webhook) ─────────
@@ -390,6 +536,21 @@ export class BillingService {
     source: 'return_url' | 'webhook' | 'scheduler',
   ): Promise<{ success: boolean; orderId: string; redirectPath: string }> {
     const orderId = payment.hdfcOrderId;
+
+    // Idempotency guard: if payment is already marked SUCCESS in DB, do not re-activate or extend period twice
+    const currentPayment = await this.prisma.payment.findUnique({
+      where: { id: payment.id },
+    });
+    if (currentPayment?.status === 'SUCCESS') {
+      this.logger.log(
+        `[CONFIRM] Payment ${payment.id} for order ${orderId} already SUCCESS — idempotent (source: ${source})`,
+      );
+      return {
+        success: true,
+        orderId,
+        redirectPath: `/pricing?success=true&order_id=${orderId}`,
+      };
+    }
 
     // Call Order Status API — backend confirms payment, never trust redirect params
     const orderStatus = await this.hdfc.getOrderStatus(orderId);
@@ -437,7 +598,8 @@ export class BillingService {
       // Non-terminal: still pending — don't change state
       if (
         orderStatus.status === 'NEW' ||
-        orderStatus.status === 'PENDING_VBV'
+        orderStatus.status === 'PENDING_VBV' ||
+        (orderStatus.status as string) === 'PENDING'
       ) {
         return {
           success: false,
@@ -458,11 +620,20 @@ export class BillingService {
       const sub = await this.prisma.subscription.findUnique({
         where: { id: payment.subscriptionId },
       });
-      if (sub)
-        await this.subscriptions.markPastDue(
-          sub.organizationId,
-          orderStatus.bank_error_message ?? 'Payment declined',
-        );
+      if (sub) {
+        const newFailureCount = (sub.failureCount ?? 0) + 1;
+        if (newFailureCount >= MAX_FAILURES_BEFORE_EXPIRE) {
+          await this.revokeAndExpire(
+            sub,
+            `Payment declined ${newFailureCount} times — grace period exhausted`,
+          );
+        } else {
+          await this.subscriptions.markPastDue(
+            sub.organizationId,
+            orderStatus.bank_error_message ?? 'Payment declined',
+          );
+        }
+      }
       return {
         success: false,
         orderId,
@@ -484,8 +655,27 @@ export class BillingService {
     }
 
     // Billing anchor: periodStart = now (first activation); subsequent renewals use previousPeriodEnd
-    const periodStart = new Date();
+    const isRenewal = payment.type === 'RECURRING_EXECUTION';
+    const periodStart =
+      isRenewal && sub.currentPeriodEnd ? sub.currentPeriodEnd : new Date();
     const periodEnd = addBillingPeriod(periodStart, sub.billingCycle);
+
+    let baseAmount = sub.baseAmount;
+    let extraUsers = sub.extraUsers;
+    let totalAmount = sub.totalAmount;
+
+    if (isRenewal) {
+      const billing = calculateBillingAmount(
+        sub.plan,
+        sub.billingCycle,
+        payment.seatsAtCharge,
+      );
+      if (billing) {
+        baseAmount = billing.baseAmount;
+        extraUsers = billing.extraUsers;
+        totalAmount = billing.totalAmount;
+      }
+    }
 
     try {
       await this.prisma.$transaction([
@@ -520,27 +710,36 @@ export class BillingService {
       periodStart,
       periodEnd,
       seatsAtCharge: payment.seatsAtCharge,
-      baseAmount: sub.baseAmount,
-      extraUsers: sub.extraUsers,
-      totalAmount: sub.totalAmount,
+      baseAmount,
+      extraUsers,
+      totalAmount,
     });
 
     this.eventEmitter.emit('audit.log', {
       organizationId: sub.organizationId,
       actorId: null,
-      action: 'billing.subscription_activated',
+      action: isRenewal
+        ? 'billing.renewal_success'
+        : 'billing.subscription_activated',
       resourceType: 'SUBSCRIPTION',
       resourceId: sub.id,
-      metadata: {
-        plan: sub.plan,
-        billingCycle: sub.billingCycle,
-        amount: sub.totalAmount,
-        source,
-      },
+      metadata: isRenewal
+        ? {
+            amount: totalAmount,
+            seats: payment.seatsAtCharge,
+            periodEnd: periodEnd.toISOString(),
+            source,
+          }
+        : {
+            plan: sub.plan,
+            billingCycle: sub.billingCycle,
+            amount: sub.totalAmount,
+            source,
+          },
     });
 
     this.logger.log(
-      `[CONFIRM] Subscription activated for org ${sub.organizationId}, plan ${sub.plan}`,
+      `[CONFIRM] Subscription ${isRenewal ? 'renewed' : 'activated'} for org ${sub.organizationId}, plan ${sub.plan}`,
     );
     return {
       success: true,
@@ -667,101 +866,109 @@ export class BillingService {
       return;
     }
 
-    // Calculate current-cycle amount (seats may have changed)
-    const activeSeats = await this.subscriptions.countActiveSeats(orgId);
-    const billing = calculateBillingAmount(
-      sub.plan,
-      sub.billingCycle,
-      activeSeats,
-    );
-    if (!billing) {
+    if (this.activeRenewalSubIds.has(sub.id)) {
       this.logger.warn(
-        `[RENEWAL] Cannot calculate amount for org ${orgId} (${sub.plan} ${sub.billingCycle}) — skipping`,
+        `[RENEWAL] Renewal already in progress for sub ${sub.id} (org ${orgId}) — skipping concurrent sweep`,
       );
       return;
     }
 
-    const { baseAmount, extraUsers, extraUserRate, totalAmount } = billing;
-    const orderId = generateHdfcId('rPM');
-
-    // Create PENDING payment record (idempotency key = orderId)
-    const payment = await this.prisma.payment.create({
-      data: {
-        subscription: { connect: { id: sub.id } },
-        type: 'RECURRING_EXECUTION',
-        status: 'PENDING',
-        hdfcOrderId: orderId,
-        amount: totalAmount,
-        seatsAtCharge: activeSeats,
-      },
-    });
-
+    this.activeRenewalSubIds.add(sub.id);
     try {
-      await this.hdfc.executeMandateCharge(sub.hdfcMandateId, {
-        order_id: orderId,
-        amount: formatAmount(totalAmount),
-        currency: 'INR',
-        customer_id: sub.hdfcCustomerId ?? `cust-${orgId.substring(0, 8)}`,
-      });
-
-      // Billing anchor: newPeriodStart = previousPeriodEnd (not now)
-      const newPeriodStart = sub.currentPeriodEnd ?? new Date();
-      const newPeriodEnd = addBillingPeriod(newPeriodStart, sub.billingCycle);
-
-      await this.prisma.payment.update({
-        where: { id: payment.id },
-        data: { status: 'SUCCESS', processedAt: new Date() },
-      });
-
-      await this.subscriptions.activate(orgId, {
-        periodStart: newPeriodStart,
-        periodEnd: newPeriodEnd,
-        seatsAtCharge: activeSeats,
-        baseAmount,
-        extraUsers,
-        totalAmount,
-      });
-
-      this.eventEmitter.emit('audit.log', {
-        organizationId: orgId,
-        actorId: null,
-        action: 'billing.renewal_success',
-        resourceType: 'SUBSCRIPTION',
-        resourceId: sub.id,
-        metadata: {
-          amount: totalAmount,
-          seats: activeSeats,
-          periodEnd: newPeriodEnd.toISOString(),
+      // Check if there is already a PENDING renewal payment for this subscription
+      const existingPending = await this.prisma.payment.findFirst({
+        where: {
+          subscriptionId: sub.id,
+          type: 'RECURRING_EXECUTION',
+          status: 'PENDING',
         },
       });
-
-      this.logger.log(
-        `[RENEWAL] Org ${orgId} renewed — ₹${totalAmount}, period ends ${newPeriodEnd.toISOString()}`,
-      );
-    } catch (err: unknown) {
-      const reason = (err as Error).message;
-      await this.prisma.payment.update({
-        where: { id: payment.id },
-        data: {
-          status: 'FAILED',
-          failureReason: reason,
-          processedAt: new Date(),
-        },
-      });
-
-      const newFailureCount = (sub.failureCount ?? 0) + 1;
-
-      if (newFailureCount >= MAX_FAILURES_BEFORE_EXPIRE) {
-        await this.revokeAndExpire(
-          sub,
-          `Renewal failed ${newFailureCount} times — grace period exhausted`,
+      if (existingPending) {
+        this.logger.log(
+          `[RENEWAL] Org ${orgId} already has pending renewal payment ${existingPending.hdfcOrderId} — polling order status`,
         );
-      } else {
-        await this.subscriptions.markPastDue(orgId, reason);
-        this.logger.warn(
-          `[RENEWAL] Org ${orgId} renewal failed (attempt ${newFailureCount}) → PAST_DUE`,
-        );
+        await this.confirmOrderAndActivate(existingPending, 'scheduler');
+        return;
       }
+
+      // Calculate current-cycle amount (seats may have changed)
+      const activeSeats = await this.subscriptions.countActiveSeats(orgId);
+      const billing = calculateBillingAmount(
+        sub.plan,
+        sub.billingCycle,
+        activeSeats,
+      );
+      if (!billing) {
+        this.logger.warn(
+          `[RENEWAL] Cannot calculate amount for org ${orgId} (${sub.plan} ${sub.billingCycle}) — skipping`,
+        );
+        return;
+      }
+
+      const { baseAmount, extraUsers, extraUserRate, totalAmount } = billing;
+      const orderId = generateHdfcId('rPM');
+
+      // Create PENDING payment record (idempotency key = orderId)
+      const payment = await this.prisma.payment.create({
+        data: {
+          subscription: { connect: { id: sub.id } },
+          type: 'RECURRING_EXECUTION',
+          status: 'PENDING',
+          hdfcOrderId: orderId,
+          amount: totalAmount,
+          seatsAtCharge: activeSeats,
+        },
+      });
+
+      try {
+        const chargeRes = await this.hdfc.executeMandateCharge(
+          sub.hdfcMandateId,
+          {
+            order_id: orderId,
+            amount: formatAmount(totalAmount),
+            currency: 'INR',
+            customer_id: sub.hdfcCustomerId ?? `cust-${orgId.substring(0, 8)}`,
+          },
+        );
+
+        if (chargeRes.status === 'FAILED') {
+          throw new Error(`Mandate execution failed: ${chargeRes.status}`);
+        }
+
+        if (chargeRes.status === 'CHARGED') {
+          await this.confirmOrderAndActivate(payment, 'scheduler');
+        } else {
+          this.logger.log(
+            `[RENEWAL] Org ${orgId} mandate charge initiated (order ${orderId}, status ${chargeRes.status}) — payment PENDING awaiting authoritative confirmation`,
+          );
+        }
+      } catch (err: unknown) {
+        const reason = (err as Error).message;
+        await this.prisma.payment.update({
+          where: { id: payment.id },
+          data: {
+            status: 'FAILED',
+            failureReason: reason,
+            processedAt: new Date(),
+          },
+        });
+
+        const newFailureCount = (sub.failureCount ?? 0) + 1;
+
+        if (newFailureCount >= MAX_FAILURES_BEFORE_EXPIRE) {
+          await this.revokeAndExpire(
+            sub,
+            `Renewal failed ${newFailureCount} times — grace period exhausted`,
+          );
+        } else {
+          await this.subscriptions.markPastDue(orgId, reason);
+          this.logger.warn(
+            `[RENEWAL] Org ${orgId} renewal failed (attempt ${newFailureCount}) → PAST_DUE`,
+          );
+        }
+      }
+    } finally {
+      this.activeRenewalSubIds.delete(sub.id);
     }
   }
 
