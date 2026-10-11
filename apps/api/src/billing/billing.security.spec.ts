@@ -514,5 +514,64 @@ describe('BillingService — Security Regression Tests', () => {
       expect(result.redirectPath).toBe('/pricing?status=pending');
       expect(mockSubscriptions.activate).not.toHaveBeenCalled();
     });
+
+    it('gracefully handles duplicate transaction IDs (P2002) from return_url without activating subscription', async () => {
+      mockPrisma.subscription.findUnique.mockResolvedValue({ id: 'sub-uuid' });
+      // Simulate unique constraint violation
+      mockPrisma.$transaction.mockRejectedValue(
+        Object.assign(new Error(), { code: 'P2002' }),
+      );
+
+      const result = await callReturnUrl({});
+
+      expect(result.success).toBe(false);
+      expect(result.redirectPath).toBe('/pricing?error=internal_error');
+      expect(mockSubscriptions.activate).not.toHaveBeenCalled();
+    });
+
+    it('throws ConflictException for duplicate transaction IDs (P2002) from webhook', async () => {
+      const { ConflictException } = require('@nestjs/common');
+      mockPrisma.subscription.findUnique.mockResolvedValue({ id: 'sub-uuid' });
+      // Simulate unique constraint violation
+      mockPrisma.$transaction.mockRejectedValue(
+        Object.assign(new Error(), { code: 'P2002' }),
+      );
+
+      // Call handleWebhook instead of callReturnUrl
+      mockHdfc.getOrderStatus.mockResolvedValue(chargedOrderStatus);
+      mockPrisma.payment.findUnique.mockResolvedValue({
+        ...basePayment,
+        status: 'PENDING',
+      });
+
+      await expect(
+        service.handleWebhook({
+          id: 'test-id',
+          date_created: new Date().toISOString(),
+          event_name: 'ORDER_SUCCEEDED',
+          content: {
+            order: { order_id: 'wPMABC123DEF456' } as any,
+          } as any,
+        }),
+      ).rejects.toThrow(ConflictException);
+
+      expect(mockSubscriptions.activate).not.toHaveBeenCalled();
+    });
+
+    it('normalizes empty transaction IDs to null', async () => {
+      mockPrisma.subscription.findUnique.mockResolvedValue({ id: 'sub-uuid' });
+      mockPrisma.$transaction.mockImplementation(
+        (ops: unknown[]) => Promise.all(ops) as Promise<unknown[]>,
+      );
+
+      await callReturnUrl({ txn_id: '' });
+
+      // Verify that the Prisma update was called with null for hdfcTxnId
+      expect(mockPrisma.payment.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ hdfcTxnId: null }),
+        }),
+      );
+    });
   });
 });

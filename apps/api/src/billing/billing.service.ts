@@ -487,16 +487,34 @@ export class BillingService {
     const periodStart = new Date();
     const periodEnd = addBillingPeriod(periodStart, sub.billingCycle);
 
-    await this.prisma.$transaction([
-      this.prisma.payment.update({
-        where: { id: payment.id },
-        data: {
-          status: 'SUCCESS',
-          hdfcTxnId: orderStatus.txn_id,
-          processedAt: new Date(),
-        },
-      }),
-    ]);
+    try {
+      await this.prisma.$transaction([
+        this.prisma.payment.update({
+          where: { id: payment.id },
+          data: {
+            status: 'SUCCESS',
+            hdfcTxnId: orderStatus.txn_id || null,
+            processedAt: new Date(),
+          },
+        }),
+      ]);
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        this.logger.error(
+          `[CONFIRM] Duplicate transaction ID ${orderStatus.txn_id} detected for order ${orderId} (source: ${source})`,
+        );
+        if (source === 'webhook') {
+          // Throw so the webhook controller returns 500 and HDFC stops reporting success
+          throw new ConflictException('Duplicate transaction ID');
+        }
+        return {
+          success: false,
+          orderId,
+          redirectPath: '/pricing?error=internal_error',
+        };
+      }
+      throw error;
+    }
 
     await this.subscriptions.activate(sub.organizationId, {
       periodStart,

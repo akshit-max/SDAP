@@ -679,7 +679,7 @@ model Payment {
   // hdfcOrderId: our generated unique order ID (max 21 chars, alphanumeric)
   // hdfcTxnId:   HDFC's internal txn ID from Order Status response
   hdfcOrderId String  @unique // Idempotency key — checked before processing
-  hdfcTxnId   String? // Set once HDFC confirms the transaction
+  hdfcTxnId   String? @unique // Set once HDFC confirms the transaction
 
   // ── Amount snapshot at time of execution ─────────────────────────────────
   amount        Int // Charged amount in INR
