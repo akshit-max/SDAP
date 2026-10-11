@@ -145,15 +145,64 @@ export class BillingService {
     ownerEmail: string,
     plan: PlanTier,
     billingCycle: BillingCycle,
-    customerPhone: string,
+    customerPhone?: string,
   ): Promise<{ paymentLink: string; orderId: string }> {
+    let resolvedPhone = customerPhone?.trim();
+
+    // If phone not supplied in payload, attempt to load from organization.settings.billingPhone
+    if (!resolvedPhone && (this.prisma as any).organization?.findUnique) {
+      try {
+        const org = await (this.prisma as any).organization.findUnique({
+          where: { id: organizationId },
+          select: { settings: true },
+        });
+        const orgSettings = (org?.settings as Record<string, any>) || {};
+        if (
+          orgSettings.billingPhone &&
+          typeof orgSettings.billingPhone === 'string'
+        ) {
+          resolvedPhone = orgSettings.billingPhone.trim();
+        }
+      } catch (err) {
+        this.logger.warn(
+          `Could not read org billingPhone: ${(err as Error).message}`,
+        );
+      }
+    }
+
     // Guard: phone must be exactly 10 digits — validated server-side (F-003)
     // Frontend validation is a UX aid only; we do not trust it.
     // Never log the phone value.
-    if (!customerPhone || !/^\d{10}$/.test(customerPhone)) {
+    if (!resolvedPhone || !/^\d{10}$/.test(resolvedPhone)) {
       throw new BadRequestException(
         'A valid 10-digit mobile number is required for payment processing',
       );
+    }
+
+    // Persist phone to organization settings if not already stored
+    if ((this.prisma as any).organization?.update) {
+      try {
+        const org = await (this.prisma as any).organization.findUnique({
+          where: { id: organizationId },
+          select: { settings: true },
+        });
+        const currentSettings = (org?.settings as Record<string, any>) || {};
+        if (currentSettings.billingPhone !== resolvedPhone) {
+          await (this.prisma as any).organization.update({
+            where: { id: organizationId },
+            data: {
+              settings: {
+                ...currentSettings,
+                billingPhone: resolvedPhone,
+              },
+            },
+          });
+        }
+      } catch (err) {
+        this.logger.warn(
+          `Failed to persist billingPhone to org settings: ${(err as Error).message}`,
+        );
+      }
     }
 
     // Guard: no duplicate active subscriptions
@@ -219,7 +268,7 @@ export class BillingService {
       amount: formatAmount(totalAmount),
       customer_id: customerId,
       customer_email: ownerEmail,
-      customer_phone: customerPhone, // Validated 10-digit number from customer — not persisted
+      customer_phone: resolvedPhone, // Validated 10-digit number for HDFC mandate registration
       payment_page_client_id: this.paymentPageClientId,
       action: 'paymentPage',
       currency: 'INR',

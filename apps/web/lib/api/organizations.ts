@@ -18,7 +18,7 @@ export const organizationsApi = {
     return response.data?.data;
   },
 
-  updateOrganization: async (orgId: string, data: { name?: string }) => {
+  updateOrganization: async (orgId: string, data: { name?: string; settings?: any }) => {
     const response = await apiClient.patch(`/organizations/${orgId}`, data);
     return response.data?.data;
   },

@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { DashboardShell } from '../../components/layout/DashboardShell';
 import { useAuth } from '../../lib/auth/AuthContext';
-import { useOrgMembers } from '../../hooks/useOrganization';
+import { useOrgMembers, useUpdateOrganization, useOrganization } from '../../hooks/useOrganization';
 import {
   Check,
   X,
@@ -22,6 +23,8 @@ import {
   Layers,
   Activity,
   CheckCircle2,
+  Printer,
+  Copy,
 } from 'lucide-react';
 import {
   PRICING_CONFIG,
@@ -77,66 +80,237 @@ function PlanBadge({ plan, currentPlan }: { plan: PlanTier; currentPlan: PlanTie
   );
 }
 
-// ─── Payment Confirmation Panel ─────────────────────────────────────────────
+// ─── Payment Confirmation Modal (Enterprise Pop-up Receipt) ──────────────────
 
-function PaymentConfirmationPanel({
+function PaymentConfirmationModal({
   orderId,
   receipt,
   loading,
+  onClose,
+  currentPlan,
+  billingCycle,
 }: {
   orderId: string | null;
   receipt: import('../../lib/api/billing').PaymentReceipt | null;
   loading: boolean;
+  onClose: () => void;
+  currentPlan: string;
+  billingCycle: string;
 }) {
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
   if (!orderId) return null;
 
-  return (
-    <div className="mb-6 p-5 bg-emerald-500/10 border border-emerald-500/30 rounded-sm">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="p-2 bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-full">
-          <CheckCircle2 className="w-5 h-5" />
-        </div>
-        <div>
-          <h3 className="text-sm font-black text-emerald-800 dark:text-emerald-200">
-            Payment Processing
-          </h3>
-          <p className="text-xs font-semibold text-emerald-700/80 dark:text-emerald-300/80">
-            Retrieving transaction receipt from the bank...
-          </p>
-        </div>
-      </div>
+  const handleCopy = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(label);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
 
-      <div className="bg-emerald-500/5 border border-emerald-500/20 p-4 space-y-3 font-number text-xs">
-        {loading ? (
-          <div className="flex items-center gap-2 text-emerald-600">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span>Loading receipt details...</span>
-          </div>
-        ) : receipt ? (
-          <>
-            <div className="flex justify-between">
-              <span className="text-emerald-700 dark:text-emerald-300 font-bold">Order Number</span>
-              <span className="font-black text-emerald-900 dark:text-emerald-100">{receipt.hdfcOrderId}</span>
+  const handleCopyAll = () => {
+    if (!receipt) return;
+    const summary = [
+      `WITHUS Payment Receipt`,
+      `Merchant: MAKEWITHUS PRIVATE LIMITED (Account: SG6138)`,
+      `Order ID: ${receipt.hdfcOrderId}`,
+      `Transaction ID: ${receipt.hdfcTxnId ?? 'Pending'}`,
+      `Plan: ${currentPlan} (${billingCycle})`,
+      `Amount: ${receipt.currency} ${receipt.amount}`,
+      `Status: CHARGED`,
+      `Date: ${receipt.processedAt ? new Date(receipt.processedAt).toLocaleString('en-IN') : new Date().toLocaleString('en-IN')}`,
+    ].join('\n');
+    navigator.clipboard.writeText(summary);
+    setCopiedField('all');
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+      <div className="relative w-full max-w-lg bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-2xl overflow-hidden my-8">
+        {/* Top Success Gradient Header */}
+        <div className="relative px-6 pt-6 pb-5 bg-gradient-to-b from-emerald-500/10 to-transparent border-b border-zinc-100 dark:border-zinc-800/80">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-1.5 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            aria-label="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-sm shrink-0">
+              <CheckCircle2 className="w-7 h-7 stroke-[2.5]" />
             </div>
-            <div className="flex justify-between border-t border-emerald-500/10 pt-2">
-              <span className="text-emerald-700 dark:text-emerald-300 font-bold">Amount Paid</span>
-              <span className="font-black text-emerald-900 dark:text-emerald-100">
-                {receipt.currency} {receipt.amount}
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                Payment Confirmed
               </span>
+              <h2 className="text-lg font-black text-zinc-900 dark:text-zinc-50 tracking-tight mt-1">
+                Subscription Activated
+              </h2>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+                Official Transaction Receipt via HDFC SmartGateway
+              </p>
             </div>
-            <div className="flex justify-between border-t border-emerald-500/10 pt-2">
-              <span className="text-emerald-700 dark:text-emerald-300 font-bold">Transaction ID</span>
-              <span className="font-black text-emerald-900 dark:text-emerald-100">
-                {receipt.hdfcTxnId ?? 'Pending confirmation'}
-              </span>
-            </div>
-          </>
-        ) : (
-          <div className="text-amber-600 dark:text-amber-400 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" />
-            <span>Could not retrieve a successful payment receipt for this order.</span>
           </div>
-        )}
+        </div>
+
+        {/* Modal Body / Receipt Card */}
+        <div className="p-6 space-y-5">
+          {loading ? (
+            <div className="py-12 flex flex-col items-center justify-center gap-3 text-zinc-500">
+              <Loader2 className="w-7 h-7 animate-spin text-emerald-600" />
+              <p className="text-xs font-semibold">Retrieving verified bank receipt...</p>
+            </div>
+          ) : receipt ? (
+            <>
+              {/* Amount Showcase Banner */}
+              <div className="p-4 rounded-md bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800 flex items-baseline justify-between">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500">
+                    Total Amount Paid
+                  </span>
+                  <div className="text-2xl font-black text-zinc-900 dark:text-zinc-100 font-number">
+                    {receipt.currency === 'INR' ? '₹' : receipt.currency}{' '}
+                    {receipt.amount.toLocaleString('en-IN')}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    CHARGED
+                  </span>
+                  <p className="text-[10px] text-zinc-400 font-medium mt-1 font-number">
+                    {receipt.processedAt ? new Date(receipt.processedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Settled'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Itemized Receipt Table */}
+              <div className="border border-zinc-200 dark:border-zinc-800 rounded-md overflow-hidden text-xs divide-y divide-zinc-100 dark:divide-zinc-800/80">
+                <div className="p-3 bg-zinc-50/50 dark:bg-zinc-900/30 flex items-center justify-between">
+                  <span className="text-zinc-500 font-medium">Merchant</span>
+                  <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                    MAKEWITHUS PVT LTD <span className="text-[10px] text-zinc-400 font-normal font-number">(SG6138)</span>
+                  </span>
+                </div>
+
+                <div className="p-3 flex items-center justify-between gap-2">
+                  <span className="text-zinc-500 font-medium">Order Number</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold font-mono text-zinc-900 dark:text-zinc-100">{receipt.hdfcOrderId}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(receipt.hdfcOrderId, 'orderId')}
+                      className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+                      title="Copy Order ID"
+                    >
+                      {copiedField === 'orderId' ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-3 flex items-center justify-between gap-2">
+                  <span className="text-zinc-500 font-medium">Bank Transaction ID</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold font-mono text-zinc-900 dark:text-zinc-100">
+                      {receipt.hdfcTxnId ?? 'Pending Bank Reference'}
+                    </span>
+                    {receipt.hdfcTxnId && (
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(receipt.hdfcTxnId!, 'txnId')}
+                        className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+                        title="Copy Transaction ID"
+                      >
+                        {copiedField === 'txnId' ? (
+                          <Check className="w-3.5 h-3.5 text-emerald-500" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="p-3 flex items-center justify-between">
+                  <span className="text-zinc-500 font-medium">Subscribed Plan</span>
+                  <span className="font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
+                    {currentPlan} Tier · {billingCycle}
+                  </span>
+                </div>
+
+                <div className="p-3 flex items-center justify-between">
+                  <span className="text-zinc-500 font-medium">Gateway Protocol</span>
+                  <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+                    HDFC SmartGateway Non-SDK Web (HMAC-SHA256)
+                  </span>
+                </div>
+              </div>
+
+              {/* Subscription Notice */}
+              <div className="p-3 bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-md text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed space-y-1">
+                <p className="font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+                  <Shield className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                  Subscription Details
+                </p>
+                <p>
+                  Your plan is active and will renew automatically at the end of each billing cycle. You can manage or cancel your subscription anytime from this page.
+                </p>
+              </div>
+            </>
+          ) : (
+            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-md text-amber-700 dark:text-amber-400 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>Payment order {orderId} was recorded. Bank receipt status is refreshing.</span>
+            </div>
+          )}
+        </div>
+
+        {/* Modal Actions */}
+        <div className="p-4 bg-zinc-50 dark:bg-zinc-900/60 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="px-3 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors rounded border border-zinc-200 dark:border-zinc-700 flex items-center gap-1.5"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              Print Receipt
+            </button>
+            {receipt && (
+              <button
+                type="button"
+                onClick={handleCopyAll}
+                className="px-3 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors rounded border border-zinc-200 dark:border-zinc-700 flex items-center gap-1.5"
+              >
+                {copiedField === 'all' ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-500" />
+                    Copied Summary
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    Copy Details
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-2 text-xs font-black uppercase tracking-wider text-white bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-colors rounded shadow-sm"
+          >
+            Done
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -147,6 +321,7 @@ function PaymentConfirmationPanel({
 export default function PricingPage() {
   const { organization, isLoading: isAuthLoading } = useAuth();
   const orgId = organization?.id ?? '';
+  const { data: orgData } = useOrganization(orgId);
   const { data: membersData } = useOrgMembers(orgId);
 
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('MONTHLY');
@@ -162,6 +337,7 @@ export default function PricingPage() {
   const { subscription, loading: subLoading, initialized: subInitialized, refresh: refreshSub } = useOrgSubscription(orgId);
   const { initiate, initiating } = useInitiatePayment(orgId);
   const { cancel, cancelling } = useCancelSubscription(orgId);
+  const { mutate: updateOrg } = useUpdateOrganization(orgId);
 
   // ─── Phone collection modal state ────────────────────────────────────────────
   const [phoneModal, setPhoneModal] = useState<{ plan: PlanTier; billingCycle: BillingCycle } | null>(null);
@@ -171,10 +347,30 @@ export default function PricingPage() {
 
   const { receipt, loading: receiptLoading } = usePaymentReceipt(orgId, successOrderId);
 
+  const getBillingPhone = (): string => {
+    const fromOrg = (orgData as any)?.settings?.billingPhone;
+    if (typeof fromOrg === 'string' && fromOrg.trim()) return fromOrg.trim();
+    const fromSession = (organization as any)?.settings?.billingPhone;
+    if (typeof fromSession === 'string' && fromSession.trim()) return fromSession.trim();
+    return '';
+  };
+
   const openPhoneModal = (plan: PlanTier, cycle: BillingCycle) => {
-    setPhoneInput('');
+    const savedPhone = getBillingPhone();
+    setPhoneInput(savedPhone);
     setPhoneError(null);
     setPhoneModal({ plan, billingCycle: cycle });
+  };
+
+  const handleUpgradeClick = (plan: PlanTier, cycle: BillingCycle) => {
+    const savedPhone = getBillingPhone();
+    if (/^\d{10}$/.test(savedPhone)) {
+      // Configured in Workspace Settings: proceed directly to checkout without modal!
+      void initiate(plan, cycle, savedPhone);
+    } else {
+      // Not yet configured or invalid: open modal
+      openPhoneModal(plan, cycle);
+    }
   };
 
   const handlePhoneSubmit = () => {
@@ -183,8 +379,23 @@ export default function PricingPage() {
       return;
     }
     if (!phoneModal) return;
+
+    // Automatically persist to organization settings so user is never asked again
+    try {
+      const currentSettings = (organization?.settings as any) || {};
+      updateOrg({
+        settings: {
+          ...currentSettings,
+          billingPhone: phoneInput,
+        },
+      });
+    } catch {
+      // Non-blocking
+    }
+
+    const { plan, billingCycle: cycle } = phoneModal;
     setPhoneModal(null);
-    void initiate(phoneModal.plan, phoneModal.billingCycle, phoneInput);
+    void initiate(plan, cycle, phoneInput);
   };
 
   // Detect HDFC redirect result from URL params and refetch subscription
@@ -374,7 +585,14 @@ export default function PricingPage() {
     <DashboardShell>
       <div className="flex flex-col h-full overflow-y-auto bg-[#f5f5f7] dark:bg-[#09090b]">
         <div className="max-w-6xl mx-auto w-full px-6 py-8 space-y-8">
-          <PaymentConfirmationPanel orderId={successOrderId} receipt={receipt} loading={receiptLoading} />
+          <PaymentConfirmationModal
+            orderId={successOrderId}
+            receipt={receipt}
+            loading={receiptLoading}
+            onClose={() => setSuccessOrderId(null)}
+            currentPlan={currentPlan}
+            billingCycle={currentBillingCycle}
+          />
 
           {/* ─── Hero Header & Status Banner ─────────────────────────────────── */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-premium pb-6">
@@ -614,7 +832,7 @@ export default function PricingPage() {
                             disabled={subscription?.status === 'ACTIVE' || initiating}
                             onClick={() => {
                               if (subscription?.status === 'PAST_DUE') {
-                                openPhoneModal(plan.id, billingCycle);
+                                handleUpgradeClick(plan.id, billingCycle);
                               }
                             }}
                             className={`w-full py-2.5 px-4 text-xs font-black uppercase tracking-wider text-center transition-colors shadow-sm ${
@@ -668,7 +886,7 @@ export default function PricingPage() {
                           disabled={initiating || calc.totalAmount === null || hasActiveSubscription}
                           onClick={() => {
                             if (plan.id === 'PRO' || plan.id === 'BUSINESS') {
-                              openPhoneModal(plan.id, billingCycle);
+                              handleUpgradeClick(plan.id, billingCycle);
                             }
                           }}
                           className={`w-full py-2.5 px-4 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
@@ -913,15 +1131,14 @@ export default function PricingPage() {
         {/* ─── Phone Number Collection Modal ─────────────────────────────── */}
         {phoneModal && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-zinc-900 border border-premium w-full max-w-md p-6 space-y-5 shadow-2xl">
+            <div className="bg-white dark:bg-zinc-900 border border-premium w-full max-w-md p-6 space-y-5 shadow-2xl rounded-sm">
               <div className="space-y-1">
                 <h3 className="text-sm font-black uppercase tracking-wider text-premium-main flex items-center gap-2">
-                  <CreditCard className="w-4 h-4" />
-                  Billing Phone Number
+                  <CreditCard className="w-4 h-4 text-emerald-500" />
+                  Billing Mobile Number
                 </h3>
                 <p className="text-xs font-semibold text-premium-muted leading-relaxed">
-                  Your mobile number is required by HDFC to authorize the recurring payment mandate.
-                  It will be used only for this transaction and will not be stored.
+                  Please enter your 10-digit mobile number for transaction receipts and payment verification.
                 </p>
               </div>
 
@@ -942,7 +1159,7 @@ export default function PricingPage() {
                     setPhoneError(null);
                   }}
                   onKeyDown={(e) => { if (e.key === 'Enter') handlePhoneSubmit(); }}
-                  className="w-full px-3 py-2.5 text-sm font-bold bg-zinc-50 dark:bg-zinc-800 border border-premium text-premium-main placeholder:text-premium-muted focus:outline-none focus:border-zinc-500 dark:focus:border-zinc-400 transition-colors font-number tracking-wider"
+                  className="w-full px-3 py-2.5 text-sm font-bold bg-zinc-50 dark:bg-zinc-800 border border-premium text-premium-main placeholder:text-premium-muted focus:outline-none focus:border-zinc-500 dark:focus:border-zinc-400 transition-colors font-mono tracking-wider"
                   autoFocus
                 />
                 {phoneError && (
@@ -951,9 +1168,16 @@ export default function PricingPage() {
                     {phoneError}
                   </p>
                 )}
+                <p className="text-[10px] text-premium-muted font-medium pt-1">
+                  💡 This number will be automatically saved to your{' '}
+                  <Link href="/settings" className="text-premium-main underline font-bold hover:text-emerald-500">
+                    Workspace Settings
+                  </Link>{' '}
+                  so you won't need to re-enter it.
+                </p>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-1">
+              <div className="flex items-center justify-end gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setPhoneModal(null)}
@@ -970,7 +1194,7 @@ export default function PricingPage() {
                   className="px-5 py-2 text-xs font-black uppercase tracking-wider text-white bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-colors rounded-sm flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {initiating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
-                  Proceed to Payment
+                  Save & Proceed to Payment
                 </button>
               </div>
             </div>

@@ -9,6 +9,7 @@ export type CreateOrganizationDto = z.infer<typeof CreateOrganizationSchema>;
 
 export const UpdateOrganizationSchema = z.object({
   name: z.string().min(2).max(100).optional(),
+  settings: z.record(z.any()).optional(),
 });
 
 export type UpdateOrganizationDto = z.infer<typeof UpdateOrganizationSchema>;

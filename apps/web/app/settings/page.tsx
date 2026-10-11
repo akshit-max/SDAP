@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardShell } from '../../components/layout/DashboardShell';
 import { useAuth } from '../../lib/auth/AuthContext';
-import { useUpdateOrganization } from '../../hooks/useOrganization';
+import { useUpdateOrganization, useOrganization } from '../../hooks/useOrganization';
 import { useUpdateProfile, useChangePassword, useProfile } from '../../hooks/useProfile';
 import { useToast } from '../../components/common/Toast';
 import { Loader2, Building2, User, Lock, Eye, EyeOff, GitBranch } from 'lucide-react';
@@ -11,6 +11,8 @@ import { hasPermission } from '../../lib/auth/permissions';
 
 export default function SettingsPage() {
   const { organization, refreshContext } = useAuth();
+  const orgId = organization?.id || '';
+  const { data: orgDetail } = useOrganization(orgId);
   const { toast } = useToast();
   const role = (organization as any)?.role as string | undefined;
   // ORGANIZATION_UPDATE is OWNER-only per the backend permission matrix
@@ -18,20 +20,55 @@ export default function SettingsPage() {
 
   // ── Workspace ──────────────────────────────────────────────
   const [orgName, setOrgName] = useState(organization?.name || '');
-  const { mutate: updateOrg, isPending: orgPending } = useUpdateOrganization(organization?.id || '');
+  const [billingPhone, setBillingPhone] = useState('');
+  const { mutate: updateOrg, isPending: orgPending } = useUpdateOrganization(orgId);
 
   useEffect(() => {
-    if (organization?.name) setOrgName(organization.name);
-  }, [organization?.name]);
+    if (orgDetail?.name) {
+      setOrgName(orgDetail.name);
+    } else if (organization?.name) {
+      setOrgName(organization.name);
+    }
+
+    const savedPhone =
+      (orgDetail?.settings as any)?.billingPhone ||
+      (organization as any)?.settings?.billingPhone;
+    if (typeof savedPhone === 'string') {
+      setBillingPhone(savedPhone);
+    }
+  }, [orgDetail, organization?.name]);
 
   const handleOrgSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!orgName.trim()) return;
+    if (billingPhone.trim() && !/^\d{10}$/.test(billingPhone.trim())) {
+      toast('error', 'Billing phone number must be exactly 10 digits.');
+      return;
+    }
+    const currentSettings =
+      (orgDetail?.settings as any) ||
+      (organization as any)?.settings ||
+      {};
+    const updatedSettings = {
+      ...currentSettings,
+      ...(billingPhone.trim() ? { billingPhone: billingPhone.trim() } : {}),
+    };
+    if (!billingPhone.trim() && currentSettings.billingPhone) {
+      delete updatedSettings.billingPhone;
+    }
+
     updateOrg(
-      { name: orgName.trim() },
       {
-        onSuccess: () => { toast('success', 'Workspace name updated.'); refreshContext(); },
-        onError: (err: any) => toast('error', err.message || 'Failed to update workspace.'),
+        name: orgName.trim(),
+        settings: updatedSettings,
+      },
+      {
+        onSuccess: () => {
+          toast('success', 'Workspace settings updated.');
+          refreshContext();
+        },
+        onError: (err: any) =>
+          toast('error', err.message || 'Failed to update workspace.'),
       }
     );
   };
@@ -180,6 +217,22 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div>
+                  <label className={labelClass}>Billing Phone Number</label>
+                  <input
+                    id="settings-billing-phone"
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
+                    placeholder="e.g. 9876543210"
+                    value={billingPhone}
+                    onChange={e => setBillingPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    className={`${inputClass} font-mono tracking-wider`}
+                  />
+                  <p className="text-[10px] text-premium-muted mt-1 font-semibold leading-relaxed">
+                    10-digit mobile number for payment receipts and billing updates. Automatically pre-fills at checkout.
+                  </p>
+                </div>
+                <div>
                   <label className={labelClass}>Organization ID</label>
                   <input type="text" readOnly value={organization?.id || ''}
                     className="w-full px-3.5 py-2 bg-slate-50/50 dark:bg-zinc-900/50 border border-premium rounded-lg text-premium-muted text-xs font-mono cursor-not-allowed"
@@ -187,7 +240,16 @@ export default function SettingsPage() {
                   <p className="text-[10px] text-premium-muted mt-1 font-semibold">Use this ID when calling the API directly.</p>
                 </div>
                 <div className="flex justify-end">
-                  <button type="submit" disabled={orgPending || !orgName.trim() || orgName === organization?.name} className={saveBtn}>
+                  <button
+                    type="submit"
+                    disabled={
+                      orgPending ||
+                      !orgName.trim() ||
+                      (orgName === (orgDetail?.name || organization?.name || '') &&
+                        billingPhone === ((orgDetail?.settings as any)?.billingPhone || (organization as any)?.settings?.billingPhone || ''))
+                    }
+                    className={saveBtn}
+                  >
                     {orgPending && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
                     Save Changes
                   </button>
@@ -210,11 +272,26 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     readOnly
-                    value={organization?.name || ''}
+                    value={orgDetail?.name || organization?.name || ''}
                     className="w-full px-3.5 py-2 bg-slate-50/50 dark:bg-zinc-900/50 border border-premium rounded-lg text-premium-muted text-xs cursor-not-allowed"
                   />
                 </div>
-
+                <div>
+                  <label className={labelClass}>Billing Phone Number</label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={
+                      (orgDetail?.settings as any)?.billingPhone ||
+                      (organization as any)?.settings?.billingPhone ||
+                      'Not configured (set by Owner)'
+                    }
+                    className="w-full px-3.5 py-2 bg-slate-50/50 dark:bg-zinc-900/50 border border-premium rounded-lg text-premium-muted text-xs cursor-not-allowed font-mono"
+                  />
+                  <p className="text-[10px] text-premium-muted mt-1 font-semibold">
+                    Contact mobile number for billing receipts and payment confirmations.
+                  </p>
+                </div>
               </div>
             </div>
             )}

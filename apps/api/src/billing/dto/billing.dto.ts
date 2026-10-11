@@ -6,10 +6,10 @@ export class InitiateBillingDto {
 
   /**
    * Customer's billing phone number for HDFC mandate registration.
+   * If omitted, will be loaded from organization.settings.billingPhone.
    * Must be exactly 10 digits. Validated in BillingService.
-   * Not persisted in the database — used only for the HDFC session request.
    */
-  phone!: string;
+  phone?: string;
 }
 
 export class CancelSubscriptionDto {

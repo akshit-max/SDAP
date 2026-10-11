@@ -84,22 +84,36 @@ export class HdfcSignatureService {
       // Step 6: HMAC using the algorithm from the return URL params
       const algorithm = signature_algorithm.toLowerCase(); // e.g. "hmacsha256"
       const hmacAlgo = this.normalizeAlgorithm(algorithm);
-      const computedHash = crypto
+
+      // HDFC/Juspay signatures can be formatted as hex or base64
+      const computedHex = crypto
         .createHmac(hmacAlgo, this.responseKey)
         .update(encodedParamString)
         .digest('hex');
+      const computedBase64 = crypto
+        .createHmac(hmacAlgo, this.responseKey)
+        .update(encodedParamString)
+        .digest('base64');
 
-      // Step 7-8: Percent-encode hash, compare with decoded signature
-      const computedEncoded = encodeURIComponent(computedHash);
       const receivedDecoded = decodeURIComponent(signature);
+      const receivedBuf = Buffer.from(receivedDecoded);
 
-      const isValid = crypto.timingSafeEqual(
-        Buffer.from(computedEncoded),
-        Buffer.from(receivedDecoded),
-      );
+      const safeCompare = (candidate: string): boolean => {
+        const candidateBuf = Buffer.from(candidate);
+        if (candidateBuf.length !== receivedBuf.length) return false;
+        return crypto.timingSafeEqual(candidateBuf, receivedBuf);
+      };
+
+      const isValid =
+        safeCompare(computedHex) ||
+        safeCompare(encodeURIComponent(computedHex)) ||
+        safeCompare(computedBase64) ||
+        safeCompare(encodeURIComponent(computedBase64));
 
       if (!isValid) {
-        this.logger.warn('[HMAC] Return URL signature mismatch');
+        this.logger.warn(
+          `[HMAC] Return URL signature mismatch (received length: ${receivedBuf.length}, algo: ${signature_algorithm})`,
+        );
       }
 
       return isValid;

@@ -25,7 +25,7 @@ export function useOrgMembers(orgId: string) {
 export function useUpdateOrganization(orgId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { name?: string }) => organizationsApi.updateOrganization(orgId, data),
+    mutationFn: (data: { name?: string; settings?: any }) => organizationsApi.updateOrganization(orgId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: orgKeys.detail(orgId) });
     },

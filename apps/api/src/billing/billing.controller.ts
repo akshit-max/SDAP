@@ -74,11 +74,11 @@ export class BillingController {
   async getPaymentReceipt(
     @Param('orgId') orgId: string,
     @Param('orderId') orderId: string,
-    @Req() req: Request & { user: { userId: string } },
+    @Req() req: Request & { user: { id: string; userId?: string } },
   ) {
     return this.billingService.getPaymentReceipt(
       orgId,
-      req.user.userId,
+      req.user.id ?? req.user.userId,
       orderId,
     );
   }

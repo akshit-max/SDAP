@@ -21,6 +21,7 @@ export interface OrganizationSession {
   name: string;
   slug?: string;
   role?: string;
+  settings?: any;
 }
 
 export class AuthSession {
