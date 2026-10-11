@@ -36,9 +36,14 @@ import { validate } from './config/env.validation';
       validate,
     }),
     ThrottlerModule.forRoot({
-      // Global default: 10 req / 60s per IP.
+      // Global default: 100 req / 60s per IP (matches RATE_LIMIT_LIMIT env default).
       // Per-route overrides via @Throttle decorator are unaffected.
-      throttlers: [{ ttl: 60000, limit: 10 }],
+      throttlers: [
+        {
+          ttl: parseInt(process.env.RATE_LIMIT_TTL || '60', 10) * 1000,
+          limit: parseInt(process.env.RATE_LIMIT_LIMIT || '100', 10),
+        },
+      ],
       // When REDIS_URL is set: use Redis-backed shared storage so counters
       // are consistent across multiple Render instances (production).
       // When REDIS_URL is absent: storage is undefined → ThrottlerModule uses

@@ -50,7 +50,7 @@ export class AppController {
       if (redisUrl) {
         const redis = new Redis(redisUrl, {
           maxRetriesPerRequest: 1,
-          connectTimeout: 2000,
+          connectTimeout: 5000,
         });
         await redis.ping();
         redis.disconnect();

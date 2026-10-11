@@ -105,15 +105,22 @@ async function bootstrap() {
   // When REDIS_URL is set, rate-limit counters are shared across all Render
   // instances so that the 100 req/60s limit is enforced globally, not per-instance.
   // When REDIS_URL is absent (local dev), the default MemoryStore is used unchanged.
-  // passOnStoreError: false = fail-closed: if Redis becomes unavailable,
-  // requests are blocked (429) rather than silently bypassing the rate limit.
+  // passOnStoreError: true ensures that during cold boot (e.g. Render spin-up) or
+  // transient Redis connection delays, requests are not falsely rejected with 429.
   let expressRateLimitStore: object | undefined;
   if (process.env.REDIS_URL) {
     const { RedisStore } = require('rate-limit-redis');
     const Redis = require('ioredis');
     const redisClient = new Redis(process.env.REDIS_URL, {
-      maxRetriesPerRequest: 1,
-      connectTimeout: 2000,
+      maxRetriesPerRequest: 3,
+      connectTimeout: 10000,
+      enableReadyCheck: false,
+    });
+    redisClient.on('error', (err: any) => {
+      console.warn(
+        '[express-rate-limit] Redis client connection notice:',
+        err?.message || err,
+      );
     });
     expressRateLimitStore = new RedisStore({
       sendCommand: (...args: string[]) => redisClient.call(...args),
@@ -131,7 +138,7 @@ async function bootstrap() {
         statusCode: 429,
         message: 'Too many requests, please try again later.',
       },
-      passOnStoreError: false,
+      passOnStoreError: true,
       ...(expressRateLimitStore ? { store: expressRateLimitStore } : {}),
     }),
   );

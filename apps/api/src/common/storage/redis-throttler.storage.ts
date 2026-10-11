@@ -17,9 +17,9 @@ import Redis from 'ioredis';
  * Key structure in Redis:
  *   throttler:<throttlerName>:<key>:hits  → integer hit counter (with TTL)
  *   throttler:<throttlerName>:<key>:block → "1" if IP is currently blocked (with blockDuration TTL)
- *
- * Fail-closed: if Redis is unavailable, ioredis rejects the promise and
- * ThrottlerGuard propagates the error — the request is NOT passed through.
+ * Graceful fallback: if Redis is temporarily connecting or unavailable (e.g.
+ * during Render cold-start spin-up), falls back to local in-memory rate limiting
+ * to prevent false 429 lockouts while continuing to enforce limits.
  *
  * DO NOT modify: the return shape { totalHits, timeToExpire, isBlocked,
  * timeToBlockExpire } is read directly by ThrottlerGuard to allow/reject.
@@ -27,6 +27,10 @@ import Redis from 'ioredis';
 @Injectable()
 export class RedisThrottlerStorage implements ThrottlerStorage {
   private readonly client: Redis;
+  private readonly memoryStore = new Map<
+    string,
+    { totalHits: number; expiresAt: number; blockedUntil: number }
+  >();
 
   /**
    * Atomic Lua script: increment counter, set TTL on first hit.
@@ -45,18 +49,80 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
 
   constructor(redisUrl: string) {
     this.client = new Redis(redisUrl, {
-      maxRetriesPerRequest: 1,
-      connectTimeout: 2000,
+      maxRetriesPerRequest: 3,
+      connectTimeout: 10000,
+      enableReadyCheck: false,
     });
 
     this.client.on('error', (err) => {
-      // Log to console — do not swallow. The next increment() call will
-      // reject and ThrottlerGuard will throw, which is fail-closed behavior.
-      console.error(
-        '[RedisThrottlerStorage] Redis connection error:',
+      // Log connection notice — do not crash the process.
+      // During cold boot or transient connection drops, increment() seamlessly falls back to memory.
+      console.warn(
+        '[RedisThrottlerStorage] Redis connection notice:',
         err.message,
       );
     });
+  }
+
+  private incrementMemory(
+    key: string,
+    ttl: number,
+    limit: number,
+    blockDuration: number,
+    throttlerName: string,
+  ): {
+    totalHits: number;
+    timeToExpire: number;
+    isBlocked: boolean;
+    timeToBlockExpire: number;
+  } {
+    const storeKey = `${throttlerName}:${key}`;
+    const now = Date.now();
+    let record = this.memoryStore.get(storeKey);
+
+    if (!record || record.expiresAt <= now) {
+      record = {
+        totalHits: 0,
+        expiresAt: now + ttl,
+        blockedUntil: 0,
+      };
+    }
+
+    if (record.blockedUntil > now) {
+      return {
+        totalHits: record.totalHits,
+        timeToExpire: Math.ceil((record.expiresAt - now) / 1000),
+        isBlocked: true,
+        timeToBlockExpire: Math.ceil((record.blockedUntil - now) / 1000),
+      };
+    }
+
+    record.totalHits += 1;
+    let isBlocked = false;
+    let timeToBlockExpire = 0;
+
+    if (record.totalHits > limit) {
+      record.blockedUntil = now + blockDuration;
+      isBlocked = true;
+      timeToBlockExpire = Math.ceil(blockDuration / 1000);
+    }
+
+    this.memoryStore.set(storeKey, record);
+
+    if (this.memoryStore.size > 10000) {
+      for (const [k, v] of this.memoryStore.entries()) {
+        if (v.expiresAt <= now && v.blockedUntil <= now) {
+          this.memoryStore.delete(k);
+        }
+      }
+    }
+
+    return {
+      totalHits: record.totalHits,
+      timeToExpire: Math.max(0, Math.ceil((record.expiresAt - now) / 1000)),
+      isBlocked,
+      timeToBlockExpire,
+    };
   }
 
   async increment(
@@ -71,54 +137,67 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
     isBlocked: boolean;
     timeToBlockExpire: number;
   }> {
-    const hitsKey = `throttler:${throttlerName}:${key}:hits`;
-    const blockKey = `throttler:${throttlerName}:${key}:block`;
+    try {
+      const hitsKey = `throttler:${throttlerName}:${key}:hits`;
+      const blockKey = `throttler:${throttlerName}:${key}:block`;
 
-    // ── 1. Check if IP is currently blocked ──────────────────────────────────
-    const blockPttl = await this.client.pttl(blockKey);
-    if (blockPttl > 0) {
-      // Blocked: return current state without incrementing counter
-      const hitsPttl = await this.client.pttl(hitsKey);
-      const currentHits = await this.client.get(hitsKey);
+      // ── 1. Check if IP is currently blocked ──────────────────────────────────
+      const blockPttl = await this.client.pttl(blockKey);
+      if (blockPttl > 0) {
+        // Blocked: return current state without incrementing counter
+        const hitsPttl = await this.client.pttl(hitsKey);
+        const currentHits = await this.client.get(hitsKey);
+        return {
+          totalHits: currentHits ? parseInt(currentHits, 10) : limit + 1,
+          timeToExpire: hitsPttl > 0 ? Math.ceil(hitsPttl / 1000) : 0,
+          isBlocked: true,
+          timeToBlockExpire: Math.ceil(blockPttl / 1000),
+        };
+      }
+
+      // ── 2. Atomically increment hit counter ──────────────────────────────────
+      const result = (await this.client.eval(
+        RedisThrottlerStorage.LUA_INCREMENT,
+        1,
+        hitsKey,
+        ttl,
+      )) as [number, number];
+
+      const totalHits = result[0];
+      const remainingPttl = result[1];
+      const timeToExpire =
+        remainingPttl > 0 ? Math.ceil(remainingPttl / 1000) : 0;
+
+      // ── 3. Apply block if limit exceeded ─────────────────────────────────────
+      let isBlocked = false;
+      let timeToBlockExpire = 0;
+
+      if (totalHits > limit) {
+        // NX: only set if not already blocked (avoids resetting block timer on each hit)
+        await this.client.set(blockKey, '1', 'PX', blockDuration, 'NX');
+        const blockRemainingMs = await this.client.pttl(blockKey);
+        isBlocked = true;
+        timeToBlockExpire =
+          blockRemainingMs > 0 ? Math.ceil(blockRemainingMs / 1000) : 0;
+      }
+
       return {
-        totalHits: currentHits ? parseInt(currentHits, 10) : limit + 1,
-        timeToExpire: hitsPttl > 0 ? Math.ceil(hitsPttl / 1000) : 0,
-        isBlocked: true,
-        timeToBlockExpire: Math.ceil(blockPttl / 1000),
+        totalHits,
+        timeToExpire,
+        isBlocked,
+        timeToBlockExpire,
       };
+    } catch (err: any) {
+      console.warn(
+        `[RedisThrottlerStorage] Redis unavailable (${err?.message || err}), falling back to in-memory rate limiting`,
+      );
+      return this.incrementMemory(
+        key,
+        ttl,
+        limit,
+        blockDuration,
+        throttlerName,
+      );
     }
-
-    // ── 2. Atomically increment hit counter ──────────────────────────────────
-    const result = (await this.client.eval(
-      RedisThrottlerStorage.LUA_INCREMENT,
-      1,
-      hitsKey,
-      ttl,
-    )) as [number, number];
-
-    const totalHits = result[0];
-    const remainingPttl = result[1];
-    const timeToExpire =
-      remainingPttl > 0 ? Math.ceil(remainingPttl / 1000) : 0;
-
-    // ── 3. Apply block if limit exceeded ─────────────────────────────────────
-    let isBlocked = false;
-    let timeToBlockExpire = 0;
-
-    if (totalHits > limit) {
-      // NX: only set if not already blocked (avoids resetting block timer on each hit)
-      await this.client.set(blockKey, '1', 'PX', blockDuration, 'NX');
-      const blockRemainingMs = await this.client.pttl(blockKey);
-      isBlocked = true;
-      timeToBlockExpire =
-        blockRemainingMs > 0 ? Math.ceil(blockRemainingMs / 1000) : 0;
-    }
-
-    return {
-      totalHits,
-      timeToExpire,
-      isBlocked,
-      timeToBlockExpire,
-    };
   }
 }

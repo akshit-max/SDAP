@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { BillingService } from './billing.service';
+import { BillingService, generateHdfcId } from './billing.service';
 import { HdfcGatewayService } from './hdfc/hdfc-gateway.service';
 import { HdfcSignatureService } from './hdfc/hdfc-signature.service';
 import { SubscriptionService } from './subscription/subscription.service';
@@ -499,15 +499,23 @@ describe('BillingService — Security Regression Tests', () => {
       );
     });
 
-    it('does not activate subscription when HDFC returns FAILED status (unchanged behavior)', async () => {
+    it('does not activate subscription when HDFC returns FAILED status and records txn_id', async () => {
       const result = await callReturnUrl({
         status: 'FAILED',
-        // order_id and amount still match — status check happens AFTER validation
+        txn_id: 'SG6138-TXN-FAIL-01',
       });
 
-      // validation passes, but status !== CHARGED so no activation
       expect(result.success).toBe(false);
+      expect(result.redirectPath).toBe('/pricing?error=payment_failed');
       expect(mockSubscriptions.activate).not.toHaveBeenCalled();
+      expect(mockPrisma.payment.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            status: 'FAILED',
+            hdfcTxnId: 'SG6138-TXN-FAIL-01',
+          }),
+        }),
+      );
     });
 
     it('does not activate subscription when HDFC returns PENDING_VBV (unchanged behavior)', async () => {
@@ -516,6 +524,24 @@ describe('BillingService — Security Regression Tests', () => {
       expect(result.success).toBe(false);
       expect(result.redirectPath).toBe('/pricing?status=pending');
       expect(mockSubscriptions.activate).not.toHaveBeenCalled();
+    });
+
+    it('handles AUTHORIZING as non-terminal pending and records txn_id on payment row', async () => {
+      const result = await callReturnUrl({
+        status: 'AUTHORIZING' as any,
+        txn_id: 'SG6138-TXN-PENDING-01',
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.redirectPath).toBe('/pricing?status=pending');
+      expect(mockSubscriptions.activate).not.toHaveBeenCalled();
+      expect(mockPrisma.payment.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            hdfcTxnId: 'SG6138-TXN-PENDING-01',
+          }),
+        }),
+      );
     });
 
     it('gracefully handles duplicate transaction IDs (P2002) from return_url without activating subscription', async () => {
@@ -1144,6 +1170,37 @@ describe('BillingService — Security Regression Tests', () => {
 
       expect(mockSubscriptions.cancel).not.toHaveBeenCalled();
       expect(mockSubscriptions.expire).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('generateHdfcId (HDFC ID Format Validation)', () => {
+    it('generates IDs with length strictly less than 21 (<= 20 chars)', () => {
+      for (let i = 0; i < 50; i++) {
+        const id = generateHdfcId('wPM');
+        expect(id.length).toBeLessThan(21);
+        expect(id.length).toBeLessThanOrEqual(20);
+      }
+    });
+
+    it('generates strictly alphanumeric IDs with no special characters', () => {
+      for (let i = 0; i < 50; i++) {
+        const id = generateHdfcId('wPM');
+        expect(/^[A-Za-z0-9]+$/.test(id)).toBe(true);
+      }
+    });
+
+    it('generates non-sequential cryptographic random IDs', () => {
+      const ids = new Set<string>();
+      for (let i = 0; i < 100; i++) {
+        ids.add(generateHdfcId('wPM'));
+      }
+      // All 100 generated IDs should be completely unique
+      expect(ids.size).toBe(100);
+    });
+
+    it('starts with the specified prefix', () => {
+      const id = generateHdfcId('wPM');
+      expect(id.startsWith('wPM')).toBe(true);
     });
   });
 });

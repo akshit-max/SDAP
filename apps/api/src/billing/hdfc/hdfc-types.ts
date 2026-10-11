@@ -50,7 +50,8 @@ export type HdfcOrderStatus =
   | 'CANCELLED' // Terminal — user cancelled
   | 'EXPIRED' // Terminal — session expired
   | 'NEW' // Non-terminal — no attempt yet
-  | 'PENDING_VBV'; // Non-terminal — 3DS auth in progress
+  | 'PENDING_VBV' // Non-terminal — 3DS auth in progress
+  | 'AUTHORIZING'; // Non-terminal — 3DS auth in progress
 
 export interface HdfcOrderStatusResponse {
   order_id: string;

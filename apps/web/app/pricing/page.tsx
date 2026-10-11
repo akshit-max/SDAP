@@ -191,7 +191,7 @@ function PaymentConfirmationModal({
                 <div className="p-3 bg-zinc-50/50 dark:bg-zinc-900/30 flex items-center justify-between">
                   <span className="text-zinc-500 font-medium">Merchant</span>
                   <span className="font-bold text-zinc-900 dark:text-zinc-100">
-                    MAKEWITHUS PVT LTD <span className="text-[10px] text-zinc-400 font-normal font-number">(SG6138)</span>
+                    MAKEWITHUS PRIVATE LIMITED <span className="text-[10px] text-zinc-400 font-normal font-number">(SG6138)</span>
                   </span>
                 </div>
 

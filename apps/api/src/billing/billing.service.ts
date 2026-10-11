@@ -24,6 +24,7 @@ import type {
   HdfcWebhookPayload,
 } from './hdfc/hdfc-types';
 import { HDFC_WEBHOOK_EVENTS } from './hdfc/hdfc-types';
+import * as crypto from 'crypto';
 
 // ─── Plan pricing constants (mirrored server-side from billing.ts) ────────────
 // These are the source of truth for server-side billing calculations.
@@ -44,11 +45,15 @@ const MAX_FAILURES_BEFORE_EXPIRE = 3;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Generate a unique HDFC-compatible ID: max 21 chars, alphanumeric, starts with a letter */
-function generateHdfcId(prefix: string): string {
-  const rand = Math.random().toString(36).substring(2, 14).toUpperCase();
-  const ts = Date.now().toString(36).toUpperCase().slice(-6);
-  return `${prefix}${ts}${rand}`.substring(0, 21);
+/** Generate a unique HDFC-compatible ID: strictly ≤ 20 chars, alphanumeric, non-sequential, starts with a letter */
+export function generateHdfcId(prefix: string): string {
+  // prefix e.g. 'wPM' (3 chars) + 16 crypto random alphanumeric chars = 19 chars total (always < 21)
+  const randomChars = crypto
+    .randomBytes(12)
+    .toString('base64url')
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .toUpperCase();
+  return `${prefix}${randomChars}`.substring(0, 20);
 }
 
 /** Format an INR integer as a decimal string for HDFC APIs (e.g. 499 → "499.00") */
@@ -644,28 +649,60 @@ export class BillingService {
     }
 
     if (orderStatus.status !== 'CHARGED') {
-      // Non-terminal: still pending — don't change state
+      const txnId = orderStatus.txn_id?.trim() || null;
+
+      // Non-terminal: still pending / authorizing — keep state PENDING
       if (
         orderStatus.status === 'NEW' ||
         orderStatus.status === 'PENDING_VBV' ||
+        (orderStatus.status as string) === 'AUTHORIZING' ||
         (orderStatus.status as string) === 'PENDING'
       ) {
+        if (txnId && !payment.hdfcTxnId) {
+          try {
+            await this.prisma.payment.update({
+              where: { id: payment.id },
+              data: { hdfcTxnId: txnId },
+            });
+          } catch {
+            // Non-blocking in case of race / duplicate txn_id
+          }
+        }
         return {
           success: false,
           orderId,
           redirectPath: '/pricing?status=pending',
         };
       }
-      // Terminal failure
-      await this.prisma.payment.update({
-        where: { id: payment.id },
-        data: {
-          status: 'FAILED',
-          failureCode: String(orderStatus.status_id),
-          failureReason: orderStatus.bank_error_message ?? 'Payment declined',
-          processedAt: new Date(),
-        },
-      });
+      // Terminal failure — store failure details and gateway txn_id
+      try {
+        await this.prisma.payment.update({
+          where: { id: payment.id },
+          data: {
+            status: 'FAILED',
+            hdfcTxnId: txnId ?? payment.hdfcTxnId ?? null,
+            failureCode: String(orderStatus.status_id),
+            failureReason: orderStatus.bank_error_message ?? 'Payment declined',
+            processedAt: new Date(),
+          },
+        });
+      } catch (error: any) {
+        if (error.code === 'P2002') {
+          // Fallback if duplicate txnId occurs
+          await this.prisma.payment.update({
+            where: { id: payment.id },
+            data: {
+              status: 'FAILED',
+              failureCode: String(orderStatus.status_id),
+              failureReason:
+                orderStatus.bank_error_message ?? 'Payment declined',
+              processedAt: new Date(),
+            },
+          });
+        } else {
+          throw error;
+        }
+      }
       const sub = await this.prisma.subscription.findUnique({
         where: { id: payment.subscriptionId },
       });
