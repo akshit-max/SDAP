@@ -39,6 +39,8 @@ export const envSchema = z.object({
   // Free-form on purpose: an unexpected value must never stop the app booting.
   // Parsed by BillingReconciliationScheduler (off | dry-run | live; default dry-run).
   HDFC_RECONCILE_MODE: z.string().optional(),
+  // "false" pauses the daily renewal sweep (BillingRenewalScheduler); default on.
+  BILLING_RENEWAL_SWEEP_ENABLED: z.string().optional(),
 });
 
 export function validate(config: Record<string, unknown>) {
