@@ -206,6 +206,52 @@ describe('HdfcGatewayService', () => {
     });
   });
 
+  describe('getOrderStatus timeout', () => {
+    it('passes an abort signal to fetch for order status', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ order_id: 'wPMT1', status: 'NEW' }),
+      });
+
+      await service.getOrderStatus('wPMT1');
+
+      const [, options] = fetchMock.mock.calls[0];
+      expect(options.signal).toBeInstanceOf(AbortSignal);
+    });
+
+    it('throws a plain (logged) Error naming the call when HDFC does not answer in time', async () => {
+      fetchMock.mockRejectedValueOnce(
+        Object.assign(new Error('The operation was aborted due to timeout'), {
+          name: 'TimeoutError',
+        }),
+      );
+
+      const error = await service.getOrderStatus('wPMT2').catch((e) => e);
+
+      expect(error).not.toBeInstanceOf(InternalServerErrorException);
+      expect(error.message).toBe(
+        'HDFC API GET /orders/wPMT2 timed out after 15000ms',
+      );
+    });
+
+    it('does not put a timeout on mandate charges (outcome would be unknown)', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ status: 'PENDING_VBV', order_id: 'rPM1' }),
+      });
+
+      await service.executeMandateCharge('mnd1', {
+        order_id: 'rPM1',
+        amount: '499.00',
+        currency: 'INR',
+        customer_id: 'cust-1',
+      });
+
+      const [, options] = fetchMock.mock.calls[0];
+      expect(options.signal).toBeUndefined();
+    });
+  });
+
   describe('HTTP error handling', () => {
     it('should throw InternalServerErrorException on !res.ok and preserve existing behavior', async () => {
       fetchMock.mockResolvedValue({
