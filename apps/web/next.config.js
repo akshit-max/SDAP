@@ -111,12 +111,38 @@ const nextConfig = {
     // Note: Replaced old backend (withus-yy5i.onrender.com) with new backend (sdap.onrender.com) per user request
     // const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://withus-yy5i.onrender.com/api/v1';
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://sdap.onrender.com/api/v1';
-    return [
-      {
-        source: '/api/v1/:path*',
-        destination: `${backendUrl}/:path*`,
-      },
+
+    // Marketing landing page (separate deployment) served on this same domain:
+    // "/" and the landing's own asset paths are proxied to LANDING_URL; every other
+    // route (/login, /dashboard, ...) stays in this app. The landing serves its
+    // Next.js build under /_landing (assetPrefix) so it never collides with our /_next.
+    const landingUrl = process.env.LANDING_URL?.replace(/\/+$/, '');
+    const landingPaths = [
+      '/_landing/:path*',
+      '/images/:path*',
+      '/videos/:path*',
+      '/hero-video/:path*',
+      '/seo/:path*',
+      '/ajax/:path*',
+      '/3.4.17',
+      '/withus-pitchdeck.js',
+      '/api/contact',
     ];
+
+    return {
+      // beforeFiles so the landing wins over app/page.tsx (which redirects to /dashboard)
+      beforeFiles: landingUrl ? [{ source: '/', destination: `${landingUrl}/` }] : [],
+      afterFiles: [
+        {
+          source: '/api/v1/:path*',
+          destination: `${backendUrl}/:path*`,
+        },
+        ...(landingUrl
+          ? landingPaths.map(source => ({ source, destination: `${landingUrl}${source}` }))
+          : []),
+      ],
+      fallback: [],
+    };
   },
 };
 
