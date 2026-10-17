@@ -1,5 +1,6 @@
 import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { isLatestCheckoutUnpaid } from './subscription.service';
 import type { PlanTier } from '@prisma/client';
 import {
   WITHUS_VAULT_PLATFORMS,
@@ -51,7 +52,7 @@ export class EntitlementService {
   async getEffectivePlan(organizationId: string): Promise<PlanTier> {
     const sub = await this.prisma.subscription.findUnique({
       where: { organizationId },
-      select: { plan: true, status: true, currentPeriodEnd: true },
+      select: { id: true, plan: true, status: true, currentPeriodEnd: true },
     });
 
     if (!sub) return 'FREE';
@@ -68,7 +69,10 @@ export class EntitlementService {
         return 'FREE';
       }
       case 'PAST_DUE':
-        // Still within grace period — keep plan access
+        // Still within grace period — keep plan access, but only for a subscription
+        // that was actually paid for. A PAST_DUE left by a failed first checkout
+        // (pre-fix behaviour) never had a paid period.
+        if (await isLatestCheckoutUnpaid(this.prisma, sub.id)) return 'FREE';
         return sub.plan;
       case 'FREE':
       case 'PENDING':

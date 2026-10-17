@@ -101,6 +101,8 @@ export class BillingRenewalScheduler {
 
     for (const sub of subscriptions) {
       try {
+        // Never debit a mandate that no charged checkout registered
+        if (await this.billingService.releaseIfUnpaidCheckout(sub)) continue;
         await this.billingService.processRenewal(sub);
       } catch (err: unknown) {
         this.logger.error(
@@ -122,6 +124,8 @@ export class BillingRenewalScheduler {
 
     for (const sub of subscriptions) {
       try {
+        // An unpaid checkout has no mandate to revoke and no paid plan to expire
+        if (await this.billingService.releaseIfUnpaidCheckout(sub)) continue;
         await this.billingService.revokeAndExpire(
           sub,
           'Grace period elapsed — subscription expired',

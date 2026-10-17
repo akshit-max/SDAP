@@ -12,6 +12,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 const mockPrisma = {
   subscription: { findUnique: jest.fn() },
+  payment: { findFirst: jest.fn() },
   organizationMember: { count: jest.fn() },
   integrationConnection: { count: jest.fn() },
 };
@@ -110,6 +111,55 @@ describe('EntitlementService', () => {
         currentPeriodEnd: null,
       });
       expect(await service.getEffectivePlan('org-1')).toBe('PRO');
+    });
+
+    describe('PAST_DUE backed by an unpaid first checkout', () => {
+      beforeEach(() => {
+        mockPrisma.subscription.findUnique.mockResolvedValue({
+          id: 'sub-1',
+          plan: 'PRO',
+          status: 'PAST_DUE',
+          currentPeriodEnd: null,
+        });
+      });
+
+      it.each(['FAILED', 'PENDING'])(
+        'returns FREE when the latest checkout is %s',
+        async (status) => {
+          mockPrisma.payment.findFirst.mockResolvedValue({ status });
+          expect(await service.getEffectivePlan('org-1')).toBe('FREE');
+          expect(await service.isPaidPlan('org-1')).toBe(false);
+          expect(mockPrisma.payment.findFirst).toHaveBeenCalledWith({
+            where: { subscriptionId: 'sub-1', type: 'MANDATE_REGISTRATION' },
+            orderBy: { createdAt: 'desc' },
+            select: { status: true },
+          });
+        },
+      );
+
+      it.each(['SUCCESS', 'REFUNDED'])(
+        'keeps grace access when the latest checkout is %s (genuine renewal failure)',
+        async (status) => {
+          mockPrisma.payment.findFirst.mockResolvedValue({ status });
+          expect(await service.getEffectivePlan('org-1')).toBe('PRO');
+        },
+      );
+
+      it('keeps grace access when there is no checkout payment at all (legacy rows)', async () => {
+        mockPrisma.payment.findFirst.mockResolvedValue(null);
+        expect(await service.getEffectivePlan('org-1')).toBe('PRO');
+      });
+    });
+
+    it('does not query payments for non-PAST_DUE statuses', async () => {
+      mockPrisma.subscription.findUnique.mockResolvedValue({
+        id: 'sub-1',
+        plan: 'PRO',
+        status: 'ACTIVE',
+        currentPeriodEnd: null,
+      });
+      await service.getEffectivePlan('org-1');
+      expect(mockPrisma.payment.findFirst).not.toHaveBeenCalled();
     });
   });
 

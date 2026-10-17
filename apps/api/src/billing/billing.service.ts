@@ -18,7 +18,10 @@ import type {
 import { PrismaService } from '../prisma/prisma.service';
 import { HdfcGatewayService } from './hdfc/hdfc-gateway.service';
 import { HdfcSignatureService } from './hdfc/hdfc-signature.service';
-import { SubscriptionService } from './subscription/subscription.service';
+import {
+  SubscriptionService,
+  isLatestCheckoutUnpaid,
+} from './subscription/subscription.service';
 import type {
   HdfcOrderStatusResponse,
   HdfcReturnUrlParams,
@@ -1389,6 +1392,41 @@ export class BillingService {
     this.logger.log(
       `[EXPIRE] Org ${sub.organizationId} subscription expired — reason: ${reason}`,
     );
+  }
+
+  // ─── 8b. Release PAST_DUE left by an unpaid first checkout ──────────────────
+
+  /**
+   * Renewal-job guard. Before the checkout-isolation fix, a failed first checkout
+   * marked the subscription PAST_DUE although its mandate was never registered.
+   * Such subscriptions must not be debited, revoked or expired: they go back to
+   * PENDING (no HDFC call). Returns true if the subscription was handled here and
+   * the caller must skip it.
+   */
+  async releaseIfUnpaidCheckout(sub: Subscription): Promise<boolean> {
+    if (sub.status !== 'PAST_DUE') return false;
+    if (!(await isLatestCheckoutUnpaid(this.prisma, sub.id))) return false;
+
+    const released = await this.subscriptions.releaseUnpaidPastDue(
+      sub.organizationId,
+    );
+    if (released) {
+      this.eventEmitter.emit('audit.log', {
+        organizationId: sub.organizationId,
+        actorId: null,
+        action: 'billing.unpaid_checkout_released',
+        resourceType: 'SUBSCRIPTION',
+        resourceId: sub.id,
+        metadata: {
+          reason: 'PAST_DUE without a charged first checkout — returned to PENDING',
+          hdfcMandateId: sub.hdfcMandateId,
+        },
+      });
+      this.logger.warn(
+        `[RENEWAL] Org ${sub.organizationId} was PAST_DUE from an unpaid first checkout — returned to PENDING, no debit/revoke`,
+      );
+    }
+    return true;
   }
 
   // ─── 9. Refund ──────────────────────────────────────────────────────────────
