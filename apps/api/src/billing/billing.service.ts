@@ -461,32 +461,101 @@ export class BillingService {
       }
     }
 
-    await this.prisma.payment.update({
-      where: { id: payment.id },
-      data: {
-        status: 'FAILED',
-        failureReason: reason,
-        processedAt: new Date(),
-      },
+    // Compare-and-set against the status we just read — if a concurrent return URL /
+    // scheduler run changed it first, that run owns the transition.
+    const transitioned = await this.markPaymentFailed(payment, payment.status, {
+      failureReason: reason,
     });
+    if (!transitioned) {
+      this.logger.log(
+        `[WEBHOOK] Order ${orderId} changed concurrently — failure not re-applied`,
+      );
+      return;
+    }
+    await this.applyRenewalFailure(
+      payment,
+      reason,
+      `Payment failed`,
+      'WEBHOOK',
+    );
+    this.logger.log(`[WEBHOOK] Order ${orderId} marked FAILED`);
+  }
+
+  /**
+   * Compare-and-set a payment to FAILED. Only succeeds if the row is still in
+   * `fromStatus`, so concurrent handlers record (and count) a failure once.
+   * Returns false when another handler already moved the payment.
+   */
+  private async markPaymentFailed(
+    payment: Payment,
+    fromStatus: Payment['status'],
+    details: {
+      failureReason: string;
+      failureCode?: string;
+      hdfcTxnId?: string | null;
+    },
+  ): Promise<boolean> {
+    const { hdfcTxnId, ...rest } = details;
+    const data = {
+      status: 'FAILED' as const,
+      ...rest,
+      processedAt: new Date(),
+    };
+    const where = { id: payment.id, status: fromStatus };
+    try {
+      await this.prisma.payment.update({
+        where,
+        data: hdfcTxnId === undefined ? data : { ...data, hdfcTxnId },
+      });
+      return true;
+    } catch (error: any) {
+      if (error?.code === 'P2025') return false;
+      if (error?.code !== 'P2002' || hdfcTxnId === undefined) throw error;
+    }
+    // Duplicate txn_id — record the failure without it
+    try {
+      await this.prisma.payment.update({ where, data });
+      return true;
+    } catch (error: any) {
+      if (error?.code === 'P2025') return false;
+      throw error;
+    }
+  }
+
+  /**
+   * Subscription consequences of a failed charge. Only renewal debits move the
+   * subscription to PAST_DUE / EXPIRED — a failed first checkout
+   * (MANDATE_REGISTRATION) never had a paid period or a registered mandate, so
+   * it must not grant PAST_DUE grace access, schedule debits, or revoke anything.
+   */
+  private async applyRenewalFailure(
+    payment: Payment,
+    reason: string,
+    expireLabel: string,
+    logTag: string,
+  ): Promise<void> {
+    if (payment.type !== 'RECURRING_EXECUTION') {
+      this.logger.log(
+        `[${logTag}] Checkout order ${payment.hdfcOrderId} failed — subscription left unchanged`,
+      );
+      return;
+    }
     const sub = await this.prisma.subscription.findUnique({
       where: { id: payment.subscriptionId },
     });
-    if (sub) {
-      const newFailureCount = (sub.failureCount ?? 0) + 1;
-      if (newFailureCount >= MAX_FAILURES_BEFORE_EXPIRE) {
-        await this.revokeAndExpire(
-          sub,
-          `Payment failed ${newFailureCount} times — grace period exhausted`,
-        );
-      } else {
-        await this.subscriptions.markPastDue(sub.organizationId, reason);
-        this.logger.warn(
-          `[WEBHOOK] Org ${sub.organizationId} renewal failed (attempt ${newFailureCount}) → PAST_DUE`,
-        );
-      }
+    if (!sub) return;
+    const newFailureCount = (sub.failureCount ?? 0) + 1;
+    if (newFailureCount >= MAX_FAILURES_BEFORE_EXPIRE) {
+      await this.revokeAndExpire(
+        sub,
+        `${expireLabel} ${newFailureCount} times — grace period exhausted`,
+      );
+    } else {
+      await this.subscriptions.markPastDue(sub.organizationId, reason);
+      this.logger.warn(
+        `[${logTag}] Org ${sub.organizationId} renewal failed (attempt ${newFailureCount}) → PAST_DUE`,
+      );
     }
-    this.logger.log(`[WEBHOOK] Order ${orderId} marked FAILED`);
   }
 
   private async handleMandateRevokedWebhook(mandateId: string): Promise<void> {
@@ -674,51 +743,26 @@ export class BillingService {
           redirectPath: '/pricing?status=pending',
         };
       }
-      // Terminal failure — store failure details and gateway txn_id
-      try {
-        await this.prisma.payment.update({
-          where: { id: payment.id },
-          data: {
-            status: 'FAILED',
-            hdfcTxnId: txnId ?? payment.hdfcTxnId ?? null,
-            failureCode: String(orderStatus.status_id),
-            failureReason: orderStatus.bank_error_message ?? 'Payment declined',
-            processedAt: new Date(),
-          },
-        });
-      } catch (error: any) {
-        if (error.code === 'P2002') {
-          // Fallback if duplicate txnId occurs
-          await this.prisma.payment.update({
-            where: { id: payment.id },
-            data: {
-              status: 'FAILED',
-              failureCode: String(orderStatus.status_id),
-              failureReason:
-                orderStatus.bank_error_message ?? 'Payment declined',
-              processedAt: new Date(),
-            },
-          });
-        } else {
-          throw error;
-        }
-      }
-      const sub = await this.prisma.subscription.findUnique({
-        where: { id: payment.subscriptionId },
+      // Terminal failure — store failure details and gateway txn_id.
+      // Compare-and-set PENDING → FAILED: a repeat return URL hit, webhook or
+      // scheduler run for the same order must not count the failure twice.
+      const reason = orderStatus.bank_error_message ?? 'Payment declined';
+      const transitioned = await this.markPaymentFailed(payment, 'PENDING', {
+        failureCode: String(orderStatus.status_id),
+        failureReason: reason,
+        hdfcTxnId: txnId ?? payment.hdfcTxnId ?? null,
       });
-      if (sub) {
-        const newFailureCount = (sub.failureCount ?? 0) + 1;
-        if (newFailureCount >= MAX_FAILURES_BEFORE_EXPIRE) {
-          await this.revokeAndExpire(
-            sub,
-            `Payment declined ${newFailureCount} times — grace period exhausted`,
-          );
-        } else {
-          await this.subscriptions.markPastDue(
-            sub.organizationId,
-            orderStatus.bank_error_message ?? 'Payment declined',
-          );
-        }
+      if (transitioned) {
+        await this.applyRenewalFailure(
+          payment,
+          reason,
+          'Payment declined',
+          'CONFIRM',
+        );
+      } else {
+        this.logger.log(
+          `[CONFIRM] Order ${orderId} no longer PENDING — failure already recorded (source: ${source})`,
+        );
       }
       return {
         success: false,
@@ -765,8 +809,11 @@ export class BillingService {
 
     try {
       await this.prisma.$transaction([
+        // Compare-and-set: only one concurrent handler can move the payment to
+        // SUCCESS, so the subscription is activated / extended exactly once.
+        // FAILED is allowed as a source because HDFC CHARGED is authoritative.
         this.prisma.payment.update({
-          where: { id: payment.id },
+          where: { id: payment.id, status: { in: ['PENDING', 'FAILED'] } },
           data: {
             status: 'SUCCESS',
             hdfcTxnId: orderStatus.txn_id || null,
@@ -775,6 +822,16 @@ export class BillingService {
         }),
       ]);
     } catch (error: any) {
+      if (error.code === 'P2025') {
+        this.logger.log(
+          `[CONFIRM] Order ${orderId} already confirmed by a concurrent handler — not re-activating (source: ${source})`,
+        );
+        return {
+          success: true,
+          orderId,
+          redirectPath: `/pricing?success=true&order_id=${orderId}`,
+        };
+      }
       if (error.code === 'P2002') {
         this.logger.error(
           `[CONFIRM] Duplicate transaction ID ${orderStatus.txn_id} detected for order ${orderId} (source: ${source})`,
@@ -790,6 +847,48 @@ export class BillingService {
         };
       }
       throw error;
+    }
+
+    // A checkout charged after the subscription left PENDING (e.g. a second paid
+    // checkout, or a late confirmation after another order activated it): the money
+    // is recorded above, but re-activating would reset the paid period and attach
+    // the wrong mandate. Flag it for manual refund / review instead.
+    if (!isRenewal && sub.status !== 'PENDING') {
+      this.logger.error(
+        `[CONFIRM] Order ${orderId} CHARGED but subscription ${sub.id} is ${sub.status} — not activating, needs review (source: ${source})`,
+      );
+      this.emitPaymentReview(sub, payment, source, {
+        reason: 'CHARGED_WHILE_SUBSCRIPTION_NOT_PENDING',
+        subscriptionStatus: sub.status,
+      });
+      return {
+        success: true,
+        orderId,
+        redirectPath: `/pricing?success=true&order_id=${orderId}`,
+      };
+    }
+
+    // setPending() overwrites hdfcMandateId on every checkout, so if a newer
+    // checkout exists the stored mandate may not be the one this order registered.
+    // Activate (the customer paid) but flag it before the first renewal.
+    if (!isRenewal && payment.createdAt) {
+      const newerCheckout = await this.prisma.payment.findFirst({
+        where: {
+          subscriptionId: payment.subscriptionId,
+          type: 'MANDATE_REGISTRATION',
+          createdAt: { gt: payment.createdAt },
+        },
+        select: { hdfcOrderId: true },
+      });
+      if (newerCheckout) {
+        this.logger.warn(
+          `[CONFIRM] Order ${orderId} activated but newer checkout ${newerCheckout.hdfcOrderId} exists — mandate ID may not match (source: ${source})`,
+        );
+        this.emitPaymentReview(sub, payment, source, {
+          reason: 'MANDATE_ID_MAY_BELONG_TO_LATER_CHECKOUT',
+          newerOrderId: newerCheckout.hdfcOrderId,
+        });
+      }
     }
 
     await this.subscriptions.activate(sub.organizationId, {
@@ -832,6 +931,27 @@ export class BillingService {
       orderId,
       redirectPath: `/pricing?success=true&order_id=${orderId}`,
     };
+  }
+
+  private emitPaymentReview(
+    sub: Subscription,
+    payment: Payment,
+    source: string,
+    details: Record<string, unknown>,
+  ): void {
+    this.eventEmitter.emit('audit.log', {
+      organizationId: sub.organizationId,
+      actorId: null,
+      action: 'billing.payment_needs_review',
+      resourceType: 'PAYMENT',
+      resourceId: payment.id,
+      metadata: {
+        orderId: payment.hdfcOrderId,
+        amount: payment.amount,
+        source,
+        ...details,
+      },
+    });
   }
 
   // ─── 4b. Get Payment Receipt (Safeguard 1 & 3) ──────────────────────────────

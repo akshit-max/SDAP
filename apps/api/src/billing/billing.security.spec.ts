@@ -290,6 +290,7 @@ describe('BillingService — Security Regression Tests', () => {
       mockPrisma.subscription.findUnique.mockResolvedValue({
         id: 'sub-uuid-001',
         organizationId: 'org-uuid-001',
+        status: 'PENDING',
         plan: 'PRO',
         billingCycle: 'MONTHLY',
         baseAmount: 499,
@@ -379,6 +380,7 @@ describe('BillingService — Security Regression Tests', () => {
       mockPrisma.subscription.findUnique.mockResolvedValue({
         id: 'sub-uuid-001',
         organizationId: 'org-uuid-001',
+        status: 'PENDING',
         plan: 'PRO',
         billingCycle: 'MONTHLY',
         baseAmount: 499,
@@ -399,6 +401,7 @@ describe('BillingService — Security Regression Tests', () => {
       mockPrisma.subscription.findUnique.mockResolvedValue({
         id: 'sub-uuid-001',
         organizationId: 'org-uuid-001',
+        status: 'PENDING',
         plan: 'PRO',
         billingCycle: 'MONTHLY',
         baseAmount: 499,
@@ -476,6 +479,7 @@ describe('BillingService — Security Regression Tests', () => {
       mockPrisma.subscription.findUnique.mockResolvedValue({
         id: 'sub-uuid-001',
         organizationId: 'org-uuid-001',
+        status: 'PENDING',
         plan: 'PRO',
         billingCycle: 'MONTHLY',
         baseAmount: 499,
@@ -1170,6 +1174,282 @@ describe('BillingService — Security Regression Tests', () => {
 
       expect(mockSubscriptions.cancel).not.toHaveBeenCalled();
       expect(mockSubscriptions.expire).not.toHaveBeenCalled();
+    });
+  });
+
+  // ── Checkout failure isolation, compare-and-set, late CHARGED review ────────
+
+  describe('Checkout state integrity (issues 1, 4, 5)', () => {
+    const checkoutPayment = {
+      ...basePayment,
+      type: 'MANDATE_REGISTRATION',
+      createdAt: new Date('2026-10-17T09:30:00Z'),
+    };
+    const renewalPayment = {
+      ...basePayment,
+      id: 'pay-uuid-renewal-cas',
+      hdfcOrderId: 'rPMCAS0000000001',
+      type: 'RECURRING_EXECUTION',
+    };
+    const pendingSub = {
+      id: 'sub-uuid-001',
+      organizationId: 'org-uuid-001',
+      status: 'PENDING',
+      plan: 'PRO',
+      billingCycle: 'MONTHLY',
+      baseAmount: 499,
+      extraUsers: 0,
+      totalAmount: 499,
+      failureCount: 2,
+      hdfcMandateId: 'mndCHECKOUT00001',
+      currentPeriodEnd: new Date('2026-11-17T00:00:00Z'),
+    };
+    const failedStatus = {
+      ...chargedOrderStatus,
+      status: 'AUTHORIZATION_FAILED',
+      status_id: 27,
+      bank_error_message: 'Authorization failed',
+    };
+    const lostRace = () => Object.assign(new Error(), { code: 'P2025' });
+
+    beforeEach(() => {
+      mockPrisma.payment.update.mockReset();
+      mockPrisma.payment.findFirst.mockReset();
+      mockPrisma.$transaction.mockImplementation(
+        (ops: unknown[]) => Promise.all(ops) as Promise<unknown[]>,
+      );
+      mockSubscriptions.activate.mockResolvedValue({});
+    });
+
+    it('failed checkout via return URL marks the payment FAILED and leaves the subscription untouched', async () => {
+      mockSignature.verifyReturnUrl.mockReturnValue(true);
+      mockPrisma.payment.findUnique.mockResolvedValue(checkoutPayment);
+      mockHdfc.getOrderStatus.mockResolvedValue(failedStatus);
+      // failureCount 2 → the old code would have revoked the mandate and expired
+      mockPrisma.subscription.findUnique.mockResolvedValue(pendingSub);
+
+      const result = await service.handleReturn({
+        order_id: checkoutPayment.hdfcOrderId,
+        signature: 'valid-sig',
+        signature_algorithm: 'HMACSHA256',
+      });
+
+      expect(result.redirectPath).toBe('/pricing?error=payment_failed');
+      expect(mockPrisma.payment.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: checkoutPayment.id, status: 'PENDING' },
+          data: expect.objectContaining({
+            status: 'FAILED',
+            failureCode: '27',
+          }),
+        }),
+      );
+      expect(mockSubscriptions.markPastDue).not.toHaveBeenCalled();
+      expect(mockSubscriptions.expire).not.toHaveBeenCalled();
+      expect(mockHdfc.revokeMandate).not.toHaveBeenCalled();
+    });
+
+    it('failed checkout via ORDER_FAILED webhook leaves the subscription untouched', async () => {
+      mockPrisma.payment.findUnique.mockResolvedValue(checkoutPayment);
+      mockPrisma.subscription.findUnique.mockResolvedValue(pendingSub);
+
+      await service.handleWebhook({
+        id: 'evt-checkout-fail',
+        date_created: new Date().toISOString(),
+        event_name: 'ORDER_FAILED',
+        content: {
+          order: {
+            order_id: checkoutPayment.hdfcOrderId,
+            bank_error_message: 'Authorization failed',
+          } as any,
+        },
+      });
+
+      expect(mockPrisma.payment.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: checkoutPayment.id, status: 'PENDING' },
+          data: expect.objectContaining({ status: 'FAILED' }),
+        }),
+      );
+      expect(mockSubscriptions.markPastDue).not.toHaveBeenCalled();
+      expect(mockSubscriptions.expire).not.toHaveBeenCalled();
+      expect(mockHdfc.revokeMandate).not.toHaveBeenCalled();
+    });
+
+    it('failed renewal via return/scheduler path still marks the subscription PAST_DUE', async () => {
+      mockPrisma.payment.findUnique.mockResolvedValue(renewalPayment);
+      mockHdfc.getOrderStatus.mockResolvedValue({
+        ...failedStatus,
+        order_id: renewalPayment.hdfcOrderId,
+      });
+      mockPrisma.subscription.findUnique.mockResolvedValue({
+        ...pendingSub,
+        status: 'ACTIVE',
+        failureCount: 0,
+      });
+
+      await (service as any).confirmOrderAndActivate(
+        renewalPayment,
+        'scheduler',
+      );
+
+      expect(mockSubscriptions.markPastDue).toHaveBeenCalledWith(
+        'org-uuid-001',
+        'Authorization failed',
+      );
+    });
+
+    it('does not count a failure twice when another handler already recorded it (CAS lost)', async () => {
+      mockPrisma.payment.findUnique.mockResolvedValue(renewalPayment);
+      mockHdfc.getOrderStatus.mockResolvedValue({
+        ...failedStatus,
+        order_id: renewalPayment.hdfcOrderId,
+      });
+      mockPrisma.payment.update.mockRejectedValue(lostRace());
+
+      const result = await (service as any).confirmOrderAndActivate(
+        renewalPayment,
+        'return_url',
+      );
+
+      expect(result.redirectPath).toBe('/pricing?error=payment_failed');
+      expect(mockSubscriptions.markPastDue).not.toHaveBeenCalled();
+      expect(mockSubscriptions.expire).not.toHaveBeenCalled();
+    });
+
+    it('records the failure without txn_id when the txn_id is a duplicate (P2002 fallback keeps the CAS)', async () => {
+      mockPrisma.payment.findUnique.mockResolvedValue(checkoutPayment);
+      mockHdfc.getOrderStatus.mockResolvedValue({
+        ...failedStatus,
+        txn_id: 'dup-txn',
+      });
+      mockPrisma.payment.update
+        .mockRejectedValueOnce(Object.assign(new Error(), { code: 'P2002' }))
+        .mockResolvedValueOnce({});
+
+      await (service as any).confirmOrderAndActivate(
+        checkoutPayment,
+        'return_url',
+      );
+
+      expect(mockPrisma.payment.update).toHaveBeenCalledTimes(2);
+      const fallback = mockPrisma.payment.update.mock.calls[1][0];
+      expect(fallback.where).toEqual({
+        id: checkoutPayment.id,
+        status: 'PENDING',
+      });
+      expect(fallback.data.hdfcTxnId).toBeUndefined();
+    });
+
+    it('moves a payment to SUCCESS only from PENDING or FAILED (compare-and-set)', async () => {
+      mockPrisma.payment.findUnique.mockResolvedValue(checkoutPayment);
+      mockHdfc.getOrderStatus.mockResolvedValue(chargedOrderStatus);
+      mockPrisma.subscription.findUnique.mockResolvedValue(pendingSub);
+
+      const result = await (service as any).confirmOrderAndActivate(
+        checkoutPayment,
+        'return_url',
+      );
+
+      expect(result.success).toBe(true);
+      expect(mockPrisma.payment.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            id: checkoutPayment.id,
+            status: { in: ['PENDING', 'FAILED'] },
+          },
+          data: expect.objectContaining({ status: 'SUCCESS' }),
+        }),
+      );
+      expect(mockSubscriptions.activate).toHaveBeenCalledTimes(1);
+    });
+
+    it('two concurrent confirmations of the same CHARGED renewal extend the period once', async () => {
+      mockPrisma.payment.findUnique.mockResolvedValue(renewalPayment);
+      mockHdfc.getOrderStatus.mockResolvedValue({
+        ...chargedOrderStatus,
+        order_id: renewalPayment.hdfcOrderId,
+      });
+      mockPrisma.subscription.findUnique.mockResolvedValue({
+        ...pendingSub,
+        status: 'ACTIVE',
+      });
+      // First writer wins the CAS; the second finds the row no longer PENDING/FAILED
+      mockPrisma.payment.update
+        .mockResolvedValueOnce({})
+        .mockRejectedValueOnce(lostRace());
+
+      const results = await Promise.all([
+        (service as any).confirmOrderAndActivate(renewalPayment, 'return_url'),
+        (service as any).confirmOrderAndActivate(renewalPayment, 'scheduler'),
+      ]);
+
+      expect(results.every((r: any) => r.success)).toBe(true);
+      expect(mockSubscriptions.activate).toHaveBeenCalledTimes(1);
+      expect(
+        mockEventEmitter.emit.mock.calls.filter(
+          ([, e]: any) => e.action === 'billing.renewal_success',
+        ),
+      ).toHaveLength(1);
+    });
+
+    it('late CHARGED checkout for a non-PENDING subscription records SUCCESS, does not activate, and raises a review event', async () => {
+      mockPrisma.payment.findUnique.mockResolvedValue(checkoutPayment);
+      mockHdfc.getOrderStatus.mockResolvedValue(chargedOrderStatus);
+      mockPrisma.subscription.findUnique.mockResolvedValue({
+        ...pendingSub,
+        status: 'ACTIVE',
+      });
+
+      const result = await (service as any).confirmOrderAndActivate(
+        checkoutPayment,
+        'scheduler',
+      );
+
+      expect(result.success).toBe(true);
+      expect(mockPrisma.payment.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: 'SUCCESS' }),
+        }),
+      );
+      expect(mockSubscriptions.activate).not.toHaveBeenCalled();
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        'audit.log',
+        expect.objectContaining({
+          action: 'billing.payment_needs_review',
+          resourceId: checkoutPayment.id,
+          metadata: expect.objectContaining({
+            reason: 'CHARGED_WHILE_SUBSCRIPTION_NOT_PENDING',
+            subscriptionStatus: 'ACTIVE',
+          }),
+        }),
+      );
+    });
+
+    it('activates a CHARGED checkout but flags a possible mandate mismatch when a newer checkout exists', async () => {
+      mockPrisma.payment.findUnique.mockResolvedValue(checkoutPayment);
+      mockHdfc.getOrderStatus.mockResolvedValue(chargedOrderStatus);
+      mockPrisma.subscription.findUnique.mockResolvedValue(pendingSub);
+      mockPrisma.payment.findFirst.mockResolvedValue({
+        hdfcOrderId: 'wPMNEWER00000001',
+      });
+
+      await (service as any).confirmOrderAndActivate(
+        checkoutPayment,
+        'scheduler',
+      );
+
+      expect(mockSubscriptions.activate).toHaveBeenCalledTimes(1);
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        'audit.log',
+        expect.objectContaining({
+          action: 'billing.payment_needs_review',
+          metadata: expect.objectContaining({
+            reason: 'MANDATE_ID_MAY_BELONG_TO_LATER_CHECKOUT',
+            newerOrderId: 'wPMNEWER00000001',
+          }),
+        }),
+      );
     });
   });
 
