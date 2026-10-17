@@ -60,6 +60,7 @@ const mockSubscriptions = {
   markPastDue: jest.fn(),
   cancel: jest.fn(),
   expire: jest.fn(),
+  releaseUnpaidPastDue: jest.fn(),
 };
 
 const mockPrisma = {
@@ -1713,6 +1714,73 @@ describe('BillingService — Security Regression Tests', () => {
         mockPrisma.payment.findMany.mock.calls[call][0].where.createdAt.gt;
       expect(gt(1)).toEqual(full[19]!.createdAt);
       expect(gt(2)).toEqual(new Date('2026-10-16T12:00:00Z'));
+    });
+  });
+
+  // ── Renewal guard: PAST_DUE left by an unpaid first checkout ────────────────
+
+  describe('releaseIfUnpaidCheckout()', () => {
+    const pastDueSub = {
+      id: 'sub-uuid-001',
+      organizationId: 'org-uuid-001',
+      status: 'PAST_DUE',
+      hdfcMandateId: 'mndNEVERREGISTER1',
+    };
+
+    beforeEach(() => {
+      mockPrisma.payment.findFirst.mockReset();
+      mockSubscriptions.releaseUnpaidPastDue.mockReset();
+    });
+
+    it('returns a PAST_DUE subscription with a FAILED latest checkout to PENDING — no HDFC call', async () => {
+      mockPrisma.payment.findFirst.mockResolvedValue({ status: 'FAILED' });
+      mockSubscriptions.releaseUnpaidPastDue.mockResolvedValue(true);
+
+      expect(await service.releaseIfUnpaidCheckout(pastDueSub as any)).toBe(
+        true,
+      );
+      expect(mockSubscriptions.releaseUnpaidPastDue).toHaveBeenCalledWith(
+        'org-uuid-001',
+      );
+      expect(mockHdfc.executeMandateCharge).not.toHaveBeenCalled();
+      expect(mockHdfc.revokeMandate).not.toHaveBeenCalled();
+      expect(mockSubscriptions.expire).not.toHaveBeenCalled();
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        'audit.log',
+        expect.objectContaining({
+          action: 'billing.unpaid_checkout_released',
+          resourceId: 'sub-uuid-001',
+        }),
+      );
+    });
+
+    it('still reports handled (skip) but emits nothing when the CAS finds it no longer PAST_DUE', async () => {
+      mockPrisma.payment.findFirst.mockResolvedValue({ status: 'PENDING' });
+      mockSubscriptions.releaseUnpaidPastDue.mockResolvedValue(false);
+
+      expect(await service.releaseIfUnpaidCheckout(pastDueSub as any)).toBe(
+        true,
+      );
+      expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+    });
+
+    it('leaves a genuine renewal failure (latest checkout SUCCESS) to the normal renewal path', async () => {
+      mockPrisma.payment.findFirst.mockResolvedValue({ status: 'SUCCESS' });
+
+      expect(await service.releaseIfUnpaidCheckout(pastDueSub as any)).toBe(
+        false,
+      );
+      expect(mockSubscriptions.releaseUnpaidPastDue).not.toHaveBeenCalled();
+    });
+
+    it('ignores subscriptions that are not PAST_DUE without querying payments', async () => {
+      expect(
+        await service.releaseIfUnpaidCheckout({
+          ...pastDueSub,
+          status: 'ACTIVE',
+        } as any),
+      ).toBe(false);
+      expect(mockPrisma.payment.findFirst).not.toHaveBeenCalled();
     });
   });
 

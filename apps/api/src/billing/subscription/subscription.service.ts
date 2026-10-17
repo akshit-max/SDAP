@@ -3,6 +3,25 @@ import { PrismaService } from '../../prisma/prisma.service';
 import type { BillingCycle, PlanTier, Subscription } from '@prisma/client';
 
 /**
+ * True when the subscription's most recent first checkout (MANDATE_REGISTRATION)
+ * was never charged (PENDING or FAILED). setPending() replaces hdfcMandateId on
+ * every checkout, so the latest checkout owns the stored mandate: if it was not
+ * charged, that mandate was never registered and no paid period backs the
+ * subscription. Subscriptions with no checkout payment at all return false.
+ */
+export async function isLatestCheckoutUnpaid(
+  prisma: PrismaService,
+  subscriptionId: string,
+): Promise<boolean> {
+  const latest = await prisma.payment.findFirst({
+    where: { subscriptionId, type: 'MANDATE_REGISTRATION' },
+    orderBy: { createdAt: 'desc' },
+    select: { status: true },
+  });
+  return latest?.status === 'PENDING' || latest?.status === 'FAILED';
+}
+
+/**
  * SubscriptionService
  *
  * CRUD layer for the Subscription model.
@@ -147,6 +166,20 @@ export class SubscriptionService {
         failureCount: { increment: 1 },
       },
     });
+  }
+
+  /**
+   * Undo a PAST_DUE that an unpaid first checkout caused (pre-fix behaviour):
+   * return to PENDING, the state setPending() left it in. Compare-and-set on
+   * PAST_DUE so a concurrent activation is never overwritten.
+   * Returns false if the subscription was no longer PAST_DUE.
+   */
+  async releaseUnpaidPastDue(organizationId: string): Promise<boolean> {
+    const { count } = await this.prisma.subscription.updateMany({
+      where: { organizationId, status: 'PAST_DUE' },
+      data: { status: 'PENDING', graceUntil: null },
+    });
+    return count === 1;
   }
 
   /**
