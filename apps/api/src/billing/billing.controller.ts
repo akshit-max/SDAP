@@ -146,7 +146,6 @@ export class BillingController {
    * Must be HTTPS — UAT uses the Render API URL.
    */
   @Post('billing/return')
-  @Get('billing/return') // Some gateways fallback to GET
   async handleReturn(
     @Body() bodyParams: HdfcReturnUrlParams,
     @Query() queryParams: HdfcReturnUrlParams,
@@ -154,6 +153,26 @@ export class BillingController {
   ) {
     const params =
       Object.keys(bodyParams || {}).length > 0 ? bodyParams : queryParams;
+    return this.redirectAfterReturn(params, res);
+  }
+
+  /**
+   * GET variant of the return URL (some gateway flows redirect with a query string).
+   * Must be its own handler: stacking @Get and @Post on one method makes the
+   * last-applied decorator overwrite the route metadata, so only POST was registered.
+   */
+  @Get('billing/return')
+  async handleReturnGet(
+    @Query() queryParams: HdfcReturnUrlParams,
+    @Res() res: Response,
+  ) {
+    return this.redirectAfterReturn(queryParams, res);
+  }
+
+  private async redirectAfterReturn(
+    params: HdfcReturnUrlParams,
+    res: Response,
+  ) {
     const result = await this.billingService.handleReturn(params);
     // Redirect customer browser to frontend pricing page
     const appUrl = process.env.APP_URL ?? 'http://localhost:3000';

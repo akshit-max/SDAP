@@ -16,6 +16,8 @@ import type {
   HdfcRefundRecord,
 } from './hdfc-types';
 
+export const HDFC_ORDER_STATUS_TIMEOUT_MS = 15_000;
+
 /**
  * HdfcGatewayService
  *
@@ -61,6 +63,7 @@ export class HdfcGatewayService {
     path: string,
     body?: object,
     isFormEncoded = false,
+    timeoutMs?: number,
   ): Promise<T> {
     const url = `${this.baseUrl}${path}`;
 
@@ -78,11 +81,23 @@ export class HdfcGatewayService {
       }
     }
 
-    const res = await fetch(url, {
-      method,
-      headers: requestHeaders,
-      body: requestBody,
-    });
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method,
+        headers: requestHeaders,
+        body: requestBody,
+        ...(timeoutMs ? { signal: AbortSignal.timeout(timeoutMs) } : {}),
+      });
+    } catch (err: unknown) {
+      if ((err as Error)?.name === 'TimeoutError') {
+        // Plain Error (not HttpException) so the global filter logs it
+        throw new Error(
+          `HDFC API ${method} ${path} timed out after ${timeoutMs}ms`,
+        );
+      }
+      throw err;
+    }
 
     if (!res.ok) {
       const text = await res.text().catch(() => '');
@@ -107,9 +122,16 @@ export class HdfcGatewayService {
 
   async getOrderStatus(orderId: string): Promise<HdfcOrderStatusResponse> {
     this.logger.log(`[ORDER STATUS] Fetching order ${orderId}`);
+    // Read-only, so safe to time out: the return URL redirect and the
+    // reconciliation sweep must not hang on a stalled HDFC connection.
+    // Charge/revoke/refund calls are deliberately NOT timed out — a client-side
+    // timeout there cannot tell us whether HDFC acted (see processRenewal).
     return this.request<HdfcOrderStatusResponse>(
       'GET',
       `/orders/${encodeURIComponent(orderId)}`,
+      undefined,
+      false,
+      HDFC_ORDER_STATUS_TIMEOUT_MS,
     );
   }
 
