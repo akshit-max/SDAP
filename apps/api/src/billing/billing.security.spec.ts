@@ -66,6 +66,7 @@ const mockPrisma = {
   payment: {
     findUnique: jest.fn(),
     findFirst: jest.fn(),
+    findMany: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
   },
@@ -1450,6 +1451,268 @@ describe('BillingService — Security Regression Tests', () => {
           }),
         }),
       );
+    });
+  });
+
+  // ── Abandoned checkout reconciliation sweep ─────────────────────────────────
+
+  describe('reconcilePendingCheckouts()', () => {
+    const now = new Date('2026-10-17T12:00:00Z');
+    const row = (orderId: string, minutesAgo = 60) => ({
+      ...basePayment,
+      id: `pay-${orderId}`,
+      hdfcOrderId: orderId,
+      type: 'MANDATE_REGISTRATION',
+      status: 'PENDING',
+      createdAt: new Date(now.getTime() - minutesAgo * 60 * 1000),
+    });
+    const statusFor = (orderId: string, status: string, extra = {}) => ({
+      ...chargedOrderStatus,
+      order_id: orderId,
+      status,
+      ...extra,
+    });
+    const pendingSub = {
+      id: 'sub-uuid-001',
+      organizationId: 'org-uuid-001',
+      status: 'PENDING',
+      plan: 'PRO',
+      billingCycle: 'MONTHLY',
+      baseAmount: 499,
+      extraUsers: 0,
+      totalAmount: 499,
+      failureCount: 2,
+    };
+
+    beforeEach(() => {
+      (service as any).reconcileCursor = null;
+      mockPrisma.payment.update.mockReset();
+      mockPrisma.payment.findFirst.mockReset();
+      mockPrisma.payment.findMany.mockReset();
+      mockHdfc.getOrderStatus.mockReset();
+      mockPrisma.$transaction.mockImplementation(
+        (ops: unknown[]) => Promise.all(ops) as Promise<unknown[]>,
+      );
+      mockPrisma.subscription.findUnique.mockResolvedValue(pendingSub);
+      mockSubscriptions.activate.mockResolvedValue({});
+      // confirmOrderAndActivate re-reads the row for its SUCCESS guard: still PENDING
+      mockPrisma.payment.findUnique.mockImplementation(({ where }: any) =>
+        Promise.resolve({ id: where.id, status: 'PENDING' }),
+      );
+    });
+
+    it('selects only PENDING MANDATE_REGISTRATION payments created 20 min – 24 h ago, 20 per run', async () => {
+      mockPrisma.payment.findMany.mockResolvedValue([]);
+
+      await service.reconcilePendingCheckouts({ dryRun: false, now });
+
+      expect(mockPrisma.payment.findMany).toHaveBeenCalledWith({
+        where: {
+          type: 'MANDATE_REGISTRATION',
+          status: 'PENDING',
+          createdAt: {
+            gt: new Date('2026-10-16T12:00:00Z'),
+            lte: new Date('2026-10-17T11:40:00Z'),
+          },
+        },
+        orderBy: { createdAt: 'asc' },
+        take: 20,
+      });
+    });
+
+    it('CHARGED: marks SUCCESS and activates via confirmOrderAndActivate, calling HDFC once', async () => {
+      mockPrisma.payment.findMany.mockResolvedValue([row('wPMCHARGED000001')]);
+      mockHdfc.getOrderStatus.mockResolvedValue(
+        statusFor('wPMCHARGED000001', 'CHARGED'),
+      );
+
+      const summary = await service.reconcilePendingCheckouts({
+        dryRun: false,
+        now,
+      });
+
+      expect(summary.charged).toBe(1);
+      expect(mockHdfc.getOrderStatus).toHaveBeenCalledTimes(1);
+      expect(mockPrisma.payment.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: 'SUCCESS' }),
+        }),
+      );
+      expect(mockSubscriptions.activate).toHaveBeenCalledTimes(1);
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        'audit.log',
+        expect.objectContaining({
+          action: 'billing.subscription_activated',
+          metadata: expect.objectContaining({ source: 'scheduler' }),
+        }),
+      );
+    });
+
+    it('AUTHORIZATION_FAILED: marks FAILED and leaves the subscription untouched', async () => {
+      mockPrisma.payment.findMany.mockResolvedValue([row('wPMDECLINED00001')]);
+      mockHdfc.getOrderStatus.mockResolvedValue(
+        statusFor('wPMDECLINED00001', 'AUTHORIZATION_FAILED', {
+          status_id: 27,
+        }),
+      );
+
+      const summary = await service.reconcilePendingCheckouts({
+        dryRun: false,
+        now,
+      });
+
+      expect(summary.failed).toBe(1);
+      expect(mockPrisma.payment.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'pay-wPMDECLINED00001', status: 'PENDING' },
+          data: expect.objectContaining({
+            status: 'FAILED',
+            failureCode: '27',
+          }),
+        }),
+      );
+      expect(mockSubscriptions.markPastDue).not.toHaveBeenCalled();
+      expect(mockSubscriptions.expire).not.toHaveBeenCalled();
+      expect(mockHdfc.revokeMandate).not.toHaveBeenCalled();
+    });
+
+    it.each(['NEW', 'PENDING_VBV', 'AUTHORIZING', 'AUTO_REFUNDED', 'FAILED'])(
+      '%s: leaves the payment PENDING and writes nothing',
+      async (status) => {
+        mockPrisma.payment.findMany.mockResolvedValue([
+          row('wPMLEAVE00000001'),
+        ]);
+        mockHdfc.getOrderStatus.mockResolvedValue(
+          statusFor('wPMLEAVE00000001', status),
+        );
+
+        const summary = await service.reconcilePendingCheckouts({
+          dryRun: false,
+          now,
+        });
+
+        expect(summary.leftPending).toBe(1);
+        expect(mockPrisma.payment.update).not.toHaveBeenCalled();
+        expect(mockSubscriptions.activate).not.toHaveBeenCalled();
+      },
+    );
+
+    it('dry-run: queries HDFC and logs decisions but writes nothing', async () => {
+      const logSpy = jest.spyOn((service as any).logger, 'log');
+      mockPrisma.payment.findMany.mockResolvedValue([
+        row('wPMDRYCHARGED001', 90),
+        row('wPMDRYDECLINE001', 80),
+      ]);
+      mockHdfc.getOrderStatus.mockImplementation((orderId: string) =>
+        Promise.resolve(
+          orderId === 'wPMDRYCHARGED001'
+            ? statusFor(orderId, 'CHARGED')
+            : statusFor(orderId, 'AUTHORIZATION_FAILED'),
+        ),
+      );
+
+      const summary = await service.reconcilePendingCheckouts({
+        dryRun: true,
+        now,
+      });
+
+      expect(summary).toMatchObject({ dryRun: true, charged: 1, failed: 1 });
+      expect(mockHdfc.getOrderStatus).toHaveBeenCalledTimes(2);
+      expect(mockPrisma.payment.update).not.toHaveBeenCalled();
+      expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+      expect(mockSubscriptions.activate).not.toHaveBeenCalled();
+      expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'wPMDRYCHARGED001 HDFC CHARGED → would mark SUCCESS and ACTIVATE',
+        ),
+      );
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'wPMDRYDECLINE001 HDFC AUTHORIZATION_FAILED → would mark FAILED',
+        ),
+      );
+    });
+
+    it('never changes a payment that became SUCCESS after it was selected', async () => {
+      mockPrisma.payment.findMany.mockResolvedValue([row('wPMRACED00000001')]);
+      mockPrisma.payment.findUnique.mockResolvedValue({
+        ...row('wPMRACED00000001'),
+        status: 'SUCCESS',
+      });
+      mockHdfc.getOrderStatus.mockResolvedValue(
+        statusFor('wPMRACED00000001', 'AUTHORIZATION_FAILED'),
+      );
+
+      await service.reconcilePendingCheckouts({ dryRun: false, now });
+
+      expect(mockPrisma.payment.update).not.toHaveBeenCalled();
+      expect(mockSubscriptions.activate).not.toHaveBeenCalled();
+    });
+
+    it('continues past a single HDFC error and stops after 3 consecutive errors', async () => {
+      mockPrisma.payment.findMany.mockResolvedValue([
+        row('wPMERR0000000001', 200),
+        row('wPMOK00000000001', 190),
+        row('wPMERR0000000002', 180),
+        row('wPMERR0000000003', 170),
+        row('wPMERR0000000004', 160),
+        row('wPMNEVER00000001', 150),
+      ]);
+      mockHdfc.getOrderStatus.mockImplementation((orderId: string) =>
+        orderId.startsWith('wPMOK')
+          ? Promise.resolve(statusFor(orderId, 'NEW'))
+          : Promise.reject(new Error('HDFC API GET returned 503')),
+      );
+
+      const summary = await service.reconcilePendingCheckouts({
+        dryRun: false,
+        now,
+      });
+
+      expect(summary).toMatchObject({ scanned: 5, errors: 4, leftPending: 1 });
+      expect(mockHdfc.getOrderStatus).not.toHaveBeenCalledWith(
+        'wPMNEVER00000001',
+      );
+    });
+
+    it('skips a run while a previous run is still in progress', async () => {
+      let release!: (rows: unknown[]) => void;
+      mockPrisma.payment.findMany.mockReturnValue(
+        new Promise((resolve) => (release = resolve)),
+      );
+
+      const first = service.reconcilePendingCheckouts({ dryRun: false, now });
+      const second = await service.reconcilePendingCheckouts({
+        dryRun: false,
+        now,
+      });
+      release([]);
+      await first;
+
+      expect(second.skipped).toBe(true);
+      expect(mockPrisma.payment.findMany).toHaveBeenCalledTimes(1);
+    });
+
+    it('rotates through candidates: a full batch resumes after the last row, a short batch restarts', async () => {
+      const full = Array.from({ length: 20 }, (_, i) =>
+        row(`wPMROT${String(i).padStart(10, '0')}`, 300 - i),
+      );
+      mockHdfc.getOrderStatus.mockImplementation((orderId: string) =>
+        Promise.resolve(statusFor(orderId, 'NEW')),
+      );
+
+      mockPrisma.payment.findMany.mockResolvedValueOnce(full);
+      await service.reconcilePendingCheckouts({ dryRun: false, now });
+      mockPrisma.payment.findMany.mockResolvedValueOnce([]);
+      await service.reconcilePendingCheckouts({ dryRun: false, now });
+      mockPrisma.payment.findMany.mockResolvedValueOnce([]);
+      await service.reconcilePendingCheckouts({ dryRun: false, now });
+
+      const gt = (call: number) =>
+        mockPrisma.payment.findMany.mock.calls[call][0].where.createdAt.gt;
+      expect(gt(1)).toEqual(full[19]!.createdAt);
+      expect(gt(2)).toEqual(new Date('2026-10-16T12:00:00Z'));
     });
   });
 

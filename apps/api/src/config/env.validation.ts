@@ -36,6 +36,9 @@ export const envSchema = z.object({
   HDFC_RETURN_URL: z.string().url().optional(),
   HDFC_MAX_AMOUNT_PRO: z.string().optional(),
   HDFC_MAX_AMOUNT_BUSINESS: z.string().optional(),
+  // Free-form on purpose: an unexpected value must never stop the app booting.
+  // Parsed by BillingReconciliationScheduler (off | dry-run | live; default dry-run).
+  HDFC_RECONCILE_MODE: z.string().optional(),
 });
 
 export function validate(config: Record<string, unknown>) {

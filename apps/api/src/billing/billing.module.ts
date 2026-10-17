@@ -4,6 +4,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { BillingController } from './billing.controller';
 import { BillingService } from './billing.service';
 import { BillingRenewalScheduler } from './billing.renewal.scheduler';
+import { BillingReconciliationScheduler } from './billing.reconciliation.scheduler';
 import { HdfcGatewayService } from './hdfc/hdfc-gateway.service';
 import { HdfcSignatureService } from './hdfc/hdfc-signature.service';
 import { HdfcWebhookGuard } from './hdfc/hdfc-webhook.guard';
@@ -41,6 +42,8 @@ import { EntitlementService } from './subscription/entitlement.service';
     BillingService,
     // Renewal scheduler
     BillingRenewalScheduler,
+    // Abandoned-checkout reconciliation (return URL never reached)
+    BillingReconciliationScheduler,
   ],
   exports: [
     // Export for future use by other modules (e.g. a future entitlement guard)
