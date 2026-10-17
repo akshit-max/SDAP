@@ -20,6 +20,7 @@ import { HdfcGatewayService } from './hdfc/hdfc-gateway.service';
 import { HdfcSignatureService } from './hdfc/hdfc-signature.service';
 import { SubscriptionService } from './subscription/subscription.service';
 import type {
+  HdfcOrderStatusResponse,
   HdfcReturnUrlParams,
   HdfcWebhookPayload,
 } from './hdfc/hdfc-types';
@@ -42,6 +43,34 @@ const EXTRA_USER_RATES: Record<string, Record<string, number | null>> = {
 // (not hardcoded — wired through ConfigService in BillingService constructor)
 const GRACE_PERIOD_DAYS = 3;
 const MAX_FAILURES_BEFORE_EXPIRE = 3;
+
+// ─── Checkout reconciliation (abandoned return URL) ───────────────────────────
+// HDFC order_expiry is ~15 min after creation; 20 min leaves a buffer so the
+// sweep never races a customer who is still on the payment page.
+const RECONCILE_MIN_AGE_MS = 20 * 60 * 1000;
+// NEW orders stay NEW at HDFC forever — stop polling them after 24h.
+const RECONCILE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const RECONCILE_BATCH_SIZE = 20;
+// Stop a run early if HDFC looks unavailable rather than hammering it.
+const RECONCILE_MAX_CONSECUTIVE_ERRORS = 3;
+// Terminal declines that settle a checkout as FAILED. Every other non-CHARGED
+// status (NEW, PENDING_VBV, AUTHORIZING, AUTO_REFUNDED, capture/void states, …)
+// is left PENDING for a human or a later run — never guessed.
+const CHECKOUT_DECLINED_STATUSES: ReadonlySet<string> = new Set([
+  'AUTHENTICATION_FAILED',
+  'AUTHORIZATION_FAILED',
+  'JUSPAY_DECLINED',
+]);
+
+export interface CheckoutReconcileSummary {
+  dryRun: boolean;
+  skipped: boolean; // a previous run was still in progress
+  scanned: number;
+  charged: number;
+  failed: number;
+  leftPending: number;
+  errors: number;
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -116,6 +145,10 @@ export class BillingService {
   private readonly returnUrl: string;
   private readonly mandateMaxAmounts: Record<string, string>;
   private readonly activeRenewalSubIds = new Set<string>();
+  private reconcileRunning = false;
+  // createdAt of the last checkout examined, so 20-per-run batches rotate through
+  // all candidates instead of re-polling the same oldest NEW orders every run.
+  private reconcileCursor: Date | null = null;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -657,6 +690,7 @@ export class BillingService {
   private async confirmOrderAndActivate(
     payment: Payment,
     source: 'return_url' | 'webhook' | 'scheduler',
+    prefetchedStatus?: HdfcOrderStatusResponse,
   ): Promise<{ success: boolean; orderId: string; redirectPath: string }> {
     const orderId = payment.hdfcOrderId;
 
@@ -675,8 +709,10 @@ export class BillingService {
       };
     }
 
-    // Call Order Status API — backend confirms payment, never trust redirect params
-    const orderStatus = await this.hdfc.getOrderStatus(orderId);
+    // Call Order Status API — backend confirms payment, never trust redirect params.
+    // The reconciliation sweep passes the status it just fetched to avoid a second call.
+    const orderStatus =
+      prefetchedStatus ?? (await this.hdfc.getOrderStatus(orderId));
     this.logger.log(
       `[CONFIRM] Order ${orderId} HDFC status: ${orderStatus.status} (source: ${source})`,
     );
@@ -952,6 +988,150 @@ export class BillingService {
         ...details,
       },
     });
+  }
+
+  // ─── 4a. Reconcile abandoned checkouts (called by scheduler) ────────────────
+
+  /**
+   * Resolves first-checkout payments left PENDING because the customer's browser
+   * never came back to the return URL (and no webhook arrived).
+   *
+   * Scope: MANDATE_REGISTRATION + PENDING, created 20 min – 24 h ago, 20 per run.
+   * CHARGED and terminal declines go through confirmOrderAndActivate (same
+   * validation and compare-and-set as the return URL). Everything else stays
+   * PENDING. In dry-run mode HDFC is queried but nothing is written.
+   */
+  async reconcilePendingCheckouts(opts: {
+    dryRun: boolean;
+    now?: Date;
+  }): Promise<CheckoutReconcileSummary> {
+    const summary: CheckoutReconcileSummary = {
+      dryRun: opts.dryRun,
+      skipped: false,
+      scanned: 0,
+      charged: 0,
+      failed: 0,
+      leftPending: 0,
+      errors: 0,
+    };
+    if (this.reconcileRunning) {
+      this.logger.warn('[RECONCILE] Previous run still in progress — skipping');
+      return { ...summary, skipped: true };
+    }
+    this.reconcileRunning = true;
+    const tag = opts.dryRun ? '[RECONCILE DRY-RUN]' : '[RECONCILE]';
+
+    try {
+      const now = opts.now ?? new Date();
+      const oldest = new Date(now.getTime() - RECONCILE_MAX_AGE_MS);
+      const newest = new Date(now.getTime() - RECONCILE_MIN_AGE_MS);
+      const from =
+        this.reconcileCursor && this.reconcileCursor > oldest
+          ? this.reconcileCursor
+          : oldest;
+
+      const candidates = await this.prisma.payment.findMany({
+        where: {
+          type: 'MANDATE_REGISTRATION',
+          status: 'PENDING',
+          createdAt: { gt: from, lte: newest },
+        },
+        orderBy: { createdAt: 'asc' },
+        take: RECONCILE_BATCH_SIZE,
+      });
+      // A short batch means we reached the end — start from the oldest next run
+      this.reconcileCursor =
+        candidates.length < RECONCILE_BATCH_SIZE
+          ? null
+          : (candidates[candidates.length - 1]?.createdAt ?? null);
+
+      let consecutiveErrors = 0;
+      for (const payment of candidates) {
+        summary.scanned++;
+        const orderId = payment.hdfcOrderId;
+        try {
+          const orderStatus = await this.hdfc.getOrderStatus(orderId);
+          consecutiveErrors = 0;
+          const status = orderStatus.status as string;
+
+          if (status === 'CHARGED' || CHECKOUT_DECLINED_STATUSES.has(status)) {
+            if (opts.dryRun) {
+              await this.logDryRunDecision(tag, payment, orderStatus);
+            } else {
+              const result = await this.confirmOrderAndActivate(
+                payment,
+                'scheduler',
+                orderStatus,
+              );
+              this.logger.log(
+                `${tag} Order ${orderId} HDFC ${status} → ${result.redirectPath}`,
+              );
+            }
+            if (status === 'CHARGED') summary.charged++;
+            else summary.failed++;
+          } else {
+            summary.leftPending++;
+            this.logger.log(
+              `${tag} Order ${orderId} HDFC ${status} — left PENDING`,
+            );
+          }
+        } catch (err: unknown) {
+          summary.errors++;
+          consecutiveErrors++;
+          this.logger.warn(
+            `${tag} Order ${orderId} could not be reconciled: ${(err as Error).message}`,
+          );
+          if (consecutiveErrors >= RECONCILE_MAX_CONSECUTIVE_ERRORS) {
+            this.logger.error(
+              `${tag} ${consecutiveErrors} consecutive errors — stopping this run`,
+            );
+            break;
+          }
+        }
+      }
+
+      if (summary.scanned > 0) {
+        this.logger.log(
+          `${tag} scanned=${summary.scanned} charged=${summary.charged} failed=${summary.failed} leftPending=${summary.leftPending} errors=${summary.errors}`,
+        );
+      }
+      return summary;
+    } finally {
+      this.reconcileRunning = false;
+    }
+  }
+
+  /** Dry-run: report what confirmOrderAndActivate would do, without writing. */
+  private async logDryRunDecision(
+    tag: string,
+    payment: Payment,
+    orderStatus: HdfcOrderStatusResponse,
+  ): Promise<void> {
+    const orderId = payment.hdfcOrderId;
+    if (
+      orderStatus.order_id !== orderId ||
+      Number(orderStatus.amount) !== payment.amount ||
+      orderStatus.currency !== 'INR'
+    ) {
+      this.logger.warn(
+        `${tag} Order ${orderId} would be SKIPPED — order status does not match payment (order_id/amount/currency)`,
+      );
+      return;
+    }
+    if (orderStatus.status !== 'CHARGED') {
+      this.logger.log(
+        `${tag} Order ${orderId} HDFC ${orderStatus.status} → would mark FAILED (subscription unchanged)`,
+      );
+      return;
+    }
+    const sub = await this.prisma.subscription.findUnique({
+      where: { id: payment.subscriptionId },
+    });
+    const action =
+      sub?.status === 'PENDING'
+        ? 'would mark SUCCESS and ACTIVATE subscription'
+        : `would mark SUCCESS, NOT activate (subscription ${sub?.status ?? 'missing'}) and raise review event`;
+    this.logger.log(`${tag} Order ${orderId} HDFC CHARGED → ${action}`);
   }
 
   // ─── 4b. Get Payment Receipt (Safeguard 1 & 3) ──────────────────────────────
