@@ -1,4 +1,5 @@
 ﻿import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Cron } from '@nestjs/schedule';
 import { BillingService } from './billing.service';
 import { SubscriptionService } from './subscription/subscription.service';
@@ -31,6 +32,7 @@ export class BillingRenewalScheduler {
   constructor(
     private readonly billingService: BillingService,
     private readonly subscriptions: SubscriptionService,
+    private readonly config: ConfigService,
   ) {}
 
   /**
@@ -42,6 +44,16 @@ export class BillingRenewalScheduler {
    */
   @Cron('30 20 * * *', { name: 'billing-renewal-sweep' })
   async runRenewalSweep(): Promise<void> {
+    // Kill switch: BILLING_RENEWAL_SWEEP_ENABLED=false pauses all four sweeps
+    // (no debits, retries, or expiries). Anything else, or unset, keeps them on.
+    const enabled = this.config.get<string>('BILLING_RENEWAL_SWEEP_ENABLED');
+    if (enabled?.trim().toLowerCase() === 'false') {
+      this.logger.warn(
+        '[SCHEDULER] Billing renewal sweep paused (BILLING_RENEWAL_SWEEP_ENABLED=false)',
+      );
+      return;
+    }
+
     this.logger.log('[SCHEDULER] Billing renewal sweep started');
 
     await Promise.allSettled([
