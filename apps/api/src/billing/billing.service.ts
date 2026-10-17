@@ -1418,7 +1418,8 @@ export class BillingService {
         resourceType: 'SUBSCRIPTION',
         resourceId: sub.id,
         metadata: {
-          reason: 'PAST_DUE without a charged first checkout — returned to PENDING',
+          reason:
+            'PAST_DUE without a charged first checkout — returned to PENDING',
           hdfcMandateId: sub.hdfcMandateId,
         },
       });
