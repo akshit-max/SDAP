@@ -2,13 +2,84 @@
 
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Shield, Loader2, Lock, Eye, EyeOff, MonitorSmartphone } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Sparkles, Clock, Lock, ShieldCheck, MonitorSmartphone, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '../../lib/api/client';
 import { AuthSession } from '../../lib/auth/session';
 import { useToast } from '../../components/common/Toast';
 import { useAuth } from '../../lib/auth/AuthContext';
-import { WithUsLogo } from '../../components/common/WithUsLogo';
+import { WithUsStar } from '../../components/common/WithUsLogo';
+
+function PlatformIconsBar() {
+  return (
+    <div className="flex flex-col items-center gap-3 select-none mb-6">
+      {/* App Icons container with red badge pills */}
+      <div className="flex items-center gap-2.5 p-2 sm:p-2.5 rounded-2xl bg-[#1b2232]/80 backdrop-blur-md border border-white/15 shadow-xl">
+        {/* Gmail */}
+        <div className="relative w-11 h-11 rounded-xl bg-white flex items-center justify-center shadow-sm">
+          <svg className="w-6 h-6" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22 6.5l-10 7L2 6.5V19c0 .55.45 1 1 1h18c.55 0 1-.45 1-1V6.5z" />
+            <path fill="#EA4335" d="M22 5c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v1.5l10 7 10-7V5z" />
+          </svg>
+          <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.2 bg-[#ea4335] text-white text-[10px] font-bold rounded-full border border-[#1b2232]">
+            32
+          </span>
+        </div>
+
+        {/* LinkedIn */}
+        <div className="relative w-11 h-11 rounded-xl bg-[#0a66c2] flex items-center justify-center shadow-sm">
+          <svg className="w-5 h-5 text-white fill-current" viewBox="0 0 24 24">
+            <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.64a1.65 1.65 0 1 0 0 3.3 1.65 1.65 0 0 0 0-3.3Z" />
+          </svg>
+          <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.2 bg-[#ea4335] text-white text-[10px] font-bold rounded-full border border-[#1b2232]">
+            4
+          </span>
+        </div>
+
+        {/* GoDaddy */}
+        <div className="relative w-11 h-11 rounded-xl bg-[#00a699] flex items-center justify-center shadow-sm">
+          <span className="text-white font-extrabold text-sm tracking-tighter">GD</span>
+          <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.2 bg-[#ea4335] text-white text-[10px] font-bold rounded-full border border-[#1b2232]">
+            53
+          </span>
+        </div>
+
+        {/* Vercel */}
+        <div className="relative w-11 h-11 rounded-xl bg-black flex items-center justify-center shadow-sm border border-white/20">
+          <svg className="w-5 h-5 text-white fill-current" viewBox="0 0 24 24">
+            <path d="M12 2L2 19.7778H22L12 2Z" />
+          </svg>
+          <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.2 bg-[#ea4335] text-white text-[10px] font-bold rounded-full border border-[#1b2232]">
+            12
+          </span>
+        </div>
+
+        {/* GitHub */}
+        <div className="relative w-11 h-11 rounded-xl bg-[#24292f] flex items-center justify-center shadow-sm border border-white/10">
+          <svg className="w-5 h-5 text-white fill-current" viewBox="0 0 24 24">
+            <path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.1-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z" />
+          </svg>
+          <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.2 bg-[#ea4335] text-white text-[10px] font-bold rounded-full border border-[#1b2232]">
+            3
+          </span>
+        </div>
+      </div>
+
+      {/* Pill sub-bar: [* WITHUS] [🔒 Securing access...] */}
+      <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1b2232]/80 backdrop-blur-md border border-white/15 text-xs text-white/90 shadow-md">
+        <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-[11px] text-white">
+          <WithUsStar className="w-3.5 h-3.5 text-white" />
+          WITHUS
+        </span>
+        <span className="text-white/40">&bull;</span>
+        <span className="flex items-center gap-1 text-[11px] text-white/80">
+          <Lock className="w-3 h-3 text-white/70" />
+          Securing access...
+        </span>
+      </div>
+    </div>
+  );
+}
 
 function LoginForm() {
   const router = useRouter();
@@ -65,226 +136,262 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#070b14] text-white font-sans flex flex-col justify-between relative overflow-x-hidden selection:bg-blue-600 selection:text-white">
-      {/* Atmospheric Marketing Sun-Halo & Ambient Glows */}
-      <div className="absolute top-0 left-0 w-full lg:w-2/3 h-full pointer-events-none overflow-hidden -z-0">
-        <img
-          src="/sun-halo.png"
-          alt=""
-          className="absolute -top-32 -left-32 w-[900px] max-w-none opacity-45 mix-blend-screen select-none pointer-events-none"
-        />
-        <div className="absolute top-1/4 left-1/4 w-[480px] h-[480px] bg-blue-600/15 rounded-full blur-[130px] pointer-events-none" />
-        <div className="absolute bottom-1/4 left-10 w-[420px] h-[420px] bg-indigo-600/12 rounded-full blur-[110px] pointer-events-none" />
-      </div>
+    <div
+      className="min-h-screen w-full text-white font-sans flex flex-col justify-between relative overflow-x-hidden selection:bg-white selection:text-zinc-950"
+      style={{
+        background: `
+          radial-gradient(circle at 10% 90%, rgba(230, 140, 105, 0.45) 0%, transparent 45%),
+          radial-gradient(circle at 90% 90%, rgba(220, 130, 95, 0.4) 0%, transparent 45%),
+          radial-gradient(circle at 50% 10%, rgba(100, 140, 220, 0.35) 0%, transparent 55%),
+          linear-gradient(180deg, #2e4a80 0%, #3e5e9e 35%, #5673ab 68%, #788ba5 100%)
+        `,
+      }}
+    >
+      {/* Top Floating Announcement Pill */}
+      <header className="w-full max-w-7xl mx-auto px-6 pt-6 sm:pt-8 flex items-center justify-between relative z-20">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/35 backdrop-blur-md border border-white/15 text-xs text-white/90 hover:bg-black/45 transition-colors"
+        >
+          <span className="font-semibold text-white">Product of makewithus®</span>
+          <span className="text-white/40">&mdash;</span>
+          <span className="hidden sm:inline text-white/80">Give access without giving away control.</span>
+          <ArrowRight className="w-3.5 h-3.5 text-white/70" />
+        </Link>
 
-      {/* Two-Sided Grid */}
-      <div className="relative z-10 flex-1 grid grid-cols-1 lg:grid-cols-12 min-h-screen">
-        {/* Left Side: Brand & Product Showcase (Two-Sided, Cheerful Marketing Theme) */}
-        <div className="hidden lg:flex lg:col-span-6 xl:col-span-7 flex-col justify-between p-12 xl:p-16 border-r border-white/10 relative">
-          {/* Top Brand Logo */}
-          <div className="flex items-center">
-            <Link href="/" className="hover:opacity-85 transition-opacity">
-              <WithUsLogo height="h-8" forceTheme="dark" />
-            </Link>
+        <Link
+          href={redirectParam ? `/register?redirect=${encodeURIComponent(redirectParam)}` : '/register'}
+          className="text-xs font-semibold text-white hover:text-white/90 transition-all px-4 py-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md hover:bg-white/20"
+        >
+          {redirectParam?.includes('/invite') ? 'Create Account' : 'Create Workspace'}
+        </Link>
+      </header>
+
+      {/* Main Two-Sided Content Area */}
+      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-6 py-8 sm:py-12 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+        {/* Left Side: Exact Marketing Page Layout */}
+        <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-between space-y-8 select-none">
+          {/* Logo & Product of makewithus */}
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl font-black tracking-wider text-white">WITH US</span>
+              <WithUsStar className="w-5 h-5 text-white" />
+            </div>
+            <p className="text-[12px] text-white/75 font-medium tracking-wide mt-1">
+              Product of makewithus®
+            </p>
           </div>
 
-          {/* Hero Content */}
-          <div className="my-auto max-w-xl space-y-7">
-            {/* Cheerful Badge with Steady Luminous Dot (NO pulsating flicker) */}
-            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/25 text-xs font-medium text-blue-400 tracking-wide">
-              <span className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.85)] flex-shrink-0" />
-              <span>Enterprise Credential Gateway</span>
-            </div>
-
-            <h1 className="text-4xl xl:text-5xl font-bold tracking-tight text-white leading-[1.14]">
-              Give access without <br />
-              <span className="bg-gradient-to-r from-white via-zinc-200 to-blue-200 bg-clip-text text-transparent">
-                giving away control.
-              </span>
+          {/* Headline */}
+          <div className="space-y-4">
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-white leading-[1.12]">
+              Give access <br />
+              without giving <br />
+              away control.
             </h1>
 
-            <p className="text-zinc-400 text-sm xl:text-base leading-relaxed font-normal max-w-lg">
-              Manage scoped, temporary delegated access to platforms, cloud repositories, and enterprise portals with automatic OTP relay and zero credential leakage.
-            </p>
-
-            {/* Cheerful Visual Feature Cards */}
-            <div className="pt-2 space-y-3.5 max-w-lg">
-              <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-white/[0.03] border border-white/10 backdrop-blur-md hover:border-blue-500/30 hover:bg-white/[0.05] transition-all">
-                <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center text-blue-400 flex-shrink-0 mt-0.5 shadow-[0_0_20px_rgba(59,130,246,0.15)]">
-                  <Lock className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-white">Zero Credential Exposure</h2>
-                  <p className="text-xs text-zinc-400 mt-0.5 leading-relaxed">
-                    Credentials inject directly into authenticated browser enclaves. Collaborators never view or copy raw passwords.
-                  </p>
-                </div>
+            {/* Feature Bullets matching marketing page */}
+            <div className="space-y-2.5 pt-2 text-xs sm:text-[13px] text-white/90 font-normal">
+              <div className="flex items-center gap-2.5">
+                <Sparkles className="w-4 h-4 text-white/80 flex-shrink-0" />
+                <span>Eliminate password & OTP sharing for external collaborators</span>
               </div>
-
-              <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-white/[0.03] border border-white/10 backdrop-blur-md hover:border-indigo-500/30 hover:bg-white/[0.05] transition-all">
-                <div className="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center text-indigo-400 flex-shrink-0 mt-0.5 shadow-[0_0_20px_rgba(99,102,241,0.15)]">
-                  <Shield className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-white">Time-Scoped Sessions</h2>
-                  <p className="text-xs text-zinc-400 mt-0.5 leading-relaxed">
-                    Automatic access expiry with full audit trail, screenshot proof, and instant live revocation.
-                  </p>
-                </div>
+              <div className="flex items-center gap-2.5">
+                <Clock className="w-4 h-4 text-white/80 flex-shrink-0" />
+                <span>12 live business platforms supported &mdash; GitHub to GST Portal</span>
               </div>
+              <div className="flex items-center gap-2.5">
+                <Lock className="w-4 h-4 text-white/80 flex-shrink-0" />
+                <span>Scoped parameters, bounded time limits, and automatic expiry</span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <ShieldCheck className="w-4 h-4 text-white/80 flex-shrink-0" />
+                <span>Session-level immutable audit trail across every portal</span>
+              </div>
+            </div>
+
+            {/* Action pill */}
+            <div className="pt-2">
+              <Link
+                href="/register"
+                className="inline-flex items-center gap-2 rounded-full bg-white text-zinc-950 font-semibold px-5 py-2.5 text-xs shadow-md hover:bg-white/90 transition-all"
+              >
+                Get Started <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
           </div>
 
-          {/* Left Footer Info */}
-          <div className="flex items-center justify-between text-xs text-zinc-400 pt-6 border-t border-white/10">
-            <span className="font-medium text-zinc-400">WithUs Platform &bull; Security First</span>
-            <span className="inline-flex items-center gap-2 text-zinc-300 font-medium">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]" /> 256-bit AES Vault
-            </span>
+          {/* The Delegated Access Lifecycle List (from Screenshot 1) */}
+          <div className="pt-4 border-t border-white/15 max-w-md">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-white/60 mb-2">
+              The Delegated Access Lifecycle
+            </p>
+            <div className="space-y-1 text-xs">
+              <div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-white/15 text-white font-semibold backdrop-blur-sm">
+                <span>Password Sharing</span>
+                <span className="text-white/80 text-[11px]">01</span>
+              </div>
+              <div className="flex items-center justify-between px-3 py-1 text-white/60 hover:text-white transition-colors">
+                <span>Cost of Sharing</span>
+                <span className="text-white/40 text-[11px]">02</span>
+              </div>
+              <div className="flex items-center justify-between px-3 py-1 text-white/60 hover:text-white transition-colors">
+                <span>01 Request</span>
+                <span className="text-white/40 text-[11px]">03</span>
+              </div>
+              <div className="flex items-center justify-between px-3 py-1 text-white/60 hover:text-white transition-colors">
+                <span>02 Approve</span>
+                <span className="text-white/40 text-[11px]">04</span>
+              </div>
+              <div className="flex items-center justify-between px-3 py-1 text-white/60 hover:text-white transition-colors">
+                <span>03 Work</span>
+                <span className="text-white/40 text-[11px]">05</span>
+              </div>
+              <div className="flex items-center justify-between px-3 py-1 text-white/60 hover:text-white transition-colors">
+                <span>04 Audit</span>
+                <span className="text-white/40 text-[11px]">06</span>
+              </div>
+              <div className="flex items-center justify-between px-3 py-1 text-white/60 hover:text-white transition-colors">
+                <span>05 Expire & Revoke</span>
+                <span className="text-white/40 text-[11px]">07</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Right Side: Form Side */}
-        <div className="lg:col-span-6 xl:col-span-5 flex flex-col justify-between p-6 sm:p-10 lg:p-12 relative overflow-y-auto">
-          {/* Top Header Switcher */}
-          <div className="w-full flex items-center justify-between mb-6">
-            <div className="lg:hidden">
-              <Link href="/" className="hover:opacity-85 transition-opacity">
-                <WithUsLogo height="h-7" forceTheme="dark" />
-              </Link>
-            </div>
-            <div className="ml-auto">
-              <Link
-                href={redirectParam ? `/register?redirect=${encodeURIComponent(redirectParam)}` : '/register'}
-                className="text-xs font-medium text-zinc-300 hover:text-white transition-all px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/20"
-              >
-                {redirectParam?.includes('/invite') ? 'Create Account' : 'Create Workspace'}
-              </Link>
-            </div>
-          </div>
+        {/* Right Side: Form Card with Platform Bar */}
+        <div className="lg:col-span-6 xl:col-span-5 flex flex-col items-center justify-center">
+          {/* App Icons Container from Marketing Hero */}
+          <PlatformIconsBar />
 
-          {/* Form Container */}
-          <div className="w-full max-w-[420px] mx-auto my-auto py-6">
-            <div className="bg-gradient-to-b from-[#0e1424]/90 to-[#0a0e18]/90 border border-white/15 rounded-[28px] p-8 sm:p-10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8),0_0_50px_rgba(59,130,246,0.12)] backdrop-blur-xl">
-              <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold tracking-tight text-white">
-                  Sign in to WithUs
-                </h1>
-                <p className="text-xs sm:text-sm text-zinc-400 mt-2 font-normal">
-                  Access your secure vaults and delegated sessions
+          {/* Form Card */}
+          <div className="w-full max-w-[420px] bg-black/40 backdrop-blur-2xl border border-white/20 rounded-[28px] p-8 sm:p-10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5)]">
+            <div className="text-center mb-7">
+              <h2 className="text-2xl font-bold tracking-tight text-white">
+                Sign in to WithUs
+              </h2>
+              <p className="text-xs text-white/70 mt-1.5 font-normal">
+                Access your secure vaults and delegated sessions
+              </p>
+            </div>
+
+            {/* Invite Banner */}
+            {redirectParam?.includes('/invite') && (
+              <div className="mb-6 p-4 bg-white/10 border border-white/20 rounded-2xl text-center text-xs leading-relaxed">
+                <p className="text-white font-semibold mb-1">Invited to join a workspace?</p>
+                <p className="text-white/80 text-[11px]">
+                  Sign in with your invited email, or{' '}
+                  <Link href={`/register?redirect=${encodeURIComponent(redirectParam)}`} className="text-white font-semibold underline underline-offset-2">
+                    create an account
+                  </Link>.
                 </p>
               </div>
+            )}
 
-              {/* Invite Banner */}
-              {redirectParam?.includes('/invite') && (
-                <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl text-center text-xs leading-relaxed">
-                  <p className="text-white font-semibold mb-1">Invited to join a workspace?</p>
-                  <p className="text-zinc-300 text-[11px]">
-                    Sign in with your invited email, or{' '}
-                    <Link href={`/register?redirect=${encodeURIComponent(redirectParam)}`} className="text-blue-400 font-semibold underline hover:text-blue-300">
-                      create an account
-                    </Link>.
-                  </p>
-                </div>
-              )}
-
-              {/* Displaced Banner */}
-              {isDisplaced && (
-                <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-xs leading-relaxed">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-8 h-8 bg-amber-500/20 rounded-xl flex items-center justify-center mt-0.5">
-                      <MonitorSmartphone className="w-4 h-4 text-amber-400" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-amber-300 mb-0.5">Active on another device</p>
-                      <p className="text-amber-200/90 text-[11px]">
-                        Your account was opened elsewhere. Please sign in again to resume this session.
-                      </p>
-                    </div>
+            {/* Displaced Banner */}
+            {isDisplaced && (
+              <div className="mb-6 p-4 bg-amber-500/20 border border-amber-500/30 rounded-2xl text-xs leading-relaxed">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-8 h-8 bg-amber-500/30 rounded-xl flex items-center justify-center mt-0.5">
+                    <MonitorSmartphone className="w-4 h-4 text-amber-200" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-amber-100 mb-0.5">Active on another device</p>
+                    <p className="text-amber-200/90 text-[11px]">
+                      Your account was opened elsewhere. Please sign in again to resume this session.
+                    </p>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Form */}
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-medium text-zinc-300">
-                    Email
-                  </label>
+            {/* Form */}
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-white/90">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  required
+                  autoComplete="email"
+                  className="w-full h-11 px-3.5 bg-white/[0.08] border border-white/20 rounded-xl text-sm font-normal text-white placeholder:text-white/40 focus:outline-none focus:border-white focus:bg-white/[0.14] transition-all"
+                  placeholder="name@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-white/90">
+                  Password
+                </label>
+                <div className="relative">
                   <input
-                    type="email"
+                    type={showPassword ? "text" : "password"}
                     required
-                    autoComplete="email"
-                    className="w-full h-11 px-3.5 bg-white/[0.04] border border-white/15 rounded-xl text-sm font-normal text-white placeholder:text-zinc-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:bg-white/[0.07] transition-all"
-                    placeholder="name@company.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="current-password"
+                    className="w-full h-11 pl-3.5 pr-10 bg-white/[0.08] border border-white/20 rounded-xl text-sm font-normal text-white placeholder:text-white/40 focus:outline-none focus:border-white focus:bg-white/[0.14] transition-all"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
+              </div>
 
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-medium text-zinc-300">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      required
-                      autoComplete="current-password"
-                      className="w-full h-11 pl-3.5 pr-10 bg-white/[0.04] border border-white/15 rounded-xl text-sm font-normal text-white placeholder:text-zinc-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:bg-white/[0.07] transition-all"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full h-11 mt-2 bg-white hover:bg-zinc-100 text-zinc-950 font-semibold text-sm rounded-full shadow-[0_10px_25px_rgba(0,0,0,0.35)] hover:shadow-[0_12px_30px_rgba(255,255,255,0.15)] transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? (
-                    <><Loader2 className="w-4 h-4 animate-spin text-zinc-950" /> Signing in...</>
-                  ) : (
-                    'Continue'
-                  )}
-                </button>
-              </form>
-            </div>
-
-            {/* Bottom Switcher */}
-            <div className="text-center text-xs text-zinc-400 mt-6">
-              Don't have an account?{' '}
-              <Link
-                href={redirectParam ? `/register?redirect=${encodeURIComponent(redirectParam)}` : '/register'}
-                className="text-white font-semibold hover:text-blue-300 underline underline-offset-2 transition-colors"
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-11 mt-3 bg-white hover:bg-white/95 text-zinc-950 font-semibold text-sm rounded-full shadow-lg transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {redirectParam?.includes('/invite') ? 'Create Account' : 'Create Workspace'}
-              </Link>
-            </div>
+                {loading ? (
+                  <><Loader2 className="w-4 h-4 animate-spin text-zinc-950" /> Signing in...</>
+                ) : (
+                  'Continue'
+                )}
+              </button>
+            </form>
           </div>
 
-          {/* Footer */}
-          <footer className="w-full text-center text-xs text-zinc-500 pt-6">
-            <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2">
-              <span>&copy; {new Date().getFullYear()} WithUs Inc.</span>
-              <Link href="/privacy" className="hover:text-zinc-300 transition-colors">Privacy</Link>
-              <Link href="/terms" className="hover:text-zinc-300 transition-colors">Terms</Link>
-              <Link href="/security" className="hover:text-zinc-300 transition-colors">Security</Link>
-              <Link href="/cookie-policy" className="hover:text-zinc-300 transition-colors">Cookies</Link>
-              <Link href="/refund-policy" className="hover:text-zinc-300 transition-colors">Refund Policy</Link>
-            </div>
-          </footer>
+          {/* Bottom Switcher */}
+          <div className="text-center text-xs text-white/80 mt-6">
+            Don't have an account?{' '}
+            <Link
+              href={redirectParam ? `/register?redirect=${encodeURIComponent(redirectParam)}` : '/register'}
+              className="text-white font-bold underline underline-offset-4 hover:opacity-85 transition-opacity"
+            >
+              {redirectParam?.includes('/invite') ? 'Create Account' : 'Create Workspace'}
+            </Link>
+          </div>
         </div>
-      </div>
+      </main>
+
+      {/* Floating Bottom Nav matching Marketing Site */}
+      <footer className="w-full max-w-7xl mx-auto px-6 pb-6 pt-4 relative z-20 flex flex-col sm:flex-row items-center justify-between gap-4">
+        {/* Floating Navbar Pill */}
+        <div className="mx-auto sm:mx-0 flex items-center gap-4 px-4 py-2 rounded-full bg-black/40 backdrop-blur-md border border-white/15 text-xs text-white/90">
+          <span className="flex items-center gap-1.5 font-bold tracking-wider text-[11px] text-white">
+            <WithUsStar className="w-3.5 h-3.5 text-white" />
+            WithUs
+          </span>
+          <span className="text-white/30 hidden sm:inline">&bull;</span>
+          <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+          <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
+          <Link href="/security" className="hover:text-white transition-colors">Security</Link>
+          <Link href="/cookie-policy" className="hover:text-white transition-colors hidden sm:inline">Cookies</Link>
+        </div>
+
+        <div className="text-[11px] text-white/60">
+          &copy; {new Date().getFullYear()} makewithus&reg;. All rights reserved.
+        </div>
+      </footer>
     </div>
   );
 }
