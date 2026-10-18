@@ -2,7 +2,7 @@
 
 import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Shield, Loader2, Mail, Lock, User, Building2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '../../lib/api/client';
 import { AuthSession } from '../../lib/auth/session';
@@ -17,6 +17,7 @@ function RegisterForm() {
   const { toast } = useToast();
   const { refreshContext } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Detect if this is an invite-based registration
   const redirectParam = searchParams.get('redirect') || '';
@@ -29,7 +30,6 @@ function RegisterForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const { data: inviteDetails } = useInvitationDetails(inviteToken || '');
@@ -44,11 +44,26 @@ function RegisterForm() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!fullName.trim()) { toast('warning', 'Please enter your full name.'); return; }
-    if (!isInviteFlow && !companyName.trim()) { toast('warning', 'Please enter your company name.'); return; }
-    if (!email.trim()) { toast('warning', 'Please enter your email address.'); return; }
-    if (password.length < 8) { toast('warning', 'Password must be at least 8 characters.'); return; }
-    if (password !== confirmPassword) { toast('warning', 'Passwords do not match.'); return; }
+    if (!fullName.trim()) {
+      toast('warning', 'Please enter your full name.');
+      return;
+    }
+    if (!isInviteFlow && !companyName.trim()) {
+      toast('warning', 'Please enter your company name.');
+      return;
+    }
+    if (!email.trim()) {
+      toast('warning', 'Please enter your email address.');
+      return;
+    }
+    if (password.length < 8) {
+      toast('warning', 'Password must be at least 8 characters.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      toast('warning', 'Passwords do not match.');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -86,169 +101,122 @@ function RegisterForm() {
   };
 
   return (
-    <div className="h-[100dvh] overflow-y-auto lg:overflow-hidden grid grid-cols-1 lg:grid-cols-12 bg-[#fafafa] dark:bg-[#09090b] text-zinc-900 dark:text-zinc-100 font-sans">
-      {/* Brand Side (Left) */}
-      <div className="hidden lg:flex lg:col-span-5 bg-[#09090b] text-white p-12 xl:p-16 flex-col justify-between relative overflow-hidden border-r border-white/10 select-none h-full">
-        {/* Subtle background ambient radial glow */}
-        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-white/[0.03] rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-white/[0.02] rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen w-full bg-[#fafafa] dark:bg-[#000000] text-zinc-900 dark:text-zinc-100 font-sans flex flex-col justify-between selection:bg-zinc-900 selection:text-white dark:selection:bg-white dark:selection:text-black">
+      {/* Top Header */}
+      <header className="w-full max-w-6xl mx-auto px-6 py-6 sm:py-8 flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <WithUsLogo height="h-8" />
+        </Link>
+        <Link
+          href={isInviteFlow ? `/login?redirect=${encodeURIComponent(redirectParam)}` : '/login'}
+          className="text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors px-4 py-2 rounded-full border border-black/10 dark:border-white/10 hover:border-black/20 dark:hover:border-white/20"
+        >
+          Sign In
+        </Link>
+      </header>
 
-        {/* Brand Header */}
-        <div className="flex items-center relative z-10">
-          <img src="/logo-dark.png" alt="WithUs" className="h-10 w-auto object-contain" />
-        </div>
-
-        {/* Hero Text & Value Props */}
-        <div className="relative z-10 max-w-md my-auto space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.06] border border-white/10 text-[11px] font-semibold text-zinc-300 tracking-wide">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Enterprise Credential Gateway
-          </div>
-
-          <h2 className="text-3xl xl:text-4xl font-extrabold tracking-tight text-white leading-tight">
-            Give access without giving away control.
-          </h2>
-
-          <p className="text-zinc-400 text-xs xl:text-sm leading-relaxed font-normal">
-            Manage scoped, temporary delegated access to platforms, cloud repositories, and enterprise portals with automatic OTP relay and zero credential leakage.
-          </p>
-
-          <div className="pt-2 space-y-3">
-            <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.03] border border-white/10 backdrop-blur-sm">
-              <div className="w-8 h-8 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center text-white flex-shrink-0">
-                <Lock className="w-4 h-4 text-zinc-200" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-white">Zero Credential Exposure</p>
-                <p className="text-[11px] text-zinc-400">Credentials inject directly into authenticated browser enclaves.</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.03] border border-white/10 backdrop-blur-sm">
-              <div className="w-8 h-8 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center text-white flex-shrink-0">
-                <Shield className="w-4 h-4 text-zinc-200" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-white">Time-Scoped Sessions</p>
-                <p className="text-[11px] text-zinc-400">Automatic access expiry with full audit trail and live revocation.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Brand Footer */}
-        <div className="relative z-10 flex items-center justify-between text-zinc-500 text-xs pt-4 border-t border-white/10">
-          <span className="font-medium">WithUs Platform &bull; Security First</span>
-          <span className="inline-flex items-center gap-1.5 text-zinc-400 font-semibold text-[11px]">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> 256-bit AES Vault
-          </span>
-        </div>
-      </div>
-
-      {/* Form Side (Right) */}
-      <div className="lg:col-span-7 flex flex-col justify-between h-full p-4 sm:p-8 relative overflow-y-auto">
-        <div className="h-4 hidden lg:block"></div>
-
-        <div className="flex-1 flex items-center justify-center py-6 w-full">
-          <div className="max-w-[440px] w-full bg-white dark:bg-[#121214] border border-black/10 dark:border-white/10 rounded-3xl p-8 sm:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.04)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] transition-all">
-
-            {/* Header */}
-            <div className="text-center mb-7">
-              <div className="flex justify-center mb-5">
-                <WithUsLogo height="h-10" />
-              </div>
-              <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 mb-1.5">
+      {/* Main Form Center */}
+      <main className="flex-1 flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-[440px]">
+          {/* Card */}
+          <div className="bg-white dark:bg-[#0f0f11] border border-black/10 dark:border-white/10 rounded-[28px] p-8 sm:p-10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] dark:shadow-[0_30px_70px_-20px_rgba(0,0,0,0.8)]">
+            <div className="text-center mb-8">
+              <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
                 {isInviteFlow ? 'Accept Team Invitation' : 'Create your workspace'}
               </h1>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 font-normal">
+              <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-2 font-normal">
                 {isInviteFlow ? 'Join your organization on WithUs' : 'Start managing secure delegated access in minutes'}
               </p>
             </div>
 
+            {/* Invite Banner */}
             {isInviteFlow && (
-              <div className="mb-6 p-4 bg-zinc-50 dark:bg-zinc-900/60 border border-black/10 dark:border-white/10 rounded-2xl text-center text-xs font-medium leading-relaxed">
-                <p className="text-zinc-900 dark:text-zinc-100 font-bold mb-1">First time joining WithUs?</p>
+              <div className="mb-6 p-4 bg-zinc-50 dark:bg-zinc-900/60 border border-black/10 dark:border-white/10 rounded-2xl text-center text-xs leading-relaxed">
+                <p className="text-zinc-900 dark:text-white font-semibold mb-1">First time joining WithUs?</p>
                 <p className="text-zinc-500 dark:text-zinc-400 text-[11px]">
-                  You are creating a new account using the invited email.
+                  You are creating an account with your invited email.
                 </p>
-                <p className="text-zinc-400 dark:text-zinc-500 text-[11px] mt-0.5">
-                  Already have an account? Click{' '}
-                  <Link href={`/login?redirect=${encodeURIComponent(redirectParam)}`} className="text-zinc-900 dark:text-white font-bold underline hover:opacity-80 transition-opacity">
+                <p className="text-zinc-400 dark:text-zinc-500 text-[11px] mt-1">
+                  Already have an account?{' '}
+                  <Link
+                    href={`/login?redirect=${encodeURIComponent(redirectParam)}`}
+                    className="text-zinc-900 dark:text-white font-semibold underline"
+                  >
                     Sign In
                   </Link>{' '}
-                  instead to join the team.
+                  instead.
                 </p>
               </div>
             )}
 
             {/* Form */}
-            <form onSubmit={handleRegister} className="space-y-3.5">
+            <form onSubmit={handleRegister} className="space-y-4">
               {/* Full Name */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Full Name</label>
-                <div className="relative">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoComplete="name"
+                  className="w-full h-11 px-3.5 bg-zinc-50 dark:bg-white/[0.04] border border-black/10 dark:border-white/10 rounded-xl text-sm font-normal text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:border-zinc-900 dark:focus:border-white/40 focus:bg-white dark:focus:bg-white/[0.07] transition-all"
+                  placeholder="Jane Doe"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                />
+              </div>
+
+              {/* Company Name (only if not invite) */}
+              {!isInviteFlow && (
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                    Company Name
+                  </label>
                   <input
                     type="text"
                     required
-                    autoComplete="name"
-                    className="w-full pl-10 pr-4 py-2.5 bg-[#f4f4f5] dark:bg-[#18181b] border border-black/10 dark:border-white/10 rounded-xl text-xs font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white transition-all"
-                    placeholder="Jane Doe"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full h-11 px-3.5 bg-zinc-50 dark:bg-white/[0.04] border border-black/10 dark:border-white/10 rounded-xl text-sm font-normal text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:border-zinc-900 dark:focus:border-white/40 focus:bg-white dark:focus:bg-white/[0.07] transition-all"
+                    placeholder="Acme Corp"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
                   />
-                </div>
-              </div>
-
-              {/* Company Name — only shown for normal signups */}
-              {!isInviteFlow && (
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Company Name</label>
-                  <div className="relative">
-                    <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
-                    <input
-                      type="text"
-                      required
-                      className="w-full pl-10 pr-4 py-2.5 bg-[#f4f4f5] dark:bg-[#18181b] border border-black/10 dark:border-white/10 rounded-xl text-xs font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white transition-all"
-                      placeholder="Acme Corp"
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
-                    />
-                  </div>
                 </div>
               )}
 
               {/* Email */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Email Address</label>
-                <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
-                  <input
-                    type="email"
-                    required
-                    autoComplete="email"
-                    disabled={isInviteFlow}
-                    className={`w-full pl-10 pr-4 py-2.5 bg-[#f4f4f5] dark:bg-[#18181b] border border-black/10 dark:border-white/10 rounded-xl text-xs font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white transition-all ${isInviteFlow ? 'opacity-60 cursor-not-allowed' : ''}`}
-                    placeholder="admin@company.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
+                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  required
+                  autoComplete="email"
+                  disabled={isInviteFlow}
+                  className={`w-full h-11 px-3.5 bg-zinc-50 dark:bg-white/[0.04] border border-black/10 dark:border-white/10 rounded-xl text-sm font-normal text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:border-zinc-900 dark:focus:border-white/40 focus:bg-white dark:focus:bg-white/[0.07] transition-all ${
+                    isInviteFlow ? 'opacity-60 cursor-not-allowed' : ''
+                  }`}
+                  placeholder="admin@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
                 {isInviteFlow && (
-                  <p className="text-[11px] text-zinc-500 mt-1">This is the email address that was invited.</p>
+                  <p className="text-[11px] text-zinc-400 mt-1">This is the email address that was invited.</p>
                 )}
               </div>
 
               {/* Password */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Password</label>
+                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                  Password
+                </label>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
                   <input
-                    type={showPassword ? "text" : "password"}
+                    type={showPassword ? 'text' : 'password'}
                     required
                     autoComplete="new-password"
-                    className="w-full pl-10 pr-10 py-2.5 bg-[#f4f4f5] dark:bg-[#18181b] border border-black/10 dark:border-white/10 rounded-xl text-xs font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white transition-all"
+                    className="w-full h-11 pl-3.5 pr-10 bg-zinc-50 dark:bg-white/[0.04] border border-black/10 dark:border-white/10 rounded-xl text-sm font-normal text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:border-zinc-900 dark:focus:border-white/40 focus:bg-white dark:focus:bg-white/[0.07] transition-all"
                     placeholder="Min. 8 characters"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -256,7 +224,7 @@ function RegisterForm() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 focus:outline-none transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -265,14 +233,15 @@ function RegisterForm() {
 
               {/* Confirm Password */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Confirm Password</label>
+                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                  Confirm Password
+                </label>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
                   <input
-                    type={showConfirmPassword ? "text" : "password"}
+                    type={showConfirmPassword ? 'text' : 'password'}
                     required
                     autoComplete="new-password"
-                    className="w-full pl-10 pr-10 py-2.5 bg-[#f4f4f5] dark:bg-[#18181b] border border-black/10 dark:border-white/10 rounded-xl text-xs font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white transition-all"
+                    className="w-full h-11 pl-3.5 pr-10 bg-zinc-50 dark:bg-white/[0.04] border border-black/10 dark:border-white/10 rounded-xl text-sm font-normal text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:border-zinc-900 dark:focus:border-white/40 focus:bg-white dark:focus:bg-white/[0.07] transition-all"
                     placeholder="Confirm your password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -280,60 +249,64 @@ function RegisterForm() {
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 focus:outline-none transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
                   >
                     {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
 
-              <div className="text-[11px] text-zinc-500 dark:text-zinc-400 font-normal text-center leading-relaxed pt-1 pb-1 px-2">
+              {/* Terms note */}
+              <div className="text-[11px] text-zinc-500 dark:text-zinc-400 text-center leading-relaxed pt-1">
                 By creating an account, you agree to our{' '}
-                <Link href="/terms" className="text-zinc-900 dark:text-white font-medium hover:underline transition-colors">Terms & Conditions</Link>
-                {' '}and acknowledge our{' '}
-                <Link href="/privacy" className="text-zinc-900 dark:text-white font-medium hover:underline transition-colors">Privacy Policy</Link>.
+                <Link href="/terms" className="text-zinc-900 dark:text-white font-medium underline">
+                  Terms
+                </Link>{' '}
+                and{' '}
+                <Link href="/privacy" className="text-zinc-900 dark:text-white font-medium underline">
+                  Privacy Policy
+                </Link>.
               </div>
 
+              {/* CTA Button */}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-900 font-semibold text-xs rounded-full shadow-md hover:shadow-lg transition-all duration-150 flex items-center justify-center gap-2 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full h-11 mt-2 bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-black font-semibold text-sm rounded-full shadow-sm hover:shadow transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <><Loader2 className="w-4 h-4 animate-spin" /> Creating Account...</>
                 ) : (
-                  isInviteFlow ? 'Create Account & Join Team' : 'Create Workspace'
+                  isInviteFlow ? 'Accept & Join Workspace' : 'Create Workspace'
                 )}
               </button>
-
-              <div className="text-center text-xs text-zinc-500 dark:text-zinc-400 pt-5 border-t border-black/10 dark:border-white/10 mt-5">
-                Already have an account?{' '}
-                <Link
-                  href={isInviteFlow ? `/login?redirect=${encodeURIComponent(redirectParam)}` : '/login'}
-                  className="text-zinc-900 dark:text-white font-semibold hover:underline transition-colors"
-                >
-                  Sign In
-                </Link>
-              </div>
             </form>
           </div>
-        </div>
 
-        <div className="text-center text-[11px] text-zinc-400 dark:text-zinc-500 font-medium max-w-md mx-auto w-full pt-4 pb-2">
-          <div className="flex flex-wrap justify-center items-center gap-x-2 gap-y-1.5">
-            <Link href="/privacy" className="hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors hover:underline">Privacy Policy</Link>
-            <span className="text-zinc-300 dark:text-zinc-700 select-none hidden sm:inline">&bull;</span>
-            <Link href="/terms" className="hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors hover:underline">Terms & Conditions</Link>
-            <span className="text-zinc-300 dark:text-zinc-700 select-none hidden sm:inline">&bull;</span>
-            <Link href="/security" className="hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors hover:underline">Security & Data Protection</Link>
-            <span className="text-zinc-300 dark:text-zinc-700 select-none hidden sm:inline">&bull;</span>
-            <Link href="/cookie-policy" className="hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors hover:underline">Cookie Policy</Link>
-            <span className="text-zinc-300 dark:text-zinc-700 select-none hidden sm:inline">&bull;</span>
-            <Link href="/refund-policy" className="hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors hover:underline">Refund & Cancellation Policy</Link>
+          {/* Bottom Switcher */}
+          <div className="text-center text-xs text-zinc-500 dark:text-zinc-400 mt-6">
+            Already have an account?{' '}
+            <Link
+              href={isInviteFlow ? `/login?redirect=${encodeURIComponent(redirectParam)}` : '/login'}
+              className="text-zinc-900 dark:text-white font-semibold hover:underline"
+            >
+              Sign In
+            </Link>
           </div>
         </div>
+      </main>
 
-      </div>
+      {/* Footer */}
+      <footer className="w-full max-w-6xl mx-auto px-6 py-6 sm:py-8 text-center text-xs text-zinc-400 dark:text-zinc-600">
+        <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2">
+          <span>&copy; {new Date().getFullYear()} WithUs Inc.</span>
+          <Link href="/privacy" className="hover:text-zinc-700 dark:hover:text-zinc-400 transition-colors">Privacy</Link>
+          <Link href="/terms" className="hover:text-zinc-700 dark:hover:text-zinc-400 transition-colors">Terms</Link>
+          <Link href="/security" className="hover:text-zinc-700 dark:hover:text-zinc-400 transition-colors">Security</Link>
+          <Link href="/cookie-policy" className="hover:text-zinc-700 dark:hover:text-zinc-400 transition-colors">Cookies</Link>
+          <Link href="/refund-policy" className="hover:text-zinc-700 dark:hover:text-zinc-400 transition-colors">Refund Policy</Link>
+        </div>
+      </footer>
     </div>
   );
 }
