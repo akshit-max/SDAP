@@ -53,117 +53,122 @@ export default function SecretDetailsPage({ params }: { params: Promise<{ id: st
           onRetry={() => refetch()}
         />
       ) : (
-        <div className="space-y-6 max-w-4xl mx-auto">
-          <div className="pb-2 border-b border-premium">
-            <div className="flex items-center text-[10px] text-premium-muted font-bold uppercase tracking-wider mb-1.5">
-              <Link href="/vaults" className="hover:text-premium-main transition-colors">Vaults</Link>
-              <span className="mx-1.5 text-slate-350 dark:text-slate-700">/</span>
-              <Link href={`/vaults/${id}`} className="hover:text-premium-main transition-colors">{vault?.name || 'Vault'}</Link>
-              <span className="mx-1.5 text-slate-355 dark:text-slate-700">/</span>
-              <span className="text-premium-main font-bold">{secret.name}</span>
+        <div className="space-y-6 max-w-4xl mx-auto pb-12">
+          {/* Header */}
+          <div>
+            <div className="flex items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-500 mb-2">
+              <Link href="/vaults" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Vaults</Link>
+              <span>/</span>
+              <Link href={`/vaults/${id}`} className="hover:text-zinc-900 dark:hover:text-white transition-colors">{vault?.name || 'Vault'}</Link>
+              <span>/</span>
+              <span className="font-medium text-zinc-800 dark:text-zinc-200">{secret.name}</span>
             </div>
-            <h2 className="text-lg font-bold text-premium-main tracking-tight flex items-center">
-              <FileKey2 className="w-5 h-5 mr-2 text-premium-muted" />
-              {secret.name}
-            </h2>
-            <p className="text-xs text-premium-muted mt-1">{secret.description || 'No description provided.'}</p>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-zinc-100 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 flex items-center justify-center text-zinc-800 dark:text-zinc-200 shadow-sm">
+                <FileKey2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white">
+                  {secret.name}
+                </h1>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{secret.description || 'Protected credential secret.'}</p>
+              </div>
+            </div>
           </div>
 
-          <div className="premium-card overflow-hidden shadow-none">
-            <div className="px-5 py-3 border-b border-premium bg-slate-50/20 dark:bg-zinc-900/10 flex justify-between items-center">
-              <h3 className="text-xs font-bold text-premium-main uppercase tracking-wider">Secret Information</h3>
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                <CheckCircle className="w-3 h-3 mr-1" />
+          <div className="rounded-[28px] border border-zinc-200/80 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] overflow-hidden">
+            <div className="px-6 py-4 border-b border-zinc-200/60 dark:border-white/10 bg-zinc-50/60 dark:bg-white/[0.02] flex justify-between items-center">
+              <h3 className="text-xs font-semibold text-zinc-900 dark:text-white uppercase tracking-wider">Secret Specifications</h3>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 {secret.status}
               </span>
             </div>
             
-            <div className="p-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
-                <div className="space-y-0.5">
-                  <h4 className="text-[10px] font-bold text-premium-muted uppercase tracking-wider">Type</h4>
-                  <p className="text-xs font-bold text-premium-main">{secret.type}</p>
+            <div className="p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+                <div>
+                  <h4 className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Format</h4>
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-white mt-1 font-mono">{secret.type}</p>
                 </div>
-                <div className="space-y-0.5">
-                  <h4 className="text-[10px] font-bold text-premium-muted uppercase tracking-wider">Created</h4>
-                  <p className="text-xs font-bold text-premium-main flex items-center">
-                    <Clock className="w-3.5 h-3.5 mr-1 text-premium-muted" />
+                <div>
+                  <h4 className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Created</h4>
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-white mt-1 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-zinc-400" />
                     {formatDateTime(secret.createdAt)}
                   </p>
                 </div>
-                <div className="space-y-0.5">
-                  <h4 className="text-[10px] font-bold text-premium-muted uppercase tracking-wider">Status</h4>
-                  <p className="text-xs font-bold text-premium-main">{secret.status}</p>
+                <div>
+                  <h4 className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Status</h4>
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-white mt-1">{secret.status}</p>
                 </div>
-                <div className="space-y-0.5">
-                  <h4 className="text-[10px] font-bold text-premium-muted uppercase tracking-wider">Last Updated</h4>
-                  <p className="text-xs font-bold text-premium-main flex items-center">
-                    <Clock className="w-3.5 h-3.5 mr-1 text-premium-muted" />
+                <div>
+                  <h4 className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Last Modified</h4>
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-white mt-1 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-zinc-400" />
                     {formatDateTime(secret.updatedAt)}
                   </p>
                 </div>
               </div>
 
-              <div className="border-t border-premium pt-5 mt-3">
-                <h4 className="text-xs font-bold text-premium-main uppercase tracking-wider mb-3">Secret Value</h4>
+              <div className="border-t border-zinc-200/60 dark:border-white/10 pt-6">
+                <h4 className="text-xs font-semibold text-zinc-900 dark:text-white uppercase tracking-wider mb-4">Payload & Reveal Control</h4>
                 {/* Gate: show Reveal UI only if user has SECRET_REVEAL permission (OWNER/ADMIN)
                     OR has an active session with permission='REVEAL'.
                     An EXTENSION session does NOT satisfy the second condition. */}
                 {!hasPermission(organization?.role, 'SECRET_REVEAL') && !activeSessionForSecret ? (
-                  <div className="premium-card rounded-lg p-6 text-center">
-                    <p className="text-xs font-semibold text-premium-muted mb-4">
-                      You don't have permission to reveal this secret.
-                      <br />
-                      Request temporary access from an administrator.
+                  <div className="rounded-[22px] border border-zinc-200/80 dark:border-white/10 bg-zinc-50/50 dark:bg-white/[0.02] p-8 text-center">
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-4 leading-relaxed max-w-md mx-auto">
+                      Direct reveal is restricted for your role. You can request temporary access through delegated sessions from a workspace administrator.
                     </p>
                     <Link 
                       href="/sessions" 
-                      className="premium-button-primary text-xs"
+                      className="inline-flex items-center px-4 py-2 rounded-full text-xs font-medium bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 hover:opacity-90 transition-all shadow-sm"
                     >
-                      Request Access
+                      Request Delegated Access
                     </Link>
                   </div>
                 ) : (
                   <>
                     {deliveryMethod === 'EXTENSION' && (
-                      <div className="premium-card rounded-lg p-6 flex flex-col items-center justify-center space-y-4">
-                        <div className="text-center">
-                          <p className="text-xs font-semibold text-premium-muted">
-                            This secret is securely delivered via the WithUs Browser Extension.
+                      <div className="rounded-[22px] border border-zinc-200/80 dark:border-white/10 bg-zinc-50/50 dark:bg-white/[0.02] p-8 flex flex-col items-center justify-center space-y-4 text-center">
+                        <div>
+                          <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                            This secret is delivered directly to your browser session via the WithUs Browser Extension.
                           </p>
                           {activeSessionForSecret && (
-                            <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 font-bold uppercase tracking-wider">
+                            <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 font-semibold uppercase tracking-wider">
                               Session Active
                             </p>
                           )}
                         </div>
-                        <button className="premium-button-primary bg-emerald-650 hover:bg-emerald-700 text-white">
-                          <Play className="w-4 h-4 mr-2" />
+                        <button className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-sm">
+                          <Play className="w-3.5 h-3.5" />
                           Launch Session
                         </button>
                       </div>
                     )}
                     
                     {deliveryMethod === 'NATIVE' && (
-                      <div className="premium-card rounded-lg p-6 flex flex-col items-center justify-center text-center">
-                        <Shield className="w-6 h-6 text-premium-muted mb-2" />
-                        <p className="text-xs font-bold text-premium-main">
-                          Managed by WithUs
+                      <div className="rounded-[22px] border border-zinc-200/80 dark:border-white/10 bg-zinc-50/50 dark:bg-white/[0.02] p-8 flex flex-col items-center justify-center text-center">
+                        <Shield className="w-8 h-8 text-zinc-400 mb-2" />
+                        <p className="text-sm font-semibold text-zinc-900 dark:text-white">
+                          Managed Platform Injection
                         </p>
-                        <p className="text-[10px] text-premium-muted mt-1">
-                          This secret is automatically injected into connected workflows. Reveal is disabled for security.
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-sm">
+                          This secret is automatically injected into connected workflows. Manual reveal is disabled for security.
                         </p>
                       </div>
                     )}
 
                     {deliveryMethod === 'REVEAL' && (
                       <div className="space-y-4">
-                        <div className="border border-amber-200/40 dark:border-amber-900/20 bg-amber-500/5 dark:bg-amber-950/10 rounded-lg p-4 flex gap-3">
-                          <span className="text-amber-500 mt-0.5">⚠</span>
+                        <div className="rounded-[20px] border border-amber-500/20 bg-amber-500/5 dark:bg-amber-950/10 p-4 flex gap-3">
+                          <span className="text-amber-500 font-bold">⚠</span>
                           <div>
-                            <p className="text-xs font-bold text-amber-800 dark:text-amber-200 mb-0.5">Emergency Reveal</p>
-                            <p className="text-xs text-amber-700 dark:text-amber-350">
-                              This action exposes the secret. Only use when automated access cannot be used.
+                            <p className="text-xs font-semibold text-amber-800 dark:text-amber-200 mb-0.5">Emergency Decryption Access</p>
+                            <p className="text-xs text-amber-700 dark:text-amber-300/80 leading-relaxed">
+                              Revealing plaintext values will be permanently logged in the workspace audit trail. Only decrypt when automated browser fill cannot be used.
                             </p>
                           </div>
                         </div>

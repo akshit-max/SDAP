@@ -122,18 +122,26 @@ export default function SettingsPage() {
     );
   };
 
-  const inputClass = 'w-full px-3.5 py-2 premium-input text-xs';
-  const sectionClass = 'premium-card overflow-hidden shadow-none';
-  const headerClass = 'px-6 py-4 border-b border-premium bg-slate-50/20 dark:bg-zinc-900/10';
-  const labelClass = 'block text-[10px] font-bold text-premium-muted uppercase tracking-wider mb-1.5';
-  const saveBtn = 'premium-button-primary';
+  const inputClass = 'w-full px-3.5 py-2.5 rounded-xl text-xs bg-zinc-50/80 dark:bg-white/5 border border-zinc-200/80 dark:border-white/10 text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-white/20 transition-all';
+  const sectionClass = 'rounded-[28px] border border-zinc-200/80 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] overflow-hidden';
+  const headerClass = 'px-6 py-4 border-b border-zinc-200/60 dark:border-white/10 bg-zinc-50/60 dark:bg-white/[0.02]';
+  const labelClass = 'block text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2';
+  const saveBtn = 'inline-flex items-center px-4 py-2 rounded-full text-xs font-medium bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 hover:opacity-90 disabled:opacity-40 transition-all shadow-sm';
 
   return (
     <DashboardShell>
-      <div className="max-w-5xl mx-auto space-y-6">
-        <div className="pb-2 border-b border-premium">
-          <h1 className="text-lg font-bold tracking-tight text-premium-main">Settings</h1>
-          <p className="text-xs text-premium-muted mt-0.5">Manage your profile and workspace configuration.</p>
+      <div className="max-w-6xl mx-auto space-y-8 pb-12">
+        <div>
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-[10px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-widest mb-2">
+            <Building2 className="w-3 h-3 text-zinc-500" />
+            Workspace & Account
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-900 dark:text-white">
+            Workspace Settings
+          </h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+            Manage your personal profile, credentials, and organizational configuration.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -132,7 +132,7 @@ export default function ForgotPasswordPage() {
                       required
                       value={email}
                       onChange={(e) => { setEmail(e.target.value); setError(''); }}
-                      className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm bg-white/[0.08] hover:bg-white/[0.12] focus-within:bg-white/[0.15] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-2xl text-white placeholder-white/45 focus:outline-none transition-all"
+                      className="w-full h-11 pl-10 pr-4 text-sm bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-white placeholder-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]"
                       placeholder="you@company.com"
                     />
                   </div>
@@ -148,7 +148,7 @@ export default function ForgotPasswordPage() {
                   id="forgot-submit"
                   type="submit"
                   disabled={status === 'loading'}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-zinc-100 text-zinc-950 rounded-2xl text-xs sm:text-sm font-bold shadow-[0_12px_28px_-6px_rgba(0,0,0,0.35)] transition-all disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99] mt-2"
+                  className="w-full h-12 flex items-center justify-center gap-2 px-4 bg-white hover:bg-white/95 text-zinc-950 rounded-full text-xs font-bold uppercase tracking-wider shadow-[0_4px_20px_rgba(255,255,255,0.2)] hover:shadow-[0_6px_25px_rgba(255,255,255,0.35)] transition-all disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99] mt-2"
                 >
                   {status === 'loading' ? (
                     <>

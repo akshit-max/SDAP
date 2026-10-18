@@ -31,20 +31,34 @@ import clsx from 'clsx';
 import { useTheme } from 'next-themes';
 import { hasPermission } from '../../lib/auth/permissions';
 
-const CustomAsterisk = ({ className }: { className?: string; strokeWidth?: number }) => (
-  <svg
-    viewBox="0 0 128 128"
-    fill="none"
-    className={className}
-  >
-    <rect x="2" y="2" width="124" height="124" rx="26" fill="#09090b" stroke="#27272a" strokeWidth="4" />
-    <g stroke="#ffffff" strokeWidth="10" strokeLinecap="round">
-      <line x1="64" y1="28" x2="64" y2="100" />
-      <line x1="28" y1="64" x2="100" y2="64" />
-      <line x1="44" y1="44" x2="84" y2="84" />
-      <line x1="44" y1="84" x2="84" y2="44" />
-    </g>
-  </svg>
+const WithUsBrandMark = ({ className = "h-6 w-auto" }: { className?: string }) => (
+  <div className="relative flex items-center select-none flex-shrink-0">
+    <img
+      src="/withus_black_full.png"
+      alt="WithUs"
+      className={clsx(className, "object-contain dark:hidden")}
+    />
+    <img
+      src="/withus_white_full.png"
+      alt="WithUs"
+      className={clsx(className, "object-contain hidden dark:block")}
+    />
+  </div>
+);
+
+const WithUsEmblem = ({ className = "w-6 h-6" }: { className?: string }) => (
+  <div className="relative flex items-center justify-center select-none flex-shrink-0">
+    <img
+      src="/withus_black_emblem.png"
+      alt="WithUs"
+      className={clsx(className, "object-contain dark:hidden")}
+    />
+    <img
+      src="/withus_white_emblem.png"
+      alt="WithUs"
+      className={clsx(className, "object-contain hidden dark:block")}
+    />
+  </div>
 );
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -247,7 +261,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="flex h-[100dvh] bg-premium-bg font-premium overflow-hidden relative">
+    <div className="flex h-[100dvh] bg-[#f8f9fa] dark:bg-[#07080b] font-sans overflow-hidden relative selection:bg-zinc-950 selection:text-white dark:selection:bg-white dark:selection:text-zinc-950">
       {/* Mobile Drawer Overlay Backdrop */}
       {isMobileOpen && (
         <div
@@ -272,15 +286,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             <button
               onClick={async () => {
                 try {
-                  // Must call backend logout to clear httpOnly sdap_token cookie via Set-Cookie.
-                  // Without this, the Next.js middleware sees the cookie and redirects back to /dashboard.
                   const { apiClient } = await import('../../lib/api/client');
                   await apiClient.post('/auth/logout', {});
                 } catch {
-                  // Ignore — cookies may already be invalid, but server still clears them
+                  // Ignore
                 } finally {
                   AuthSession.clear();
-                  // Full page reload (not router.push) so middleware re-evaluates cleared cookies
                   window.location.href = '/login?reason=displaced';
                 }
               }}
@@ -295,49 +306,72 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       {/* ── Single Compact Premium SaaS User Portal Sidebar ─────────────────── */}
       <aside
         className={clsx(
-          'flex flex-col transition-all duration-200 select-none overflow-hidden border-r border-zinc-200/80 dark:border-zinc-800/80 bg-white dark:bg-[#121214]',
+          'flex flex-col transition-all duration-200 select-none overflow-hidden border-r border-zinc-200/80 dark:border-white/10 bg-white/80 dark:bg-[#0c0e14]/80 backdrop-blur-2xl',
           'fixed inset-y-0 left-0 z-50 md:static md:z-auto',
           isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
-          isCollapsed ? 'md:w-[60px]' : 'w-[240px] md:w-[230px]',
+          isCollapsed ? 'md:w-[68px]' : 'w-[250px] md:w-[240px]',
         )}
       >
-        {/* Sidebar Top Header (Logo + Org Name + Collapse Toggle) */}
-        <div className="h-14 px-4 flex items-center justify-between border-b border-zinc-200/80 dark:border-zinc-800/80 flex-shrink-0">
+        {/* Sidebar Top Header (Brand Logo + Collapse Toggle) */}
+        <div className={clsx(
+          "h-16 flex items-center border-b border-zinc-200/80 dark:border-white/10 flex-shrink-0",
+          isCollapsed && !isMobileOpen ? "justify-center px-2" : "justify-between px-4"
+        )}>
           <Link
             href="/dashboard"
-            className="flex items-center gap-2.5 min-w-0 hover:opacity-85 transition-opacity"
+            className="flex items-center min-w-0 hover:opacity-90 transition-opacity"
             onClick={() => setIsMobileOpen(false)}
+            title="WithUs Dashboard"
           >
-            <CustomAsterisk className="w-6 h-6 flex-shrink-0" strokeWidth={10} />
-            {(!isCollapsed || isMobileOpen) && (
-              <span className="text-xs font-bold tracking-tight text-zinc-900 dark:text-zinc-100 truncate">
-                {organization?.name || 'WithUs Vault'}
-              </span>
+            {isCollapsed && !isMobileOpen ? (
+              <WithUsEmblem className="w-7 h-7" />
+            ) : (
+              <WithUsBrandMark className="h-7 w-auto" />
             )}
           </Link>
 
-          {!isCollapsed && (
+          {(!isCollapsed || isMobileOpen) && (
             <button
               onClick={handleMenuClick}
-              className="p-1 rounded text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-              title="Close/Collapse sidebar"
+              className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors"
+              title="Collapse sidebar"
             >
-              <Menu className="w-3.5 h-3.5" />
+              <Menu className="w-4 h-4" />
             </button>
           )}
         </div>
 
+        {/* Dedicated Workspace Identity Card */}
+        {(!isCollapsed || isMobileOpen) && (
+          <div className="px-3 pt-3 pb-1 flex-shrink-0">
+            <div className="px-3 py-2 rounded-2xl bg-zinc-100/70 dark:bg-white/[0.04] border border-zinc-200/60 dark:border-white/10 flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-bold text-xs flex items-center justify-center flex-shrink-0 shadow-sm">
+                {organization?.name?.[0]?.toUpperCase() || 'W'}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-zinc-900 dark:text-white truncate leading-tight">
+                  {organization?.name || 'Workspace'}
+                </p>
+                <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium flex items-center gap-1.5 mt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="capitalize">{role?.toLowerCase() || 'Member'}</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Categorized Navigation Menu */}
-        <div className="flex-1 overflow-y-auto px-3 py-2 space-y-3 scrollbar-thin">
+        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4 scrollbar-thin">
           {navGroups.map((group, groupIdx) => (
             <div key={group.category} className="space-y-1">
               {/* Category Header Label */}
               {(!isCollapsed || isMobileOpen) ? (
-                <div className="pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 select-none">
+                <div className="pt-2 pb-1 px-2 text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 select-none">
                   {group.category}
                 </div>
               ) : (
-                groupIdx > 0 && <div className="h-px bg-zinc-200 dark:bg-zinc-800/80 my-1.5" />
+                groupIdx > 0 && <div className="h-px bg-zinc-200 dark:border-white/10 my-2" />
               )}
 
               {/* Group Items */}
@@ -353,17 +387,17 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                         href={item.href}
                         title={item.name}
                         className={clsx(
-                          'relative w-full h-9 rounded-lg flex items-center justify-center transition-colors group',
+                          'relative w-full h-10 rounded-xl flex items-center justify-center transition-all group',
                           isActive
-                            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold shadow-sm'
-                            : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800/60',
+                            ? 'bg-zinc-900 text-white font-bold shadow-sm dark:bg-white/[0.14] dark:text-white dark:border dark:border-white/20 dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.25)]'
+                            : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-100/80 dark:hover:bg-white/[0.06]',
                         )}
                       >
                         <IconComponent className="w-4 h-4 flex-shrink-0" />
 
                         {/* Badge overlay when collapsed */}
                         {item.name === 'Approvals' && approvalBadgeCount > 0 && (
-                          <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-zinc-900 dark:bg-zinc-100" />
+                          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-sky-500" />
                         )}
                       </Link>
                     );
@@ -375,10 +409,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                       href={item.href}
                       onClick={() => setIsMobileOpen(false)}
                       className={clsx(
-                        'group flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition-colors select-none',
+                        'group flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition-all select-none',
                         isActive
-                          ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-bold shadow-sm'
-                          : 'text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-100/80 dark:hover:bg-zinc-800/60',
+                          ? 'bg-zinc-900 text-white font-bold shadow-sm dark:bg-white/[0.14] dark:text-white dark:border dark:border-white/20 dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.25)]'
+                          : 'text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-100/80 dark:hover:bg-white/[0.06]',
                       )}
                     >
                       <div className="flex items-center min-w-0">
@@ -386,8 +420,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                           className={clsx(
                             'w-4 h-4 mr-2.5 flex-shrink-0 transition-colors',
                             isActive
-                              ? 'text-white dark:text-zinc-900'
-                              : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white',
+                              ? 'text-white'
+                              : 'text-zinc-400 dark:text-zinc-400 group-hover:text-zinc-950 dark:group-hover:text-white',
                           )}
                         />
                         <span className="truncate">{item.name}</span>
@@ -396,10 +430,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                       {/* Pending Approvals Count Badge */}
                       {item.name === 'Approvals' && approvalBadgeCount > 0 && (
                         <span className={clsx(
-                          "ml-auto px-1.5 py-0.2 rounded-full text-[9px] font-bold font-number flex-shrink-0",
+                          "ml-auto px-2 py-0.5 rounded-full text-[10px] font-bold font-number flex-shrink-0",
                           isActive
-                            ? "bg-white text-zinc-900 dark:bg-zinc-900 dark:text-white"
-                            : "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                            ? "bg-white text-zinc-900 dark:bg-sky-400 dark:text-zinc-950"
+                            : "bg-zinc-900 text-white dark:bg-sky-400 dark:text-zinc-950"
                         )}>
                           {approvalBadgeCount}
                         </span>
@@ -413,14 +447,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Bottom Logout Row */}
-        <div className="p-3 border-t border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-[#09090b]/50 flex-shrink-0">
+        <div className="p-3 border-t border-zinc-200/80 dark:border-white/10 bg-zinc-50/50 dark:bg-white/[0.02] flex-shrink-0">
           <button
             onClick={() => {
               setIsMobileOpen(false);
               setShowLogoutConfirm(true);
             }}
             className={clsx(
-              'w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors',
+              'w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors',
               isCollapsed && !isMobileOpen && 'px-0',
             )}
             title="Log Out"
@@ -433,37 +467,51 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       {/* ── Main Content Area ─────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-14 bg-premium-bg border-b border-zinc-200 dark:border-zinc-800 flex items-center px-4 sm:px-6 md:px-8 shadow-none gap-4 justify-between pt-1 flex-shrink-0">
+        <header className="h-16 bg-white/80 dark:bg-[#0c0e14]/80 backdrop-blur-2xl border-b border-zinc-200/80 dark:border-white/10 flex items-center px-4 sm:px-6 md:px-8 shadow-none gap-4 justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
             <button
               onClick={handleMenuClick}
-              className="p-1.5 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 transition-colors rounded"
+              className={clsx(
+                "p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors rounded-xl",
+                !isCollapsed && "md:hidden"
+              )}
               title="Toggle sidebar"
             >
-              <Menu className="w-5 h-5 md:w-4 md:h-4" />
+              <Menu className="w-4 h-4" />
             </button>
-            <h1 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate max-w-[160px] sm:max-w-xs md:max-w-none">
-              {activeItem?.name || 'Vaults'}
-            </h1>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="font-semibold text-zinc-500 dark:text-zinc-400 hidden sm:inline">
+                {organization?.name || 'Workspace'}
+              </span>
+              <span className="text-zinc-300 dark:text-zinc-700 hidden sm:inline">/</span>
+              <h1 className="text-sm font-semibold text-zinc-900 dark:text-white tracking-tight">
+                {activeItem?.name || 'Dashboard'}
+              </h1>
+            </div>
           </div>
 
-          {mounted && (
-            <button
-              onClick={cycleTheme}
-              className="p-1.5 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 transition-colors flex items-center gap-1.5 rounded"
-              title={`Active Theme: ${theme || 'system'} (Click to cycle)`}
-            >
-              {theme === 'light' && <Sun className="w-4 h-4" />}
-              {theme === 'dark' && <Moon className="w-4 h-4" />}
-              {theme === 'system' && <Monitor className="w-4 h-4" />}
-              <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:inline-block">
-                {theme || 'system'}
-              </span>
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {mounted && (
+              <button
+                onClick={cycleTheme}
+                className="px-3.5 py-1.5 rounded-full border border-zinc-200 dark:border-white/15 bg-white/70 dark:bg-white/[0.06] text-zinc-700 dark:text-zinc-200 hover:text-zinc-950 dark:hover:text-white hover:bg-white dark:hover:bg-white/[0.12] transition-all flex items-center gap-2 text-xs font-semibold backdrop-blur-md shadow-sm"
+                title={`Active Theme: ${theme || 'system'} (Click to cycle)`}
+              >
+                {theme === 'light' && <Sun className="w-3.5 h-3.5 text-amber-500" />}
+                {theme === 'dark' && <Moon className="w-3.5 h-3.5 text-sky-400" />}
+                {theme === 'system' && <Monitor className="w-3.5 h-3.5 text-zinc-400" />}
+                <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:inline-block">
+                  {theme || 'system'}
+                </span>
+              </button>
+            )}
+          </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-premium-bg">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-[#f8f9fa] dark:bg-[#07080b] relative">
+          {/* Subtle ambient lighting accent */}
+          <div className="pointer-events-none absolute -top-32 right-0 w-[500px] h-[500px] bg-sky-500/5 dark:bg-sky-500/[0.04] rounded-full blur-3xl -z-10" />
+          <div className="pointer-events-none absolute top-1/2 left-0 w-[400px] h-[400px] bg-amber-500/5 dark:bg-amber-500/[0.03] rounded-full blur-3xl -z-10" />
           {children}
         </main>
       </div>

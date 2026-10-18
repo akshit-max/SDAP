@@ -11,16 +11,16 @@ interface SupportCardProps {
 export function SupportCard({ className = '', compact = false }: SupportCardProps) {
   if (compact) {
     return (
-      <div className={`p-4 rounded-lg bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border border-zinc-800 dark:border-zinc-200 shadow-sm space-y-2 ${className}`}>
+      <div className={`p-4 rounded-[20px] bg-white/80 dark:bg-white/[0.06] backdrop-blur-xl border border-zinc-200/80 dark:border-white/15 text-zinc-900 dark:text-white shadow-sm space-y-2 ${className}`}>
         <div className="flex items-center gap-2">
-          <HelpCircle className="w-4 h-4 text-emerald-400 dark:text-emerald-600 flex-shrink-0" />
-          <h4 className="text-xs font-bold tracking-tight">Need help with WITHUS?</h4>
+          <HelpCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+          <h4 className="text-xs font-bold tracking-tight">Need assistance?</h4>
         </div>
-        <p className="text-[11px] text-zinc-300 dark:text-zinc-600 leading-relaxed">
-          Raise a support request and our team will get back to you -{' '}
+        <p className="text-[11px] text-zinc-600 dark:text-zinc-400 leading-relaxed">
+          Raise a support ticket with our engineering team &mdash;{' '}
           <a
             href="mailto:support@makewithus.in"
-            className="font-bold underline text-white dark:text-zinc-900 hover:text-emerald-400 dark:hover:text-emerald-600 transition-colors inline-flex items-center gap-0.5"
+            className="font-bold underline text-zinc-900 dark:text-white hover:text-emerald-500 transition-colors inline-flex items-center gap-0.5"
           >
             support@makewithus.in
             <ArrowUpRight className="w-3 h-3 inline" />
@@ -31,21 +31,21 @@ export function SupportCard({ className = '', compact = false }: SupportCardProp
   }
 
   return (
-    <div className={`bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5 shadow-sm transition-all hover:border-zinc-300 dark:hover:border-zinc-700 ${className}`}>
+    <div className={`rounded-[24px] bg-white/80 dark:bg-white/[0.06] backdrop-blur-xl border border-zinc-200/80 dark:border-white/15 p-6 shadow-sm hover:border-zinc-300 dark:hover:border-white/30 transition-all ${className}`}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-start gap-3.5">
-          <div className="w-9 h-9 rounded-md bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700/80 flex items-center justify-center text-zinc-900 dark:text-zinc-100 flex-shrink-0 mt-0.5">
-            <HelpCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+        <div className="flex items-start gap-4">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200/60 dark:border-emerald-400/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 flex-shrink-0">
+            <HelpCircle className="w-5 h-5" />
           </div>
           <div className="space-y-1">
-            <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
-              Need help with WITHUS?
+            <h4 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white tracking-tight">
+              Need assistance with your Vault or Extension?
             </h4>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed font-medium">
-              Raise a support request and our team will get back to you -{' '}
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed font-normal">
+              Raise a support inquiry and our security team will assist you &mdash;{' '}
               <a
                 href="mailto:support@makewithus.in"
-                className="font-bold text-zinc-900 dark:text-zinc-100 underline decoration-zinc-400 hover:decoration-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors inline-flex items-center gap-0.5"
+                className="font-bold text-zinc-900 dark:text-white underline underline-offset-2 hover:text-emerald-500 transition-colors inline-flex items-center gap-0.5"
               >
                 support@makewithus.in
                 <ArrowUpRight className="w-3 h-3 inline text-zinc-400" />
@@ -56,9 +56,9 @@ export function SupportCard({ className = '', compact = false }: SupportCardProp
 
         <a
           href="mailto:support@makewithus.in"
-          className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded text-xs font-bold text-zinc-900 dark:text-zinc-100 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200/80 dark:hover:bg-zinc-700 transition-colors self-start sm:self-auto flex-shrink-0"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-bold text-zinc-900 dark:text-white bg-zinc-100 dark:bg-white/10 border border-zinc-200 dark:border-white/15 hover:bg-zinc-200/80 dark:hover:bg-white/20 transition-all self-start sm:self-auto flex-shrink-0 shadow-sm"
         >
-          <Mail className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+          <Mail className="w-3.5 h-3.5 text-emerald-500" />
           <span>Contact Support</span>
         </a>
       </div>
