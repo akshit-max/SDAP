@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { apiClient } from '../../lib/api/client';
 import { ResetPasswordSchema } from '@repo/types';
 import Link from 'next/link';
-import { Lock, Eye, EyeOff, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
+import { Lock, Eye, EyeOff, CheckCircle2, Loader2, AlertCircle, ArrowLeft, ArrowRight } from 'lucide-react';
 
 function ResetPasswordForm() {
   const params = useSearchParams();
@@ -20,12 +20,24 @@ function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <div className="text-center space-y-4">
-        <AlertCircle className="w-10 h-10 text-red-400 mx-auto" />
-        <h1 className="text-lg font-bold text-white">Invalid reset link</h1>
-        <p className="text-sm text-slate-400">This link is missing a token. Please request a new one.</p>
-        <Link href="/forgot-password" className="text-xs font-semibold text-slate-300 hover:text-white transition-colors underline">
-          Request new reset link
+      <div className="text-center space-y-5">
+        <div className="w-14 h-14 rounded-2xl bg-rose-500/20 border border-rose-400/30 flex items-center justify-center mx-auto shadow-[inset_0_1px_1px_rgba(255,255,255,0.35)]">
+          <AlertCircle className="w-7 h-7 text-rose-300" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
+            Invalid reset link
+          </h2>
+          <p className="text-xs sm:text-sm text-white/80 mt-2 leading-relaxed">
+            This password reset link is missing a verification token or has already been used.
+          </p>
+        </div>
+        <Link
+          href="/forgot-password"
+          className="w-full mt-4 inline-flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-zinc-100 text-zinc-950 rounded-2xl text-xs sm:text-sm font-bold shadow-[0_12px_28px_-6px_rgba(0,0,0,0.35)] transition-all active:scale-[0.99]"
+        >
+          <span>Request new reset link</span>
+          <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
     );
@@ -51,7 +63,7 @@ function ResetPasswordForm() {
     try {
       await apiClient.post('/auth/reset-password', { token, password });
       setStatus('success');
-      setTimeout(() => router.push('/login'), 3000);
+      setTimeout(() => router.push('/login'), 2500);
     } catch (err: any) {
       const msg = err?.response?.data?.message ?? 'This reset link is invalid or has expired.';
       setError(msg);
@@ -61,17 +73,24 @@ function ResetPasswordForm() {
 
   if (status === 'success') {
     return (
-      <div className="text-center space-y-4">
-        <CheckCircle className="w-12 h-12 text-emerald-400 mx-auto" />
-        <h1 className="text-lg font-bold text-white">Password updated!</h1>
-        <p className="text-sm text-slate-400 leading-relaxed">
-          Your password has been changed. Redirecting you to sign in…
-        </p>
+      <div className="text-center space-y-5">
+        <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center mx-auto shadow-[inset_0_1px_1px_rgba(255,255,255,0.35)]">
+          <CheckCircle2 className="w-7 h-7 text-emerald-300" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
+            Password updated!
+          </h2>
+          <p className="text-xs sm:text-sm text-white/80 mt-2 leading-relaxed">
+            Your password has been changed successfully. Redirecting you to sign in…
+          </p>
+        </div>
         <Link
           href="/login"
-          className="inline-block mt-2 text-xs font-semibold text-slate-300 hover:text-white transition-colors underline"
+          className="w-full mt-4 inline-flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-zinc-100 text-zinc-950 rounded-2xl text-xs sm:text-sm font-bold shadow-[0_12px_28px_-6px_rgba(0,0,0,0.35)] transition-all active:scale-[0.99]"
         >
-          Sign in now
+          <span>Sign In Now</span>
+          <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
     );
@@ -79,22 +98,32 @@ function ResetPasswordForm() {
 
   return (
     <>
-      <div className="mb-6">
-        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-slate-800 mb-4 mx-auto">
-          <Lock className="w-5 h-5 text-slate-300" />
+      {/* Card Header with Logo */}
+      <div className="text-center mb-6">
+        <div className="flex justify-center mb-3">
+          <img
+            src="/withus_white_full.png"
+            alt="WithUs"
+            className="h-7 sm:h-8 w-auto object-contain select-none"
+          />
         </div>
-        <h1 className="text-lg font-bold text-white text-center">Set new password</h1>
-        <p className="text-sm text-slate-400 text-center mt-1">
+        <h1 className="text-2xl sm:text-[26px] font-bold tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
+          Set new password
+        </h1>
+        <p className="text-xs sm:text-sm text-white/80 mt-1 font-normal">
           Choose a strong password for your account.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label htmlFor="reset-password" className="block text-[11px] font-bold uppercase tracking-wider text-white/90 mb-1.5">
             New password
           </label>
           <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-white/60">
+              <Lock className="w-4 h-4" />
+            </div>
             <input
               id="reset-password"
               type={showPassword ? 'text' : 'password'}
@@ -103,13 +132,13 @@ function ResetPasswordForm() {
               minLength={8}
               value={password}
               onChange={(e) => { setPassword(e.target.value); setError(''); }}
-              className="w-full px-3 py-2.5 pr-10 text-sm bg-slate-800/60 border border-slate-700/60 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all"
+              className="w-full pl-10 pr-10 py-2.5 text-xs sm:text-sm bg-white/[0.08] hover:bg-white/[0.12] focus-within:bg-white/[0.15] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-2xl text-white placeholder-white/45 focus:outline-none transition-all"
               placeholder="Minimum 8 characters"
             />
             <button
               type="button"
               onClick={() => setShowPassword(v => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -118,25 +147,30 @@ function ResetPasswordForm() {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label htmlFor="reset-confirm" className="block text-[11px] font-bold uppercase tracking-wider text-white/90 mb-1.5">
             Confirm new password
           </label>
-          <input
-            id="reset-confirm"
-            type={showPassword ? 'text' : 'password'}
-            autoComplete="new-password"
-            required
-            value={confirm}
-            onChange={(e) => { setConfirm(e.target.value); setError(''); }}
-            className="w-full px-3 py-2.5 text-sm bg-slate-800/60 border border-slate-700/60 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all"
-            placeholder="Repeat your password"
-          />
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-white/60">
+              <Lock className="w-4 h-4" />
+            </div>
+            <input
+              id="reset-confirm"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="new-password"
+              required
+              value={confirm}
+              onChange={(e) => { setConfirm(e.target.value); setError(''); }}
+              className="w-full pl-10 pr-10 py-2.5 text-xs sm:text-sm bg-white/[0.08] hover:bg-white/[0.12] focus-within:bg-white/[0.15] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-2xl text-white placeholder-white/45 focus:outline-none transition-all"
+              placeholder="Repeat your password"
+            />
+          </div>
         </div>
 
         {error && (
-          <div className="flex items-start gap-2 p-3 bg-red-950/30 border border-red-900/40 rounded-lg">
-            <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-red-400">{error}</p>
+          <div className="flex items-start gap-2 p-3 bg-rose-500/15 border border-rose-400/30 rounded-2xl">
+            <AlertCircle className="w-4 h-4 text-rose-300 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-rose-200">{error}</p>
           </div>
         )}
 
@@ -144,29 +178,86 @@ function ResetPasswordForm() {
           id="reset-submit"
           type="submit"
           disabled={status === 'loading'}
-          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-white hover:bg-slate-100 text-slate-900 rounded-lg text-sm font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-zinc-100 text-zinc-950 rounded-2xl text-xs sm:text-sm font-bold shadow-[0_12px_28px_-6px_rgba(0,0,0,0.35)] transition-all disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99] mt-2"
         >
-          {status === 'loading' && <Loader2 className="w-4 h-4 animate-spin" />}
-          {status === 'loading' ? 'Updating…' : 'Set new password'}
+          {status === 'loading' ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin text-zinc-950" />
+              <span>Updating password…</span>
+            </>
+          ) : (
+            <>
+              <span>Set new password</span>
+              <ArrowRight className="w-4 h-4" />
+            </>
+          )}
         </button>
       </form>
+
+      <div className="mt-6 text-center">
+        <Link
+          href="/login"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-white/80 hover:text-white transition-colors"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Back to Sign In</span>
+        </Link>
+      </div>
     </>
   );
 }
 
 export default function ResetPasswordPage() {
   return (
-    <div className="h-[100dvh] overflow-y-auto flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 px-4">
-      <div className="w-full max-w-sm">
-        <div className="flex flex-col items-center mb-8">
-          <img src="/logo-dark.png" alt="WithUs Logo" className="h-20 w-auto object-contain" />
+    <div className="min-h-screen w-full relative flex flex-col justify-between overflow-x-hidden overflow-y-auto text-white font-sans antialiased selection:bg-white selection:text-zinc-950">
+      {/* High-Resolution Clean Twilight Horizon Wallpaper */}
+      <div
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none -z-10"
+        style={{ backgroundImage: "url('/bg-dunes.jpg')" }}
+      />
+
+      {/* Top Navbar */}
+      <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7 flex items-center justify-between relative z-20">
+        <Link href="/" className="flex items-center hover:opacity-90 transition-opacity group">
+          <img
+            src="/withus_white_full.png"
+            alt="WithUs"
+            className="h-8 sm:h-9 w-auto object-contain select-none group-hover:scale-105 transition-transform"
+          />
+        </Link>
+
+        <div className="flex items-center gap-2 text-xs">
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-white/30 hover:border-white/70 hover:bg-white/10 text-white font-medium transition-all shadow-sm backdrop-blur-md"
+          >
+            <span>Sign In</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
-        <div className="bg-slate-900/90 backdrop-blur border border-slate-800/60 rounded-2xl p-8 shadow-2xl">
-          <Suspense fallback={<div className="text-slate-400 text-sm text-center">Loading…</div>}>
+      </header>
+
+      {/* Main Container */}
+      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex items-center justify-center">
+        <div className="w-full max-w-[440px] rounded-[32px] p-8 sm:p-9 bg-white/[0.10] backdrop-blur-2xl border border-white/25 shadow-[0_28px_60px_-12px_rgba(0,0,0,0.45),inset_0_1px_1px_rgba(255,255,255,0.35)] text-white">
+          <Suspense fallback={<div className="text-white/70 text-sm text-center py-6">Loading verification…</div>}>
             <ResetPasswordForm />
           </Suspense>
         </div>
-      </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 text-xs text-white/70 flex flex-col sm:flex-row items-center justify-between gap-3 relative z-20">
+        <p className="select-none font-medium text-[11px] sm:text-xs">
+          &copy; {new Date().getFullYear()} WithUs Inc. All rights reserved.
+        </p>
+        <div className="flex items-center gap-4 sm:gap-6 text-[11px] sm:text-xs font-medium">
+          <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+          <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
+          <Link href="/security" className="hover:text-white transition-colors">Security</Link>
+          <Link href="/cookie-policy" className="hover:text-white transition-colors">Cookies</Link>
+        </div>
+      </footer>
     </div>
   );
 }

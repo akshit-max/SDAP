@@ -1,27 +1,33 @@
 import React from 'react';
 import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 export function PublicFooter() {
   return (
-    <div className="text-center text-xs text-premium-muted font-medium border-t border-premium/60 mt-12 pt-8">
-      <p className="select-none">&copy; {new Date().getFullYear()} makewithus. All rights reserved.</p>
-      <div className="mt-4 flex flex-wrap justify-center items-center gap-x-3 gap-y-2 text-[11px]">
-        <Link href="/privacy" className="hover:text-premium-main transition-colors hover:underline">Privacy Policy</Link>
-        <span className="text-zinc-300 dark:text-zinc-700 select-none hidden sm:inline">&bull;</span>
-        <Link href="/terms" className="hover:text-premium-main transition-colors hover:underline">Terms & Conditions</Link>
-        <span className="text-zinc-300 dark:text-zinc-700 select-none hidden sm:inline">&bull;</span>
-        <Link href="/security" className="hover:text-premium-main transition-colors hover:underline">Security & Data Protection</Link>
-        <span className="text-zinc-300 dark:text-zinc-700 select-none hidden sm:inline">&bull;</span>
-        <Link href="/cookie-policy" className="hover:text-premium-main transition-colors hover:underline">Cookie Policy</Link>
-        <span className="text-zinc-300 dark:text-zinc-700 select-none hidden sm:inline">&bull;</span>
-        <Link href="/refund-policy" className="hover:text-premium-main transition-colors hover:underline">Refund & Cancellation Policy</Link>
+    <footer className="text-center text-xs text-white/70 font-medium border-t border-white/20 mt-12 pt-8 select-none">
+      <p className="text-[11px] sm:text-xs">
+        &copy; {new Date().getFullYear()} WithUs Inc. All rights reserved.
+      </p>
+      <div className="mt-4 flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-[11px] sm:text-xs">
+        <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+        <span className="text-white/40 hidden sm:inline">&bull;</span>
+        <Link href="/terms" className="hover:text-white transition-colors">Terms & Conditions</Link>
+        <span className="text-white/40 hidden sm:inline">&bull;</span>
+        <Link href="/security" className="hover:text-white transition-colors">Security & Data Protection</Link>
+        <span className="text-white/40 hidden sm:inline">&bull;</span>
+        <Link href="/cookie-policy" className="hover:text-white transition-colors">Cookie Policy</Link>
+        <span className="text-white/40 hidden sm:inline">&bull;</span>
+        <Link href="/refund-policy" className="hover:text-white transition-colors">Refund & Cancellation</Link>
       </div>
       <div className="mt-6 pt-2">
-        <Link href="/" className="inline-flex items-center gap-1.5 text-xs text-premium-muted hover:text-premium-main transition-colors hover:underline">
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-          Return to Home
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-white/25 hover:border-white/60 hover:bg-white/10 text-white/90 hover:text-white text-xs transition-all backdrop-blur-md"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Return to Home</span>
         </Link>
       </div>
-    </div>
+    </footer>
   );
 }
