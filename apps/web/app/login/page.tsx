@@ -78,38 +78,29 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen w-full relative flex flex-col justify-between overflow-x-hidden text-white font-sans antialiased selection:bg-white selection:text-zinc-950">
-      {/* High-Resolution Crystal Clear Background Wallpaper */}
+    <div className="min-h-screen w-full relative flex flex-col justify-between overflow-x-hidden overflow-y-auto text-white font-sans antialiased selection:bg-white selection:text-zinc-950">
+      {/* High-Resolution Clean Twilight Horizon Wallpaper */}
       <div
         className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none -z-10"
         style={{ backgroundImage: "url('/bg-dunes.jpg')" }}
-      >
-        {/* Subtle, non-blurring optical dark gradient to elevate text sharpness */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0a1528]/60 via-[#10203a]/25 to-[#121a28]/65" />
-      </div>
+      />
 
       {/* Top Navbar */}
-      <header className="w-full max-w-7xl mx-auto px-6 py-6 sm:py-8 flex items-center justify-between relative z-20">
+      <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7 flex items-center justify-between relative z-20">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
-          <span className="text-2xl font-black tracking-wider text-white">WITH US</span>
-          <WithUsStar className="w-5 h-5 text-white" />
+        <Link href="/" className="flex items-center hover:opacity-90 transition-opacity group">
+          <img
+            src="/withus_white_full.png"
+            alt="WithUs"
+            className="h-8 sm:h-9 w-auto object-contain select-none group-hover:scale-105 transition-transform"
+          />
         </Link>
-
-        {/* Center Nav Links (Desktop) */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-white/75">
-          <Link href="/product" className="hover:text-white transition-colors">Product</Link>
-          <Link href="/use-cases" className="hover:text-white transition-colors">Use Cases</Link>
-          <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
-          <Link href="/docs" className="hover:text-white transition-colors">Docs</Link>
-        </nav>
 
         {/* Right Switcher */}
         <div className="flex items-center gap-2 text-xs">
-          <span className="hidden sm:inline text-white/70">New here?</span>
           <Link
             href={redirectParam ? `/register?redirect=${encodeURIComponent(redirectParam)}` : '/register'}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-white/25 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-semibold transition-all shadow-sm"
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-white/30 hover:border-white/70 hover:bg-white/10 text-white font-medium transition-all shadow-sm backdrop-blur-md"
           >
             <span>{redirectParam?.includes('/invite') ? 'Create Account' : 'Create Workspace'}</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -118,91 +109,89 @@ function LoginForm() {
       </header>
 
       {/* Main Two-Sided Content Area */}
-      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-6 py-6 sm:py-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center">
+      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center">
         {/* Left Column: Product Showcase */}
-        <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-between space-y-7 select-none">
-          {/* Badge */}
-          <div>
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-white/20 bg-white/[0.08] backdrop-blur-md text-[11px] font-semibold text-white/90 tracking-widest uppercase shadow-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.9)]" />
-              <span>DELEGATED ACCESS PLATFORM</span>
-            </div>
+        <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-center space-y-6 sm:space-y-7 select-none max-w-xl mx-auto lg:mx-0 text-center lg:text-left">
+          {/* Badge: Thin line + uppercase tracking text */}
+          <div className="flex items-center gap-3 justify-center lg:justify-start">
+            <div className="w-9 h-[1.5px] bg-white/60" />
+            <span className="text-xs font-bold tracking-[0.22em] uppercase text-white/90">
+              DELEGATED ACCESS PLATFORM
+            </span>
           </div>
 
-          {/* Main Headline */}
-          <h1 className="text-4xl sm:text-5xl lg:text-[58px] font-extrabold tracking-[-0.035em] text-white leading-[1.08]">
-            Give access without<br />
-            giving away control.
+          {/* Main Headline with sky-300 highlight */}
+          <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold tracking-tight text-white leading-[1.08] drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)]">
+            Give access<br />
+            without giving<br />
+            away <span className="text-sky-300 drop-shadow-[0_0_24px_rgba(125,211,252,0.45)]">control.</span>
           </h1>
 
           {/* Subtitle */}
-          <p className="text-sm sm:text-base text-white/80 leading-relaxed font-normal max-w-lg">
+          <p className="text-sm sm:text-base lg:text-[17px] text-white/90 leading-relaxed font-normal max-w-lg mx-auto lg:mx-0 drop-shadow-[0_1px_4px_rgba(0,0,0,0.3)]">
             Manage delegated access to GitHub, Vercel, Stripe, and government portals with scoped sessions, automatic OTP extraction, and zero raw credential exposure.
           </p>
 
-          {/* 4 Feature Items with Structured Hierarchy */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1 max-w-lg">
-            <div className="flex items-start gap-3 p-2.5 rounded-xl bg-white/[0.04] border border-white/10 backdrop-blur-sm">
-              <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5">
+          {/* 4 Feature Items Stacked Vertically with Subtitles */}
+          <div className="space-y-4 pt-1 max-w-md mx-auto lg:mx-0 text-left">
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-white/[0.12] border border-white/20 flex items-center justify-center flex-shrink-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)]">
                 <Lock className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-white tracking-tight">Passwordless access</p>
-                <p className="text-[12px] text-white/60 font-normal">Direct zero-credential logins</p>
+                <p className="text-sm sm:text-[15px] font-bold text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">Passwordless access</p>
+                <p className="text-xs sm:text-[13px] text-white/80 font-medium">No shared credentials</p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-2.5 rounded-xl bg-white/[0.04] border border-white/10 backdrop-blur-sm">
-              <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5">
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-white/[0.12] border border-white/20 flex items-center justify-center flex-shrink-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)]">
                 <Shield className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-white tracking-tight">Scoped permissions</p>
-                <p className="text-[12px] text-white/60 font-normal">Strict workspace isolation</p>
+                <p className="text-sm sm:text-[15px] font-bold text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">Scoped permissions</p>
+                <p className="text-xs sm:text-[13px] text-white/80 font-medium">Least privilege access</p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-2.5 rounded-xl bg-white/[0.04] border border-white/10 backdrop-blur-sm">
-              <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5">
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-white/[0.12] border border-white/20 flex items-center justify-center flex-shrink-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)]">
                 <Clock className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-white tracking-tight">Auto expiry sessions</p>
-                <p className="text-[12px] text-white/60 font-normal">Ephemeral time-bound access</p>
+                <p className="text-sm sm:text-[15px] font-bold text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">Auto expiry sessions</p>
+                <p className="text-xs sm:text-[13px] text-white/80 font-medium">Time-bound access</p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-2.5 rounded-xl bg-white/[0.04] border border-white/10 backdrop-blur-sm">
-              <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5">
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-white/[0.12] border border-white/20 flex items-center justify-center flex-shrink-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)]">
                 <FileText className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-white tracking-tight">Immutable audit trails</p>
-                <p className="text-[12px] text-white/60 font-normal">Complete session telemetry</p>
+                <p className="text-sm sm:text-[15px] font-bold text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">Immutable audit trails</p>
+                <p className="text-xs sm:text-[13px] text-white/80 font-medium">Complete session logs</p>
               </div>
             </div>
-          </div>
-
-          {/* Bottom Protection Badge */}
-          <div className="pt-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-emerald-400">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>ENTERPRISE GRADE PROTECTION &bull; SOC-2 READY</span>
           </div>
         </div>
 
         {/* Right Column: Premium Frosted Glass Card */}
-        <div className="lg:col-span-6 xl:col-span-5 flex justify-center">
-          <div className="w-full max-w-[420px] rounded-[30px] p-8 sm:p-9 bg-slate-950/40 backdrop-blur-2xl border-t border-t-white/35 border-x border-x-white/20 border-b border-b-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.4)] text-white">
+        <div className="lg:col-span-6 xl:col-span-5 flex justify-center w-full">
+          <div className="w-full max-w-[430px] rounded-[32px] p-8 sm:p-9 bg-white/[0.10] backdrop-blur-2xl border border-white/25 shadow-[0_28px_60px_-12px_rgba(0,0,0,0.45),inset_0_1px_1px_rgba(255,255,255,0.35)] text-white">
             {/* Card Header with Logo */}
             <div className="text-center mb-6">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <span className="text-xl font-black tracking-wider text-white">WITH US</span>
-                <WithUsStar className="w-4 h-4 text-white" />
+              <div className="flex justify-center mb-3">
+                <img
+                  src="/withus_white_full.png"
+                  alt="WithUs"
+                  className="h-7 sm:h-8 w-auto object-contain select-none"
+                />
               </div>
-              <h2 className="text-2xl font-bold tracking-tight text-white">
+              <h2 className="text-2xl sm:text-[26px] font-bold tracking-tight text-white">
                 Welcome back
               </h2>
-              <p className="text-xs text-white/65 mt-1 font-normal">
+              <p className="text-xs sm:text-sm text-white/80 mt-1 font-normal">
                 Sign in to your workspace
               </p>
             </div>
@@ -239,16 +228,16 @@ function LoginForm() {
             <form onSubmit={handleLogin} className="space-y-4">
               {/* Email Address */}
               <div className="space-y-1.5">
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-white/75">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-white/90">
                   EMAIL ADDRESS
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/45" />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" />
                   <input
                     type="email"
                     required
                     autoComplete="email"
-                    className="w-full h-12 pl-10 pr-4 bg-black/40 hover:bg-black/50 focus:bg-black/60 border border-white/15 focus:border-white/50 focus:ring-1 focus:ring-white/30 rounded-xl text-sm font-medium text-white placeholder:text-white/30 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)]"
+                    className="w-full h-11 pl-10 pr-4 bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-xl text-sm font-medium text-white placeholder:text-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]"
                     placeholder="name@company.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -258,16 +247,16 @@ function LoginForm() {
 
               {/* Password */}
               <div className="space-y-1.5">
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-white/75">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-white/90">
                   PASSWORD
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/45" />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" />
                   <input
                     type={showPassword ? "text" : "password"}
                     required
                     autoComplete="current-password"
-                    className="w-full h-12 pl-10 pr-10 bg-black/40 hover:bg-black/50 focus:bg-black/60 border border-white/15 focus:border-white/50 focus:ring-1 focus:ring-white/30 rounded-xl text-sm font-medium text-white placeholder:text-white/30 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)]"
+                    className="w-full h-11 pl-10 pr-10 bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-xl text-sm font-medium text-white placeholder:text-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]"
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -275,7 +264,7 @@ function LoginForm() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -289,14 +278,14 @@ function LoginForm() {
                     type="checkbox"
                     checked={keepSignedIn}
                     onChange={(e) => setKeepSignedIn(e.target.checked)}
-                    className="w-4 h-4 rounded bg-black/40 border-white/30 text-white focus:ring-0 cursor-pointer accent-white"
+                    className="w-4 h-4 rounded bg-white/10 border-white/30 text-zinc-950 focus:ring-0 cursor-pointer"
                   />
-                  <span className="text-white/80">Keep me signed in</span>
+                  <span className="text-white/90 font-medium">Keep me signed in</span>
                 </label>
 
                 <Link
                   href="/forgot-password"
-                  className="text-white/75 hover:text-white transition-colors font-medium hover:underline"
+                  className="text-white/90 hover:text-white transition-colors font-medium hover:underline"
                 >
                   Forgot password?
                 </Link>
@@ -306,7 +295,7 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 mt-2 bg-white hover:bg-white/95 active:scale-[0.99] text-zinc-950 font-bold text-sm tracking-tight rounded-xl shadow-[0_4px_20px_rgba(255,255,255,0.2),0_2px_4px_rgba(0,0,0,0.4)] hover:shadow-[0_6px_24px_rgba(255,255,255,0.3)] transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full h-11 mt-2 bg-white hover:bg-white/95 active:scale-[0.99] text-zinc-950 font-bold text-sm tracking-tight rounded-xl shadow-[0_4px_16px_rgba(255,255,255,0.15)] hover:shadow-[0_6px_20px_rgba(255,255,255,0.25)] transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <><Loader2 className="w-4 h-4 animate-spin text-zinc-950" /> Signing in...</>
@@ -318,9 +307,9 @@ function LoginForm() {
               {/* Divider: OR CONTINUE WITH */}
               <div className="relative my-4 text-center">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/15" />
+                  <div className="w-full border-t border-white/20" />
                 </div>
-                <span className="relative px-3 bg-transparent text-[10px] font-bold tracking-[0.15em] text-white/50 uppercase">
+                <span className="relative px-3 bg-transparent text-[10px] font-bold tracking-[0.15em] text-white/60 uppercase">
                   OR CONTINUE WITH
                 </span>
               </div>
@@ -330,7 +319,7 @@ function LoginForm() {
                 {/* Google */}
                 <button
                   type="button"
-                  className="h-11 rounded-xl bg-white/[0.06] hover:bg-white/[0.14] border border-white/15 flex items-center justify-center transition-all shadow-sm"
+                  className="h-11 rounded-xl bg-white/[0.08] hover:bg-white/[0.16] border border-white/20 flex items-center justify-center transition-all shadow-sm"
                   title="Sign in with Google"
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -344,7 +333,7 @@ function LoginForm() {
                 {/* GitHub */}
                 <button
                   type="button"
-                  className="h-11 rounded-xl bg-white/[0.06] hover:bg-white/[0.14] border border-white/15 flex items-center justify-center transition-all shadow-sm"
+                  className="h-11 rounded-xl bg-white/[0.08] hover:bg-white/[0.16] border border-white/20 flex items-center justify-center transition-all shadow-sm"
                   title="Sign in with GitHub"
                 >
                   <svg className="w-4 h-4 text-white fill-current" viewBox="0 0 24 24">
@@ -355,7 +344,7 @@ function LoginForm() {
                 {/* Microsoft */}
                 <button
                   type="button"
-                  className="h-11 rounded-xl bg-white/[0.06] hover:bg-white/[0.14] border border-white/15 flex items-center justify-center transition-all shadow-sm"
+                  className="h-11 rounded-xl bg-white/[0.08] hover:bg-white/[0.16] border border-white/20 flex items-center justify-center transition-all shadow-sm"
                   title="Sign in with Microsoft"
                 >
                   <svg className="w-4 h-4" viewBox="0 0 21 21">
@@ -369,11 +358,11 @@ function LoginForm() {
             </form>
 
             {/* Bottom Card Switcher */}
-            <div className="text-center text-xs text-white/75 mt-6 pt-1">
+            <div className="text-center text-xs text-white/85 mt-6 pt-1 font-medium">
               Don't have an account?{' '}
               <Link
                 href={redirectParam ? `/register?redirect=${encodeURIComponent(redirectParam)}` : '/register'}
-                className="text-white font-bold hover:underline transition-colors"
+                className="text-white font-bold underline-offset-4 hover:underline transition-colors"
               >
                 Create Workspace
               </Link>
@@ -383,9 +372,9 @@ function LoginForm() {
       </main>
 
       {/* Footer */}
-      <footer className="w-full max-w-7xl mx-auto px-6 py-4 relative z-20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/60">
+      <footer className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 relative z-20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/75">
         <div>&copy; {new Date().getFullYear()} WithUs Inc. All rights reserved.</div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
           <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
           <Link href="/security" className="hover:text-white transition-colors">Security</Link>

@@ -37,15 +37,14 @@ body {
   font-family: 'Plus Jakarta Sans', var(--font-inter), var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif !important;
 }
 
-/* Apple-grade razor-sharp dark theme autofill */
+/* Apple-grade frosted glass autofill */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 1000px #0c1524 inset !important;
+  transition: background-color 5000000s ease-in-out 0s, color 5000000s ease-in-out 0s;
   -webkit-text-fill-color: #ffffff !important;
   caret-color: #ffffff !important;
-  transition: background-color 5000s ease-in-out 0s;
 }
 
 .font-mono {
