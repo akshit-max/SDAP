@@ -64,31 +64,28 @@ export function VaultListPage() {
 
   return (
     <>
-      <div className="space-y-8 w-full max-w-7xl mx-auto">
+      <div className="space-y-6 w-full max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-zinc-200/80 dark:border-white/10">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2">
           <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="w-5 h-[1.5px] bg-sky-500" />
-              <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
-                CREDENTIAL STORAGE
-              </span>
+            <div className="text-[11px] font-semibold text-[#86868B] dark:text-[#8E8E93] uppercase tracking-wider mb-0.5">
+              CREDENTIAL STORAGE
             </div>
-            <h2 className="text-2xl font-extrabold text-zinc-900 dark:text-white tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#1D1D1F] dark:text-[#F5F5F7]">
               Secure Vaults
             </h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 font-normal">
-              {total} vault{total !== 1 ? 's' : ''} configured &bull; Page {page} of {totalPages}
+            <p className="text-xs sm:text-sm text-[#86868B] dark:text-[#8E8E93] mt-0.5 font-normal">
+              Store and manage credentials for workspace services and delegated team access.
             </p>
           </div>
 
           {canCreateVault && (
             <button
               onClick={() => setIsCreateOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-950 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-bold transition-all shadow-sm active:scale-[0.99]"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-medium shadow-sm transition-colors flex-shrink-0"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Create Vault</span>
+              <span>New Vault</span>
             </button>
           )}
         </div>

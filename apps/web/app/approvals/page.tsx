@@ -89,55 +89,54 @@ export default function ApprovalsPage() {
   return (
     <>
     <DashboardShell>
-      <div className="w-full max-w-7xl mx-auto space-y-8 pb-12">
+      <div className="w-full max-w-7xl mx-auto space-y-6 pb-12">
         {/* Header Section */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2">
           <div>
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-[10px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-widest mb-2">
-              <Shield className="w-3 h-3 text-emerald-500" />
-              Access Governance
+            <div className="text-[11px] font-semibold text-[#86868B] dark:text-[#8E8E93] uppercase tracking-wider mb-0.5">
+              ACCESS GOVERNANCE
             </div>
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-900 dark:text-white">
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#1D1D1F] dark:text-[#F5F5F7]">
               Approval Workflows
             </h1>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+            <p className="text-xs sm:text-sm text-[#86868B] dark:text-[#8E8E93] mt-0.5 font-normal">
               Review and manage privileged access authorization requests.
             </p>
           </div>
         </div>
 
         {/* Info Banner */}
-        <div className="rounded-[24px] border border-zinc-200/80 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.02)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] flex gap-4 items-start">
-          <div className="flex-shrink-0 w-10 h-10 rounded-2xl bg-zinc-100 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 flex items-center justify-center text-zinc-800 dark:text-zinc-200">
-            <Shield className="w-5 h-5" />
+        <div className="rounded-xl border border-[#E5E5EA] dark:border-[#2C2C2E] bg-white dark:bg-[#1C1C1E] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex gap-3.5 items-start">
+          <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-[#0071E3]/10 text-[#0071E3] flex items-center justify-center">
+            <Shield className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-white mb-1">
+            <h3 className="text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] mb-0.5">
               Privileged Delegated Access Control
             </h3>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-3xl">
-              When a team member requests a <span className="font-medium text-zinc-900 dark:text-white">Delegated Session</span> to access a vault or fill portal credentials, organization policies can require sign-off from an Owner or Admin. Approved sessions are scoped strictly to requested timeframes.
+            <p className="text-xs text-[#86868B] dark:text-[#8E8E93] leading-relaxed max-w-3xl">
+              When a team member requests a <span className="font-medium text-[#1D1D1F] dark:text-[#F5F5F7]">Delegated Session</span> to access a vault or fill portal credentials, organization policies can require sign-off from an Owner or Admin. Approved sessions are scoped strictly to requested timeframes.
             </p>
           </div>
         </div>
 
         {/* Pending Approvals (Admin view) */}
         {organization?.role !== 'MEMBER' && (
-          <section className="space-y-4">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2.5">
-                <h2 className="text-sm font-semibold text-zinc-900 dark:text-white">
+          <section className="space-y-2.5">
+            <div className="flex justify-between items-center px-0.5">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7]">
                   Access Requests To Review
                 </h2>
                 {pendingApprovalsToReview && pendingApprovalsToReview.length > 0 && (
-                  <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#FF9500]/10 text-[#FF9500] border border-[#FF9500]/20">
                     {pendingApprovalsToReview.length} pending
                   </span>
                 )}
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-zinc-200/80 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] overflow-hidden">
+            <div className="rounded-xl border border-[#E5E5EA] dark:border-[#2C2C2E] bg-white dark:bg-[#1C1C1E] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
               {isLoadingPending ? (
                 <div className="p-8 text-center text-xs text-zinc-500">Loading pending requests...</div>
               ) : pendingApprovalsToReview?.length === 0 ? (
@@ -251,13 +250,13 @@ export default function ApprovalsPage() {
         )}
 
         {/* My Requests (Member view) */}
-        <section className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-sm font-semibold text-zinc-900 dark:text-white">
+        <section className="space-y-2.5">
+          <div className="flex justify-between items-center px-0.5">
+            <h2 className="text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7]">
               My Request History
             </h2>
           </div>
-          <div className="rounded-[28px] border border-zinc-200/80 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] overflow-hidden">
+          <div className="rounded-xl border border-[#E5E5EA] dark:border-[#2C2C2E] bg-white dark:bg-[#1C1C1E] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
             {isLoadingRequests ? (
               <div className="p-8 text-center text-xs text-zinc-500">Loading your requests...</div>
             ) : myRequests?.length === 0 ? (

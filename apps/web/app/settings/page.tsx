@@ -122,25 +122,23 @@ export default function SettingsPage() {
     );
   };
 
-  const inputClass = 'w-full px-3.5 py-2.5 rounded-xl text-xs bg-zinc-50/80 dark:bg-white/5 border border-zinc-200/80 dark:border-white/10 text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-white/20 transition-all';
-  const sectionClass = 'rounded-[28px] border border-zinc-200/80 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] overflow-hidden';
-  const headerClass = 'px-6 py-4 border-b border-zinc-200/60 dark:border-white/10 bg-zinc-50/60 dark:bg-white/[0.02]';
-  const labelClass = 'block text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2';
-  const saveBtn = 'inline-flex items-center px-4 py-2 rounded-full text-xs font-medium bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 hover:opacity-90 disabled:opacity-40 transition-all shadow-sm';
+  const inputClass = 'w-full px-3.5 py-2 rounded-lg text-xs bg-[#F5F5F7] dark:bg-[#2C2C2E]/60 border border-[#E5E5EA] dark:border-[#38383A] text-[#1D1D1F] dark:text-[#F5F5F7] placeholder-[#86868B] dark:placeholder-[#8E8E93] focus:outline-none focus:ring-1 focus:ring-[#0071E3] transition-all';
+  const sectionClass = 'rounded-xl border border-[#E5E5EA] dark:border-[#2C2C2E] bg-white dark:bg-[#1C1C1E] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden';
+  const headerClass = 'px-6 py-3.5 border-b border-[#E5E5EA] dark:border-[#2C2C2E] flex items-center gap-2 text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7]';
+  const labelClass = 'block text-xs font-medium text-[#1D1D1F] dark:text-[#F5F5F7] mb-1.5';
+  const saveBtn = 'inline-flex items-center px-4 py-2 rounded-lg text-xs font-medium bg-[#0071E3] hover:bg-[#0077ED] text-white disabled:opacity-40 transition-colors shadow-sm';
+
+  const userInitial = (fullName || profile?.fullName || profile?.email || 'U').charAt(0).toUpperCase();
 
   return (
     <DashboardShell>
-      <div className="max-w-6xl mx-auto space-y-8 pb-12">
+      <div className="max-w-6xl mx-auto space-y-6 pb-12">
         <div>
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-[10px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-widest mb-2">
-            <Building2 className="w-3 h-3 text-zinc-500" />
-            Workspace & Account
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-900 dark:text-white">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#1D1D1F] dark:text-[#F5F5F7]">
             Workspace Settings
           </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            Manage your personal profile, credentials, and organizational configuration.
+          <p className="text-xs sm:text-sm text-[#86868B] dark:text-[#8E8E93] mt-0.5 font-normal">
+            Manage your personal profile, workspace, and organizational configuration.
           </p>
         </div>
 
@@ -149,11 +147,25 @@ export default function SettingsPage() {
             {/* ── Profile Section ── */}
             <div className={sectionClass}>
               <div className={headerClass}>
-                <h2 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
-                  <User className="w-4 h-4 text-slate-400" /> Profile
-                </h2>
+                <User className="w-4 h-4 text-[#86868B]" />
+                <span>Profile</span>
               </div>
               <form onSubmit={handleProfileSubmit} className="p-6 space-y-5">
+                {/* Avatar Row */}
+                <div className="flex items-center gap-4 pb-2">
+                  <div className="w-12 h-12 rounded-full bg-[#F5F5F7] dark:bg-[#2C2C2E] border border-[#E5E5EA] dark:border-[#38383A] flex items-center justify-center text-sm font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] shadow-sm">
+                    {userInitial}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toast('info', 'Avatar upload will be available in the next release.')}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E5E5EA] dark:border-[#38383A] bg-white dark:bg-[#2C2C2E] hover:bg-[#F5F5F7] dark:hover:bg-[#38383A]/80 text-xs font-medium text-[#1D1D1F] dark:text-[#F5F5F7] shadow-sm transition-colors"
+                  >
+                    <User className="w-3.5 h-3.5 text-[#86868B]" />
+                    <span>Change Avatar</span>
+                  </button>
+                </div>
+
                 <div>
                   <label className={labelClass}>Full Name</label>
                   <input
@@ -174,15 +186,24 @@ export default function SettingsPage() {
                     type="email"
                     readOnly
                     value={profile?.email || ''}
-                    className="w-full px-3.5 py-2 bg-slate-50/50 dark:bg-zinc-900/50 border border-premium rounded-lg text-premium-muted text-xs cursor-not-allowed"
+                    className="w-full px-3.5 py-2 rounded-lg text-xs bg-[#F5F5F7]/60 dark:bg-[#2C2C2E]/40 border border-[#E5E5EA] dark:border-[#38383A] text-[#86868B] dark:text-[#8E8E93] cursor-not-allowed"
                   />
-                  <p className="text-[10px] text-premium-muted mt-1 font-semibold">Email changes require email verification — coming soon.</p>
+                </div>
+                <div>
+                  <label className={labelClass}>Job Title</label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={role || 'Owner'}
+                    className="w-full px-3.5 py-2 rounded-lg text-xs bg-[#F5F5F7]/60 dark:bg-[#2C2C2E]/40 border border-[#E5E5EA] dark:border-[#38383A] text-[#1D1D1F] dark:text-[#F5F5F7] cursor-not-allowed"
+                  />
+                  <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93] mt-1">This will be visible to your team members</p>
                 </div>
                 
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                <div className="pt-2">
                   <label className={`${labelClass} flex items-center gap-1.5`}>
-                    <GitBranch className="w-3.5 h-3.5" />
-                    GitHub Username
+                    <GitBranch className="w-3.5 h-3.5 text-[#86868B]" />
+                    <span>GitHub Username</span>
                   </label>
                   <input
                     id="profile-github"
@@ -192,10 +213,10 @@ export default function SettingsPage() {
                     className={inputClass}
                     placeholder="e.g. octocat"
                   />
-                  <p className="text-[10px] text-premium-muted mt-1 font-semibold">Required to receive delegated access to GitHub repositories.</p>
+                  <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93] mt-1">Required to receive delegated access to GitHub repositories.</p>
                 </div>
                 
-                <div className="flex justify-end pt-2">
+                <div className="flex justify-start pt-2">
                   <button type="submit" disabled={profilePending || (!fullName.trim() && !githubUsername.trim())} className={saveBtn}>
                     {profilePending && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
                     Save Profile
@@ -208,9 +229,8 @@ export default function SettingsPage() {
             {canUpdateOrg ? (
             <div className={sectionClass}>
               <div className={headerClass}>
-                <h2 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-slate-400" /> Workspace
-                </h2>
+                <Building2 className="w-4 h-4 text-[#86868B]" />
+                <span>Workspace</span>
               </div>
               <form onSubmit={handleOrgSubmit} className="p-6 space-y-5">
                 <div>
@@ -234,20 +254,19 @@ export default function SettingsPage() {
                     placeholder="e.g. 9876543210"
                     value={billingPhone}
                     onChange={e => setBillingPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    className={`${inputClass} font-mono tracking-wider`}
+                    className={`${inputClass} font-mono`}
                   />
-                  <p className="text-[10px] text-premium-muted mt-1 font-semibold leading-relaxed">
-                    10-digit mobile number for payment receipts and billing updates. Automatically pre-fills at checkout.
+                  <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93] mt-1">
+                    10-digit mobile number for payment receipts and billing updates.
                   </p>
                 </div>
                 <div>
                   <label className={labelClass}>Organization ID</label>
                   <input type="text" readOnly value={organization?.id || ''}
-                    className="w-full px-3.5 py-2 bg-slate-50/50 dark:bg-zinc-900/50 border border-premium rounded-lg text-premium-muted text-xs font-mono cursor-not-allowed"
+                    className="w-full px-3.5 py-2 rounded-lg text-xs bg-[#F5F5F7]/60 dark:bg-[#2C2C2E]/40 border border-[#E5E5EA] dark:border-[#38383A] text-[#86868B] dark:text-[#8E8E93] font-mono cursor-not-allowed"
                   />
-                  <p className="text-[10px] text-premium-muted mt-1 font-semibold">Use this ID when calling the API directly.</p>
                 </div>
-                <div className="flex justify-end">
+                <div className="flex justify-start">
                   <button
                     type="submit"
                     disabled={
@@ -265,14 +284,10 @@ export default function SettingsPage() {
               </form>
             </div>
             ) : (
-            // Read-only Workspace section for non-Owner members.
-            // Matches the same visual design as the Owner's editable version
-            // but all inputs are read-only and no Save button is shown.
             <div className={sectionClass}>
               <div className={headerClass}>
-                <h2 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-slate-400" /> Workspace
-                </h2>
+                <Building2 className="w-4 h-4 text-[#86868B]" />
+                <span>Workspace</span>
               </div>
               <div className="p-6 space-y-5">
                 <div>
@@ -281,7 +296,7 @@ export default function SettingsPage() {
                     type="text"
                     readOnly
                     value={orgDetail?.name || organization?.name || ''}
-                    className="w-full px-3.5 py-2 bg-slate-50/50 dark:bg-zinc-900/50 border border-premium rounded-lg text-premium-muted text-xs cursor-not-allowed"
+                    className="w-full px-3.5 py-2 rounded-lg text-xs bg-[#F5F5F7]/60 dark:bg-[#2C2C2E]/40 border border-[#E5E5EA] dark:border-[#38383A] text-[#86868B] dark:text-[#8E8E93] cursor-not-allowed"
                   />
                 </div>
                 <div>
@@ -294,11 +309,8 @@ export default function SettingsPage() {
                       (organization as any)?.settings?.billingPhone ||
                       'Not configured (set by Owner)'
                     }
-                    className="w-full px-3.5 py-2 bg-slate-50/50 dark:bg-zinc-900/50 border border-premium rounded-lg text-premium-muted text-xs cursor-not-allowed font-mono"
+                    className="w-full px-3.5 py-2 rounded-lg text-xs bg-[#F5F5F7]/60 dark:bg-[#2C2C2E]/40 border border-[#E5E5EA] dark:border-[#38383A] text-[#86868B] dark:text-[#8E8E93] cursor-not-allowed font-mono"
                   />
-                  <p className="text-[10px] text-premium-muted mt-1 font-semibold">
-                    Contact mobile number for billing receipts and payment confirmations.
-                  </p>
                 </div>
               </div>
             </div>
@@ -309,9 +321,8 @@ export default function SettingsPage() {
             {/* ── Change Password Section ── */}
             <div className={sectionClass}>
               <div className={headerClass}>
-                <h2 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
-                  <Lock className="w-4 h-4 text-slate-400" /> Change Password
-                </h2>
+                <Lock className="w-4 h-4 text-[#86868B]" />
+                <span>Change Password</span>
               </div>
               <form onSubmit={handlePasswordSubmit} className="p-6 space-y-5">
                 <div>
@@ -325,10 +336,10 @@ export default function SettingsPage() {
                       value={currentPassword}
                       onChange={e => { setCurrentPassword(e.target.value); setPwError(''); }}
                       className={`${inputClass} pr-10`}
-                      placeholder="Your current password"
+                      placeholder="Enter your current password"
                     />
                     <button type="button" onClick={() => setShowPasswords(v => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white transition-colors">
                       {showPasswords ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
@@ -344,7 +355,7 @@ export default function SettingsPage() {
                     value={newPassword}
                     onChange={e => { setNewPassword(e.target.value); setPwError(''); }}
                     className={inputClass}
-                    placeholder="At least 8 characters"
+                    placeholder="Enter new password"
                   />
                 </div>
                 <div>
@@ -357,13 +368,13 @@ export default function SettingsPage() {
                     value={confirmPassword}
                     onChange={e => { setConfirmPassword(e.target.value); setPwError(''); }}
                     className={inputClass}
-                    placeholder="Repeat new password"
+                    placeholder="Confirm new password"
                   />
                 </div>
                 {pwError && (
-                  <p className="text-xs text-red-500 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg font-semibold">{pwError}</p>
+                  <p className="text-xs text-[#FF3B30] bg-[#FF3B30]/10 border border-[#FF3B30]/20 px-3 py-2 rounded-lg font-medium">{pwError}</p>
                 )}
-                <div className="flex justify-end">
+                <div className="flex justify-start">
                   <button type="submit" disabled={pwPending || !currentPassword || !newPassword || !confirmPassword} className={saveBtn}>
                     {pwPending && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
                     Change Password
