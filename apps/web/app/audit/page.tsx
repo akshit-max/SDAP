@@ -289,13 +289,20 @@ export default function AuditPage() {
 
   return (
     <DashboardShell>
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-6 pb-12">
         {/* Header */}
-        <div className="pb-2 border-b border-premium flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-lg font-bold tracking-tight text-premium-main">Audit Log</h1>
-            <p className="text-xs text-premium-muted mt-0.5">
-              Security and operational events across <span className="font-semibold">{organization?.name}</span>.
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wider">
+                COMPLIANCE &amp; FORENSICS
+              </span>
+            </div>
+            <h1 className="text-xl font-semibold tracking-tight text-[#1D1D1F] dark:text-white">
+              Audit Trail
+            </h1>
+            <p className="text-xs text-[#86868B] mt-0.5">
+              Immutable chronological record of security and operational events across <span className="font-medium text-[#1D1D1F] dark:text-white">{organization?.name}</span>.
             </p>
           </div>
           {/* BUSINESS: Export CSV button */}
@@ -303,7 +310,7 @@ export default function AuditPage() {
             <button
               onClick={handleExport}
               disabled={isExporting}
-              className="premium-button-secondary flex items-center gap-1.5 py-1.5 px-3 text-xs flex-shrink-0"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white dark:bg-[#2C2C2E] border border-[#E5E5EA] dark:border-[#38383A] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#F5F5F7] dark:hover:bg-[#38383A]/80 transition-colors shadow-sm flex-shrink-0 disabled:opacity-50"
             >
               <Download className="w-3.5 h-3.5" />
               {isExporting ? 'Exporting…' : 'Export CSV'}
@@ -313,61 +320,59 @@ export default function AuditPage() {
 
         {/* FREE: 7-day history restriction banner */}
         {isFree && (
-          <div className="flex items-start gap-3 px-4 py-3 rounded-xl border border-amber-200/70 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-950/20">
+          <div className="flex items-start gap-3 p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/5 dark:bg-amber-950/20">
             <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-xs font-bold text-amber-800 dark:text-amber-300">Recent Events Only — Free Plan</p>
-              <p className="text-[11px] text-amber-700/80 dark:text-amber-400/80 mt-0.5">
-                Your plan shows the last 7 days of audit history.
-                {' '}<a href="/pricing" className="underline font-semibold hover:text-amber-900 dark:hover:text-amber-200 transition-colors">Upgrade to Pro or Business</a>
-                {' '}for full history and CSV export.
+              <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">7-Day Retention Limit (Free Workspace)</p>
+              <p className="text-xs text-amber-700 dark:text-amber-300/80 mt-0.5 leading-relaxed">
+                Free plan displays events from the last 7 days.
+                {' '}<a href="/pricing" className="underline font-semibold hover:text-amber-900 dark:hover:text-amber-100 transition-colors">Upgrade to Pro or Business</a>
+                {' '}for perpetual retention and cryptographic export verification.
               </p>
             </div>
           </div>
         )}
 
-        {/* Filters */}
-        <div className="premium-card p-4 shadow-none space-y-3">
-          <div className="flex flex-col sm:flex-row gap-3">
+        {/* Filters Card */}
+        <div className="rounded-xl border border-[#E5E5EA] dark:border-[#2C2C2E] bg-white dark:bg-[#1C1C1E] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {/* Event type */}
-            <div className="flex-1 space-y-1.5">
-              <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wide">Event Type</label>
+            <div>
+              <label className="block text-[11px] font-medium text-[#86868B] uppercase tracking-wider mb-1">Event Type</label>
               <select
-                className="w-full premium-input text-xs"
+                className="w-full px-3 py-1.5 rounded-lg text-xs bg-[#F5F5F7] dark:bg-[#2C2C2E]/60 border border-[#E5E5EA] dark:border-[#38383A] text-[#1D1D1F] dark:text-[#F5F5F7] focus:outline-none focus:ring-1 focus:ring-[#0071E3] transition-all"
                 value={actionFilter}
                 onChange={handleFilterChange(setActionFilter)}
               >
                 {ACTION_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option key={opt.value} value={opt.value} className="bg-white dark:bg-[#1C1C1E]">{opt.label}</option>
                 ))}
               </select>
             </div>
 
             {/* Actor / member */}
-            <div className="flex-1 space-y-1.5">
-              <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wide">Actor</label>
+            <div>
+              <label className="block text-[11px] font-medium text-[#86868B] uppercase tracking-wider mb-1">Actor</label>
               <select
-                className="w-full premium-input text-xs"
+                className="w-full px-3 py-1.5 rounded-lg text-xs bg-[#F5F5F7] dark:bg-[#2C2C2E]/60 border border-[#E5E5EA] dark:border-[#38383A] text-[#1D1D1F] dark:text-[#F5F5F7] focus:outline-none focus:ring-1 focus:ring-[#0071E3] transition-all"
                 value={actorFilter}
                 onChange={handleFilterChange(setActorFilter)}
               >
-                <option value="">All Members</option>
+                <option value="" className="bg-white dark:bg-[#1C1C1E]">All Members</option>
                 {membersData.map((m: any) => (
-                  <option key={m.userId} value={m.userId}>
+                  <option key={m.userId} value={m.userId} className="bg-white dark:bg-[#1C1C1E]">
                     {m.user?.fullName || m.user?.email || m.userId}
                   </option>
                 ))}
               </select>
             </div>
-          </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 items-end">
             {/* Start date */}
-            <div className="flex-1 space-y-1.5">
-              <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wide">From</label>
+            <div>
+              <label className="block text-[11px] font-medium text-[#86868B] uppercase tracking-wider mb-1">From Date</label>
               <input
                 type="date"
-                className="w-full premium-input text-xs"
+                className="w-full px-3 py-1.5 rounded-lg text-xs bg-[#F5F5F7] dark:bg-[#2C2C2E]/60 border border-[#E5E5EA] dark:border-[#38383A] text-[#1D1D1F] dark:text-[#F5F5F7] focus:outline-none focus:ring-1 focus:ring-[#0071E3] transition-all"
                 value={startDate}
                 onChange={handleFilterChange(setStartDate)}
                 max={endDate || undefined}
@@ -376,64 +381,65 @@ export default function AuditPage() {
             </div>
 
             {/* End date */}
-            <div className="flex-1 space-y-1.5">
-              <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wide">To</label>
-              <input
-                type="date"
-                className="w-full premium-input text-xs"
-                value={endDate}
-                onChange={handleFilterChange(setEndDate)}
-                min={startDate || undefined}
-              />
+            <div>
+              <label className="block text-[11px] font-medium text-[#86868B] uppercase tracking-wider mb-1">To Date</label>
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  className="w-full px-3 py-1.5 rounded-lg text-xs bg-[#F5F5F7] dark:bg-[#2C2C2E]/60 border border-[#E5E5EA] dark:border-[#38383A] text-[#1D1D1F] dark:text-[#F5F5F7] focus:outline-none focus:ring-1 focus:ring-[#0071E3] transition-all"
+                  value={endDate}
+                  onChange={handleFilterChange(setEndDate)}
+                  min={startDate || undefined}
+                />
+                <button
+                  onClick={handleClearFilters}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white dark:bg-[#2C2C2E] border border-[#E5E5EA] dark:border-[#38383A] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#F5F5F7] dark:hover:bg-[#38383A]/80 transition-colors whitespace-nowrap shadow-sm"
+                >
+                  Reset
+                </button>
+              </div>
             </div>
-
-            <button
-              onClick={handleClearFilters}
-              className="premium-button-secondary py-1.5 px-4 flex-shrink-0"
-            >
-              Clear All
-            </button>
           </div>
         </div>
 
-        {/* Table */}
-        <div className="premium-card overflow-hidden shadow-none">
+        {/* Table Card */}
+        <div className="rounded-xl border border-[#E5E5EA] dark:border-[#2C2C2E] bg-white dark:bg-[#1C1C1E] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
           <div className="overflow-x-auto w-full">
-            <table className="min-w-full divide-y divide-premium">
-              <thead className="bg-slate-50/20 dark:bg-zinc-900/10">
+            <table className="min-w-full divide-y divide-[#E5E5EA]/60 dark:divide-[#2C2C2E]/60">
+              <thead className="bg-[#F5F5F7]/60 dark:bg-[#2C2C2E]/40">
                 <tr>
-                  <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">Event</th>
-                  <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">Actor</th>
-                  <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium hidden sm:table-cell">Resource</th>
-                  <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">When</th>
-                  <th scope="col" className="px-5 py-2.5 text-right text-[10px] font-bold text-premium-muted uppercase tracking-wider border-b border-premium">Details</th>
+                  <th scope="col" className="px-5 py-3 text-left text-[11px] font-medium text-[#86868B] uppercase tracking-wider">Event</th>
+                  <th scope="col" className="px-5 py-3 text-left text-[11px] font-medium text-[#86868B] uppercase tracking-wider">Actor</th>
+                  <th scope="col" className="px-5 py-3 text-left text-[11px] font-medium text-[#86868B] uppercase tracking-wider hidden sm:table-cell">Target Resource</th>
+                  <th scope="col" className="px-5 py-3 text-left text-[11px] font-medium text-[#86868B] uppercase tracking-wider">Timestamp</th>
+                  <th scope="col" className="px-5 py-3 text-right text-[11px] font-medium text-[#86868B] uppercase tracking-wider">Details</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-premium bg-premium-surface">
+              <tbody className="divide-y divide-[#E5E5EA]/60 dark:divide-[#2C2C2E]/60">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={5} className="px-5 py-10 text-center text-xs text-slate-400">
-                      <Activity className="w-5 h-5 mx-auto mb-2 animate-pulse text-slate-300" />
+                    <td colSpan={5} className="px-5 py-12 text-center text-xs text-[#86868B]">
+                      <Activity className="w-5 h-5 mx-auto mb-2 animate-pulse text-[#86868B]" />
                       Loading events...
                     </td>
                   </tr>
                 ) : isError ? (
                   <tr>
-                    <td colSpan={5} className="px-5 py-12 text-center">
-                      <ShieldOff className="w-8 h-8 mx-auto mb-3 text-red-300 dark:text-red-900/50" />
-                      <p className="text-sm font-semibold text-red-500 dark:text-red-400">Failed to load audit events</p>
-                      <p className="text-xs text-red-400/80 mt-1 font-semibold">
+                    <td colSpan={5} className="px-5 py-14 text-center">
+                      <ShieldOff className="w-8 h-8 mx-auto mb-3 text-red-500/50" />
+                      <p className="text-sm font-semibold text-red-600 dark:text-red-400">Failed to load audit events</p>
+                      <p className="text-xs text-[#86868B] mt-1">
                         Please try refreshing the page.
                       </p>
                     </td>
                   </tr>
                 ) : !data?.data?.length ? (
                   <tr>
-                    <td colSpan={5} className="px-5 py-12 text-center">
-                      <Shield className="w-8 h-8 mx-auto mb-3 text-slate-200 dark:text-slate-700" />
-                      <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">No events found</p>
-                      <p className="text-xs text-premium-muted mt-1 font-semibold">
-                        Events will appear here as your team uses WithUs.
+                    <td colSpan={5} className="px-5 py-14 text-center">
+                      <Shield className="w-8 h-8 mx-auto mb-3 text-[#86868B]" />
+                      <p className="text-sm font-semibold text-[#1D1D1F] dark:text-white">No events found</p>
+                      <p className="text-xs text-[#86868B] mt-1">
+                        Events will appear here as your team performs operations.
                       </p>
                     </td>
                   </tr>
@@ -453,45 +459,43 @@ export default function AuditPage() {
 
                     return (
                       <React.Fragment key={event.id}>
-                        <tr className="hover:bg-slate-50/30 dark:hover:bg-zinc-900/10 transition-colors border-b border-premium/65 last:border-b-0">
+                        <tr className="hover:bg-[#F5F5F7]/50 dark:hover:bg-[#2C2C2E]/50 transition-colors">
                           {/* Event */}
-                          <td className="px-5 py-3.5 whitespace-nowrap">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${cfg.bg} ${cfg.color}`}>
+                          <td className="px-5 py-3 whitespace-nowrap">
+                            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium border ${cfg.bg} ${cfg.color}`}>
                               {cfg.icon}
                               {cfg.label}
                             </span>
                           </td>
 
                           {/* Actor */}
-                          <td className="px-5 py-3.5 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0">
-                                <span className="text-[10px] font-bold text-premium-muted">
-                                  {actorName[0]?.toUpperCase() || '?'}
-                                </span>
+                          <td className="px-5 py-3 whitespace-nowrap">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-6 h-6 rounded-full bg-[#0071E3]/10 text-[#0071E3] flex items-center justify-center flex-shrink-0 text-[10px] font-semibold">
+                                {actorName[0]?.toUpperCase() || '?'}
                               </div>
                               <div>
-                                <p className="text-xs font-bold text-premium-main">{actorName}</p>
-                                {actorEmail && <p className="text-[10px] text-premium-muted font-semibold">{actorEmail}</p>}
+                                <p className="text-xs font-medium text-[#1D1D1F] dark:text-white">{actorName}</p>
+                                {actorEmail && <p className="text-[11px] text-[#86868B]">{actorEmail}</p>}
                               </div>
                             </div>
                           </td>
 
                           {/* Resource */}
-                          <td className="px-5 py-3.5 whitespace-nowrap hidden sm:table-cell">
+                          <td className="px-5 py-3 whitespace-nowrap hidden sm:table-cell">
                             {resourceLabel ? (
-                              <span className="text-xs font-semibold text-premium-muted">
+                              <span className="text-xs text-[#1D1D1F] dark:text-[#F5F5F7] font-mono">
                                 {resourceLabel}
                               </span>
                             ) : (
-                              <span className="text-xs text-slate-300 dark:text-zinc-800">—</span>
+                              <span className="text-xs text-[#86868B]">—</span>
                             )}
                           </td>
 
                           {/* When */}
-                          <td className="px-5 py-3.5 whitespace-nowrap">
+                          <td className="px-5 py-3 whitespace-nowrap">
                             <span
-                              className="text-xs text-premium-muted font-bold"
+                              className="text-xs text-[#86868B]"
                               title={formatDateTime(event.createdAt)}
                             >
                               {relativeTime(event.createdAt)}
@@ -499,10 +503,10 @@ export default function AuditPage() {
                           </td>
 
                           {/* Details toggle */}
-                          <td className="px-5 py-3.5 whitespace-nowrap text-right">
+                          <td className="px-5 py-3 whitespace-nowrap text-right">
                             <button
                               onClick={() => toggleRow(event.id)}
-                              className="text-premium-muted hover:text-premium-main transition-colors"
+                              className="p-1 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white transition-colors"
                               title="View details"
                             >
                               {expandedRow === event.id ? <ChevronUp className="h-4 w-4 ml-auto" /> : <ChevronDown className="h-4 w-4 ml-auto" />}
@@ -512,26 +516,26 @@ export default function AuditPage() {
 
                         {/* Expanded details */}
                         {expandedRow === event.id && (
-                          <tr className="bg-slate-50/10 dark:bg-zinc-900/5">
-                            <td colSpan={5} className="px-5 py-4">
-                              <div className="text-xs text-premium-muted">
+                          <tr className="bg-[#F5F5F7]/30 dark:bg-[#2C2C2E]/20">
+                            <td colSpan={5} className="px-5 py-3 border-t border-[#E5E5EA]/60 dark:border-[#2C2C2E]/60">
+                              <div className="text-xs text-[#636366] dark:text-[#AEAEB2]">
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-3">
                                   <div>
-                                    <p className="text-[10px] font-bold text-premium-muted uppercase tracking-wider mb-0.5">Event Time</p>
-                                    <p className="font-bold text-premium-main">{formatDateTime(event.createdAt)}</p>
+                                    <p className="text-[10px] font-medium text-[#86868B] uppercase tracking-wider mb-0.5">Event Timestamp</p>
+                                    <p className="font-medium text-[#1D1D1F] dark:text-white">{formatDateTime(event.createdAt)}</p>
                                   </div>
                                   <div>
-                                    <p className="text-[10px] font-bold text-premium-muted uppercase tracking-wider mb-0.5">Resource Type</p>
-                                    <p className="font-bold text-premium-main">{event.resourceType || '—'}</p>
+                                    <p className="text-[10px] font-medium text-[#86868B] uppercase tracking-wider mb-0.5">Resource Class</p>
+                                    <p className="font-medium text-[#1D1D1F] dark:text-white">{event.resourceType || '—'}</p>
                                   </div>
                                   <div>
-                                    <p className="text-[10px] font-bold text-premium-muted uppercase tracking-wider mb-0.5">Event Version</p>
-                                    <p className="font-bold text-premium-main">v{event.eventVersion}</p>
+                                    <p className="text-[10px] font-medium text-[#86868B] uppercase tracking-wider mb-0.5">Schema Version</p>
+                                    <p className="font-medium text-[#1D1D1F] dark:text-white">v{event.eventVersion}</p>
                                   </div>
                                 </div>
                                 {Boolean(event.metadata) && (
                                   <>
-                                    <p className="text-[10px] font-bold text-premium-muted uppercase tracking-wider mb-2">Details</p>
+                                    <p className="text-[10px] font-medium text-[#86868B] uppercase tracking-wider mb-1.5">Context Metadata</p>
                                     <AuditMetaDetails
                                       action={event.action}
                                       metadata={(event.metadata as Record<string, any>) ?? {}}
@@ -552,24 +556,24 @@ export default function AuditPage() {
 
           {/* Pagination */}
           {data && data.totalPages > 1 && (
-            <div className="px-5 py-3 border-t border-premium flex items-center justify-between bg-premium-surface/50">
-              <p className="text-xs text-premium-muted font-bold">
-                Page <span className="text-premium-main">{page}</span> of{' '}
-                <span className="text-premium-main">{data.totalPages}</span>
-                {' '}· <span className="text-premium-main">{data.total}</span> total events
+            <div className="px-5 py-3 border-t border-[#E5E5EA] dark:border-[#2C2C2E] flex items-center justify-between bg-[#F5F5F7]/40 dark:bg-[#2C2C2E]/20">
+              <p className="text-xs text-[#86868B]">
+                Page <span className="font-medium text-[#1D1D1F] dark:text-white">{page}</span> of{' '}
+                <span className="font-medium text-[#1D1D1F] dark:text-white">{data.totalPages}</span>
+                {' '}· <span className="font-medium text-[#1D1D1F] dark:text-white">{data.total}</span> total events
               </p>
               <div className="flex gap-2">
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="premium-button-secondary py-1 px-2.5 text-[10px]"
+                  className="px-3 py-1 rounded-lg text-xs font-medium bg-white dark:bg-[#2C2C2E] border border-[#E5E5EA] dark:border-[#38383A] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#F5F5F7] dark:hover:bg-[#38383A]/80 disabled:opacity-40 transition-colors shadow-sm"
                 >
                   Previous
                 </button>
                 <button
                   onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))}
                   disabled={page === data.totalPages}
-                  className="premium-button-secondary py-1 px-2.5 text-[10px]"
+                  className="px-3 py-1 rounded-lg text-xs font-medium bg-white dark:bg-[#2C2C2E] border border-[#E5E5EA] dark:border-[#38383A] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#F5F5F7] dark:hover:bg-[#38383A]/80 disabled:opacity-40 transition-colors shadow-sm"
                 >
                   Next
                 </button>

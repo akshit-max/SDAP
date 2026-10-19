@@ -4,13 +4,14 @@ import React, { useState } from 'react';
 import { apiClient } from '../../lib/api/client';
 import { ForgotPasswordSchema } from '@repo/types';
 import Link from 'next/link';
-import { Mail, ArrowLeft, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
+import { Mail, ArrowLeft, CheckCircle2, Loader2, AlertCircle, ArrowRight } from 'lucide-react';
 
 /**
  * Forgot Password Page
  *
- * Sends a password reset email. Always shows success to prevent
- * email enumeration — consistent with backend behavior.
+ * Atmospheric Apple Frosted Glass design language with
+ * high-contrast typography, zero-clipping scroll model,
+ * and authentic WithUs stacked brand mark.
  */
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -39,63 +40,104 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="h-[100dvh] overflow-y-auto flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 px-4">
-      <div className="w-full max-w-sm">
-        <div className="flex flex-col items-center mb-8">
-          <img src="/logo-dark.png" alt="WithUs Logo" className="h-20 w-auto object-contain" />
-        </div>
+    <div className="min-h-screen w-full relative flex flex-col justify-between overflow-x-hidden overflow-y-auto text-white font-sans antialiased selection:bg-white selection:text-zinc-950">
+      {/* High-Resolution Clean Twilight Horizon Wallpaper */}
+      <div
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none -z-10"
+        style={{ backgroundImage: "url('/bg-dunes.jpg')" }}
+      />
 
-        <div className="bg-slate-900/90 backdrop-blur border border-slate-800/60 rounded-2xl p-8 shadow-2xl">
+      {/* Top Navbar */}
+      <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7 flex items-center justify-between relative z-20">
+        <Link href="/" className="flex items-center hover:opacity-90 transition-opacity group">
+          <img
+            src="/withus_white_full.png"
+            alt="WithUs"
+            className="h-8 sm:h-9 w-auto object-contain select-none group-hover:scale-105 transition-transform"
+          />
+        </Link>
+
+        <div className="flex items-center gap-2 text-xs">
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-white/30 hover:border-white/70 hover:bg-white/10 text-white font-medium transition-all shadow-sm backdrop-blur-md"
+          >
+            <span>Sign In</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      </header>
+
+      {/* Main Container */}
+      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex items-center justify-center">
+        <div className="w-full max-w-[440px] rounded-[32px] p-8 sm:p-9 bg-white/[0.10] backdrop-blur-2xl border border-white/25 shadow-[0_28px_60px_-12px_rgba(0,0,0,0.45),inset_0_1px_1px_rgba(255,255,255,0.35)] text-white">
           {status === 'success' ? (
-            <div className="text-center space-y-4">
-              <div className="flex justify-center">
-                <CheckCircle className="w-12 h-12 text-emerald-400" />
+            <div className="text-center space-y-5">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center mx-auto shadow-[inset_0_1px_1px_rgba(255,255,255,0.35)]">
+                <CheckCircle2 className="w-7 h-7 text-emerald-300" />
               </div>
-              <h1 className="text-lg font-bold text-white">Check your email</h1>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                If <span className="text-slate-200 font-medium">{email}</span> is registered,
-                you'll receive a reset link shortly. It expires in 15 minutes.
-              </p>
-              <p className="text-xs text-slate-500">
-                Don't see it? Check your spam folder.
-              </p>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
+                  Check your email
+                </h1>
+                <p className="text-xs sm:text-sm text-white/80 mt-2 leading-relaxed">
+                  If <span className="text-white font-semibold">{email}</span> is registered with us, you'll receive a password reset link shortly. It expires in 15 minutes.
+                </p>
+                <p className="text-[11px] text-white/60 mt-2">
+                  Don't see it? Check your spam folder or try again.
+                </p>
+              </div>
+
               <Link
                 href="/login"
-                className="inline-flex items-center gap-1.5 mt-4 text-xs font-semibold text-slate-300 hover:text-white transition-colors"
+                className="w-full mt-4 flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-zinc-100 text-zinc-950 rounded-2xl text-xs sm:text-sm font-bold shadow-[0_12px_28px_-6px_rgba(0,0,0,0.35)] transition-all active:scale-[0.99]"
               >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                Back to sign in
+                <ArrowLeft className="w-4 h-4" />
+                <span>Return to Sign In</span>
               </Link>
             </div>
           ) : (
             <>
-              <div className="mb-6">
-                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-slate-800 mb-4 mx-auto">
-                  <Mail className="w-5 h-5 text-slate-300" />
+              {/* Card Header with Logo */}
+              <div className="text-center mb-6">
+                <div className="flex justify-center mb-3">
+                  <img
+                    src="/withus_white_full.png"
+                    alt="WithUs"
+                    className="h-7 sm:h-8 w-auto object-contain select-none"
+                  />
                 </div>
-                <h1 className="text-lg font-bold text-white text-center">Forgot password?</h1>
-                <p className="text-sm text-slate-400 text-center mt-1">
-                  Enter your email and we'll send a reset link.
+                <h1 className="text-2xl sm:text-[26px] font-bold tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
+                  Forgot password?
+                </h1>
+                <p className="text-xs sm:text-sm text-white/80 mt-1 font-normal">
+                  Enter your email and we'll send a recovery link.
                 </p>
               </div>
 
+              {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  <label htmlFor="forgot-email" className="block text-[11px] font-bold uppercase tracking-wider text-white/90 mb-1.5">
                     Email address
                   </label>
-                  <input
-                    id="forgot-email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={(e) => { setEmail(e.target.value); setError(''); }}
-                    className="w-full px-3 py-2.5 text-sm bg-slate-800/60 border border-slate-700/60 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all"
-                    placeholder="you@company.com"
-                  />
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-white/60">
+                      <Mail className="w-4 h-4" />
+                    </div>
+                    <input
+                      id="forgot-email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={email}
+                      onChange={(e) => { setEmail(e.target.value); setError(''); }}
+                      className="w-full h-11 pl-10 pr-4 text-sm bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-white placeholder-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]"
+                      placeholder="you@company.com"
+                    />
+                  </div>
                   {error && (
-                    <p className="mt-1.5 flex items-center gap-1 text-xs text-red-400">
+                    <p className="mt-1.5 flex items-center gap-1 text-xs text-rose-300">
                       <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                       {error}
                     </p>
@@ -106,26 +148,48 @@ export default function ForgotPasswordPage() {
                   id="forgot-submit"
                   type="submit"
                   disabled={status === 'loading'}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-white hover:bg-slate-100 text-slate-900 rounded-lg text-sm font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full h-12 flex items-center justify-center gap-2 px-4 bg-white hover:bg-white/95 text-zinc-950 rounded-full text-xs font-bold uppercase tracking-wider shadow-[0_4px_20px_rgba(255,255,255,0.2)] hover:shadow-[0_6px_25px_rgba(255,255,255,0.35)] transition-all disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99] mt-2"
                 >
-                  {status === 'loading' && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {status === 'loading' ? 'Sending…' : 'Send reset link'}
+                  {status === 'loading' ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-zinc-950" />
+                      <span>Sending link…</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Send reset link</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
                 </button>
               </form>
 
               <div className="mt-6 text-center">
                 <Link
                   href="/login"
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-white/80 hover:text-white transition-colors"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
-                  Back to sign in
+                  <span>Back to Sign In</span>
                 </Link>
               </div>
             </>
           )}
         </div>
-      </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 text-xs text-white/70 flex flex-col sm:flex-row items-center justify-between gap-3 relative z-20">
+        <p className="select-none font-medium text-[11px] sm:text-xs">
+          &copy; {new Date().getFullYear()} WithUs Inc. All rights reserved.
+        </p>
+        <div className="flex items-center gap-4 sm:gap-6 text-[11px] sm:text-xs font-medium">
+          <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+          <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
+          <Link href="/security" className="hover:text-white transition-colors">Security</Link>
+          <Link href="/cookie-policy" className="hover:text-white transition-colors">Cookies</Link>
+        </div>
+      </footer>
     </div>
   );
 }

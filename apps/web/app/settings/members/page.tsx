@@ -55,23 +55,23 @@ const roleIcons: Record<string, React.ReactNode> = {
 };
 
 const roleBadge: Record<string, string> = {
-  OWNER: 'bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border-amber-200/50 dark:border-amber-900/30',
-  ADMIN: 'bg-indigo-50 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-400 border-indigo-200/50 dark:border-indigo-900/30',
-  MEMBER: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700',
+  OWNER: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+  ADMIN: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20',
+  MEMBER: 'bg-zinc-100 dark:bg-white/[0.08] text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-white/10',
 };
 
 const sessionStatusBadge: Record<string, string> = {
-  ACTIVE: 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border-emerald-200/50',
-  EXPIRED: 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700',
-  REVOKED: 'bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 border-red-200/50',
-  REVOKE_FAILED: 'bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border-amber-200/50',
+  ACTIVE: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+  EXPIRED: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 border-zinc-200 dark:border-zinc-700',
+  REVOKED: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
+  REVOKE_FAILED: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20',
 };
 
 function Avatar({ name, email }: { name?: string; email?: string }) {
   const label = (name || email || '?')[0]?.toUpperCase();
   return (
-    <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center flex-shrink-0">
-      <span className="text-xs font-bold text-slate-600 dark:text-slate-300">{label}</span>
+    <div className="w-8 h-8 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center flex-shrink-0 font-bold text-xs shadow-sm">
+      <span>{label}</span>
     </div>
   );
 }
@@ -221,12 +221,19 @@ export default function MembersPage() {
 
   return (
     <DashboardShell>
-      <div className="max-w-3xl mx-auto space-y-6">
-        <div className="pb-2 border-b border-premium">
-          <h1 className="text-lg font-bold tracking-tight text-premium-main">Team Members</h1>
-          <p className="text-xs text-premium-muted mt-0.5">
-            Manage who has access to <span className="font-semibold">{organization?.name}</span>.
-          </p>
+      <div className="max-w-4xl mx-auto space-y-6 pb-12">
+        <div className="pb-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <div className="text-[11px] font-semibold text-[#86868B] dark:text-[#8E8E93] uppercase tracking-wider mb-0.5">
+              ORGANIZATION
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#1D1D1F] dark:text-[#F5F5F7]">
+              Team Members
+            </h1>
+            <p className="text-xs sm:text-sm text-[#86868B] dark:text-[#8E8E93] mt-0.5 font-normal">
+              Manage member roles, invitations, and access delegation for <span className="font-medium text-[#1D1D1F] dark:text-[#F5F5F7]">{organization?.name}</span>.
+            </p>
+          </div>
         </div>
 
         {/* ── Downgrade cleanup banner — only visible to OWNER when over limit ── */}
@@ -243,37 +250,43 @@ export default function MembersPage() {
 
         {/* ── Invite Form ──────────────────────────────────────────────── */}
         {canInvite && (
-          <div className="premium-card p-5 shadow-none">
-            <h2 className="text-[10px] font-bold text-premium-main uppercase tracking-wider mb-4 flex items-center gap-2">
-              <UserPlus className="w-4 h-4 text-premium-muted" />
-              Invite a Member
+          <div className="rounded-xl bg-white dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#2C2C2E] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+            <h2 className="text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] mb-3 flex items-center gap-2">
+              <UserPlus className="w-4 h-4 text-[#0071E3]" />
+              Invite a Team Member
             </h2>
             <form onSubmit={handleInvite} className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1 relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-premium-muted" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#86868B]" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onPaste={(e) => {
+                    const pasted = e.clipboardData.getData('text');
+                    if (pasted) {
+                      setEmail(pasted.trim());
+                    }
+                  }}
                   placeholder="colleague@company.com"
-                  className="w-full pl-9 pr-4 py-2 premium-input text-xs"
+                  className="w-full pl-9 pr-4 py-2 rounded-lg border border-[#E5E5EA] dark:border-[#38383A] bg-[#F5F5F7] dark:bg-[#2C2C2E]/60 text-xs text-[#1D1D1F] dark:text-[#F5F5F7] placeholder:text-[#86868B] focus:outline-none focus:ring-1 focus:ring-[#0071E3] transition-all"
                 />
               </div>
               <button
                 type="submit"
                 disabled={isInviting || !email.trim()}
-                className="premium-button-primary"
+                className="px-4 py-2 rounded-lg bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 flex-shrink-0"
               >
                 {isInviting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Send Invite'}
               </button>
             </form>
 
             {inviteToken && (
-              <div className="mt-4 p-4 bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 relative transition-all animate-in fade-in slide-in-from-top-2">
+              <div className="mt-5 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 relative transition-all">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                  <p className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
                     Share Invite Link
                   </p>
                   <button
@@ -284,13 +297,13 @@ export default function MembersPage() {
                     <X className="w-4 h-4" />
                   </button>
                 </div>
-                <div className="flex items-center gap-2 bg-white/60 dark:bg-zinc-950/80 p-2 border border-amber-500/20">
+                <div className="flex items-center gap-2 bg-white/80 dark:bg-black/40 p-2.5 rounded-xl border border-amber-500/20">
                   <p className="text-xs font-mono text-amber-900 dark:text-amber-200 break-all flex-1 select-all">
                     {typeof window !== 'undefined' ? window.location.origin : ''}/invite/{inviteToken}
                   </p>
                   <button
                     onClick={() => handleCopyInvite('new', inviteToken)}
-                    className="flex-shrink-0 px-3 py-1.5 text-xs font-bold uppercase tracking-wider bg-amber-500 hover:bg-amber-600 text-zinc-950 transition-colors flex items-center gap-1.5 shadow-sm"
+                    className="flex-shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-600 text-zinc-950 transition-colors flex items-center gap-1.5 shadow-sm"
                   >
                     {copiedInviteId === 'new' ? (
                       <>
@@ -310,49 +323,49 @@ export default function MembersPage() {
 
         {/* ── Pending Invitations ──────────────────────────────────────── */}
         {canInvite && pendingInvitations.length > 0 && (
-          <div className="premium-card overflow-hidden shadow-none">
-            <div className="px-5 py-3 border-b border-premium bg-slate-50/20 dark:bg-zinc-900/10 flex items-center justify-between">
-              <h2 className="text-[10px] font-bold text-premium-main uppercase tracking-wider flex items-center gap-2">
+          <div className="rounded-[28px] bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl border border-zinc-200/80 dark:border-white/10 overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.02)] dark:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]">
+            <div className="px-6 py-4 border-b border-zinc-100 dark:border-white/10 bg-zinc-50/50 dark:bg-white/[0.02] flex items-center justify-between">
+              <h2 className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest flex items-center gap-2">
                 <Clock className="w-4 h-4 text-amber-500" />
                 Pending Invitations
               </h2>
-              <span className="text-[10px] text-amber-550 font-bold uppercase tracking-wider">
+              <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold uppercase tracking-wider bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
                 {pendingInvitations.length} awaiting response
               </span>
             </div>
-            <ul className="divide-y divide-premium">
+            <ul className="divide-y divide-zinc-100 dark:divide-white/5">
               {pendingInvitations.map((inv: { id: string; email: string; createdAt: string; expiresAt: string }) => {
                 const isExpired = new Date() > new Date(inv.expiresAt);
                 const daysLeft = Math.ceil((new Date(inv.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
                 return (
                 <li
                   key={inv.id}
-                  className="px-5 py-3.5 flex items-center justify-between hover:bg-slate-50/30 dark:hover:bg-zinc-900/10 transition-colors border-b border-premium/65 last:border-b-0 bg-premium-surface"
+                  className="px-6 py-4 flex items-center justify-between hover:bg-zinc-50/60 dark:hover:bg-white/[0.02] transition-colors"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isExpired ? 'bg-red-100 dark:bg-red-950/20' : 'bg-amber-100 dark:bg-amber-950/20'}`}>
-                      <Mail className={`w-3.5 h-3.5 ${isExpired ? 'text-red-500' : 'text-amber-500'}`} />
+                  <div className="flex items-center gap-3.5">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${isExpired ? 'bg-red-500/10 text-red-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                      <Mail className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-premium-main">
+                      <p className="text-xs font-bold text-zinc-900 dark:text-white">
                         {inv.email}
                       </p>
-                      <p className="text-[10px] text-premium-muted font-semibold">
+                      <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium mt-0.5">
                         Invited {formatDate(inv.createdAt)}
-                        <span className="mx-1.5">•</span>
+                        <span className="mx-1.5">&bull;</span>
                         {isExpired ? (
                           <span className="text-red-500 font-bold">Expired</span>
                         ) : (
-                          <span className="text-amber-600 dark:text-amber-500 font-bold">Expires in {daysLeft} days</span>
+                          <span className="text-amber-600 dark:text-amber-400 font-bold">Expires in {daysLeft} days</span>
                         )}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => handleCopyInvite(inv.id, undefined, inv.email)}
                       title="Copy invite link"
-                      className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded transition-colors"
+                      className="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
                     >
                       {copiedInviteId === inv.id ? (
                         <Check className="w-4 h-4 text-emerald-500" />
@@ -363,7 +376,7 @@ export default function MembersPage() {
                     <button
                       onClick={() => handleResendInvite(inv.email)}
                       title="Resend invitation"
-                      className="p-1.5 text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 rounded transition-colors"
+                      className="p-2 text-zinc-400 hover:text-sky-500 dark:hover:text-sky-400 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
                     >
                       <Mail className="w-4 h-4" />
                     </button>
@@ -371,7 +384,7 @@ export default function MembersPage() {
                       onClick={() => handleCancelInvitation(inv.id)}
                       disabled={isCancelling}
                       title="Cancel invitation"
-                      className="p-1.5 text-slate-400 hover:text-red-500 dark:hover:text-red-400 rounded transition-colors disabled:opacity-50"
+                      className="p-2 text-zinc-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors disabled:opacity-50"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -383,71 +396,73 @@ export default function MembersPage() {
         )}
 
         {/* ── Current Members ──────────────────────────────────────────── */}
-        <div className="premium-card shadow-none">
-          <div className="px-5 py-3 border-b border-premium bg-slate-50/20 dark:bg-zinc-900/10 flex items-center justify-between">
-            <h2 className="text-[10px] font-bold text-premium-main uppercase tracking-wider flex items-center gap-2">
-              <Users className="w-4 h-4 text-premium-muted" />
+        <div className="rounded-xl bg-white dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#2C2C2E] shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+          <div className="px-6 py-3.5 border-b border-[#E5E5EA] dark:border-[#2C2C2E] bg-[#F5F5F7]/60 dark:bg-[#2C2C2E]/40 rounded-t-xl flex items-center justify-between">
+            <h2 className="text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] flex items-center gap-2">
+              <Users className="w-4 h-4 text-[#0071E3]" />
               Current Members
             </h2>
-            <span className="text-[10px] text-premium-muted font-bold uppercase tracking-wider">
+            <span className="text-[11px] text-[#86868B] dark:text-[#8E8E93] font-medium bg-[#F5F5F7] dark:bg-[#2C2C2E] px-2 py-0.5 rounded border border-[#E5E5EA] dark:border-[#38383A]">
               {members.length} member{members.length !== 1 ? 's' : ''}
             </span>
           </div>
 
-          <div className="px-5 py-3 border-b border-premium bg-premium-surface">
+          <div className="px-6 py-3 border-b border-[#E5E5EA] dark:border-[#2C2C2E] bg-white dark:bg-[#1C1C1E]">
             <div className="relative">
-              <Search className="w-4 h-4 text-premium-muted absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-[#86868B] absolute left-3 top-1/2 -translate-y-1/2" />
               <input 
                 type="text" 
                 placeholder="Search team members by name or email..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-zinc-600 transition-shadow text-premium-main placeholder:text-premium-muted"
+                className="w-full pl-8 pr-4 py-1.5 text-xs rounded-lg bg-[#F5F5F7] dark:bg-[#2C2C2E]/60 border border-[#E5E5EA] dark:border-[#38383A] focus:outline-none focus:ring-1 focus:ring-[#0071E3] transition-all text-[#1D1D1F] dark:text-[#F5F5F7] placeholder:text-[#86868B]"
               />
             </div>
           </div>
 
           {isLoading ? (
-            <div className="p-6 bg-premium-surface">
+            <div className="p-8">
               <Loading message="Loading members…" />
             </div>
           ) : filteredMembers.length === 0 ? (
-            <div className="p-8 text-center text-premium-muted text-sm bg-premium-surface">
+            <div className="p-12 text-center text-zinc-400 text-xs font-medium">
               No members match your search.
             </div>
           ) : (
-            <ul className="divide-y divide-premium">
-              {filteredMembers.map((member: any) => {
+            <ul className="divide-y divide-zinc-100 dark:divide-white/5">
+              {filteredMembers.map((member: any, index: number) => {
                 const isOwner = member.role === 'OWNER';
                 const isSelf = member.userId === currentUserId;
                 const canEdit = canRemove && !isOwner && !isSelf;
+                const isLast = index === filteredMembers.length - 1;
+                const isNearBottom = index >= filteredMembers.length - 2;
                 return (
-                  <li key={member.id} className={`border-b border-premium/65 last:border-b-0 bg-premium-surface ${openMenuId === member.id ? 'relative z-20' : ''}`}>
+                  <li key={member.id} className={`transition-colors ${isLast ? 'rounded-b-xl' : ''} ${openMenuId === member.id ? 'relative z-20' : ''}`}>
                     {/* ── Member Row ── */}
                     <div
-                      className="px-5 py-3.5 flex items-center justify-between transition-colors hover:bg-slate-50/50 dark:hover:bg-zinc-900/10"
+                      className={`px-6 py-4 flex items-center justify-between hover:bg-zinc-50/60 dark:hover:bg-white/[0.02] ${isLast ? 'rounded-b-xl' : ''}`}
                     >
                       {/* Left: Avatar + Info */}
-                      <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex items-center gap-3.5 min-w-0">
                         <Avatar name={member.user?.fullName} email={member.user?.email} />
                         <div className="min-w-0">
-                          <p className="text-xs font-bold text-premium-main truncate">
+                          <p className="text-xs font-bold text-zinc-900 dark:text-white truncate">
                             {member.user?.fullName || '—'}
                             {isSelf && (
-                              <span className="ml-1.5 text-[10px] font-bold text-premium-muted">(you)</span>
+                              <span className="ml-1.5 text-[10px] font-semibold text-zinc-400 dark:text-zinc-500">(you)</span>
                             )}
                           </p>
-                          <p className="text-[10px] text-premium-muted font-semibold truncate">
+                          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium truncate mt-0.5">
                             {member.user?.email}
                           </p>
                         </div>
                       </div>
 
                       {/* Right: Role + Expand chevron + Actions */}
-                      <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                      <div className="flex items-center gap-3 flex-shrink-0 ml-3">
                         {/* Role badge */}
                         <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
                             roleBadge[member.role] || roleBadge['MEMBER']
                           }`}
                         >
@@ -462,9 +477,9 @@ export default function MembersPage() {
                               e.stopPropagation();
                               router.push('/settings/members/' + member.userId);
                             }}
-                            className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-white/15 rounded-full hover:bg-zinc-100 dark:hover:bg-white/[0.08] hover:text-zinc-950 dark:hover:text-white transition-all shadow-sm"
                           >
-                            View Access
+                            <span>View Access</span>
                             <ArrowRight className="w-3 h-3" />
                           </button>
                         )}
@@ -475,7 +490,7 @@ export default function MembersPage() {
                             <div className="relative" onClick={(e) => e.stopPropagation()}>
                               <button
                                 onClick={() => setOpenMenuId(openMenuId === member.id ? null : member.id)}
-                                className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded transition-colors"
+                                className="p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
                               >
                                 <MoreVertical className="w-4 h-4" />
                               </button>
@@ -486,7 +501,7 @@ export default function MembersPage() {
                                      className="fixed inset-0 z-40"
                                      onClick={() => setOpenMenuId(null)}
                                    />
-                                   <div className="absolute right-0 mt-1 w-52 bg-premium-surface border border-premium rounded-lg shadow-xl overflow-hidden z-50 py-1.5">
+                                   <div className={`absolute right-0 ${isNearBottom ? 'bottom-full mb-1.5' : 'mt-2'} w-52 rounded-xl bg-white dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#2C2C2E] shadow-[0_12px_32px_rgba(0,0,0,0.12)] z-50 py-1.5`}>
                                      {/* Promote / Demote — OWNER only */}
                                      {canChangeRole && member.role === 'MEMBER' && (
                                        <button
@@ -494,7 +509,7 @@ export default function MembersPage() {
                                            handleChangeRole(member.id, 'ADMIN');
                                            setOpenMenuId(null);
                                          }}
-                                         className="w-full text-left px-3.5 py-2 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 flex items-center gap-2.5 whitespace-nowrap transition-colors"
+                                         className="w-full text-left px-4 py-2.5 text-xs font-semibold text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/30 flex items-center gap-2.5 transition-colors"
                                        >
                                          <Shield className="w-4 h-4 flex-shrink-0" />
                                          <span>Promote to Admin</span>
@@ -506,14 +521,14 @@ export default function MembersPage() {
                                            handleChangeRole(member.id, 'MEMBER');
                                            setOpenMenuId(null);
                                          }}
-                                         className="w-full text-left px-3.5 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2.5 whitespace-nowrap transition-colors"
+                                         className="w-full text-left px-4 py-2.5 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.06] flex items-center gap-2.5 transition-colors"
                                        >
                                          <ShieldOff className="w-4 h-4 flex-shrink-0" />
                                          <span>Demote to Member</span>
                                        </button>
                                      )}
                                      {canChangeRole && (
-                                       <div className="border-t border-premium my-1" />
+                                       <div className="border-t border-zinc-100 dark:border-white/10 my-1" />
                                      )}
                                      {canRemove && (
                                        <button
@@ -522,7 +537,7 @@ export default function MembersPage() {
                                            setOpenMenuId(null);
                                          }}
                                          disabled={isOffboarding}
-                                         className="w-full text-left px-3.5 py-2 text-xs font-medium text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/30 disabled:opacity-50 flex items-center gap-2.5 whitespace-nowrap transition-colors"
+                                         className="w-full text-left px-4 py-2.5 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 disabled:opacity-50 flex items-center gap-2.5 transition-colors"
                                        >
                                          <UserX className="w-4 h-4 flex-shrink-0" />
                                          <span>Offboard Employee</span>
@@ -530,14 +545,14 @@ export default function MembersPage() {
                                      )}
                                      {canRemove && (
                                        <>
-                                         <div className="border-t border-premium my-1" />
+                                         <div className="border-t border-zinc-100 dark:border-white/10 my-1" />
                                          <button
                                            onClick={() => {
                                              handleRemoveMember(member.id, member.user?.email);
                                              setOpenMenuId(null);
                                            }}
                                            disabled={isRemoving}
-                                           className="w-full text-left px-3.5 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-50 flex items-center gap-2.5 whitespace-nowrap transition-colors"
+                                           className="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-50 flex items-center gap-2.5 transition-colors"
                                          >
                                            <Trash2 className="w-4 h-4 flex-shrink-0" />
                                            <span>Remove Member</span>

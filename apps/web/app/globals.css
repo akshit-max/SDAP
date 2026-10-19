@@ -1,40 +1,62 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: #f5f5f7; /* Soft grey background for all page canvases */
+  --background: #fafafa; /* Crisp pearl canvas */
   --foreground: #09090b; /* Deep zinc-950 for text readability */
 }
 
 .dark {
-  --background: #09090b;
+  --background: #09090b; /* Deep obsidian canvas */
   --foreground: #f4f4f5;
 }
 
 html,
 body {
-  margin: 0 !important;
-  padding: 0 !important;
-  height: 100dvh !important;
-  overflow: hidden !important;
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
   max-width: 100vw;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: 'Plus Jakarta Sans', var(--font-inter), var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  letter-spacing: -0.015em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .font-number,
 .font-premium,
 .font-sans {
-  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-family: 'Plus Jakarta Sans', var(--font-inter), var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif !important;
+}
+
+/* Apple-grade frosted glass autofill */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  transition: background-color 5000000s ease-in-out 0s, color 5000000s ease-in-out 0s;
+  -webkit-text-fill-color: #1D1D1F !important;
+  caret-color: #0071E3 !important;
+}
+
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark input:-webkit-autofill:active {
+  -webkit-text-fill-color: #F5F5F7 !important;
+  caret-color: #0071E3 !important;
 }
 
 .font-mono {
-  font-family: var(--font-space-mono), monospace !important;
+  font-family: var(--font-geist-mono), var(--font-space-mono), monospace !important;
 }
 
 a {
@@ -58,24 +80,26 @@ a {
   to   { width: 0%; }
 }
 
-/* UI Refactor Utility Classes */
+/* UI Design Tokens matching WithUs Landing Page */
 
 :root {
-  --bg-primary: #f5f5f7; /* Clean, flat soft gray background */
+  --bg-primary: #fafafa; /* Clean, elevated pearl canvas */
   --bg-surface: #ffffff; /* Crisp white card surface */
-  --border-subtle: #e4e4e7; /* Defined neutral border */
+  --border-subtle: rgba(0, 0, 0, 0.08); /* Refined translucent hairline border */
+  --border-subtle-strong: rgba(0, 0, 0, 0.14);
   --text-main: #09090b; /* Deep text */
   --text-muted: #71717a; /* Muted text */
-  --primary-accent: #09090b; /* Sleek black accent */
+  --primary-accent: #09090b; /* High-contrast monochrome black */
   --primary-accent-text: #ffffff; /* White text for contrast */
-  --accent-lime: #09090b; /* Sleek black background matching logo */
-  --accent-lime-text: #ffffff; /* Crisp white text */
+  --accent-lime: #09090b; 
+  --accent-lime-text: #ffffff; 
 }
 
 .dark {
-  --bg-primary: #09090b; 
-  --bg-surface: #18181b; 
-  --border-subtle: #27272a; 
+  --bg-primary: #09090b; /* Pure deep obsidian */
+  --bg-surface: #121214; /* Sleek elevated card surface */
+  --border-subtle: rgba(255, 255, 255, 0.09); /* Translucent hairline border */
+  --border-subtle-strong: rgba(255, 255, 255, 0.16);
   --text-main: #f4f4f5; 
   --text-muted: #a1a1aa; 
   --primary-accent: #ffffff; 
@@ -101,83 +125,83 @@ a {
 }
 
 .theme-light {
-  --bg-primary: #f5f5f7;
+  --bg-primary: #fafafa;
   --bg-surface: #ffffff;
-  --border-subtle: #e4e4e7;
+  --border-subtle: rgba(0, 0, 0, 0.08);
   --text-main: #09090b;
   --text-muted: #71717a;
   --primary-accent: #09090b;
   --primary-accent-text: #ffffff;
-  background-color: #f5f5f7;
+  background-color: #fafafa;
   background-image: none;
 }
 
 .premium-card {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 0px;
-  box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.01);
-  transition: all 0.2s ease;
+  border-radius: 20px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 16px 36px -12px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .premium-input {
-  background-color: #f3f4f6;
-  border: 1px solid #e5e7eb;
+  background-color: #f4f4f5;
+  border: 1px solid var(--border-subtle);
   color: var(--text-main);
-  border-radius: 0px;
+  border-radius: 12px;
   font-size: 0.825rem;
-  padding: 0.7rem 0.85rem;
+  padding: 0.7rem 0.95rem;
   font-weight: 500;
   transition: all 0.15s ease;
 }
 .dark .premium-input {
-  background-color: #27272a;
-  border-color: #3f3f46;
+  background-color: #18181b;
+  border-color: var(--border-subtle);
 }
 .premium-input:focus {
   outline: none;
   background-color: #ffffff;
-  border-color: #09090b; /* Sharp black border on focus for modern high-contrast aesthetic */
-  box-shadow: 0 0 0 1px #09090b;
+  border-color: #09090b;
+  box-shadow: 0 0 0 2px rgba(9, 9, 11, 0.08);
 }
 .dark .premium-input:focus {
-  background-color: #18181b;
+  background-color: #121214;
   border-color: #ffffff;
-  box-shadow: 0 0 0 1px #ffffff;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12);
 }
 
 .theme-light .premium-input {
-  background-color: #f4f4f7;
-  border: 1px solid #e4e4e7;
+  background-color: #f4f4f5;
+  border: 1px solid var(--border-subtle);
 }
 .theme-light .premium-input:focus {
   background-color: #ffffff;
   border-color: #09090b;
-  box-shadow: 0 0 0 1px #09090b;
+  box-shadow: 0 0 0 2px rgba(9, 9, 11, 0.08);
 }
 
 .premium-button-primary {
   background-color: var(--primary-accent);
   color: var(--primary-accent-text);
-  font-weight: 700;
+  font-weight: 600;
   font-size: 0.825rem;
-  padding: 0.7rem 1.1rem;
-  border-radius: 0px;
+  padding: 0.65rem 1.2rem;
+  border-radius: 9999px;
   border: 1px solid transparent;
-  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 .premium-button-primary:hover {
-  background-color: #27272a; /* Smooth zinc-800 on hover */
+  background-color: #27272a;
   color: #ffffff;
   transform: translateY(-0.5px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
 }
 .dark .premium-button-primary:hover {
-  background-color: #e4e4e7;
+  background-color: #f4f4f5;
   color: #09090b;
 }
 .premium-button-primary:active {
@@ -190,15 +214,15 @@ a {
   border: 1px solid var(--border-subtle);
   font-weight: 600;
   font-size: 0.825rem;
-  padding: 0.7rem 1.1rem;
-  border-radius: 0px;
-  transition: all 0.15s ease;
+  padding: 0.65rem 1.2rem;
+  border-radius: 9999px;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 .premium-button-secondary:hover {
-  background-color: var(--bg-primary);
+  background-color: var(--border-subtle);
 }
 .premium-button-secondary:active {
   transform: scale(0.98);
@@ -210,8 +234,8 @@ a {
   border: 1px solid rgba(239, 68, 68, 0.2);
   font-weight: 600;
   font-size: 0.825rem;
-  padding: 0.7rem 1.1rem;
-  border-radius: 0px;
+  padding: 0.65rem 1.2rem;
+  border-radius: 9999px;
   transition: all 0.15s ease;
   display: inline-flex;
   align-items: center;
@@ -224,12 +248,6 @@ a {
 .dark .premium-button-danger {
   background-color: rgba(239, 68, 68, 0.15);
   border-color: rgba(239, 68, 68, 0.3);
-}
-
-/* Force all badges/pills (which don't have explicit height/width constraints) to be sharp rectangles */
-span.rounded-full:not([class*="w-"]):not([class*="h-"]),
-div.rounded-full:not([class*="w-"]):not([class*="h-"]) {
-  border-radius: 0px !important;
 }
 
 /* Ensure tailwind utility paddings override shorthand padding of premium-input */

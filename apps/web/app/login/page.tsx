@@ -2,13 +2,25 @@
 
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Shield, Loader2, Mail, Lock, Eye, EyeOff, MonitorSmartphone } from 'lucide-react';
+import {
+  Loader2,
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  Shield,
+  Clock,
+  FileText,
+  ShieldCheck,
+  ArrowRight,
+  MonitorSmartphone
+} from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '../../lib/api/client';
 import { AuthSession } from '../../lib/auth/session';
 import { useToast } from '../../components/common/Toast';
 import { useAuth } from '../../lib/auth/AuthContext';
-import { WithUsLogo } from '../../components/common/WithUsLogo';
+import { WithUsStar } from '../../components/common/WithUsLogo';
 
 function LoginForm() {
   const router = useRouter();
@@ -17,6 +29,7 @@ function LoginForm() {
   const { refreshContext } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [keepSignedIn, setKeepSignedIn] = useState(true);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -48,8 +61,6 @@ function LoginForm() {
         );
         refreshContext();
         toast('success', `Welcome back, ${response.data.user?.fullName?.split(' ')[0] || 'there'}!`);
-        // Super Admin → redirect to platform admin console
-        // Normal users → respect redirect param or go to dashboard
         if (response.data.user.isSuperAdmin) {
           router.push('/superadmin');
         } else {
@@ -67,75 +78,146 @@ function LoginForm() {
   };
 
   return (
-    <div className="h-[100dvh] overflow-y-auto lg:overflow-hidden grid grid-cols-1 lg:grid-cols-12 bg-premium-bg text-premium-main">
-      {/* Brand Side (Left) */}
-      <div className="hidden lg:flex lg:col-span-5 bg-zinc-950 text-white p-16 flex-col justify-between relative overflow-hidden border-r border-zinc-900 select-none h-full">
+    <div className="min-h-screen w-full relative flex flex-col justify-between overflow-x-hidden overflow-y-auto text-white font-sans antialiased selection:bg-white selection:text-zinc-950">
+      {/* High-Resolution Clean Twilight Horizon Wallpaper */}
+      <div
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none -z-10"
+        style={{ backgroundImage: "url('/bg-dunes.jpg')" }}
+      />
 
-        {/* Brand Header */}
-        <div className="flex items-center relative z-10 pl-2">
-          <img src="/logo-dark.png" alt="WithUs" className="h-14 w-auto object-contain" />
+      {/* Top Navbar */}
+      <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7 flex items-center justify-between relative z-20">
+        {/* Logo */}
+        <Link href="/" className="flex items-center hover:opacity-90 transition-opacity group">
+          <img
+            src="/withus_white_full.png"
+            alt="WithUs"
+            className="h-8 sm:h-9 w-auto object-contain select-none group-hover:scale-105 transition-transform"
+          />
+        </Link>
+
+        {/* Right Switcher */}
+        <div className="flex items-center gap-2 text-xs">
+          <Link
+            href={redirectParam ? `/register?redirect=${encodeURIComponent(redirectParam)}` : '/register'}
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-white/30 hover:border-white/70 hover:bg-white/10 text-white font-medium transition-all shadow-sm backdrop-blur-md"
+          >
+            <span>{redirectParam?.includes('/invite') ? 'Create Account' : 'Create Workspace'}</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
+      </header>
 
-        {/* Hero Text */}
-        <div className="relative z-10 max-w-sm my-auto space-y-4">
-          <h2 className="text-3xl font-extrabold tracking-tight text-white leading-tight">
-            Security first.<br />
-            Credentials simplified.
-          </h2>
-          <p className="text-zinc-400 text-xs leading-relaxed font-medium">
+      {/* Main Two-Sided Content Area */}
+      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center">
+        {/* Left Column: Product Showcase */}
+        <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-center space-y-6 sm:space-y-7 select-none max-w-xl mx-auto lg:mx-0 text-center lg:text-left">
+          {/* Badge: Thin line + uppercase tracking text */}
+          <div className="flex items-center gap-3 justify-center lg:justify-start">
+            <div className="w-9 h-[1.5px] bg-white/60" />
+            <span className="text-xs font-bold tracking-[0.22em] uppercase text-white/90">
+              DELEGATED ACCESS PLATFORM
+            </span>
+          </div>
+
+          {/* Main Headline with sky-300 highlight */}
+          <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold tracking-tight text-white leading-[1.08] drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)]">
+            Give access<br />
+            without giving<br />
+            away <span className="text-sky-300 drop-shadow-[0_0_24px_rgba(125,211,252,0.45)]">control.</span>
+          </h1>
+
+          {/* Subtitle */}
+          <p className="text-sm sm:text-base lg:text-[17px] text-white/90 leading-relaxed font-normal max-w-lg mx-auto lg:mx-0 drop-shadow-[0_1px_4px_rgba(0,0,0,0.3)]">
             Manage delegated access to GitHub, Vercel, Stripe, and government portals with scoped sessions, automatic OTP extraction, and zero raw credential exposure.
           </p>
-        </div>
 
-        {/* Brand Footer */}
-        <div className="relative z-10 flex items-center gap-2 text-zinc-500 text-[10px] font-bold tracking-wider uppercase">
-          <svg className="w-4 h-4 text-lime-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-          Enterprise Grade Protection
-        </div>
-      </div>
-
-      {/* Form Side (Right) */}
-      <div className="lg:col-span-7 flex flex-col justify-between h-full p-4 sm:p-8 relative overflow-y-auto">
-        <div className="h-8 hidden lg:block"></div>
-
-        <div className="flex-1 flex items-center justify-center py-6 w-full">
-          <div className="max-w-md w-full premium-card p-6 sm:p-10 bg-premium-surface">
-
-            {/* Header */}
-            <div className="text-center mb-8">
-              <div className="flex justify-center mb-4">
-                <WithUsLogo height="h-16" />
+          {/* 4 Feature Items Stacked Vertically with Subtitles */}
+          <div className="space-y-4 pt-1 max-w-md mx-auto lg:mx-0 text-left">
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-white/[0.12] border border-white/20 flex items-center justify-center flex-shrink-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)]">
+                <Lock className="w-4 h-4 text-white" />
               </div>
-              <p className="text-[10px] text-premium-muted font-bold tracking-widest uppercase">Delegated Credential Access</p>
+              <div>
+                <p className="text-sm sm:text-[15px] font-bold text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">Passwordless access</p>
+                <p className="text-xs sm:text-[13px] text-white/80 font-medium">No shared credentials</p>
+              </div>
             </div>
 
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-white/[0.12] border border-white/20 flex items-center justify-center flex-shrink-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)]">
+                <Shield className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-sm sm:text-[15px] font-bold text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">Scoped permissions</p>
+                <p className="text-xs sm:text-[13px] text-white/80 font-medium">Least privilege access</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-white/[0.12] border border-white/20 flex items-center justify-center flex-shrink-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)]">
+                <Clock className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-sm sm:text-[15px] font-bold text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">Auto expiry sessions</p>
+                <p className="text-xs sm:text-[13px] text-white/80 font-medium">Time-bound access</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-white/[0.12] border border-white/20 flex items-center justify-center flex-shrink-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)]">
+                <FileText className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-sm sm:text-[15px] font-bold text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">Immutable audit trails</p>
+                <p className="text-xs sm:text-[13px] text-white/80 font-medium">Complete session logs</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Premium Frosted Glass Card */}
+        <div className="lg:col-span-6 xl:col-span-5 flex justify-center w-full">
+          <div className="w-full max-w-[430px] rounded-[32px] p-8 sm:p-9 bg-white/[0.10] backdrop-blur-2xl border border-white/25 shadow-[0_28px_60px_-12px_rgba(0,0,0,0.45),inset_0_1px_1px_rgba(255,255,255,0.35)] text-white">
+            {/* Card Header with Logo */}
+            <div className="text-center mb-6">
+              <div className="flex justify-center mb-3">
+                <img
+                  src="/withus_white_full.png"
+                  alt="WithUs"
+                  className="h-7 sm:h-8 w-auto object-contain select-none"
+                />
+              </div>
+              <h2 className="text-2xl sm:text-[26px] font-bold tracking-tight text-white">
+                Welcome back
+              </h2>
+              <p className="text-xs sm:text-sm text-white/80 mt-1 font-normal">
+                Sign in to your workspace
+              </p>
+            </div>
+
+            {/* Invite Banner */}
             {redirectParam?.includes('/invite') && (
-              <div className="mb-6 p-4 bg-zinc-100/50 dark:bg-zinc-900/40 border border-premium rounded-xl text-center text-xs font-semibold leading-relaxed">
-                <p className="text-premium-main font-bold mb-1">First time joining WithUs?</p>
-                <p className="text-premium-muted text-[11px]">
-                  If you don't have an account, click{' '}
-                  <Link href={`/register?redirect=${encodeURIComponent(redirectParam)}`} className="text-premium-main font-bold underline hover:text-zinc-800 transition-colors">
-                    Create Account
-                  </Link>{' '}
-                  using your invited email.
-                </p>
-                <p className="text-premium-muted text-[11px] mt-0.5">
-                  Already have an account? Simply sign in below.
+              <div className="mb-5 p-3.5 bg-white/15 border border-white/25 rounded-2xl text-center text-xs leading-relaxed">
+                <p className="text-white font-semibold mb-0.5">Invited to join a workspace?</p>
+                <p className="text-white/80 text-[11px]">
+                  Sign in with your invited email, or{' '}
+                  <Link href={`/register?redirect=${encodeURIComponent(redirectParam)}`} className="text-white font-bold underline underline-offset-2">
+                    create an account
+                  </Link>.
                 </p>
               </div>
             )}
 
-            {/* ── Session Displaced Banner ─────────────────────────────────── */}
+            {/* Displaced Banner */}
             {isDisplaced && (
-              <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl text-xs leading-relaxed">
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-8 h-8 bg-amber-100 dark:bg-amber-900/50 rounded-lg flex items-center justify-center mt-0.5">
-                    <MonitorSmartphone className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                  </div>
+              <div className="mb-5 p-3.5 bg-amber-500/20 border border-amber-500/30 rounded-2xl text-xs leading-relaxed">
+                <div className="flex items-start gap-2.5">
+                  <MonitorSmartphone className="w-4 h-4 text-amber-300 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-bold text-amber-800 dark:text-amber-300 mb-0.5">New login detected</p>
-                    <p className="text-amber-700 dark:text-amber-400/80">
-                      Your WITHUS account is now active on another device. Please sign in again to continue here.
+                    <p className="font-semibold text-amber-200">Active on another device</p>
+                    <p className="text-amber-200/80 text-[11px]">
+                      Your account was opened elsewhere. Sign in again to resume.
                     </p>
                   </div>
                 </div>
@@ -143,37 +225,38 @@ function LoginForm() {
             )}
 
             {/* Form */}
-            <form onSubmit={handleLogin} className="space-y-5">
-              <div className="space-y-2">
-                <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wider">Email Address</label>
+            <form onSubmit={handleLogin} className="space-y-4">
+              {/* Email Address */}
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-white/90">
+                  EMAIL ADDRESS
+                </label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-premium-muted transition-colors" />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" />
                   <input
                     type="email"
                     required
                     autoComplete="email"
-                    className="w-full pl-10 pr-4 py-2.5 premium-input text-xs font-medium"
-                    placeholder="you@company.com"
+                    className="w-full h-11 pl-10 pr-4 bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-sm font-medium text-white placeholder:text-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]"
+                    placeholder="name@company.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="block text-[10px] font-bold text-premium-muted uppercase tracking-wider">Password</label>
-                  {/* <Link href="/forgot-password" className="text-[11px] text-premium-muted hover:text-premium-main transition-colors font-medium">
-                    Forgot password?
-                  </Link> */}
-                </div>
+              {/* Password */}
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-white/90">
+                  PASSWORD
+                </label>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-premium-muted transition-colors" />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" />
                   <input
                     type={showPassword ? "text" : "password"}
                     required
                     autoComplete="current-password"
-                    className="w-full pl-10 pr-10 py-2.5 premium-input text-xs font-medium"
+                    className="w-full h-11 pl-10 pr-10 bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-sm font-medium text-white placeholder:text-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]"
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -181,51 +264,123 @@ function LoginForm() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-premium-muted hover:text-premium-main focus:outline-none transition-colors"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
 
+              {/* Keep me signed in & Forgot Password */}
+              <div className="flex items-center justify-between text-xs pt-0.5">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={keepSignedIn}
+                    onChange={(e) => setKeepSignedIn(e.target.checked)}
+                    className="w-4 h-4 rounded bg-white/10 border-white/30 text-zinc-950 focus:ring-0 cursor-pointer"
+                  />
+                  <span className="text-white/90 font-medium">Keep me signed in</span>
+                </label>
 
+                <Link
+                  href="/forgot-password"
+                  className="text-white/90 hover:text-white transition-colors font-medium hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+
+              {/* Submit CTA Button */}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full premium-button-primary py-2.5 text-xs shadow-md font-bold mt-2"
+                className="w-full h-12 mt-2 bg-white hover:bg-white/95 active:scale-[0.99] text-zinc-950 font-bold text-xs uppercase tracking-wider rounded-full shadow-[0_4px_20px_rgba(255,255,255,0.2)] hover:shadow-[0_6px_25px_rgba(255,255,255,0.35)] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
-                  <><Loader2 className="w-4 h-4 animate-spin mr-1.5" /> Authenticating...</>
+                  <><Loader2 className="w-4 h-4 animate-spin text-zinc-950" /> Signing in...</>
                 ) : (
-                  'Sign In'
+                  <>Sign In <ArrowRight className="w-4 h-4" /></>
                 )}
               </button>
 
-              <div className="text-center text-xs text-premium-muted pt-4 border-t border-premium mt-4">
-                Don't have an account?{' '}
-                <Link href={redirectParam ? `/register?redirect=${encodeURIComponent(redirectParam)}` : '/register'} className="text-premium-main font-bold hover:underline hover:text-zinc-800 transition-colors">
-                  {redirectParam?.includes('/invite') ? 'Create Account' : 'Create Workspace'}
-                </Link>
+              {/* Divider: OR CONTINUE WITH */}
+              <div className="relative my-4 text-center">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/20" />
+                </div>
+                <span className="relative px-3 bg-transparent text-[10px] font-bold tracking-[0.15em] text-white/60 uppercase">
+                  OR CONTINUE WITH
+                </span>
+              </div>
+
+              {/* Social / SSO Buttons */}
+              <div className="grid grid-cols-3 gap-3">
+                {/* Google */}
+                <button
+                  type="button"
+                  className="h-11 rounded-full bg-white/[0.08] hover:bg-white/[0.16] border border-white/20 flex items-center justify-center transition-all shadow-sm active:scale-[0.98]"
+                  title="Sign in with Google"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24">
+                    <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z" />
+                    <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z" />
+                    <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15.2s.7 5.5 1.9 7.9l3.7-2.9z" />
+                    <path fill="#34A853" d="M12 23.5c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16.5C3.7 20.3 7.5 23.5 12 23.5z" />
+                  </svg>
+                </button>
+
+                {/* GitHub */}
+                <button
+                  type="button"
+                  className="h-11 rounded-full bg-white/[0.08] hover:bg-white/[0.16] border border-white/20 flex items-center justify-center transition-all shadow-sm active:scale-[0.98]"
+                  title="Sign in with GitHub"
+                >
+                  <svg className="w-4 h-4 text-white fill-current" viewBox="0 0 24 24">
+                    <path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.1-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z" />
+                  </svg>
+                </button>
+
+                {/* Microsoft */}
+                <button
+                  type="button"
+                  className="h-11 rounded-full bg-white/[0.08] hover:bg-white/[0.16] border border-white/20 flex items-center justify-center transition-all shadow-sm active:scale-[0.98]"
+                  title="Sign in with Microsoft"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 21 21">
+                    <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+                    <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+                    <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+                    <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+                  </svg>
+                </button>
               </div>
             </form>
+
+            {/* Bottom Card Switcher */}
+            <div className="text-center text-xs text-white/85 mt-6 pt-1 font-medium">
+              Don't have an account?{' '}
+              <Link
+                href={redirectParam ? `/register?redirect=${encodeURIComponent(redirectParam)}` : '/register'}
+                className="text-white font-bold underline-offset-4 hover:underline transition-colors"
+              >
+                Create Workspace
+              </Link>
+            </div>
           </div>
         </div>
+      </main>
 
-        <div className="text-center text-[11px] text-premium-muted font-medium max-w-md mx-auto w-full pt-4 pb-2">
-          <div className="flex flex-wrap justify-center items-center gap-x-2 gap-y-1.5">
-            <Link href="/privacy" className="hover:text-premium-main transition-colors hover:underline">Privacy Policy</Link>
-            <span className="text-zinc-300 dark:text-zinc-700 select-none hidden sm:inline">&bull;</span>
-            <Link href="/terms" className="hover:text-premium-main transition-colors hover:underline">Terms & Conditions</Link>
-            <span className="text-zinc-300 dark:text-zinc-700 select-none hidden sm:inline">&bull;</span>
-            <Link href="/security" className="hover:text-premium-main transition-colors hover:underline">Security & Data Protection</Link>
-            <span className="text-zinc-300 dark:text-zinc-700 select-none hidden sm:inline">&bull;</span>
-            <Link href="/cookie-policy" className="hover:text-premium-main transition-colors hover:underline">Cookie Policy</Link>
-            <span className="text-zinc-300 dark:text-zinc-700 select-none hidden sm:inline">&bull;</span>
-            <Link href="/refund-policy" className="hover:text-premium-main transition-colors hover:underline">Refund & Cancellation Policy</Link>
-          </div>
+      {/* Footer */}
+      <footer className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 relative z-20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/75">
+        <div>&copy; {new Date().getFullYear()} WithUs Inc. All rights reserved.</div>
+        <div className="flex items-center gap-6">
+          <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+          <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
+          <Link href="/security" className="hover:text-white transition-colors">Security</Link>
+          <Link href="/cookie-policy" className="hover:text-white transition-colors">Cookies</Link>
         </div>
-
-      </div>
+      </footer>
     </div>
   );
 }

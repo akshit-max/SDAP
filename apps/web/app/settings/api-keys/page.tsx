@@ -129,30 +129,30 @@ function CreateKeyForm({ onSubmit, isPending }: { onSubmit: (name: string, expir
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 p-4 mb-6">
-      <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-3">Create New API Key</p>
+    <form onSubmit={handleSubmit} className="rounded-[28px] bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl border border-zinc-200/80 dark:border-white/10 p-6 mb-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)] dark:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]">
+      <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-4">Create New API Key</p>
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Key name (e.g. CI Pipeline, Vercel Deploy)"
-          className="flex-1 min-w-48 text-xs px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
+          className="flex-1 min-w-48 text-xs px-4 py-2.5 rounded-full border border-zinc-200 dark:border-white/10 bg-white/80 dark:bg-white/[0.04] text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 shadow-sm"
           required
         />
         <div className="flex items-center gap-2">
-          <label className="text-xs text-slate-500 whitespace-nowrap">Expires</label>
+          <label className="text-xs text-zinc-500 dark:text-zinc-400 font-semibold whitespace-nowrap">Expires</label>
           <input
             type="date"
             value={expiresAt}
             onChange={(e) => setExpiresAt(e.target.value)}
             min={new Date().toISOString().split('T')[0]}
-            className="text-xs px-2 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none"
+            className="text-xs px-3 py-2 rounded-full border border-zinc-200 dark:border-white/10 bg-white/80 dark:bg-white/[0.04] text-zinc-900 dark:text-white focus:outline-none"
           />
         </div>
         <button
           type="submit"
           disabled={isPending || !name.trim()}
-          className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-slate-900 dark:bg-slate-100 dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap"
+          className="inline-flex items-center justify-center gap-1.5 px-6 py-2.5 text-xs font-bold text-white dark:text-zinc-950 bg-zinc-950 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-100 rounded-full transition-all shadow-sm active:scale-[0.99] disabled:opacity-50 whitespace-nowrap"
         >
           <Plus className="w-3.5 h-3.5" />
           {isPending ? 'Creating…' : 'Create Key'}
@@ -176,27 +176,27 @@ function KeyRow({
   const isExpired = apiKey.expiresAt && new Date(apiKey.expiresAt) < new Date();
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-3 border-b border-slate-100 dark:border-slate-800 last:border-0">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-4 border-b border-zinc-100 dark:border-white/5 last:border-0">
       <div className="flex items-center gap-3 min-w-0">
-        <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
-          <Key className="w-3.5 h-3.5 text-slate-500" />
+        <div className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-white/[0.06] text-sky-500 flex items-center justify-center flex-shrink-0">
+          <Key className="w-3.5 h-3.5" />
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">{apiKey.name}</p>
-          <code className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">{apiKey.keyPrefix}…</code>
+          <p className="text-xs font-bold text-zinc-900 dark:text-white truncate">{apiKey.name}</p>
+          <code className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">{apiKey.keyPrefix}…</code>
         </div>
       </div>
 
       <div className="flex items-center justify-between sm:justify-end gap-4 flex-wrap">
         {/* Last used */}
-        <div className="hidden sm:flex items-center gap-1 text-[10px] text-slate-400">
-          <Clock className="w-3 h-3" />
+        <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-zinc-400 font-medium">
+          <Clock className="w-3.5 h-3.5" />
           {apiKey.lastUsedAt ? `Used ${formatDate(apiKey.lastUsedAt)}` : 'Never used'}
         </div>
 
         {/* Expiry */}
         {apiKey.expiresAt && (
-          <span className={`text-[10px] font-medium ${isExpired ? 'text-red-500' : 'text-slate-400'}`}>
+          <span className={`text-[11px] font-semibold ${isExpired ? 'text-rose-500' : 'text-zinc-400'}`}>
             {isExpired ? 'Expired' : `Expires ${formatDate(apiKey.expiresAt)}`}
           </span>
         )}
@@ -205,14 +205,14 @@ function KeyRow({
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => onRotate(apiKey.id, apiKey.name)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors"
+            className="p-2 rounded-lg text-zinc-400 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-white/[0.06] transition-colors"
             title="Rotate key"
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => onRevoke(apiKey.id, apiKey.name)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+            className="p-2 rounded-lg text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-white/[0.06] transition-colors"
             title="Revoke key"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -273,12 +273,18 @@ export default function ApiKeysPage() {
 
   return (
     <DashboardShell>
-      <div className="max-w-3xl mx-auto space-y-4">
+      <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-base font-bold text-slate-900 dark:text-slate-100">API Keys</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Issue keys for CI/CD pipelines and integrations. Keys are stored as hashes — only the prefix is shown after creation.
+        <div className="pb-4 border-b border-zinc-200/80 dark:border-white/10">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="w-5 h-[1.5px] bg-sky-500" />
+            <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
+              DEVELOPER SETTINGS
+            </span>
+          </div>
+          <h1 className="text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-white">API Keys</h1>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+            Issue keys for CI/CD pipelines and external integrations. Keys are stored as hashes — only the prefix is visible after creation.
           </p>
         </div>
 
@@ -291,13 +297,13 @@ export default function ApiKeysPage() {
         <CreateKeyForm onSubmit={(name, exp) => createKey({ name, expiresAt: exp })} isPending={isCreating} />
 
         {/* Keys list */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 px-4">
+        <div className="rounded-[28px] bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl border border-zinc-200/80 dark:border-white/10 px-6 py-2 shadow-[0_4px_24px_rgba(0,0,0,0.02)] dark:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]">
           {isLoading ? (
-            <div className="py-8 text-center text-xs text-slate-400">Loading…</div>
+            <div className="py-12 text-center text-xs text-zinc-400">Loading…</div>
           ) : keys.length === 0 ? (
-            <div className="py-8 text-center">
-              <Key className="w-6 h-6 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-              <p className="text-xs text-slate-400">No API keys yet. Create one above.</p>
+            <div className="py-12 text-center">
+              <Key className="w-6 h-6 text-zinc-300 dark:text-zinc-600 mx-auto mb-2" />
+              <p className="text-xs text-zinc-400 font-medium">No API keys yet. Create one above.</p>
             </div>
           ) : (
             keys.map((k) => (

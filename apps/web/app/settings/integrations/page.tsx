@@ -80,19 +80,22 @@ const PROVIDERS: {
 function StatusBadge({ status }: { status: string }) {
   if (status === 'ACTIVE')
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-        <CheckCircle className="w-3 h-3" /> Connected
+      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+        Connected
       </span>
     );
   if (status === 'ERROR')
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/10 text-red-650 dark:text-red-400 border border-red-500/20">
-        <AlertCircle className="w-3 h-3" /> Error
+      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+        <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+        Error
       </span>
     );
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-zinc-800 text-premium-muted border border-premium">
-      <XCircle className="w-3 h-3" /> Not connected
+    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#86868B] border border-[#E5E5EA] dark:border-[#38383A]">
+      <span className="w-1.5 h-1.5 rounded-full bg-[#86868B]" />
+      Not Connected
     </span>
   );
 }
@@ -119,69 +122,84 @@ function IntegrationCard({
   const isConnected = connection?.status === 'ACTIVE' || connection?.status === 'ERROR';
 
   return (
-    <div className="premium-card p-5 shadow-none transition-all duration-150">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4 mb-4">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-premium-main flex-shrink-0">
-            {provider.icon}
+    <div className="rounded-xl bg-white dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#2C2C2E] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between hover:border-[#D1D1D6] dark:hover:border-[#38383A] transition-colors">
+      <div>
+        {/* Header */}
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-[#F5F5F7] dark:bg-[#2C2C2E] border border-[#E5E5EA] dark:border-[#38383A] flex items-center justify-center text-[#1D1D1F] dark:text-[#F5F5F7] flex-shrink-0">
+              {provider.icon}
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[#1D1D1F] dark:text-white truncate tracking-tight">{provider.name}</p>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-[#86868B]">
+                {provider.authenticationType === 'OAUTH' ? 'OAuth 2.0' : 'Personal Token'}
+              </p>
+            </div>
           </div>
-          <p className="text-sm font-bold text-premium-main truncate">{provider.name}</p>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <StatusBadge status={connection?.status || 'DISCONNECTED'} />
+            <a
+              href={provider.docsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white transition-colors p-1.5 rounded-lg hover:bg-[#F5F5F7] dark:hover:bg-[#2C2C2E]"
+              title="Documentation"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <StatusBadge status={connection?.status || 'DISCONNECTED'} />
-          <a
-            href={provider.docsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-slate-450 hover:text-slate-700 dark:hover:text-slate-200 transition-colors p-1"
-            title="Documentation"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
-        </div>
+
+        {/* Description */}
+        <p className="text-xs text-[#636366] dark:text-[#AEAEB2] mb-4 leading-relaxed font-normal">
+          {provider.description}
+        </p>
+
+        {/* Last checked */}
+        {connection?.lastCheckedAt && (
+          <p className="text-[11px] text-[#86868B] mb-3 font-medium">
+            Last checked: {formatDateTime(connection.lastCheckedAt)}
+            {(connection.providerMeta as any)?.identity && ` · ${(connection.providerMeta as any).identity}`}
+          </p>
+        )}
+
+        {/* Error */}
+        {connection?.lastError && (
+          <p className="text-[11px] text-rose-600 dark:text-rose-400 mb-3 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-1.5 font-medium">
+            {connection.lastError}
+          </p>
+        )}
       </div>
-
-      {/* Description */}
-      <p className="text-xs text-premium-muted mb-3 leading-relaxed">
-        {provider.description}
-      </p>
-
-      {/* Last checked */}
-      {connection?.lastCheckedAt && (
-        <p className="text-[10px] text-premium-muted mb-3 font-semibold">
-          Last checked: {formatDateTime(connection.lastCheckedAt)}
-          {(connection.providerMeta as any)?.identity && ` · ${(connection.providerMeta as any).identity}`}
-        </p>
-      )}
-
-      {/* Error */}
-      {connection?.lastError && (
-        <p className="text-[10px] text-red-500 dark:text-red-400 mb-3 bg-red-500/10 border border-red-500/20 rounded-lg px-2 py-1 font-semibold">
-          {connection.lastError}
-        </p>
-      )}
 
       {/* Actions */}
       {canManage && (
-        <div className="flex items-center gap-2 border-t border-premium pt-3">
+        <div className="flex items-center justify-between gap-2 border-t border-[#E5E5EA] dark:border-[#2C2C2E] pt-3.5 mt-2">
           {isConnected ? (
-            <>
+            <div className="flex items-center gap-2 w-full justify-between">
+              <button
+                onClick={() => onHealthCheck(provider.id)}
+                disabled={isCheckingHealth}
+                className="px-3 py-1.5 rounded-lg border border-[#E5E5EA] dark:border-[#38383A] bg-white dark:bg-[#2C2C2E] text-xs font-medium text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#F5F5F7] dark:hover:bg-[#38383A]/80 transition-colors inline-flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3 h-3 ${isCheckingHealth ? 'animate-spin' : ''}`} />
+                Check Health
+              </button>
               <button
                 onClick={() => onDisconnect(provider.id)}
-                className="py-1 px-2.5 text-[10px] font-semibold rounded bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 hover:border-red-500/30 transition-all duration-150 inline-flex items-center justify-center"
+                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 transition-colors inline-flex items-center gap-1.5"
               >
-                <Link2Off className="w-3 h-3 mr-1" />
+                <Link2Off className="w-3 h-3" />
                 Disconnect
               </button>
-            </>
+            </div>
           ) : (
             <button
               onClick={() => onConnect(provider.id)}
-              className="premium-button-primary"
+              className="w-full px-4 py-2 rounded-lg bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-medium transition-colors shadow-sm active:scale-[0.99] flex items-center justify-center gap-1.5"
             >
-              <Link2 className="w-3.5 h-3.5 mr-1" />
-              Connect
+              <Link2 className="w-3.5 h-3.5" />
+              Connect {provider.name}
             </button>
           )}
         </div>
@@ -316,66 +334,75 @@ export default function IntegrationsPage() {
 
   return (
     <DashboardShell>
-      <div className="flex flex-col space-y-6">
+      <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
-        <div className="pb-2 border-b border-premium">
-          <h1 className="text-lg font-bold tracking-tight text-premium-main">Integrations</h1>
-          <p className="text-xs text-premium-muted mt-0.5">
-            Connect external platforms to delegate access securely through WithUs.
+        <div className="pb-4 border-b border-[#E5E5EA] dark:border-[#2C2C2E]">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wider">
+              PLATFORM &amp; SECURITY
+            </span>
+          </div>
+          <h1 className="text-xl font-semibold tracking-tight text-[#1D1D1F] dark:text-white">
+            Connected Integrations
+          </h1>
+          <p className="text-xs text-[#86868B] mt-0.5">
+            Connect external developer platforms and OAuth providers to delegate access securely with zero raw credential exposure.
           </p>
         </div>
 
         {/* Level 1 Custom Portal Analyzer */}
-        <div className="premium-card p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <Globe className="w-5 h-5 text-premium-muted" />
-            <h2 className="text-lg font-bold text-premium">Add Custom Portal</h2>
+        <div className="rounded-xl bg-white dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#2C2C2E] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+          <div className="flex items-center gap-2.5 mb-1.5">
+            <div className="w-7 h-7 rounded-lg bg-[#0071E3]/10 text-[#0071E3] flex items-center justify-center">
+              <Globe className="w-3.5 h-3.5" />
+            </div>
+            <h2 className="text-xs font-semibold text-[#1D1D1F] dark:text-white uppercase tracking-wider">Add Custom Portal</h2>
           </div>
-          <p className="text-sm text-premium-muted mb-4 max-w-3xl">
-            Paste a portal login URL to check if WITHUS supports delegated access for it. Currently, WITHUS matches submitted URLs against verified platforms in our integration registry.
+          <p className="text-xs text-[#636366] dark:text-[#AEAEB2] mb-4 max-w-3xl leading-relaxed">
+            Paste a portal login URL to check if WITHUS supports delegated access for it. WITHUS matches submitted URLs against verified platforms in our integration registry.
           </p>
-          <form onSubmit={handleAnalyzePortal} className="flex gap-3 max-w-xl">
+          <form onSubmit={handleAnalyzePortal} className="flex flex-col sm:flex-row gap-2.5 max-w-2xl">
             <input
               type="url"
-              className="premium-input flex-1"
+              className="flex-1 px-3.5 py-2 rounded-lg text-xs bg-[#F5F5F7] dark:bg-[#2C2C2E]/60 border border-[#E5E5EA] dark:border-[#38383A] text-[#1D1D1F] dark:text-[#F5F5F7] placeholder-[#86868B] focus:outline-none focus:ring-1 focus:ring-[#0071E3] transition-all"
               placeholder="https://github.com/login"
               value={portalUrl}
               onChange={(e) => {
                 setPortalUrl(e.target.value);
-                setPortalResult(null); // Clear result on edit
+                setPortalResult(null);
               }}
               required
             />
             <button
               type="submit"
               disabled={isAnalyzing || !portalUrl}
-              className="premium-button-primary whitespace-nowrap min-w-[100px]"
+              className="px-4 py-2 rounded-lg bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-medium transition-colors shadow-sm active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 whitespace-nowrap"
             >
-              {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Check URL'}
+              {isAnalyzing ? <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto" /> : 'Check URL'}
             </button>
           </form>
 
           {portalResult && (
-            <div className="mt-4 pt-4 border-t border-premium">
+            <div className="mt-4 pt-4 border-t border-[#E5E5EA] dark:border-[#2C2C2E]">
               {portalResult.compatible ? (
-                <div className="flex items-center gap-3 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20">
-                  <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                <div className="flex items-center gap-3 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 p-3.5 rounded-lg border border-emerald-500/20">
+                  <CheckCircle className="w-4 h-4 flex-shrink-0" />
                   <div>
-                    <div className="font-bold text-sm">Compatible ✅</div>
-                    <div className="text-xs opacity-90">{portalResult.platform} detected. Known WITHUS platform.</div>
+                    <div className="font-semibold text-xs uppercase tracking-wider">Compatible Platform Detected</div>
+                    <div className="text-xs opacity-90 mt-0.5">{portalResult.platform} detected. Verified WITHUS login automation engine ready.</div>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-3 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <div className="flex items-center gap-3 text-amber-600 dark:text-amber-400 bg-amber-500/10 p-3.5 rounded-lg border border-amber-500/20">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   <div>
-                    <div className="font-bold text-sm">Unknown Portal ⚠️</div>
-                    <div className="text-xs opacity-90">
+                    <div className="font-semibold text-xs uppercase tracking-wider">Custom Portal Notice</div>
+                    <div className="text-xs opacity-90 mt-0.5">
                       {portalResult.reason === 'not_https'
                         ? 'Custom portals must use HTTPS for secure connection.'
                         : portalResult.reason === 'invalid_url'
                         ? 'Invalid URL format.'
-                        : 'Not currently supported. This portal is not in the WITHUS verified registry.'}
+                        : 'Not currently in the WITHUS verified registry. You can still store credentials securely in your vaults.'}
                     </div>
                   </div>
                 </div>
@@ -385,34 +412,32 @@ export default function IntegrationsPage() {
         </div>
 
         {/* Info Banner */}
-        <div className="border border-premium bg-slate-50/20 dark:bg-zinc-900/10 rounded-lg p-4 flex gap-3">
-          <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 flex items-center justify-center">
-            <Zap className="w-4 h-4 text-premium-muted" />
+        <div className="rounded-xl border border-[#E5E5EA] dark:border-[#2C2C2E] bg-white dark:bg-[#1C1C1E] p-4 flex gap-3.5 items-center shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+          <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-[#0071E3]/10 text-[#0071E3] flex items-center justify-center">
+            <Zap className="w-4 h-4" />
           </div>
           <div>
-            <p className="text-xs font-bold text-premium-main mb-0.5">
-              Platform-Agnostic Integrations
+            <p className="text-xs font-semibold text-[#1D1D1F] dark:text-white">
+              Platform-Agnostic Access Delegation
             </p>
-            <p className="text-xs text-premium-muted leading-relaxed">
-              Connect your developer platforms and delegate access securely. WithUs stores credentials
-              encrypted and handles approval workflows — your team never shares passwords or tokens
-              directly.
+            <p className="text-xs text-[#86868B] leading-relaxed mt-0.5">
+              Connect external services to delegate authenticated sessions. Credentials stay end-to-end encrypted in the vault and your team members never see raw tokens or passwords.
             </p>
           </div>
         </div>
 
         {/* Provider Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl">
             {PROVIDERS.map((p) => (
               <div
                 key={p.id}
-                className="premium-card p-5 h-52 animate-pulse"
+                className="rounded-xl bg-white dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#2C2C2E] p-5 h-52 animate-pulse"
               />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl">
             {PROVIDERS.map((provider) => {
               const connection = connections.find((c) => c.provider === provider.id);
               return (

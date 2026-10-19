@@ -125,10 +125,10 @@ function PaymentConfirmationModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="relative w-full max-w-lg bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-2xl overflow-hidden my-8">
-        {/* Top Success Gradient Header */}
-        <div className="relative px-6 pt-6 pb-5 bg-gradient-to-b from-emerald-500/10 to-transparent border-b border-zinc-100 dark:border-zinc-800/80">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+      <div className="relative w-full max-w-lg bg-white dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#2C2C2E] rounded-xl shadow-2xl overflow-hidden my-8">
+        {/* Top Success Header */}
+        <div className="relative px-6 pt-6 pb-5 border-b border-[#E5E5EA] dark:border-[#2C2C2E]">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 p-1.5 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
@@ -583,8 +583,8 @@ export default function PricingPage() {
 
   return (
     <DashboardShell>
-      <div className="flex flex-col h-full overflow-y-auto bg-[#f5f5f7] dark:bg-[#09090b]">
-        <div className="max-w-6xl mx-auto w-full px-6 py-8 space-y-8">
+      <div className="flex flex-col h-full overflow-y-auto">
+        <div className="max-w-6xl mx-auto w-full px-6 py-6 space-y-6">
           <PaymentConfirmationModal
             orderId={successOrderId}
             receipt={receipt}
@@ -595,61 +595,56 @@ export default function PricingPage() {
           />
 
           {/* ─── Hero Header & Status Banner ─────────────────────────────────── */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-premium pb-6">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-md bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-sm">
-                  <CreditCard className="w-4 h-4" />
-                </div>
-                <span className="text-[11px] font-extrabold uppercase tracking-widest text-premium-muted">
-                  Billing & Organization Plans
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#E5E5EA] dark:border-[#2C2C2E] pb-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wider">
+                  BILLING &amp; PLANS
                 </span>
               </div>
-              <h1 className="text-2xl font-black text-premium-main tracking-tight font-number">
-                Subscription & Pricing
+              <h1 className="text-xl font-semibold tracking-tight text-[#1D1D1F] dark:text-white">
+                Subscription &amp; Pricing
               </h1>
-              <p className="text-xs text-premium-muted font-medium max-w-xl">
+              <p className="text-xs text-[#86868B] font-normal max-w-xl">
                 Scale your security infrastructure with flexible per-user billing. Seamlessly upgrade or adjust capacity at any time.
               </p>
             </div>
 
-
-
             {/* Active Seats Summary Card */}
-            <div className="flex items-center gap-4 px-4 py-3 bg-premium-surface border border-premium shadow-sm rounded-none">
-              <div className="p-2 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                <Users className="w-4 h-4" />
+            <div className="flex items-center gap-3 px-3.5 py-2 bg-white dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#2C2C2E] shadow-[0_1px_3px_rgba(0,0,0,0.02)] rounded-xl">
+              <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <Users className="w-3.5 h-3.5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-premium-muted">Active Org Seats</span>
-                  <span className="px-1.5 py-0.2 rounded text-[10px] font-black bg-zinc-100 dark:bg-zinc-800 text-premium-main font-number">
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-[#86868B]">Active Org Seats</span>
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-white">
                     {activeUsers}
                   </span>
                 </div>
-                <p className="text-[11px] font-bold text-premium-main font-number mt-0.5">
-                  {activeUsers} Member{activeUsers !== 1 ? 's' : ''} <span className="text-[10px] font-semibold text-premium-muted">(incl. Admins)</span>
+                <p className="text-xs font-medium text-[#1D1D1F] dark:text-white mt-0.5">
+                  {activeUsers} Member{activeUsers !== 1 ? 's' : ''} <span className="text-[10px] text-[#86868B]">(incl. Admins)</span>
                 </p>
               </div>
             </div>
           </div>
 
           {/* ─── Billing Cycle Segmented Switcher ─────────────────────────────── */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-premium-surface border border-premium p-3">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl bg-white dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#2C2C2E] p-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
             <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-premium-muted" />
-              <span className="text-xs font-bold text-premium-main">Billing Cadence</span>
+              <Layers className="w-4 h-4 text-[#86868B]" />
+              <span className="text-xs font-semibold text-[#1D1D1F] dark:text-white">Billing Cadence</span>
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="inline-flex p-1 bg-zinc-100 dark:bg-zinc-900 border border-premium rounded-none">
+              <div className="inline-flex p-1 bg-[#F5F5F7] dark:bg-[#2C2C2E] border border-[#E5E5EA] dark:border-[#38383A] rounded-lg">
                 <button
                   type="button"
                   onClick={() => setBillingCycle('MONTHLY')}
-                  className={`px-4 py-1.5 text-xs font-extrabold transition-all ${
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                     billingCycle === 'MONTHLY'
-                      ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-sm'
-                      : 'text-premium-muted hover:text-premium-main'
+                      ? 'bg-white dark:bg-[#1C1C1E] text-[#1D1D1F] dark:text-white shadow-sm'
+                      : 'text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white'
                   }`}
                   id="billing-cycle-monthly"
                 >
@@ -658,15 +653,15 @@ export default function PricingPage() {
                 <button
                   type="button"
                   onClick={() => setBillingCycle('ANNUAL')}
-                  className={`px-4 py-1.5 text-xs font-extrabold transition-all flex items-center gap-1.5 ${
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 ${
                     billingCycle === 'ANNUAL'
-                      ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-sm'
-                      : 'text-premium-muted hover:text-premium-main'
+                      ? 'bg-white dark:bg-[#1C1C1E] text-[#1D1D1F] dark:text-white shadow-sm'
+                      : 'text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white'
                   }`}
                   id="billing-cycle-annual"
                 >
                   <span>Annual Billing</span>
-                  <span className="px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider bg-emerald-500 text-white dark:bg-emerald-600 rounded-none">
+                  <span className="px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded">
                     Save 17%
                   </span>
                 </button>
@@ -686,56 +681,56 @@ export default function PricingPage() {
               return (
                 <div
                   key={plan.id}
-                  className={`relative flex flex-col bg-premium-surface border transition-all duration-200 ${
+                  className={`relative flex flex-col rounded-xl overflow-hidden transition-colors shadow-[0_1px_3px_rgba(0,0,0,0.02)] ${
                     isHighlighted
-                      ? 'border-zinc-900 dark:border-zinc-100 shadow-xl ring-1 ring-zinc-900 dark:ring-zinc-100'
-                      : 'border-premium hover:border-zinc-400 dark:hover:border-zinc-700 shadow-sm'
+                      ? 'bg-white dark:bg-[#1C1C1E] border-2 border-[#0071E3] ring-1 ring-[#0071E3]/20'
+                      : 'bg-white dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#2C2C2E]'
                   }`}
                   id={`plan-card-${plan.id.toLowerCase()}`}
                 >
                   {/* Highlight Banner */}
                   {plan.badgeText && (
-                    <div className="w-full bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 text-[10px] font-black uppercase tracking-widest py-1 text-center font-number">
+                    <div className="w-full bg-[#0071E3] text-white text-[10px] font-medium uppercase tracking-wider py-1 text-center">
                       {plan.badgeText}
                     </div>
                   )}
 
-                  <div className="p-6 flex flex-col justify-between flex-1 gap-6">
+                  <div className="p-5 flex flex-col justify-between flex-1 gap-5">
                     {/* Header & Title */}
-                    <div className="space-y-3">
+                    <div className="space-y-2.5">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
-                          <div className={`p-2 rounded-sm ${
+                          <div className={`p-2 rounded-lg border ${
                             isHighlighted 
-                              ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900' 
-                              : 'bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100'
+                              ? 'bg-[#0071E3]/10 text-[#0071E3] border-[#0071E3]/20' 
+                              : 'bg-[#F5F5F7] text-[#1D1D1F] dark:bg-[#2C2C2E] dark:text-[#F5F5F7] border-[#E5E5EA] dark:border-[#38383A]'
                           }`}>
                             {plan.icon}
                           </div>
-                          <h3 className="text-base font-black text-premium-main tracking-tight font-number">
+                          <h3 className="text-sm font-semibold text-[#1D1D1F] dark:text-white tracking-tight">
                             {plan.name}
                           </h3>
                         </div>
                         <PlanBadge plan={plan.id} currentPlan={currentPlan} />
                       </div>
-                      <p className="text-[11px] font-semibold text-premium-muted leading-relaxed">
+                      <p className="text-xs text-[#636366] dark:text-[#AEAEB2] leading-relaxed">
                         {plan.tagline}
                       </p>
                     </div>
 
                     {/* Price Section */}
-                    <div className="space-y-2 py-3 border-y border-premium">
+                    <div className="space-y-2 py-3 border-y border-[#E5E5EA] dark:border-[#2C2C2E]">
                       {calc.totalAmount === null ? (
                         <div>
                           <div className="flex items-baseline gap-1">
-                            <span className="text-3xl font-black text-premium-main font-number tracking-tight">
+                            <span className="text-2xl font-bold text-[#1D1D1F] dark:text-white tracking-tight">
                               {formatINR(calc.basePrice)}
                             </span>
-                            <span className="text-xs font-extrabold text-premium-muted">
+                            <span className="text-xs font-normal text-[#86868B]">
                               /{billingCycle === 'MONTHLY' ? 'mo' : 'yr'}
                             </span>
                           </div>
-                          <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
+                          <p className="text-[10px] font-medium text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
                             <AlertCircle className="w-3 h-3 shrink-0" />
                             Annual extra-user rate pending confirmation
                           </p>
@@ -743,15 +738,15 @@ export default function PricingPage() {
                       ) : (
                         <div>
                           <div className="flex items-baseline gap-1">
-                            <span className="text-3xl font-black text-premium-main font-number tracking-tight">
+                            <span className="text-2xl font-bold text-[#1D1D1F] dark:text-white tracking-tight">
                               {formatINR(calc.totalAmount)}
                             </span>
-                            <span className="text-xs font-extrabold text-premium-muted">
+                            <span className="text-xs font-normal text-[#86868B]">
                               /{billingCycle === 'MONTHLY' ? 'month' : 'year'}
                             </span>
                           </div>
                           {plan.id !== 'FREE' && (
-                            <p className="text-[10px] font-bold text-premium-muted mt-1 font-number">
+                            <p className="text-[10px] font-medium text-[#86868B] mt-0.5">
                               Base: {billingCycle === 'MONTHLY' ? formatMonthly(calc.basePrice) : formatAnnual(calc.basePrice)}
                               {' · '}Includes {PRICING_CONFIG[plan.id].baseUsers} users
                             </p>
@@ -761,14 +756,14 @@ export default function PricingPage() {
 
                       {/* Extra User Itemized Calculation Pill */}
                       {calc.extraUsers > 0 && (
-                        <div className="p-2.5 bg-zinc-100/70 dark:bg-zinc-900/80 border border-premium space-y-1">
-                          <div className="flex items-center justify-between text-[10px] font-black text-premium-main">
+                        <div className="p-2 rounded-lg bg-[#F5F5F7] dark:bg-[#2C2C2E] border border-[#E5E5EA] dark:border-[#38383A] space-y-0.5">
+                          <div className="flex items-center justify-between text-[10px] font-medium text-[#1D1D1F] dark:text-white">
                             <span>Extra Users ({calc.extraUsers})</span>
-                            <span className="font-number">
+                            <span>
                               +{calc.extraUsersCharge !== null ? formatINR(calc.extraUsersCharge) : 'TBD'}
                             </span>
                           </div>
-                          <p className="text-[9px] font-semibold text-premium-muted">
+                          <p className="text-[9px] text-[#86868B]">
                             {calc.extraUsers} user{calc.extraUsers > 1 ? 's' : ''} above {PRICING_CONFIG[plan.id].baseUsers} base limit @ {calc.extraUserRate !== null ? formatINR(calc.extraUserRate) : 'TBD'}/user
                           </p>
                         </div>
@@ -776,11 +771,11 @@ export default function PricingPage() {
                     </div>
 
                     {/* Features Checklist */}
-                    <div className="space-y-2.5">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-premium-muted">
+                    <div className="space-y-2">
+                      <span className="text-[10px] font-medium uppercase tracking-wider text-[#86868B]">
                         Key Entitlements
                       </span>
-                      <ul className="space-y-2 text-[11px] font-semibold text-premium-main">
+                      <ul className="space-y-1.5 text-xs text-[#1D1D1F] dark:text-[#F5F5F7]">
                         <li className="flex items-start gap-2">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
                           <span>
@@ -835,10 +830,10 @@ export default function PricingPage() {
                                 handleUpgradeClick(plan.id, billingCycle);
                               }
                             }}
-                            className={`w-full py-2.5 px-4 text-xs font-black uppercase tracking-wider text-center transition-colors shadow-sm ${
+                            className={`w-full py-2.5 px-4 text-xs font-medium uppercase tracking-wider text-center transition-colors rounded-lg shadow-sm ${
                               subscription?.status === 'PAST_DUE' && !initiating
-                                ? 'bg-rose-600 text-white hover:bg-rose-700 border border-transparent animate-pulse'
-                                : 'bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500 border border-premium cursor-not-allowed'
+                                ? 'bg-rose-600 text-white hover:bg-rose-700'
+                                : 'bg-[#F5F5F7] text-[#86868B] dark:bg-[#2C2C2E] dark:text-[#86868B] border border-[#E5E5EA] dark:border-[#38383A] cursor-not-allowed'
                             }`}
                             id={`cta-current-${plan.id.toLowerCase()}`}
                           >
@@ -854,7 +849,7 @@ export default function PricingPage() {
                             )}
                           </button>
                           {subscription?.currentPeriodEnd && subscription.status === 'ACTIVE' && (
-                            <p className="text-[10px] font-bold text-center text-premium-muted">
+                            <p className="text-[10px] text-center text-[#86868B]">
                               {(() => {
                                 const end = new Date(subscription.currentPeriodEnd);
                                 const now = new Date();
@@ -868,7 +863,7 @@ export default function PricingPage() {
                       ) : isOnDifferentCycleOfSamePlan ? (
                         <button
                           disabled
-                          className="w-full py-2.5 px-4 text-xs font-black uppercase tracking-wider bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500 border border-premium cursor-not-allowed text-center"
+                          className="w-full py-2.5 px-4 text-xs font-medium uppercase tracking-wider bg-[#F5F5F7] text-[#86868B] dark:bg-[#2C2C2E] dark:text-[#86868B] border border-[#E5E5EA] dark:border-[#38383A] rounded-lg cursor-not-allowed text-center"
                           id={`cta-switch-cycle-${plan.id.toLowerCase()}`}
                         >
                           Active on {currentBillingCycle === 'MONTHLY' ? 'Monthly' : 'Annual'}
@@ -876,7 +871,7 @@ export default function PricingPage() {
                       ) : plan.id === 'FREE' ? (
                         <button
                           disabled
-                          className="w-full py-2.5 px-4 text-xs font-extrabold text-premium-muted border border-premium cursor-not-allowed text-center"
+                          className="w-full py-2.5 px-4 text-xs font-medium text-[#86868B] border border-[#E5E5EA] dark:border-[#38383A] rounded-lg cursor-not-allowed text-center bg-[#F5F5F7] dark:bg-[#2C2C2E]/50"
                           id={`cta-downgrade-${plan.id.toLowerCase()}`}
                         >
                           Included Base Tier
@@ -889,12 +884,12 @@ export default function PricingPage() {
                               handleUpgradeClick(plan.id, billingCycle);
                             }
                           }}
-                          className={`w-full py-2.5 px-4 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                          className={`w-full py-2.5 px-4 text-xs font-medium uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 rounded-lg shadow-sm ${
                             initiating || calc.totalAmount === null || hasActiveSubscription
-                              ? 'opacity-50 cursor-not-allowed bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500'
+                              ? 'opacity-50 cursor-not-allowed bg-[#F5F5F7] text-[#86868B] dark:bg-[#2C2C2E] dark:text-[#86868B] border border-[#E5E5EA] dark:border-[#38383A]'
                               : isHighlighted
-                                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-md hover:scale-[1.02]'
-                                : 'bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100 border border-premium hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                                ? 'bg-[#0071E3] hover:bg-[#0077ED] text-white active:scale-[0.99]'
+                                : 'bg-white text-[#1D1D1F] dark:bg-[#2C2C2E] dark:text-[#F5F5F7] border border-[#E5E5EA] dark:border-[#38383A] hover:bg-[#F5F5F7] dark:hover:bg-[#38383A]/80 active:scale-[0.99]'
                           }`}
                           id={`cta-upgrade-${plan.id.toLowerCase()}`}
                         >
@@ -916,18 +911,18 @@ export default function PricingPage() {
 
           {/* ─── Subscription Status Banner ───────────────────────────────── */}
           {subscription && (subscription.status === 'ACTIVE' || subscription.status === 'PAST_DUE') && (
-            <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
                   <Activity className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-premium-main">Subscription Status: {subscription.status}</h4>
-                  <p className="text-[11px] text-premium-muted font-medium mt-0.5">
+                  <h4 className="text-xs font-semibold text-[#1D1D1F] dark:text-white">Subscription Status: {subscription.status}</h4>
+                  <p className="text-[11px] text-[#86868B] font-normal mt-0.5">
                     Plan: {subscription.plan} | Cycle: {subscription.billingCycle}
                   </p>
                   {subscription.currentPeriodEnd && (
-                    <p className="text-[10px] font-bold text-premium-muted mt-1">
+                    <p className="text-[10px] font-medium text-[#86868B] mt-0.5">
                       {(() => {
                         const isPastDue = subscription.status === 'PAST_DUE';
                         const graceUntil = (subscription as any).graceUntil;
@@ -948,7 +943,7 @@ export default function PricingPage() {
                 <button
                   onClick={() => setShowCancelModal(true)}
                   disabled={cancelling}
-                  className="px-4 py-2 text-[11px] font-black uppercase tracking-wider text-rose-600 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 rounded-sm transition-colors flex items-center gap-2"
+                  className="px-3 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-lg transition-colors flex items-center gap-1.5"
                 >
                   {cancelling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
                   <span>Cancel Plan</span>
@@ -958,10 +953,10 @@ export default function PricingPage() {
           )}
 
           {/* ─── Expandable Feature Comparison Table ───────────────────────────── */}
-          <div className="bg-premium-surface border border-premium">
+          <div className="rounded-[28px] overflow-hidden bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl border border-zinc-200/80 dark:border-white/10 shadow-sm">
             <button
               type="button"
-              className="w-full flex items-center justify-between px-6 py-4 border-b border-premium hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors"
+              className="w-full flex items-center justify-between px-6 py-4 border-b border-zinc-200/80 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/[0.03] transition-colors"
               onClick={() => setShowFeatureMatrix(v => !v)}
               id="feature-matrix-toggle"
             >
@@ -981,14 +976,14 @@ export default function PricingPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse" id="feature-comparison-table">
                   <thead>
-                    <tr className="border-b border-premium bg-zinc-100/50 dark:bg-zinc-900/50">
+                    <tr className="border-b border-zinc-200/80 dark:border-white/10 bg-zinc-100/50 dark:bg-white/[0.04]">
                       <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-wider text-premium-muted w-5/12">
                         System Capability / Module
                       </th>
                       <th className="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-wider text-premium-muted w-2/12">
                         Free
                       </th>
-                      <th className="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-wider text-zinc-900 dark:text-zinc-100 bg-zinc-200/50 dark:bg-zinc-800/50 w-2/12">
+                      <th className="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-wider text-zinc-900 dark:text-zinc-100 bg-zinc-200/50 dark:bg-white/[0.08] w-2/12">
                         Pro
                       </th>
                       <th className="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-wider text-premium-muted w-3/12">
@@ -996,10 +991,10 @@ export default function PricingPage() {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-premium">
+                  <tbody className="divide-y divide-zinc-200/80 dark:divide-white/10">
                     {featureSections.map((section) => (
                       <React.Fragment key={section.category}>
-                        <tr className="bg-zinc-100 dark:bg-zinc-900">
+                        <tr className="bg-zinc-100 dark:bg-white/[0.02]">
                           <td
                             colSpan={4}
                             className="px-6 py-2 text-[10px] font-black uppercase tracking-widest text-premium-muted"
@@ -1008,14 +1003,14 @@ export default function PricingPage() {
                           </td>
                         </tr>
                         {section.rows.map((row) => (
-                          <tr key={row.label} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-900/30 transition-colors">
+                          <tr key={row.label} className="hover:bg-zinc-50/80 dark:hover:bg-white/[0.02] transition-colors">
                             <td className="px-6 py-3 text-[11px] font-bold text-premium-main">
                               {row.label}
                             </td>
                             <td className="px-4 py-3 text-center">
                               <FeatureCell value={row.free} />
                             </td>
-                            <td className="px-4 py-3 text-center bg-zinc-50/50 dark:bg-zinc-900/20">
+                            <td className="px-4 py-3 text-center bg-zinc-50/50 dark:bg-white/[0.02]">
                               <FeatureCell value={row.pro} />
                             </td>
                             <td className="px-4 py-3 text-center">
@@ -1034,7 +1029,7 @@ export default function PricingPage() {
           {/* ─── Platform Selection Policy & Billing Calculation Rules ───────── */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Free Plan Policy */}
-            <div className="p-5 bg-premium-surface border border-premium space-y-2.5">
+            <div className="p-5 rounded-2xl bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl border border-zinc-200/80 dark:border-white/10 space-y-2.5 shadow-sm">
               <div className="flex items-center gap-2 text-premium-main">
                 <AlertCircle className="w-4 h-4 text-premium-muted" />
                 <h4 className="text-xs font-black uppercase tracking-wider">
@@ -1047,7 +1042,7 @@ export default function PricingPage() {
             </div>
 
             {/* Automated Seat Recalculation Rules */}
-            <div className="p-5 bg-premium-surface border border-premium space-y-2.5">
+            <div className="p-5 rounded-2xl bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl border border-zinc-200/80 dark:border-white/10 space-y-2.5 shadow-sm">
               <div className="flex items-center gap-2 text-premium-main">
                 <Activity className="w-4 h-4 text-premium-muted" />
                 <h4 className="text-xs font-black uppercase tracking-wider">
@@ -1063,7 +1058,7 @@ export default function PricingPage() {
           {/* ─── Cancel Plan Modal ──────────────────────────────────────────────── */}
           {showCancelModal && subscription && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm">
-              <div className="bg-premium-surface border border-premium max-w-md w-full shadow-2xl overflow-hidden flex flex-col">
+              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 max-w-md w-full shadow-2xl overflow-hidden rounded-[28px] flex flex-col">
                 <div className="p-6 pb-0 flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <div className="p-3 bg-rose-500/10 text-rose-600 rounded-full">
@@ -1079,7 +1074,7 @@ export default function PricingPage() {
                 </div>
 
                 <div className="p-6 space-y-4">
-                  <div className="bg-zinc-100/50 dark:bg-zinc-900/50 border border-premium p-4 rounded-sm">
+                  <div className="bg-zinc-100/50 dark:bg-white/[0.04] border border-zinc-200/80 dark:border-white/10 p-4 rounded-2xl">
                     <p className="text-sm font-semibold text-premium-main">
                       Your subscription will remain active until the end of the current billing cycle.
                     </p>
@@ -1103,11 +1098,11 @@ export default function PricingPage() {
                   </p>
                 </div>
 
-                <div className="p-4 bg-zinc-50 dark:bg-zinc-900/30 border-t border-premium flex justify-end gap-3">
+                <div className="p-4 bg-zinc-50 dark:bg-white/[0.02] border-t border-zinc-200/80 dark:border-white/10 flex justify-end gap-3">
                   <button
                     onClick={() => setShowCancelModal(false)}
                     disabled={cancelling}
-                    className="px-4 py-2 text-xs font-bold text-premium-main hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors border border-transparent rounded-sm"
+                    className="px-5 py-2 text-xs font-bold text-premium-main hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors rounded-full"
                   >
                     Keep My Plan
                   </button>
@@ -1118,7 +1113,7 @@ export default function PricingPage() {
                       setShowCancelModal(false);
                     }}
                     disabled={cancelling}
-                    className="px-4 py-2 text-xs font-black uppercase tracking-wider text-white bg-rose-600 hover:bg-rose-700 transition-colors rounded-sm flex items-center gap-2 shadow-sm"
+                    className="px-5 py-2 text-xs font-black uppercase tracking-wider text-white bg-rose-600 hover:bg-rose-700 transition-colors rounded-full flex items-center gap-2 shadow-sm"
                   >
                     {cancelling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                     Confirm Cancellation
@@ -1131,7 +1126,7 @@ export default function PricingPage() {
         {/* ─── Phone Number Collection Modal ─────────────────────────────── */}
         {phoneModal && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-zinc-900 border border-premium w-full max-w-md p-6 space-y-5 shadow-2xl rounded-sm">
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 w-full max-w-md p-6 space-y-5 shadow-2xl rounded-[28px]">
               <div className="space-y-1">
                 <h3 className="text-sm font-black uppercase tracking-wider text-premium-main flex items-center gap-2">
                   <CreditCard className="w-4 h-4 text-emerald-500" />
@@ -1159,7 +1154,7 @@ export default function PricingPage() {
                     setPhoneError(null);
                   }}
                   onKeyDown={(e) => { if (e.key === 'Enter') handlePhoneSubmit(); }}
-                  className="w-full px-3 py-2.5 text-sm font-bold bg-zinc-50 dark:bg-zinc-800 border border-premium text-premium-main placeholder:text-premium-muted focus:outline-none focus:border-zinc-500 dark:focus:border-zinc-400 transition-colors font-mono tracking-wider"
+                  className="w-full px-4 py-2.5 text-sm font-bold bg-zinc-50 dark:bg-white/[0.04] border border-zinc-200/80 dark:border-white/10 rounded-full text-premium-main placeholder:text-premium-muted focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-mono tracking-wider"
                   autoFocus
                 />
                 {phoneError && (
@@ -1182,7 +1177,7 @@ export default function PricingPage() {
                   type="button"
                   onClick={() => setPhoneModal(null)}
                   disabled={initiating}
-                  className="px-4 py-2 text-xs font-bold text-premium-main hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors border border-transparent rounded-sm"
+                  className="px-5 py-2 text-xs font-bold text-premium-main hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors rounded-full"
                 >
                   Cancel
                 </button>
@@ -1191,7 +1186,7 @@ export default function PricingPage() {
                   id="billing-phone-submit"
                   onClick={handlePhoneSubmit}
                   disabled={initiating || phoneInput.length !== 10}
-                  className="px-5 py-2 text-xs font-black uppercase tracking-wider text-white bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-colors rounded-sm flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-2.5 text-xs font-black uppercase tracking-wider text-white bg-zinc-950 dark:bg-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-all rounded-full flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99]"
                 >
                   {initiating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
                   Save & Proceed to Payment

@@ -158,31 +158,35 @@ export default function PermissionMatrixPage() {
 
   return (
     <DashboardShell>
-      <div className="max-w-6xl mx-auto space-y-8 pb-12">
+      <div className="max-w-6xl mx-auto space-y-6 pb-12">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-premium pb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E5E5EA] dark:border-[#2C2C2E]">
           <div>
-            <div className="flex items-center gap-2.5 mb-1">
-              <Shield className="w-5 h-5 text-premium-main" />
-              <h1 className="text-xl font-bold text-premium-main tracking-tight">Permission Matrix</h1>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wider">
+                ACCESS CONTROL POLICY
+              </span>
             </div>
-            <p className="text-xs text-premium-muted">
-              Complete, transparent breakdown of capabilities for each organization role.
+            <h1 className="text-xl font-semibold tracking-tight text-[#1D1D1F] dark:text-white">
+              Role Permission Matrix
+            </h1>
+            <p className="text-xs text-[#86868B] mt-0.5">
+              Deterministic breakdown of role-based capabilities across your workspace.
             </p>
           </div>
 
           {/* Current Role Banner */}
-          <div className="flex items-center gap-3 bg-premium-surface border border-premium px-4 py-2.5 rounded-lg shadow-sm">
-            <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400">Your Active Role:</span>
+          <div className="flex items-center gap-2.5 bg-white dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#2C2C2E] px-3.5 py-2 rounded-lg shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+            <span className="text-xs font-medium text-[#86868B]">Your Active Role:</span>
             <span
               className={clsx(
-                'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider',
+                'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium border uppercase tracking-wider',
                 roles.find((r) => r.id === currentRole)?.badgeStyle || 'bg-zinc-100 text-zinc-800 border-zinc-200'
               )}
             >
               {currentRole === 'OWNER' && <Crown className="w-3.5 h-3.5 text-amber-500" />}
               {currentRole === 'ADMIN' && <UserCheck className="w-3.5 h-3.5 text-indigo-500" />}
-              {currentRole === 'MEMBER' && <User className="w-3.5 h-3.5 text-slate-500" />}
+              {currentRole === 'MEMBER' && <User className="w-3.5 h-3.5 text-zinc-400" />}
               {currentRole}
             </span>
           </div>
@@ -192,90 +196,102 @@ export default function PermissionMatrixPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div
             className={clsx(
-              'premium-card p-5 transition-all relative',
-              currentRole === 'OWNER' ? 'ring-2 ring-amber-500/50 bg-amber-500/5 dark:bg-amber-500/10' : 'opacity-90'
+              'rounded-xl border p-5 transition-colors relative shadow-[0_1px_3px_rgba(0,0,0,0.02)]',
+              currentRole === 'OWNER' 
+                ? 'border-amber-500/40 bg-amber-500/[0.04]' 
+                : 'border-[#E5E5EA] dark:border-[#2C2C2E] bg-white dark:bg-[#1C1C1E]'
             )}
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Crown className="w-4 h-4 text-amber-500" />
-                <h3 className="text-sm font-bold text-premium-main">Workspace Owner</h3>
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
+                  <Crown className="w-4 h-4" />
+                </div>
+                <h3 className="text-xs font-semibold text-[#1D1D1F] dark:text-white">Workspace Owner</h3>
               </div>
               {currentRole === 'OWNER' && (
-                <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/60 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-900">
+                <span className="text-[10px] font-medium text-amber-700 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
                   YOUR ROLE
                 </span>
               )}
             </div>
-            <p className="text-xs text-premium-muted leading-relaxed">
+            <p className="text-xs text-[#636366] dark:text-[#AEAEB2] leading-relaxed">
               Full control over all organizational assets, billing, vault deletion, workspace configuration, and member role assignment.
             </p>
           </div>
 
           <div
             className={clsx(
-              'premium-card p-5 transition-all relative',
-              currentRole === 'ADMIN' ? 'ring-2 ring-indigo-500/50 bg-indigo-500/5 dark:bg-indigo-500/10' : 'opacity-90'
+              'rounded-xl border p-5 transition-colors relative shadow-[0_1px_3px_rgba(0,0,0,0.02)]',
+              currentRole === 'ADMIN' 
+                ? 'border-indigo-500/40 bg-indigo-500/[0.04]' 
+                : 'border-[#E5E5EA] dark:border-[#2C2C2E] bg-white dark:bg-[#1C1C1E]'
             )}
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <UserCheck className="w-4 h-4 text-indigo-500" />
-                <h3 className="text-sm font-bold text-premium-main">Administrator</h3>
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-500">
+                  <UserCheck className="w-4 h-4" />
+                </div>
+                <h3 className="text-xs font-semibold text-[#1D1D1F] dark:text-white">Administrator</h3>
               </div>
               {currentRole === 'ADMIN' && (
-                <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-950/60 px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-900">
+                <span className="text-[10px] font-medium text-indigo-700 dark:text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">
                   YOUR ROLE
                 </span>
               )}
             </div>
-            <p className="text-xs text-premium-muted leading-relaxed">
+            <p className="text-xs text-[#636366] dark:text-[#AEAEB2] leading-relaxed">
               Trusted operational lead. Manages vaults, secrets, integrations, invites, and approvals. Cannot delete vaults or change member roles.
             </p>
           </div>
 
           <div
             className={clsx(
-              'premium-card p-5 transition-all relative',
-              currentRole === 'MEMBER' ? 'ring-2 ring-slate-400/50 bg-slate-500/5 dark:bg-zinc-500/10' : 'opacity-90'
+              'rounded-xl border p-5 transition-colors relative shadow-[0_1px_3px_rgba(0,0,0,0.02)]',
+              currentRole === 'MEMBER' 
+                ? 'border-[#0071E3]/40 bg-[#0071E3]/[0.03]' 
+                : 'border-[#E5E5EA] dark:border-[#2C2C2E] bg-white dark:bg-[#1C1C1E]'
             )}
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <User className="w-4 h-4 text-slate-400" />
-                <h3 className="text-sm font-bold text-premium-main">Team Member</h3>
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-[#F5F5F7] dark:bg-[#2C2C2E] border border-[#E5E5EA] dark:border-[#38383A] flex items-center justify-center text-[#1D1D1F] dark:text-[#F5F5F7]">
+                  <User className="w-4 h-4" />
+                </div>
+                <h3 className="text-xs font-semibold text-[#1D1D1F] dark:text-white">Team Member</h3>
               </div>
               {currentRole === 'MEMBER' && (
-                <span className="text-[10px] font-bold text-slate-600 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-zinc-700">
+                <span className="text-[10px] font-medium text-[#1D1D1F] dark:text-[#F5F5F7] bg-[#F5F5F7] dark:bg-[#2C2C2E] px-2 py-0.5 rounded-md border border-[#E5E5EA] dark:border-[#38383A]">
                   YOUR ROLE
                 </span>
               )}
             </div>
-            <p className="text-xs text-premium-muted leading-relaxed">
+            <p className="text-xs text-[#636366] dark:text-[#AEAEB2] leading-relaxed">
               Standard consumer access. Can view permitted vaults, request delegated credential sessions, and browse team directory.
             </p>
           </div>
         </div>
 
         {/* Permission Table */}
-        <div className="premium-card overflow-hidden shadow-none border border-premium">
+        <div className="rounded-xl border border-[#E5E5EA] dark:border-[#2C2C2E] bg-white dark:bg-[#1C1C1E] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-premium bg-slate-100/80 dark:bg-zinc-900/80 text-[11px] font-extrabold uppercase tracking-wider text-premium-main">
-                  <th className="py-4 px-6 min-w-[300px]">Feature & Capability</th>
+                <tr className="border-b border-[#E5E5EA] dark:border-[#2C2C2E] bg-[#F5F5F7]/60 dark:bg-[#2C2C2E]/40 text-[11px] font-medium uppercase tracking-wider text-[#86868B]">
+                  <th className="py-3 px-5 min-w-[300px]">Capability &amp; Resource Scope</th>
                   {roles.map((r) => {
                     const isCurrent = currentRole === r.id;
                     return (
                       <th
                         key={r.id}
                         className={clsx(
-                          'py-4 px-6 text-center w-40 transition-colors border-l border-premium/50',
-                          isCurrent && 'bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-black'
+                          'py-3 px-5 text-center w-36 transition-colors border-l border-[#E5E5EA]/60 dark:border-[#2C2C2E]/60',
+                          isCurrent && 'bg-[#0071E3]/5 text-[#1D1D1F] dark:text-white font-semibold'
                         )}
                       >
                         <div className="flex items-center justify-center gap-1.5">
-                          <r.icon className="w-4 h-4" />
+                          <r.icon className="w-3.5 h-3.5" />
                           <span>{r.title}</span>
                         </div>
                       </th>
@@ -283,16 +299,16 @@ export default function PermissionMatrixPage() {
                   })}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-premium/60 text-xs">
+              <tbody className="divide-y divide-[#E5E5EA]/60 dark:divide-[#2C2C2E]/60 text-xs">
                 {PERMISSION_GROUPS.map((group) => {
                   const GroupIcon = group.icon;
                   return (
                     <React.Fragment key={group.id}>
                       {/* Group Section Header */}
-                      <tr className="bg-slate-100/90 dark:bg-zinc-900/90 border-y border-premium/80 font-bold">
-                        <td colSpan={4} className="py-3 px-6 text-premium-main">
-                          <div className="flex items-center gap-2.5 text-xs font-black uppercase tracking-wider text-slate-900 dark:text-slate-100">
-                            <GroupIcon className="w-4 h-4 text-slate-700 dark:text-slate-300" />
+                      <tr className="bg-[#F5F5F7]/80 dark:bg-[#2C2C2E]/40 border-y border-[#E5E5EA] dark:border-[#2C2C2E]">
+                        <td colSpan={4} className="py-2.5 px-5">
+                          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#1D1D1F] dark:text-white">
+                            <GroupIcon className="w-3.5 h-3.5 text-[#86868B]" />
                             <span>{group.title}</span>
                           </div>
                         </td>
@@ -300,10 +316,10 @@ export default function PermissionMatrixPage() {
 
                       {/* Group Permission Rows */}
                       {group.permissions.map((perm) => (
-                        <tr key={perm.key} className="hover:bg-slate-50/60 dark:hover:bg-zinc-900/40 transition-colors">
-                          <td className="py-3.5 px-6">
-                            <div className="font-bold text-slate-950 dark:text-slate-50 text-xs">{perm.label}</div>
-                            <div className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium mt-0.5">{perm.description}</div>
+                        <tr key={perm.key} className="hover:bg-[#F5F5F7]/50 dark:hover:bg-[#2C2C2E]/50 transition-colors">
+                          <td className="py-3 px-5">
+                            <div className="font-medium text-[#1D1D1F] dark:text-white text-xs">{perm.label}</div>
+                            <div className="text-[11px] text-[#86868B] mt-0.5">{perm.description}</div>
                           </td>
 
                           {roles.map((r) => {
@@ -313,20 +329,20 @@ export default function PermissionMatrixPage() {
                               <td
                                 key={r.id}
                                 className={clsx(
-                                  'py-3.5 px-6 text-center align-middle transition-colors border-l border-premium/30',
-                                  isCurrentRole && 'bg-indigo-500/5 dark:bg-indigo-500/10'
+                                  'py-3 px-5 text-center align-middle transition-colors border-l border-[#E5E5EA]/60 dark:border-[#2C2C2E]/60',
+                                  isCurrentRole && 'bg-[#0071E3]/[0.02]'
                                 )}
                               >
                                 <div className="flex justify-center items-center">
                                   {isAllowed ? (
-                                    <div className="inline-flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 font-extrabold bg-emerald-500/10 dark:bg-emerald-500/15 px-2.5 py-1 rounded-md border border-emerald-500/20 dark:border-emerald-500/30 text-[10px] tracking-wide uppercase shadow-2xs">
-                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                    <div className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 text-[11px]">
+                                      <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                                       <span>Allowed</span>
                                     </div>
                                   ) : (
-                                    <div className="inline-flex items-center gap-1.5 text-red-700 dark:text-red-400 font-bold bg-red-50 dark:bg-red-950/20 px-2.5 py-1 rounded-md border border-red-200/30 dark:border-red-900/30 text-[10px] tracking-wide uppercase">
-                                      <XCircle className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
-                                      <span>Rejected</span>
+                                    <div className="inline-flex items-center gap-1.5 text-[#86868B] font-medium bg-[#F5F5F7] dark:bg-[#2C2C2E] px-2 py-0.5 rounded-md border border-[#E5E5EA] dark:border-[#38383A] text-[11px]">
+                                      <XCircle className="w-3 h-3 text-[#86868B]" />
+                                      <span>Restricted</span>
                                     </div>
                                   )}
                                 </div>

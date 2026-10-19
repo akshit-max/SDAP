@@ -10,17 +10,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-inter)", "ui-sans-serif", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
-        mono: ["var(--font-space-mono)", "monospace"],
-      },
-      borderRadius: {
-        none: "0px",
-        sm: "0px",
-        md: "0px",
-        lg: "0px",
-        xl: "0px",
-        "2xl": "0px",
-        "3xl": "0px",
+        sans: ["'Plus Jakarta Sans'", "var(--font-inter)", "var(--font-geist-sans)", "-apple-system", "BlinkMacSystemFont", "'SF Pro Display'", "'SF Pro Text'", "system-ui", "sans-serif"],
+        mono: ["var(--font-geist-mono)", "var(--font-space-mono)", "monospace"],
       },
     },
   },
