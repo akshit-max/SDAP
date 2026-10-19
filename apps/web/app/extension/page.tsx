@@ -65,21 +65,20 @@ export default function ExtensionPage() {
 
   return (
     <DashboardShell>
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="max-w-4xl mx-auto space-y-6">
         
         {/* Header Section */}
-        <div className="pb-4 border-b border-zinc-200/80 dark:border-white/10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="pb-4 border-b border-[#E5E5EA] dark:border-[#2C2C2E] flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="w-5 h-[1.5px] bg-sky-500" />
-              <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
-                AUTOMATION & AGENTS
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wider">
+                AUTOMATION &amp; AGENTS
               </span>
             </div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
+            <h1 className="text-xl font-semibold tracking-tight text-[#1D1D1F] dark:text-white">
               Browser Extension
             </h1>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed">
+            <p className="text-xs text-[#86868B] mt-0.5 leading-relaxed">
               Autofill credentials directly into target websites securely and dynamically through WithUs.
             </p>
           </div>
@@ -88,9 +87,9 @@ export default function ExtensionPage() {
               href="https://chromewebstore.google.com/detail/withus-vault/ccelghkaoejlmljlhcefnkbcbfmoge"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-zinc-200 dark:border-white/15 bg-white/70 dark:bg-white/[0.06] hover:bg-white dark:hover:bg-white/[0.12] text-zinc-700 dark:text-zinc-200 hover:text-zinc-950 dark:hover:text-white text-xs font-bold transition-all shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E5E5EA] dark:border-[#38383A] bg-white dark:bg-[#2C2C2E] hover:bg-[#F5F5F7] dark:hover:bg-[#38383A]/80 text-[#1D1D1F] dark:text-[#F5F5F7] text-xs font-medium transition-colors shadow-sm"
             >
-              <svg className="w-4 h-4 text-zinc-900 dark:text-zinc-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <circle cx="12" cy="12" r="4" />
                 <line x1="21.17" y1="8" x2="12" y2="8" />
@@ -101,19 +100,19 @@ export default function ExtensionPage() {
             </a>
             <a
               href="/downloads/WITHUS-Extension.zip"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-zinc-950 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-bold transition-all shadow-sm active:scale-[0.99]"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-medium transition-colors shadow-sm active:scale-[0.99]"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-3.5 h-3.5" />
               <span>Download Extension (ZIP)</span>
             </a>
           </div>
         </div>
 
         {/* Future Ready / Webstore Announcement Alert */}
-        <div className="p-4 rounded-2xl bg-white/70 dark:bg-white/[0.03] backdrop-blur-md border border-zinc-200/80 dark:border-white/10 flex items-start gap-3 shadow-sm">
-          <Info className="w-4 h-4 text-sky-500 mt-0.5 flex-shrink-0" />
-          <div className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium">
-            <span className="text-zinc-900 dark:text-white font-bold mr-1.5">Store Release Status:</span>
+        <div className="p-3.5 rounded-xl bg-white dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#2C2C2E] flex items-start gap-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+          <Info className="w-4 h-4 text-[#0071E3] mt-0.5 flex-shrink-0" />
+          <div className="text-xs text-[#636366] dark:text-[#AEAEB2] leading-relaxed font-normal">
+            <span className="text-[#1D1D1F] dark:text-white font-medium mr-1.5">Store Release Status:</span>
             Chrome Web Store and Microsoft Edge store approval is in progress. In the meantime, you can load the developer version unpacked using the step-by-step instructions below.
           </div>
         </div>
@@ -125,26 +124,26 @@ export default function ExtensionPage() {
             return (
               <div 
                 key={step.number} 
-                className="rounded-[24px] bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl border border-zinc-200/80 dark:border-white/10 p-5 flex flex-col justify-between hover:border-zinc-300 dark:hover:border-white/20 transition-all shadow-[0_4px_24px_rgba(0,0,0,0.02)] dark:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]"
+                className="rounded-xl bg-white dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#2C2C2E] p-4 flex flex-col justify-between hover:border-[#D1D1D6] dark:hover:border-[#38383A] transition-colors shadow-[0_1px_3px_rgba(0,0,0,0.02)]"
               >
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest bg-zinc-100 dark:bg-white/[0.06] border border-zinc-200 dark:border-white/10 px-2.5 py-0.5 rounded-full">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-medium text-[#86868B] uppercase tracking-wider bg-[#F5F5F7] dark:bg-[#2C2C2E] border border-[#E5E5EA] dark:border-[#38383A] px-2 py-0.5 rounded-md">
                       Step {step.number}
                     </span>
                     {step.badge && (
-                      <span className="text-[10px] font-bold bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 px-2.5 py-0.5 rounded-full">
+                      <span className="text-[10px] font-medium bg-[#0071E3]/10 text-[#0071E3] border border-[#0071E3]/20 px-2 py-0.5 rounded-md">
                         {step.badge}
                       </span>
                     )}
                   </div>
-                  <div className="flex gap-3.5 items-start">
-                    <div className="w-9 h-9 rounded-xl border border-zinc-200/80 dark:border-white/10 flex items-center justify-center bg-zinc-100 dark:bg-white/[0.06] text-zinc-900 dark:text-white flex-shrink-0 shadow-sm">
+                  <div className="flex gap-3 items-start">
+                    <div className="w-8 h-8 rounded-lg border border-[#E5E5EA] dark:border-[#38383A] flex items-center justify-center bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] flex-shrink-0">
                       <Icon className="w-4 h-4" />
                     </div>
                     <div>
-                      <h3 className="text-xs font-bold text-zinc-900 dark:text-white">{step.title}</h3>
-                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium mt-1 leading-relaxed">
+                      <h3 className="text-xs font-semibold text-[#1D1D1F] dark:text-white">{step.title}</h3>
+                      <p className="text-[11px] text-[#636366] dark:text-[#AEAEB2] font-normal mt-0.5 leading-relaxed">
                         {step.description}
                       </p>
                     </div>
@@ -153,10 +152,10 @@ export default function ExtensionPage() {
 
                 {/* Optional Step Actions */}
                 {step.number === 1 && (
-                  <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-white/10 flex justify-end">
+                  <div className="mt-3 pt-2.5 border-t border-[#E5E5EA] dark:border-[#2C2C2E] flex justify-end">
                     <a
                       href="/downloads/WITHUS-Extension.zip"
-                      className="text-[11px] font-bold text-zinc-900 dark:text-white hover:underline flex items-center gap-1.5"
+                      className="text-xs font-medium text-[#0071E3] hover:underline flex items-center gap-1"
                     >
                       Download Package <ExternalLink className="w-3 h-3" />
                     </a>
@@ -164,10 +163,10 @@ export default function ExtensionPage() {
                 )}
 
                 {step.number === 3 && step.action && (
-                  <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-white/10 flex justify-end">
+                  <div className="mt-3 pt-2.5 border-t border-[#E5E5EA] dark:border-[#2C2C2E] flex justify-end">
                     <button
                       onClick={step.action}
-                      className="text-[11px] font-bold text-zinc-900 dark:text-white hover:underline"
+                      className="text-xs font-medium text-[#0071E3] hover:underline"
                     >
                       {copiedLink ? 'Copied to Clipboard!' : 'Copy Link'}
                     </button>
@@ -179,12 +178,12 @@ export default function ExtensionPage() {
         </div>
 
         {/* Verification Checklist Card */}
-        <div className="rounded-[28px] bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl border border-zinc-200/80 dark:border-white/10 p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)] dark:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]">
-          <h2 className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+        <div className="rounded-xl bg-white dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#2C2C2E] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+          <h2 className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wider mb-3 flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
             Verification Checklist
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 text-xs text-zinc-600 dark:text-zinc-300 font-medium">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-[#636366] dark:text-[#AEAEB2] font-normal">
             <div className="flex items-center gap-2.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
               <span>WithUs extension badge appears in your browser bar</span>
@@ -205,44 +204,44 @@ export default function ExtensionPage() {
         </div>
 
         {/* Troubleshooting Section */}
-        <div className="rounded-[28px] bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl border border-zinc-200/80 dark:border-white/10 p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)] dark:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]">
-          <h2 className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+        <div className="rounded-xl bg-white dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#2C2C2E] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+          <h2 className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wider mb-3 flex items-center gap-2">
             <Info className="w-4 h-4 text-amber-500" />
             Troubleshooting
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-1.5">
-              <h3 className="text-xs font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-1">
+              <h3 className="text-xs font-semibold text-[#1D1D1F] dark:text-white flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
                 Extension icon not showing in toolbar?
               </h3>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed font-normal pl-3.5">
-                Click the Extensions icon (puzzle piece) in your browser's toolbar and select the pin icon next to <span className="font-bold text-zinc-900 dark:text-white">WithUs Vault</span> to keep it permanently visible.
+              <p className="text-xs text-[#636366] dark:text-[#AEAEB2] leading-relaxed font-normal pl-3.5">
+                Click the Extensions icon (puzzle piece) in your browser's toolbar and select the pin icon next to <span className="font-semibold text-[#1D1D1F] dark:text-white">WithUs Vault</span> to keep it permanently visible.
               </p>
             </div>
-            <div className="space-y-1.5">
-              <h3 className="text-xs font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+            <div className="space-y-1">
+              <h3 className="text-xs font-semibold text-[#1D1D1F] dark:text-white flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
                 Autofill prompts not triggering?
               </h3>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed font-normal pl-3.5">
-                Open the extension pop-up and confirm that the status dot in the top right is green. If it's grey, click <span className="font-bold text-zinc-900 dark:text-white">Sign In</span> to re-establish your workspace session.
+              <p className="text-xs text-[#636366] dark:text-[#AEAEB2] leading-relaxed font-normal pl-3.5">
+                Open the extension pop-up and confirm that the status dot in the top right is green. If it's grey, click <span className="font-semibold text-[#1D1D1F] dark:text-white">Sign In</span> to re-establish your workspace session.
               </p>
             </div>
           </div>
         </div>
 
         {/* Support & Privacy Footer */}
-        <div className="pt-4 flex items-center justify-between border-t border-zinc-200/80 dark:border-white/10 text-[10px] text-zinc-400 font-medium">
+        <div className="pt-4 flex items-center justify-between border-t border-[#E5E5EA] dark:border-[#2C2C2E] text-[11px] text-[#86868B] font-normal">
           <div>
             &copy; {new Date().getFullYear()} WithUs. All rights reserved.
           </div>
           <div className="flex gap-4">
-            <Link href="/privacy" className="hover:text-zinc-900 dark:hover:text-white transition-colors hover:underline">
+            <Link href="/privacy" className="hover:text-[#1D1D1F] dark:hover:text-white transition-colors hover:underline">
               Privacy Policy
             </Link>
             <span>&bull;</span>
-            <a href="mailto:makewithus.in@gmail.com" className="hover:text-zinc-900 dark:hover:text-white transition-colors hover:underline">
+            <a href="mailto:makewithus.in@gmail.com" className="hover:text-[#1D1D1F] dark:hover:text-white transition-colors hover:underline">
               Support
             </a>
           </div>

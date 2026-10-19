@@ -8,7 +8,7 @@ import { formatDate } from '../../lib/formatters';
 
 export function VaultCard({ vault }: { vault: VaultResponse }) {
   const createdDate = formatDate(vault.createdAt);
-  const secretCount = (vault as any)?._count?.secrets ?? (vault as any)?.secretsCount ?? 0;
+  const secretCount = (vault as any)?._count?.secrets ?? (vault as any)?.secretsCount;
 
   return (
     <Link 
@@ -24,9 +24,16 @@ export function VaultCard({ vault }: { vault: VaultResponse }) {
             <h3 className="text-sm font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] truncate group-hover:text-[#0071E3] transition-colors">
               {vault.name}
             </h3>
-            <span className="text-[11px] text-[#86868B] dark:text-[#8E8E93] flex items-center gap-1">
-              <span>{secretCount} credentials</span>
-            </span>
+            {typeof secretCount === 'number' ? (
+              <span className="text-[11px] text-[#86868B] dark:text-[#8E8E93] flex items-center gap-1">
+                <span>{secretCount} {secretCount === 1 ? 'credential' : 'credentials'}</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span>AES-256 Encrypted</span>
+              </span>
+            )}
           </div>
         </div>
       </div>

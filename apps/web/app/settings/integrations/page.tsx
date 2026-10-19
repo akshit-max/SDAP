@@ -80,21 +80,21 @@ const PROVIDERS: {
 function StatusBadge({ status }: { status: string }) {
   if (status === 'ACTIVE')
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
         Connected
       </span>
     );
   if (status === 'ERROR')
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
         <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
         Error
       </span>
     );
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-zinc-100 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-white/10">
-      <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
+    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#86868B] border border-[#E5E5EA] dark:border-[#38383A]">
+      <span className="w-1.5 h-1.5 rounded-full bg-[#86868B]" />
       Not Connected
     </span>
   );
@@ -122,17 +122,17 @@ function IntegrationCard({
   const isConnected = connection?.status === 'ACTIVE' || connection?.status === 'ERROR';
 
   return (
-    <div className="rounded-[28px] bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl border border-zinc-200/80 dark:border-white/10 p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)] dark:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)] flex flex-col justify-between hover:border-zinc-300 dark:hover:border-white/20 transition-all">
+    <div className="rounded-xl bg-white dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#2C2C2E] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between hover:border-[#D1D1D6] dark:hover:border-[#38383A] transition-colors">
       <div>
         {/* Header */}
         <div className="flex items-center justify-between gap-4 mb-4">
-          <div className="flex items-center gap-3.5 min-w-0">
-            <div className="w-11 h-11 rounded-2xl bg-zinc-100 dark:bg-white/[0.08] flex items-center justify-center text-zinc-900 dark:text-white flex-shrink-0 shadow-sm">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-[#F5F5F7] dark:bg-[#2C2C2E] border border-[#E5E5EA] dark:border-[#38383A] flex items-center justify-center text-[#1D1D1F] dark:text-[#F5F5F7] flex-shrink-0">
               {provider.icon}
             </div>
             <div>
-              <p className="text-sm font-extrabold text-zinc-900 dark:text-white truncate tracking-tight">{provider.name}</p>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+              <p className="text-sm font-semibold text-[#1D1D1F] dark:text-white truncate tracking-tight">{provider.name}</p>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-[#86868B]">
                 {provider.authenticationType === 'OAUTH' ? 'OAuth 2.0' : 'Personal Token'}
               </p>
             </div>
@@ -143,7 +143,7 @@ function IntegrationCard({
               href={provider.docsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.06]"
+              className="text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white transition-colors p-1.5 rounded-lg hover:bg-[#F5F5F7] dark:hover:bg-[#2C2C2E]"
               title="Documentation"
             >
               <ExternalLink className="w-3.5 h-3.5" />
@@ -152,13 +152,13 @@ function IntegrationCard({
         </div>
 
         {/* Description */}
-        <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-4 leading-relaxed font-normal">
+        <p className="text-xs text-[#636366] dark:text-[#AEAEB2] mb-4 leading-relaxed font-normal">
           {provider.description}
         </p>
 
         {/* Last checked */}
         {connection?.lastCheckedAt && (
-          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mb-3 font-medium">
+          <p className="text-[11px] text-[#86868B] mb-3 font-medium">
             Last checked: {formatDateTime(connection.lastCheckedAt)}
             {(connection.providerMeta as any)?.identity && ` · ${(connection.providerMeta as any).identity}`}
           </p>
@@ -166,7 +166,7 @@ function IntegrationCard({
 
         {/* Error */}
         {connection?.lastError && (
-          <p className="text-[11px] text-rose-600 dark:text-rose-400 mb-3 bg-rose-500/10 border border-rose-500/20 rounded-xl px-3 py-1.5 font-medium">
+          <p className="text-[11px] text-rose-600 dark:text-rose-400 mb-3 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-1.5 font-medium">
             {connection.lastError}
           </p>
         )}
@@ -174,20 +174,20 @@ function IntegrationCard({
 
       {/* Actions */}
       {canManage && (
-        <div className="flex items-center justify-between gap-2 border-t border-zinc-100 dark:border-white/10 pt-4 mt-2">
+        <div className="flex items-center justify-between gap-2 border-t border-[#E5E5EA] dark:border-[#2C2C2E] pt-3.5 mt-2">
           {isConnected ? (
             <div className="flex items-center gap-2 w-full justify-between">
               <button
                 onClick={() => onHealthCheck(provider.id)}
                 disabled={isCheckingHealth}
-                className="px-3.5 py-1.5 rounded-full border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-[11px] font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/[0.08] transition-all inline-flex items-center gap-1.5 shadow-sm"
+                className="px-3 py-1.5 rounded-lg border border-[#E5E5EA] dark:border-[#38383A] bg-white dark:bg-[#2C2C2E] text-xs font-medium text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#F5F5F7] dark:hover:bg-[#38383A]/80 transition-colors inline-flex items-center gap-1.5 shadow-sm disabled:opacity-50"
               >
                 <RefreshCw className={`w-3 h-3 ${isCheckingHealth ? 'animate-spin' : ''}`} />
                 Check Health
               </button>
               <button
                 onClick={() => onDisconnect(provider.id)}
-                className="px-3.5 py-1.5 text-[11px] font-bold rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 transition-all inline-flex items-center gap-1.5"
+                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 transition-colors inline-flex items-center gap-1.5"
               >
                 <Link2Off className="w-3 h-3" />
                 Disconnect
@@ -196,7 +196,7 @@ function IntegrationCard({
           ) : (
             <button
               onClick={() => onConnect(provider.id)}
-              className="w-full px-4 py-2.5 rounded-full bg-zinc-950 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-bold transition-all shadow-sm active:scale-[0.99] flex items-center justify-center gap-2"
+              className="w-full px-4 py-2 rounded-lg bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-medium transition-colors shadow-sm active:scale-[0.99] flex items-center justify-center gap-1.5"
             >
               <Link2 className="w-3.5 h-3.5" />
               Connect {provider.name}
@@ -336,34 +336,35 @@ export default function IntegrationsPage() {
     <DashboardShell>
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
-        <div className="pb-4 border-b border-zinc-200/80 dark:border-white/10">
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="w-5 h-[1.5px] bg-sky-500" />
-            <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
-              PLATFORM & SECURITY
+        <div className="pb-4 border-b border-[#E5E5EA] dark:border-[#2C2C2E]">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wider">
+              PLATFORM &amp; SECURITY
             </span>
           </div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
+          <h1 className="text-xl font-semibold tracking-tight text-[#1D1D1F] dark:text-white">
             Connected Integrations
           </h1>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+          <p className="text-xs text-[#86868B] mt-0.5">
             Connect external developer platforms and OAuth providers to delegate access securely with zero raw credential exposure.
           </p>
         </div>
 
         {/* Level 1 Custom Portal Analyzer */}
-        <div className="rounded-[28px] bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl border border-zinc-200/80 dark:border-white/10 p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)] dark:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]">
-          <div className="flex items-center gap-2.5 mb-2">
-            <Globe className="w-4 h-4 text-sky-500" />
-            <h2 className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Add Custom Portal</h2>
+        <div className="rounded-xl bg-white dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#2C2C2E] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+          <div className="flex items-center gap-2.5 mb-1.5">
+            <div className="w-7 h-7 rounded-lg bg-[#0071E3]/10 text-[#0071E3] flex items-center justify-center">
+              <Globe className="w-3.5 h-3.5" />
+            </div>
+            <h2 className="text-xs font-semibold text-[#1D1D1F] dark:text-white uppercase tracking-wider">Add Custom Portal</h2>
           </div>
-          <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-4 max-w-3xl leading-relaxed">
+          <p className="text-xs text-[#636366] dark:text-[#AEAEB2] mb-4 max-w-3xl leading-relaxed">
             Paste a portal login URL to check if WITHUS supports delegated access for it. WITHUS matches submitted URLs against verified platforms in our integration registry.
           </p>
-          <form onSubmit={handleAnalyzePortal} className="flex flex-col sm:flex-row gap-3 max-w-2xl">
+          <form onSubmit={handleAnalyzePortal} className="flex flex-col sm:flex-row gap-2.5 max-w-2xl">
             <input
               type="url"
-              className="flex-1 px-4 py-2.5 rounded-full border border-zinc-200 dark:border-white/10 bg-white/80 dark:bg-white/[0.04] text-xs font-medium text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all shadow-sm"
+              className="flex-1 px-3.5 py-2 rounded-lg text-xs bg-[#F5F5F7] dark:bg-[#2C2C2E]/60 border border-[#E5E5EA] dark:border-[#38383A] text-[#1D1D1F] dark:text-[#F5F5F7] placeholder-[#86868B] focus:outline-none focus:ring-1 focus:ring-[#0071E3] transition-all"
               placeholder="https://github.com/login"
               value={portalUrl}
               onChange={(e) => {
@@ -375,27 +376,27 @@ export default function IntegrationsPage() {
             <button
               type="submit"
               disabled={isAnalyzing || !portalUrl}
-              className="px-6 py-2.5 rounded-full bg-zinc-950 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-bold transition-all shadow-sm active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 whitespace-nowrap"
+              className="px-4 py-2 rounded-lg bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-medium transition-colors shadow-sm active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 whitespace-nowrap"
             >
               {isAnalyzing ? <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto" /> : 'Check URL'}
             </button>
           </form>
 
           {portalResult && (
-            <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-white/10">
+            <div className="mt-4 pt-4 border-t border-[#E5E5EA] dark:border-[#2C2C2E]">
               {portalResult.compatible ? (
-                <div className="flex items-center gap-3 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 p-4 rounded-2xl border border-emerald-500/20">
-                  <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                <div className="flex items-center gap-3 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 p-3.5 rounded-lg border border-emerald-500/20">
+                  <CheckCircle className="w-4 h-4 flex-shrink-0" />
                   <div>
-                    <div className="font-bold text-xs uppercase tracking-wider">Compatible Platform Detected</div>
+                    <div className="font-semibold text-xs uppercase tracking-wider">Compatible Platform Detected</div>
                     <div className="text-xs opacity-90 mt-0.5">{portalResult.platform} detected. Verified WITHUS login automation engine ready.</div>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-3 text-amber-600 dark:text-amber-400 bg-amber-500/10 p-4 rounded-2xl border border-amber-500/20">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <div className="flex items-center gap-3 text-amber-600 dark:text-amber-400 bg-amber-500/10 p-3.5 rounded-lg border border-amber-500/20">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   <div>
-                    <div className="font-bold text-xs uppercase tracking-wider">Custom Portal Notice</div>
+                    <div className="font-semibold text-xs uppercase tracking-wider">Custom Portal Notice</div>
                     <div className="text-xs opacity-90 mt-0.5">
                       {portalResult.reason === 'not_https'
                         ? 'Custom portals must use HTTPS for secure connection.'
@@ -411,15 +412,15 @@ export default function IntegrationsPage() {
         </div>
 
         {/* Info Banner */}
-        <div className="rounded-2xl border border-zinc-200/80 dark:border-white/10 bg-white/60 dark:bg-white/[0.02] backdrop-blur-md p-4 flex gap-3.5 items-center">
-          <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center">
+        <div className="rounded-xl border border-[#E5E5EA] dark:border-[#2C2C2E] bg-white dark:bg-[#1C1C1E] p-4 flex gap-3.5 items-center shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+          <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-[#0071E3]/10 text-[#0071E3] flex items-center justify-center">
             <Zap className="w-4 h-4" />
           </div>
           <div>
-            <p className="text-xs font-bold text-zinc-900 dark:text-white">
+            <p className="text-xs font-semibold text-[#1D1D1F] dark:text-white">
               Platform-Agnostic Access Delegation
             </p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed mt-0.5">
+            <p className="text-xs text-[#86868B] leading-relaxed mt-0.5">
               Connect external services to delegate authenticated sessions. Credentials stay end-to-end encrypted in the vault and your team members never see raw tokens or passwords.
             </p>
           </div>
@@ -427,16 +428,16 @@ export default function IntegrationsPage() {
 
         {/* Provider Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl">
             {PROVIDERS.map((p) => (
               <div
                 key={p.id}
-                className="premium-card p-5 h-52 animate-pulse"
+                className="rounded-xl bg-white dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#2C2C2E] p-5 h-52 animate-pulse"
               />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl">
             {PROVIDERS.map((provider) => {
               const connection = connections.find((c) => c.provider === provider.id);
               return (

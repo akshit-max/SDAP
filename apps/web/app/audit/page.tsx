@@ -293,15 +293,16 @@ export default function AuditPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-[10px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-widest mb-2">
-              <Shield className="w-3 h-3 text-indigo-500" />
-              Compliance & Forensics
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wider">
+                COMPLIANCE &amp; FORENSICS
+              </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-900 dark:text-white">
+            <h1 className="text-xl font-semibold tracking-tight text-[#1D1D1F] dark:text-white">
               Audit Trail
             </h1>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-              Immutable chronological record of security and operational events across <span className="font-medium text-zinc-800 dark:text-zinc-200">{organization?.name}</span>.
+            <p className="text-xs text-[#86868B] mt-0.5">
+              Immutable chronological record of security and operational events across <span className="font-medium text-[#1D1D1F] dark:text-white">{organization?.name}</span>.
             </p>
           </div>
           {/* BUSINESS: Export CSV button */}
@@ -309,7 +310,7 @@ export default function AuditPage() {
             <button
               onClick={handleExport}
               disabled={isExporting}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-white/10 transition-all shadow-sm flex-shrink-0 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white dark:bg-[#2C2C2E] border border-[#E5E5EA] dark:border-[#38383A] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#F5F5F7] dark:hover:bg-[#38383A]/80 transition-colors shadow-sm flex-shrink-0 disabled:opacity-50"
             >
               <Download className="w-3.5 h-3.5" />
               {isExporting ? 'Exporting…' : 'Export CSV'}
@@ -319,7 +320,7 @@ export default function AuditPage() {
 
         {/* FREE: 7-day history restriction banner */}
         {isFree && (
-          <div className="flex items-start gap-3.5 p-4 rounded-[20px] border border-amber-500/20 bg-amber-500/5 dark:bg-amber-950/15">
+          <div className="flex items-start gap-3 p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/5 dark:bg-amber-950/20">
             <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">7-Day Retention Limit (Free Workspace)</p>
@@ -333,33 +334,33 @@ export default function AuditPage() {
         )}
 
         {/* Filters Card */}
-        <div className="rounded-[24px] border border-zinc-200/80 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.02)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="rounded-xl border border-[#E5E5EA] dark:border-[#2C2C2E] bg-white dark:bg-[#1C1C1E] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {/* Event type */}
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">Event Type</label>
+              <label className="block text-[11px] font-medium text-[#86868B] uppercase tracking-wider mb-1">Event Type</label>
               <select
-                className="w-full px-3 py-2 rounded-xl text-xs bg-zinc-50/80 dark:bg-white/5 border border-zinc-200/80 dark:border-white/10 text-zinc-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-white/20 transition-all"
+                className="w-full px-3 py-1.5 rounded-lg text-xs bg-[#F5F5F7] dark:bg-[#2C2C2E]/60 border border-[#E5E5EA] dark:border-[#38383A] text-[#1D1D1F] dark:text-[#F5F5F7] focus:outline-none focus:ring-1 focus:ring-[#0071E3] transition-all"
                 value={actionFilter}
                 onChange={handleFilterChange(setActionFilter)}
               >
                 {ACTION_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value} className="bg-white dark:bg-zinc-900">{opt.label}</option>
+                  <option key={opt.value} value={opt.value} className="bg-white dark:bg-[#1C1C1E]">{opt.label}</option>
                 ))}
               </select>
             </div>
 
             {/* Actor / member */}
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">Actor</label>
+              <label className="block text-[11px] font-medium text-[#86868B] uppercase tracking-wider mb-1">Actor</label>
               <select
-                className="w-full px-3 py-2 rounded-xl text-xs bg-zinc-50/80 dark:bg-white/5 border border-zinc-200/80 dark:border-white/10 text-zinc-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-white/20 transition-all"
+                className="w-full px-3 py-1.5 rounded-lg text-xs bg-[#F5F5F7] dark:bg-[#2C2C2E]/60 border border-[#E5E5EA] dark:border-[#38383A] text-[#1D1D1F] dark:text-[#F5F5F7] focus:outline-none focus:ring-1 focus:ring-[#0071E3] transition-all"
                 value={actorFilter}
                 onChange={handleFilterChange(setActorFilter)}
               >
-                <option value="" className="bg-white dark:bg-zinc-900">All Members</option>
+                <option value="" className="bg-white dark:bg-[#1C1C1E]">All Members</option>
                 {membersData.map((m: any) => (
-                  <option key={m.userId} value={m.userId} className="bg-white dark:bg-zinc-900">
+                  <option key={m.userId} value={m.userId} className="bg-white dark:bg-[#1C1C1E]">
                     {m.user?.fullName || m.user?.email || m.userId}
                   </option>
                 ))}
@@ -368,10 +369,10 @@ export default function AuditPage() {
 
             {/* Start date */}
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">From Date</label>
+              <label className="block text-[11px] font-medium text-[#86868B] uppercase tracking-wider mb-1">From Date</label>
               <input
                 type="date"
-                className="w-full px-3 py-2 rounded-xl text-xs bg-zinc-50/80 dark:bg-white/5 border border-zinc-200/80 dark:border-white/10 text-zinc-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-white/20 transition-all"
+                className="w-full px-3 py-1.5 rounded-lg text-xs bg-[#F5F5F7] dark:bg-[#2C2C2E]/60 border border-[#E5E5EA] dark:border-[#38383A] text-[#1D1D1F] dark:text-[#F5F5F7] focus:outline-none focus:ring-1 focus:ring-[#0071E3] transition-all"
                 value={startDate}
                 onChange={handleFilterChange(setStartDate)}
                 max={endDate || undefined}
@@ -381,18 +382,18 @@ export default function AuditPage() {
 
             {/* End date */}
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">To Date</label>
+              <label className="block text-[11px] font-medium text-[#86868B] uppercase tracking-wider mb-1">To Date</label>
               <div className="flex gap-2">
                 <input
                   type="date"
-                  className="w-full px-3 py-2 rounded-xl text-xs bg-zinc-50/80 dark:bg-white/5 border border-zinc-200/80 dark:border-white/10 text-zinc-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-white/20 transition-all"
+                  className="w-full px-3 py-1.5 rounded-lg text-xs bg-[#F5F5F7] dark:bg-[#2C2C2E]/60 border border-[#E5E5EA] dark:border-[#38383A] text-[#1D1D1F] dark:text-[#F5F5F7] focus:outline-none focus:ring-1 focus:ring-[#0071E3] transition-all"
                   value={endDate}
                   onChange={handleFilterChange(setEndDate)}
                   min={startDate || undefined}
                 />
                 <button
                   onClick={handleClearFilters}
-                  className="px-3 py-2 rounded-xl text-xs font-medium bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200/60 dark:hover:bg-white/10 transition-all whitespace-nowrap"
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white dark:bg-[#2C2C2E] border border-[#E5E5EA] dark:border-[#38383A] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#F5F5F7] dark:hover:bg-[#38383A]/80 transition-colors whitespace-nowrap shadow-sm"
                 >
                   Reset
                 </button>
@@ -402,42 +403,42 @@ export default function AuditPage() {
         </div>
 
         {/* Table Card */}
-        <div className="rounded-[28px] border border-zinc-200/80 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] overflow-hidden">
+        <div className="rounded-xl border border-[#E5E5EA] dark:border-[#2C2C2E] bg-white dark:bg-[#1C1C1E] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
           <div className="overflow-x-auto w-full">
-            <table className="min-w-full divide-y divide-zinc-200/60 dark:divide-white/10">
-              <thead className="bg-zinc-50/60 dark:bg-white/[0.02]">
+            <table className="min-w-full divide-y divide-[#E5E5EA]/60 dark:divide-[#2C2C2E]/60">
+              <thead className="bg-[#F5F5F7]/60 dark:bg-[#2C2C2E]/40">
                 <tr>
-                  <th scope="col" className="px-6 py-3.5 text-left text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Event</th>
-                  <th scope="col" className="px-6 py-3.5 text-left text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Actor</th>
-                  <th scope="col" className="px-6 py-3.5 text-left text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider hidden sm:table-cell">Target Resource</th>
-                  <th scope="col" className="px-6 py-3.5 text-left text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Timestamp</th>
-                  <th scope="col" className="px-6 py-3.5 text-right text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Details</th>
+                  <th scope="col" className="px-5 py-3 text-left text-[11px] font-medium text-[#86868B] uppercase tracking-wider">Event</th>
+                  <th scope="col" className="px-5 py-3 text-left text-[11px] font-medium text-[#86868B] uppercase tracking-wider">Actor</th>
+                  <th scope="col" className="px-5 py-3 text-left text-[11px] font-medium text-[#86868B] uppercase tracking-wider hidden sm:table-cell">Target Resource</th>
+                  <th scope="col" className="px-5 py-3 text-left text-[11px] font-medium text-[#86868B] uppercase tracking-wider">Timestamp</th>
+                  <th scope="col" className="px-5 py-3 text-right text-[11px] font-medium text-[#86868B] uppercase tracking-wider">Details</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200/60 dark:divide-white/10">
+              <tbody className="divide-y divide-[#E5E5EA]/60 dark:divide-[#2C2C2E]/60">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-xs text-zinc-400">
-                      <Activity className="w-5 h-5 mx-auto mb-2 animate-pulse text-zinc-400" />
+                    <td colSpan={5} className="px-5 py-12 text-center text-xs text-[#86868B]">
+                      <Activity className="w-5 h-5 mx-auto mb-2 animate-pulse text-[#86868B]" />
                       Loading events...
                     </td>
                   </tr>
                 ) : isError ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-14 text-center">
+                    <td colSpan={5} className="px-5 py-14 text-center">
                       <ShieldOff className="w-8 h-8 mx-auto mb-3 text-red-500/50" />
                       <p className="text-sm font-semibold text-red-600 dark:text-red-400">Failed to load audit events</p>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                      <p className="text-xs text-[#86868B] mt-1">
                         Please try refreshing the page.
                       </p>
                     </td>
                   </tr>
                 ) : !data?.data?.length ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-14 text-center">
-                      <Shield className="w-8 h-8 mx-auto mb-3 text-zinc-400 dark:text-zinc-600" />
-                      <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">No events found</p>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                    <td colSpan={5} className="px-5 py-14 text-center">
+                      <Shield className="w-8 h-8 mx-auto mb-3 text-[#86868B]" />
+                      <p className="text-sm font-semibold text-[#1D1D1F] dark:text-white">No events found</p>
+                      <p className="text-xs text-[#86868B] mt-1">
                         Events will appear here as your team performs operations.
                       </p>
                     </td>
@@ -458,45 +459,43 @@ export default function AuditPage() {
 
                     return (
                       <React.Fragment key={event.id}>
-                        <tr className="hover:bg-zinc-50/50 dark:hover:bg-white/[0.02] transition-colors">
+                        <tr className="hover:bg-[#F5F5F7]/50 dark:hover:bg-[#2C2C2E]/50 transition-colors">
                           {/* Event */}
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${cfg.bg} ${cfg.color}`}>
+                          <td className="px-5 py-3 whitespace-nowrap">
+                            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium border ${cfg.bg} ${cfg.color}`}>
                               {cfg.icon}
                               {cfg.label}
                             </span>
                           </td>
 
                           {/* Actor */}
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-5 py-3 whitespace-nowrap">
                             <div className="flex items-center gap-2.5">
-                              <div className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 flex items-center justify-center flex-shrink-0">
-                                <span className="text-[10px] font-semibold text-zinc-700 dark:text-zinc-300">
-                                  {actorName[0]?.toUpperCase() || '?'}
-                                </span>
+                              <div className="w-6 h-6 rounded-full bg-[#0071E3]/10 text-[#0071E3] flex items-center justify-center flex-shrink-0 text-[10px] font-semibold">
+                                {actorName[0]?.toUpperCase() || '?'}
                               </div>
                               <div>
-                                <p className="text-xs font-semibold text-zinc-900 dark:text-white">{actorName}</p>
-                                {actorEmail && <p className="text-[11px] text-zinc-500 dark:text-zinc-400">{actorEmail}</p>}
+                                <p className="text-xs font-medium text-[#1D1D1F] dark:text-white">{actorName}</p>
+                                {actorEmail && <p className="text-[11px] text-[#86868B]">{actorEmail}</p>}
                               </div>
                             </div>
                           </td>
 
                           {/* Resource */}
-                          <td className="px-6 py-4 whitespace-nowrap hidden sm:table-cell">
+                          <td className="px-5 py-3 whitespace-nowrap hidden sm:table-cell">
                             {resourceLabel ? (
-                              <span className="text-xs text-zinc-700 dark:text-zinc-300 font-mono">
+                              <span className="text-xs text-[#1D1D1F] dark:text-[#F5F5F7] font-mono">
                                 {resourceLabel}
                               </span>
                             ) : (
-                              <span className="text-xs text-zinc-400 dark:text-zinc-600">—</span>
+                              <span className="text-xs text-[#86868B]">—</span>
                             )}
                           </td>
 
                           {/* When */}
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-5 py-3 whitespace-nowrap">
                             <span
-                              className="text-xs text-zinc-500 dark:text-zinc-400"
+                              className="text-xs text-[#86868B]"
                               title={formatDateTime(event.createdAt)}
                             >
                               {relativeTime(event.createdAt)}
@@ -504,10 +503,10 @@ export default function AuditPage() {
                           </td>
 
                           {/* Details toggle */}
-                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <td className="px-5 py-3 whitespace-nowrap text-right">
                             <button
                               onClick={() => toggleRow(event.id)}
-                              className="p-1 text-zinc-400 hover:text-zinc-800 dark:hover:text-white transition-colors"
+                              className="p-1 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white transition-colors"
                               title="View details"
                             >
                               {expandedRow === event.id ? <ChevronUp className="h-4 w-4 ml-auto" /> : <ChevronDown className="h-4 w-4 ml-auto" />}
@@ -517,26 +516,26 @@ export default function AuditPage() {
 
                         {/* Expanded details */}
                         {expandedRow === event.id && (
-                          <tr className="bg-zinc-50/50 dark:bg-white/[0.01]">
-                            <td colSpan={5} className="px-6 py-4 border-t border-zinc-200/40 dark:border-white/5">
-                              <div className="text-xs text-zinc-600 dark:text-zinc-400">
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+                          <tr className="bg-[#F5F5F7]/30 dark:bg-[#2C2C2E]/20">
+                            <td colSpan={5} className="px-5 py-3 border-t border-[#E5E5EA]/60 dark:border-[#2C2C2E]/60">
+                              <div className="text-xs text-[#636366] dark:text-[#AEAEB2]">
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-3">
                                   <div>
-                                    <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-0.5">Event Timestamp</p>
-                                    <p className="font-medium text-zinc-900 dark:text-white">{formatDateTime(event.createdAt)}</p>
+                                    <p className="text-[10px] font-medium text-[#86868B] uppercase tracking-wider mb-0.5">Event Timestamp</p>
+                                    <p className="font-medium text-[#1D1D1F] dark:text-white">{formatDateTime(event.createdAt)}</p>
                                   </div>
                                   <div>
-                                    <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-0.5">Resource Class</p>
-                                    <p className="font-medium text-zinc-900 dark:text-white">{event.resourceType || '—'}</p>
+                                    <p className="text-[10px] font-medium text-[#86868B] uppercase tracking-wider mb-0.5">Resource Class</p>
+                                    <p className="font-medium text-[#1D1D1F] dark:text-white">{event.resourceType || '—'}</p>
                                   </div>
                                   <div>
-                                    <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-0.5">Schema Version</p>
-                                    <p className="font-medium text-zinc-900 dark:text-white">v{event.eventVersion}</p>
+                                    <p className="text-[10px] font-medium text-[#86868B] uppercase tracking-wider mb-0.5">Schema Version</p>
+                                    <p className="font-medium text-[#1D1D1F] dark:text-white">v{event.eventVersion}</p>
                                   </div>
                                 </div>
                                 {Boolean(event.metadata) && (
                                   <>
-                                    <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-2">Context Metadata</p>
+                                    <p className="text-[10px] font-medium text-[#86868B] uppercase tracking-wider mb-1.5">Context Metadata</p>
                                     <AuditMetaDetails
                                       action={event.action}
                                       metadata={(event.metadata as Record<string, any>) ?? {}}
@@ -557,24 +556,24 @@ export default function AuditPage() {
 
           {/* Pagination */}
           {data && data.totalPages > 1 && (
-            <div className="px-6 py-4 border-t border-zinc-200/60 dark:border-white/10 flex items-center justify-between bg-zinc-50/40 dark:bg-white/[0.01]">
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Page <span className="font-semibold text-zinc-900 dark:text-white">{page}</span> of{' '}
-                <span className="font-semibold text-zinc-900 dark:text-white">{data.totalPages}</span>
-                {' '}· <span className="font-semibold text-zinc-900 dark:text-white">{data.total}</span> total events
+            <div className="px-5 py-3 border-t border-[#E5E5EA] dark:border-[#2C2C2E] flex items-center justify-between bg-[#F5F5F7]/40 dark:bg-[#2C2C2E]/20">
+              <p className="text-xs text-[#86868B]">
+                Page <span className="font-medium text-[#1D1D1F] dark:text-white">{page}</span> of{' '}
+                <span className="font-medium text-[#1D1D1F] dark:text-white">{data.totalPages}</span>
+                {' '}· <span className="font-medium text-[#1D1D1F] dark:text-white">{data.total}</span> total events
               </p>
               <div className="flex gap-2">
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="px-3 py-1 rounded-full text-xs font-medium bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 hover:bg-zinc-200/70 dark:hover:bg-white/10 disabled:opacity-40 transition-all"
+                  className="px-3 py-1 rounded-lg text-xs font-medium bg-white dark:bg-[#2C2C2E] border border-[#E5E5EA] dark:border-[#38383A] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#F5F5F7] dark:hover:bg-[#38383A]/80 disabled:opacity-40 transition-colors shadow-sm"
                 >
                   Previous
                 </button>
                 <button
                   onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))}
                   disabled={page === data.totalPages}
-                  className="px-3 py-1 rounded-full text-xs font-medium bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 hover:bg-zinc-200/70 dark:hover:bg-white/10 disabled:opacity-40 transition-all"
+                  className="px-3 py-1 rounded-lg text-xs font-medium bg-white dark:bg-[#2C2C2E] border border-[#E5E5EA] dark:border-[#38383A] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#F5F5F7] dark:hover:bg-[#38383A]/80 disabled:opacity-40 transition-colors shadow-sm"
                 >
                   Next
                 </button>

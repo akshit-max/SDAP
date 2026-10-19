@@ -221,20 +221,17 @@ export default function MembersPage() {
 
   return (
     <DashboardShell>
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="pb-4 border-b border-zinc-200/80 dark:border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="max-w-4xl mx-auto space-y-6 pb-12">
+        <div className="pb-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="w-5 h-[1.5px] bg-sky-500" />
-              <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
-                ORGANIZATION
-              </span>
+            <div className="text-[11px] font-semibold text-[#86868B] dark:text-[#8E8E93] uppercase tracking-wider mb-0.5">
+              ORGANIZATION
             </div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#1D1D1F] dark:text-[#F5F5F7]">
               Team Members
             </h1>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-              Manage member roles, invitations, and access delegation for <span className="font-semibold text-zinc-900 dark:text-white">{organization?.name}</span>.
+            <p className="text-xs sm:text-sm text-[#86868B] dark:text-[#8E8E93] mt-0.5 font-normal">
+              Manage member roles, invitations, and access delegation for <span className="font-medium text-[#1D1D1F] dark:text-[#F5F5F7]">{organization?.name}</span>.
             </p>
           </div>
         </div>
@@ -253,27 +250,33 @@ export default function MembersPage() {
 
         {/* ── Invite Form ──────────────────────────────────────────────── */}
         {canInvite && (
-          <div className="rounded-[28px] bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl border border-zinc-200/80 dark:border-white/10 p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)] dark:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]">
-            <h2 className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-              <UserPlus className="w-4 h-4 text-sky-500" />
+          <div className="rounded-xl bg-white dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#2C2C2E] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+            <h2 className="text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] mb-3 flex items-center gap-2">
+              <UserPlus className="w-4 h-4 text-[#0071E3]" />
               Invite a Team Member
             </h2>
             <form onSubmit={handleInvite} className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1 relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#86868B]" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onPaste={(e) => {
+                    const pasted = e.clipboardData.getData('text');
+                    if (pasted) {
+                      setEmail(pasted.trim());
+                    }
+                  }}
                   placeholder="colleague@company.com"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-full border border-zinc-200 dark:border-white/10 bg-white/80 dark:bg-white/[0.04] text-xs font-medium text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all shadow-sm"
+                  className="w-full pl-9 pr-4 py-2 rounded-lg border border-[#E5E5EA] dark:border-[#38383A] bg-[#F5F5F7] dark:bg-[#2C2C2E]/60 text-xs text-[#1D1D1F] dark:text-[#F5F5F7] placeholder:text-[#86868B] focus:outline-none focus:ring-1 focus:ring-[#0071E3] transition-all"
                 />
               </div>
               <button
                 type="submit"
                 disabled={isInviting || !email.trim()}
-                className="px-6 py-2.5 rounded-full bg-zinc-950 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-bold transition-all shadow-sm active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="px-4 py-2 rounded-lg bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 flex-shrink-0"
               >
                 {isInviting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Send Invite'}
               </button>
@@ -393,26 +396,26 @@ export default function MembersPage() {
         )}
 
         {/* ── Current Members ──────────────────────────────────────────── */}
-        <div className="rounded-[28px] bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl border border-zinc-200/80 dark:border-white/10 shadow-[0_4px_24px_rgba(0,0,0,0.02)] dark:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]">
-          <div className="px-6 py-4 rounded-t-[28px] border-b border-zinc-100 dark:border-white/10 bg-zinc-50/50 dark:bg-white/[0.02] flex items-center justify-between">
-            <h2 className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest flex items-center gap-2">
-              <Users className="w-4 h-4 text-sky-500" />
+        <div className="rounded-xl bg-white dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#2C2C2E] shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+          <div className="px-6 py-3.5 border-b border-[#E5E5EA] dark:border-[#2C2C2E] bg-[#F5F5F7]/60 dark:bg-[#2C2C2E]/40 rounded-t-xl flex items-center justify-between">
+            <h2 className="text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] flex items-center gap-2">
+              <Users className="w-4 h-4 text-[#0071E3]" />
               Current Members
             </h2>
-            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider bg-zinc-100 dark:bg-white/[0.06] px-2.5 py-0.5 rounded-full border border-zinc-200 dark:border-white/10">
+            <span className="text-[11px] text-[#86868B] dark:text-[#8E8E93] font-medium bg-[#F5F5F7] dark:bg-[#2C2C2E] px-2 py-0.5 rounded border border-[#E5E5EA] dark:border-[#38383A]">
               {members.length} member{members.length !== 1 ? 's' : ''}
             </span>
           </div>
 
-          <div className="px-6 py-3.5 border-b border-zinc-100 dark:border-white/10 bg-white/40 dark:bg-white/[0.01]">
+          <div className="px-6 py-3 border-b border-[#E5E5EA] dark:border-[#2C2C2E] bg-white dark:bg-[#1C1C1E]">
             <div className="relative">
-              <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-[#86868B] absolute left-3 top-1/2 -translate-y-1/2" />
               <input 
                 type="text" 
                 placeholder="Search team members by name or email..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 text-xs rounded-full bg-zinc-100/70 dark:bg-white/[0.04] border border-zinc-200/80 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-zinc-900 dark:text-white placeholder:text-zinc-400"
+                className="w-full pl-8 pr-4 py-1.5 text-xs rounded-lg bg-[#F5F5F7] dark:bg-[#2C2C2E]/60 border border-[#E5E5EA] dark:border-[#38383A] focus:outline-none focus:ring-1 focus:ring-[#0071E3] transition-all text-[#1D1D1F] dark:text-[#F5F5F7] placeholder:text-[#86868B]"
               />
             </div>
           </div>
@@ -432,11 +435,12 @@ export default function MembersPage() {
                 const isSelf = member.userId === currentUserId;
                 const canEdit = canRemove && !isOwner && !isSelf;
                 const isLast = index === filteredMembers.length - 1;
+                const isNearBottom = index >= filteredMembers.length - 2;
                 return (
-                  <li key={member.id} className={`transition-colors ${isLast ? 'rounded-b-[28px]' : ''} ${openMenuId === member.id ? 'relative z-20' : ''}`}>
+                  <li key={member.id} className={`transition-colors ${isLast ? 'rounded-b-xl' : ''} ${openMenuId === member.id ? 'relative z-20' : ''}`}>
                     {/* ── Member Row ── */}
                     <div
-                      className={`px-6 py-4 flex items-center justify-between hover:bg-zinc-50/60 dark:hover:bg-white/[0.02] ${isLast ? 'rounded-b-[28px]' : ''}`}
+                      className={`px-6 py-4 flex items-center justify-between hover:bg-zinc-50/60 dark:hover:bg-white/[0.02] ${isLast ? 'rounded-b-xl' : ''}`}
                     >
                       {/* Left: Avatar + Info */}
                       <div className="flex items-center gap-3.5 min-w-0">
@@ -497,7 +501,7 @@ export default function MembersPage() {
                                      className="fixed inset-0 z-40"
                                      onClick={() => setOpenMenuId(null)}
                                    />
-                                   <div className={`absolute right-0 ${isLast && filteredMembers.length > 2 ? 'bottom-full mb-1.5' : 'mt-2'} w-52 rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-zinc-200/80 dark:border-white/15 shadow-2xl overflow-hidden z-50 py-1.5`}>
+                                   <div className={`absolute right-0 ${isNearBottom ? 'bottom-full mb-1.5' : 'mt-2'} w-52 rounded-xl bg-white dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#2C2C2E] shadow-[0_12px_32px_rgba(0,0,0,0.12)] z-50 py-1.5`}>
                                      {/* Promote / Demote — OWNER only */}
                                      {canChangeRole && member.role === 'MEMBER' && (
                                        <button

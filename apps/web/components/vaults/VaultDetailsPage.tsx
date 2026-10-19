@@ -88,22 +88,22 @@ export function VaultDetailsPage({ vaultId }: { vaultId: string }) {
     <>
       <div className="space-y-6 max-w-6xl mx-auto pb-12">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2">
           <div>
-            <div className="flex items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-500 mb-2">
-              <Link href="/vaults" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Vaults</Link>
+            <div className="flex items-center gap-1.5 text-xs text-[#86868B] dark:text-[#8E8E93] mb-1.5">
+              <Link href="/vaults" className="hover:text-[#0071E3] transition-colors">Vaults</Link>
               <span>/</span>
-              <span className="font-medium text-zinc-800 dark:text-zinc-200">{vault.name}</span>
+              <span className="font-medium text-[#1D1D1F] dark:text-[#F5F5F7]">{vault.name}</span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-zinc-100 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 flex items-center justify-center text-zinc-800 dark:text-zinc-200 shadow-sm">
-                <KeyRound className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-lg bg-[#0071E3]/10 text-[#0071E3] flex items-center justify-center flex-shrink-0 shadow-sm">
+                <KeyRound className="w-4 h-4" />
               </div>
               <div>
-                <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white">
+                <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#1D1D1F] dark:text-[#F5F5F7]">
                   {vault.name}
                 </h1>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{vault.description || 'Secure credential storage vault.'}</p>
+                <p className="text-xs sm:text-sm text-[#86868B] dark:text-[#8E8E93] mt-0.5">{vault.description || 'Secure credential storage vault.'}</p>
               </div>
             </div>
           </div>
@@ -111,7 +111,7 @@ export function VaultDetailsPage({ vaultId }: { vaultId: string }) {
             {canUpdateVault && (
               <button
                 onClick={() => setIsEditVaultOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-white/10 transition-all"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white dark:bg-[#2C2C2E] border border-[#E5E5EA] dark:border-[#38383A] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#F5F5F7] dark:hover:bg-[#38383A]/80 transition-colors shadow-sm"
               >
                 <Pencil className="w-3.5 h-3.5" />
                 Edit Vault
@@ -120,7 +120,7 @@ export function VaultDetailsPage({ vaultId }: { vaultId: string }) {
             {canDeleteVault && (
               <button
                 onClick={() => setIsDeleteVaultOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#FF3B30]/10 text-[#FF3B30] border border-[#FF3B30]/20 hover:bg-[#FF3B30]/20 transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 Delete
@@ -129,7 +129,7 @@ export function VaultDetailsPage({ vaultId }: { vaultId: string }) {
             {canCreateSecret && (
               <button
                 onClick={() => setIsCreateSecretOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 hover:opacity-90 transition-all shadow-sm"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-[#0071E3] hover:bg-[#0077ED] text-white transition-colors shadow-sm"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Add Secret
@@ -139,10 +139,10 @@ export function VaultDetailsPage({ vaultId }: { vaultId: string }) {
         </div>
 
         {/* Secrets List Container */}
-        <div className="rounded-[28px] border border-zinc-200/80 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] overflow-hidden">
-          <div className="px-6 py-4 border-b border-zinc-200/60 dark:border-white/10 bg-zinc-50/60 dark:bg-white/[0.02] flex items-center justify-between">
-            <h3 className="text-xs font-semibold text-zinc-900 dark:text-white uppercase tracking-wider">Stored Secrets</h3>
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-zinc-100 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 text-zinc-600 dark:text-zinc-400">
+        <div className="rounded-xl border border-[#E5E5EA] dark:border-[#2C2C2E] bg-white dark:bg-[#1C1C1E] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
+          <div className="px-6 py-3.5 border-b border-[#E5E5EA] dark:border-[#2C2C2E] bg-[#F5F5F7]/60 dark:bg-[#2C2C2E]/40 flex items-center justify-between">
+            <h3 className="text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] uppercase tracking-wider">Stored Secrets</h3>
+            <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-[#F5F5F7] dark:bg-[#2C2C2E] border border-[#E5E5EA] dark:border-[#38383A] text-[#86868B] dark:text-[#8E8E93]">
               {secrets?.length || 0} secret{(secrets?.length || 0) !== 1 ? 's' : ''}
             </span>
           </div>
@@ -163,31 +163,31 @@ export function VaultDetailsPage({ vaultId }: { vaultId: string }) {
                 />
               </div>
             ) : (
-              <div className="divide-y divide-zinc-200/60 dark:divide-white/10">
+              <div className="divide-y divide-[#E5E5EA]/60 dark:divide-[#2C2C2E]/60">
                 {secrets.map((secret) => (
-                  <div key={secret.id} className="py-4 px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-zinc-50/50 dark:hover:bg-white/[0.02] transition-colors">
+                  <div key={secret.id} className="py-4 px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#F5F5F7]/50 dark:hover:bg-[#2C2C2E]/50 transition-colors">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-semibold text-zinc-900 dark:text-white font-mono">{secret.name}</h4>
+                        <h4 className="text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] font-mono">{secret.name}</h4>
                         {secret.type && (
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-white/5 text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#86868B] dark:text-[#8E8E93] uppercase tracking-wider border border-[#E5E5EA] dark:border-[#38383A]">
                             {secret.type}
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{secret.description || 'No description provided.'}</p>
+                      <p className="text-xs text-[#86868B] dark:text-[#8E8E93] mt-1">{secret.description || 'No description provided.'}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <Link
                         href={`/vaults/${vaultId}/secrets/${secret.id}`}
-                        className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-white/10 transition-all"
+                        className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium bg-[#F5F5F7] dark:bg-[#2C2C2E] border border-[#E5E5EA] dark:border-[#38383A] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#E5E5EA] dark:hover:bg-[#38383A] transition-colors"
                       >
                         View Details
                       </Link>
                       {canUpdateSecret && (
                         <button
                           onClick={() => setEditSecret(secret)}
-                          className="p-1.5 text-zinc-400 hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5 rounded-full transition-colors"
+                          className="p-1.5 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white hover:bg-black/[0.05] dark:hover:bg-white/5 rounded-lg transition-colors"
                           title="Edit secret"
                         >
                           <Pencil className="w-3.5 h-3.5" />
@@ -196,7 +196,7 @@ export function VaultDetailsPage({ vaultId }: { vaultId: string }) {
                       {canDeleteSecret && (
                         <button
                           onClick={() => setDeleteSecretId(secret.id)}
-                          className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-colors"
+                          className="p-1.5 text-[#86868B] hover:text-[#FF3B30] hover:bg-[#FF3B30]/10 rounded-lg transition-colors"
                           title="Delete secret"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

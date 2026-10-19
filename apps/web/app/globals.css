@@ -43,8 +43,16 @@ input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
   transition: background-color 5000000s ease-in-out 0s, color 5000000s ease-in-out 0s;
-  -webkit-text-fill-color: #ffffff !important;
-  caret-color: #ffffff !important;
+  -webkit-text-fill-color: #1D1D1F !important;
+  caret-color: #0071E3 !important;
+}
+
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark input:-webkit-autofill:active {
+  -webkit-text-fill-color: #F5F5F7 !important;
+  caret-color: #0071E3 !important;
 }
 
 .font-mono {

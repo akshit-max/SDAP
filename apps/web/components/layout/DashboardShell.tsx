@@ -22,7 +22,6 @@ import {
   Moon,
   Monitor,
   CreditCard,
-  Search,
   Menu,
   HelpCircle,
   ArrowUpRight,
@@ -69,7 +68,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showDisplacedModal, setShowDisplacedModal] = useState(false);
-  const [navSearch, setNavSearch] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
@@ -315,8 +313,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       >
         {/* Sidebar Header (Brand Logo & Collapse Arrow) */}
         <div className={clsx(
-          "h-14 flex items-center border-b border-[#E5E5EA] dark:border-[#2C2C2E] flex-shrink-0",
-          isCollapsed && !isMobileOpen ? "justify-center px-2" : "justify-between px-4"
+          "h-14 flex items-center border-b border-[#E5E5EA] dark:border-[#2C2C2E] flex-shrink-0 px-4",
+          isCollapsed && !isMobileOpen ? "justify-center px-2" : "justify-between"
         )}>
           <Link
             href="/dashboard"
@@ -334,7 +332,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           {(!isCollapsed || isMobileOpen) && (
             <button
               onClick={handleMenuClick}
-              className="w-6 h-6 rounded-md flex items-center justify-center text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white hover:bg-black/[0.05] dark:hover:bg-white/[0.08] transition-colors"
+              className="w-7 h-7 rounded-md flex items-center justify-center text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white hover:bg-black/[0.05] dark:hover:bg-white/[0.08] transition-colors"
               title="Collapse sidebar"
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -347,24 +345,19 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         {/* Apple Style Workspace / User Identity Pill */}
         {(!isCollapsed || isMobileOpen) && (
           <div className="px-3 pt-3 pb-1 flex-shrink-0">
-            <div className="px-2.5 py-2 rounded-xl bg-white dark:bg-[#2C2C2E] border border-[#E5E5EA] dark:border-[#38383A] shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex items-center justify-between gap-2.5">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-7 h-7 rounded-lg bg-[#1D1D1F] text-white dark:bg-white dark:text-[#1D1D1F] font-semibold text-xs flex items-center justify-center flex-shrink-0 shadow-sm">
-                  {user?.fullName?.[0]?.toUpperCase() || organization?.name?.[0]?.toUpperCase() || 'U'}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] truncate leading-tight">
-                    {user?.email || organization?.name || 'Workspace'}
-                  </p>
-                  <p className="text-[10px] text-[#86868B] dark:text-[#8E8E93] font-normal flex items-center gap-1 mt-0.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#34C759]" />
-                    <span className="capitalize">{role?.toLowerCase() || 'Owner'}</span>
-                  </p>
-                </div>
+            <div className="px-3 py-2.5 rounded-xl bg-white dark:bg-[#2C2C2E] border border-[#E5E5EA] dark:border-[#38383A] shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-[#0071E3]/10 text-[#0071E3] dark:bg-[#0071E3]/20 dark:text-[#3898FF] font-semibold text-xs flex items-center justify-center flex-shrink-0 border border-[#0071E3]/15">
+                {user?.fullName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || organization?.name?.[0]?.toUpperCase() || 'W'}
               </div>
-              <svg className="w-3 h-3 text-[#AEAEB2] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] truncate leading-tight">
+                  {user?.email || organization?.name || 'Workspace'}
+                </p>
+                <p className="text-[10px] text-[#86868B] dark:text-[#8E8E93] font-medium flex items-center gap-1.5 mt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#34C759]" />
+                  <span className="capitalize">{role?.toLowerCase() || 'Owner'}</span>
+                </p>
+              </div>
             </div>
           </div>
         )}
@@ -454,31 +447,20 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           ))}
         </div>
 
-        {/* Bottom User Profile & Logout Row */}
-        <div className="p-2.5 border-t border-[#E5E5EA] dark:border-[#2C2C2E] bg-[#F6F6F6] dark:bg-[#1E1E1E] flex-shrink-0 flex items-center justify-between gap-2">
-          {(!isCollapsed || isMobileOpen) && (
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 rounded-full bg-[#E5E5EA] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] text-xs font-semibold flex items-center justify-center flex-shrink-0">
-                {user?.fullName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
-              </div>
-              <span className="text-xs font-medium text-[#1D1D1F] dark:text-[#F5F5F7] truncate max-w-[120px]">
-                {user?.fullName || user?.email?.split('@')[0] || 'User'}
-              </span>
-            </div>
-          )}
-
+        {/* Bottom User Action - Proper Apple HIG Log Out */}
+        <div className="p-3 border-t border-[#E5E5EA] dark:border-[#2C2C2E] bg-[#F6F6F6] dark:bg-[#1E1E1E] flex-shrink-0">
           <button
             onClick={() => {
               setIsMobileOpen(false);
               setShowLogoutConfirm(true);
             }}
             className={clsx(
-              'flex items-center gap-1.5 py-1 px-2 rounded-md text-xs font-normal text-[#86868B] hover:text-[#FF3B30] hover:bg-black/[0.04] dark:hover:bg-white/[0.08] transition-colors',
-              isCollapsed && !isMobileOpen && 'w-full justify-center px-0 py-1.5',
+              'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-[#86868B] dark:text-[#8E8E93] hover:text-[#FF3B30] dark:hover:text-[#FF453A] hover:bg-red-500/10 transition-colors',
+              isCollapsed && !isMobileOpen ? 'justify-center px-0' : 'justify-start',
             )}
             title="Log Out"
           >
-            <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
+            <LogOut className="w-4 h-4 flex-shrink-0" />
             {(!isCollapsed || isMobileOpen) && <span>Log Out</span>}
           </button>
         </div>
@@ -507,23 +489,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               <h1 className="text-xs sm:text-sm font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight truncate">
                 {activeItem?.name || 'Dashboard'}
               </h1>
-            </div>
-          </div>
-
-          {/* Apple Spotlight Search Bar */}
-          <div className="hidden md:flex items-center flex-1 max-w-md mx-4">
-            <div className="relative w-full">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#86868B] dark:text-[#8E8E93] pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Search vaults, sessions, or users..."
-                className="w-full pl-8 pr-16 py-1.5 rounded-lg text-xs bg-[#F5F5F7] dark:bg-[#2C2C2E]/80 border border-[#E5E5EA] dark:border-[#38383A] text-[#1D1D1F] dark:text-[#F5F5F7] placeholder-[#86868B] dark:placeholder-[#8E8E93] focus:outline-none focus:ring-1 focus:ring-[#0071E3] transition-all"
-              />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                <kbd className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono text-[#86868B] dark:text-[#8E8E93] bg-white dark:bg-[#38383A] border border-[#E5E5EA] dark:border-[#48484A] shadow-[0_1px_1px_rgba(0,0,0,0.04)]">
-                  Ctrl K
-                </kbd>
-              </div>
             </div>
           </div>
 

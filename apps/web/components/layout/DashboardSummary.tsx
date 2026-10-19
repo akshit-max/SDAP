@@ -28,9 +28,9 @@ export function DashboardSummary() {
 
   const stats = [
     {
-      label: 'Vault Credentials',
+      label: 'Secure Vaults',
       value: vaults?.items?.length ?? 0,
-      subtext: `Across ${vaults?.items?.length ?? 0} vaults`,
+      subtext: `${vaults?.items?.length ?? 0} active ${vaults?.items?.length === 1 ? 'vault' : 'vaults'}`,
       icon: Key,
       href: '/vaults',
       color: 'text-[#0071E3]',
