@@ -78,7 +78,7 @@ export function PublicNavbar({
                   }}
                   className={`transition-all py-1 cursor-pointer tracking-wide ${
                     isActive
-                      ? 'text-white font-bold border-b-2 border-white pb-0.5 shadow-sm'
+                      ? 'text-white font-medium border-b-2 border-white pb-0.5 shadow-sm'
                       : 'text-neutral-400 hover:text-white'
                   }`}
                 >
@@ -94,7 +94,7 @@ export function PublicNavbar({
               <button
                 type="button"
                 onClick={onToggleTheme}
-                className="p-2 rounded-lg border border-neutral-800 text-neutral-300 hover:bg-neutral-800 transition-colors flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
+                className="p-2 rounded-lg border border-neutral-800 text-neutral-300 hover:bg-neutral-800 transition-colors flex items-center gap-1.5 text-xs font-medium cursor-pointer"
                 title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
               >
                 {theme === 'dark' ? (
@@ -109,7 +109,7 @@ export function PublicNavbar({
             <button
               type="button"
               onClick={onOpenDemo}
-              className="px-5 py-2.5 rounded-xl bg-neutral-100 hover:bg-white text-neutral-950 text-xs font-semibold transition-all shadow-xs flex items-center gap-2 cursor-pointer group"
+              className="px-5 py-2.5 rounded-xl bg-neutral-100 hover:bg-white text-neutral-950 text-xs font-medium transition-all shadow-xs flex items-center gap-2 cursor-pointer group"
             >
               <span>Request Demo</span>
               <ArrowRight className="w-3.5 h-3.5 text-neutral-950 group-hover:translate-x-0.5 transition-transform" />
@@ -121,7 +121,7 @@ export function PublicNavbar({
             <button
               type="button"
               onClick={onOpenDemo}
-              className="px-3 py-1.5 rounded-lg bg-neutral-100 text-neutral-950 text-xs font-bold"
+              className="px-3 py-1.5 rounded-lg bg-neutral-100 text-neutral-950 text-xs font-medium"
             >
               Demo
             </button>
@@ -161,7 +161,7 @@ export function PublicNavbar({
                     }
                   }}
                   className={`text-left transition-colors py-2 border-b border-neutral-900 ${
-                    isActive ? 'text-white font-bold border-l-2 border-white pl-2' : 'hover:text-white'
+                    isActive ? 'text-white font-medium border-l-2 border-white pl-2' : 'hover:text-white'
                   }`}
                 >
                   {link.name}
@@ -176,7 +176,7 @@ export function PublicNavbar({
                 setMobileMenuOpen(false);
                 onOpenDemo();
               }}
-              className="w-full py-2.5 rounded-xl bg-neutral-100 text-neutral-950 text-xs font-bold flex items-center justify-center gap-2"
+              className="w-full py-2.5 rounded-xl bg-neutral-100 text-neutral-950 text-xs font-medium flex items-center justify-center gap-2"
             >
               <span>Request Demo</span>
               <ArrowRight className="w-4 h-4 text-neutral-950" />

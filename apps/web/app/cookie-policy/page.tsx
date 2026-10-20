@@ -9,7 +9,7 @@ export default function CookiePolicyPage() {
     <PolicyPageLayout title="Cookie Policy" lastUpdated="August 24, 2026" badge="PRIVACY & PREFERENCES">
       {/* Section 1 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <Info className="w-5 h-5 text-sky-300" />
           <span>1. What Are Cookies</span>
         </h2>
@@ -20,7 +20,7 @@ export default function CookiePolicyPage() {
 
       {/* Section 2 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <Shield className="w-5 h-5 text-sky-300" />
           <span>2. Strictly Essential Cookies</span>
         </h2>
@@ -49,7 +49,7 @@ export default function CookiePolicyPage() {
 
       {/* Section 3 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <Settings className="w-5 h-5 text-sky-300" />
           <span>3. No Third-Party Ad Trackers</span>
         </h2>
@@ -60,7 +60,7 @@ export default function CookiePolicyPage() {
 
       {/* Section 4 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <FileText className="w-5 h-5 text-sky-300" />
           <span>4. Managing Your Preferences</span>
         </h2>

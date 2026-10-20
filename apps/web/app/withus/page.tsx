@@ -68,7 +68,7 @@ export default function PublicWithusPage() {
   return (
     <div
       ref={mainScrollRef}
-      className="dark h-[100dvh] overflow-y-auto bg-neutral-950 text-neutral-100 font-sans antialiased selection:bg-neutral-800 selection:text-neutral-100 scroll-smooth"
+      className="dark h-[100dvh] overflow-y-auto bg-neutral-950 text-neutral-100 font-geist antialiased selection:bg-neutral-800 selection:text-neutral-100 scroll-smooth"
     >
       {/* Top Navigation Bar with Active Module Indicator */}
       <PublicNavbar
@@ -91,7 +91,7 @@ export default function PublicWithusPage() {
           </div>
 
           {/* Main Headline */}
-          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white max-w-4xl mx-auto leading-[1.12]">
+          <h1 className="text-4xl sm:text-6xl font-medium tracking-tight text-white max-w-4xl mx-auto leading-[1.12]">
             Delegate Platform Access Without Sharing the Underlying Password
           </h1>
 
@@ -104,14 +104,14 @@ export default function PublicWithusPage() {
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
               onClick={() => setIsDemoModalOpen(true)}
-              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-white text-neutral-950 font-bold text-sm hover:bg-neutral-100 transition-all shadow-xl hover:shadow-neutral-200/10 flex items-center justify-center gap-2.5 group cursor-pointer"
+              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-white text-neutral-950 font-medium text-sm hover:bg-neutral-100 transition-all shadow-xl hover:shadow-neutral-200/10 flex items-center justify-center gap-2.5 group cursor-pointer"
             >
               <span>Request Product Demo</span>
               <ArrowRight className="w-4 h-4 text-neutral-950 group-hover:translate-x-1 transition-transform" />
             </button>
             <a
               href="#solution"
-              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-neutral-900/90 border border-neutral-800 text-neutral-200 font-semibold text-sm hover:bg-neutral-850 hover:text-white transition-all shadow-sm flex items-center justify-center gap-2 group"
+              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-neutral-900/90 border border-neutral-800 text-neutral-200 font-medium text-sm hover:bg-neutral-850 hover:text-white transition-all shadow-sm flex items-center justify-center gap-2 group"
             >
               <span>How WITHUS Works</span>
               <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:translate-x-0.5 transition-transform" />
@@ -126,19 +126,19 @@ export default function PublicWithusPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-center justify-center text-neutral-300">
               <div className="flex items-center justify-center gap-3 px-4 py-4 rounded-xl bg-neutral-900/60 border border-neutral-850 hover:border-neutral-800 transition-all shadow-2xs">
                 <ShieldCheck className="w-4.5 h-4.5 text-white shrink-0" />
-                <span className="text-xs font-semibold">Protected Credentials</span>
+                <span className="text-xs font-medium">Protected Credentials</span>
               </div>
               <div className="flex items-center justify-center gap-3 px-4 py-4 rounded-xl bg-neutral-900/60 border border-neutral-850 hover:border-neutral-800 transition-all shadow-2xs">
                 <Lock className="w-4.5 h-4.5 text-white shrink-0" />
-                <span className="text-xs font-semibold">Controlled Access</span>
+                <span className="text-xs font-medium">Controlled Access</span>
               </div>
               <div className="flex items-center justify-center gap-3 px-4 py-4 rounded-xl bg-neutral-900/60 border border-neutral-850 hover:border-neutral-800 transition-all shadow-2xs">
                 <Clock className="w-4.5 h-4.5 text-white shrink-0" />
-                <span className="text-xs font-semibold">Access Expiry</span>
+                <span className="text-xs font-medium">Access Expiry</span>
               </div>
               <div className="flex items-center justify-center gap-3 px-4 py-4 rounded-xl bg-neutral-900/60 border border-neutral-850 hover:border-neutral-800 transition-all shadow-2xs">
                 <Activity className="w-4.5 h-4.5 text-white shrink-0" />
-                <span className="text-xs font-semibold">Activity History</span>
+                <span className="text-xs font-medium">Activity History</span>
               </div>
             </div>
           </div>
@@ -151,7 +151,7 @@ export default function PublicWithusPage() {
               <AlertTriangle className="w-3.5 h-3.5 text-white" />
               <span>Operational Risk Factors</span>
             </div>
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-[1.15] mt-1 mb-4">
+            <h2 className="text-3xl sm:text-5xl font-medium text-white tracking-tight leading-[1.15] mt-1 mb-4">
               Traditional Credential Sharing Creates Unnecessary Risk
             </h2>
             <p className="text-base sm:text-lg text-neutral-400 font-normal leading-relaxed">
@@ -167,7 +167,7 @@ export default function PublicWithusPage() {
                   <ShieldAlert className="w-6 h-6" />
                 </div>
                 <span className="px-2.5 py-1 rounded bg-neutral-900/90 text-neutral-400 border border-neutral-800 text-[10px] font-mono uppercase font-bold tracking-wider">Risk Factor 01</span>
-                <h3 className="text-lg font-bold text-white mt-4 mb-2 tracking-tight">Password Sharing</h3>
+                <h3 className="text-lg font-medium text-white mt-4 mb-2 tracking-tight">Password Sharing</h3>
                 <p className="text-xs text-neutral-400 leading-relaxed">
                   Passwords shared through email, messaging apps, or documents can remain accessible long after the original task is complete.
                 </p>
@@ -180,7 +180,7 @@ export default function PublicWithusPage() {
                   <AlertTriangle className="w-6 h-6" />
                 </div>
                 <span className="px-2.5 py-1 rounded bg-neutral-900/90 text-neutral-400 border border-neutral-800 text-[10px] font-mono uppercase font-bold tracking-wider">Risk Factor 02</span>
-                <h3 className="text-lg font-bold text-white mt-4 mb-2 tracking-tight">Too Much Access</h3>
+                <h3 className="text-lg font-medium text-white mt-4 mb-2 tracking-tight">Too Much Access</h3>
                 <p className="text-xs text-neutral-400 leading-relaxed">
                   Sharing a full account login can give someone more access than they actually need for their daily task.
                 </p>
@@ -193,7 +193,7 @@ export default function PublicWithusPage() {
                   <Clock className="w-6 h-6" />
                 </div>
                 <span className="px-2.5 py-1 rounded bg-neutral-900/90 text-neutral-400 border border-neutral-800 text-[10px] font-mono uppercase font-bold tracking-wider">Risk Factor 03</span>
-                <h3 className="text-lg font-bold text-white mt-4 mb-2 tracking-tight">Verification Bottlenecks</h3>
+                <h3 className="text-lg font-medium text-white mt-4 mb-2 tracking-tight">Verification Bottlenecks</h3>
                 <p className="text-xs text-neutral-400 leading-relaxed">
                   Team members can be delayed when they need a verification code from an administrator to complete a login.
                 </p>
@@ -206,7 +206,7 @@ export default function PublicWithusPage() {
                   <FileCheck className="w-6 h-6" />
                 </div>
                 <span className="px-2.5 py-1 rounded bg-neutral-900/90 text-neutral-400 border border-neutral-800 text-[10px] font-mono uppercase font-bold tracking-wider">Risk Factor 04</span>
-                <h3 className="text-lg font-bold text-white mt-4 mb-2 tracking-tight">Unclear Activity History</h3>
+                <h3 className="text-lg font-medium text-white mt-4 mb-2 tracking-tight">Unclear Activity History</h3>
                 <p className="text-xs text-neutral-400 leading-relaxed">
                   Lack of timestamped session records makes it hard to see who accessed what, when, and from where.
                 </p>
@@ -218,7 +218,7 @@ export default function PublicWithusPage() {
           <div className="mt-16 p-8 sm:p-10 rounded-2xl bg-neutral-900/40 border border-neutral-850 shadow-xl">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-neutral-800">
               <div>
-                <h3 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
+                <h3 className="text-xl sm:text-2xl font-medium text-white tracking-tight">
                   Traditional Credential Sharing vs. WITHUS Session Delegation
                 </h3>
                 <p className="text-xs text-neutral-400 mt-1">
@@ -235,21 +235,21 @@ export default function PublicWithusPage() {
               <table className="w-full text-left text-xs border-collapse min-w-[650px]">
                 <thead>
                   <tr className="border-b border-neutral-800 text-neutral-400 font-mono uppercase tracking-wider">
-                    <th className="py-4 px-4 font-bold w-1/3">Feature Metric</th>
-                    <th className="py-4 px-4 text-neutral-400 font-bold w-1/3 bg-neutral-950/40 rounded-tl-xl">Legacy Credential Sharing</th>
-                    <th className="py-4 px-4 text-white font-bold w-1/3 bg-neutral-900/90 rounded-tr-xl border-t border-r border-l border-neutral-800">WITHUS Session Delegation</th>
+                    <th className="py-4 px-4 font-medium w-1/3">Feature Metric</th>
+                    <th className="py-4 px-4 text-neutral-400 font-medium w-1/3 bg-neutral-950/40 rounded-tl-xl">Legacy Credential Sharing</th>
+                    <th className="py-4 px-4 text-white font-medium w-1/3 bg-neutral-900/90 rounded-tr-xl border-t border-r border-l border-neutral-800">WITHUS Session Delegation</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-850/60 text-neutral-300">
                   <tr>
-                    <td className="py-4 px-4 font-semibold text-neutral-200">Credential Visibility</td>
+                    <td className="py-4 px-4 font-medium text-neutral-200">Credential Visibility</td>
                     <td className="py-4 px-4 text-neutral-400 bg-neutral-950/40">
                       <div className="flex items-center gap-2">
                         <XCircle className="w-4 h-4 text-neutral-500 shrink-0" />
                         <span>Exposed in plain text</span>
                       </div>
                     </td>
-                    <td className="py-4 px-4 text-white font-semibold bg-neutral-900/60 border-r border-l border-neutral-800">
+                    <td className="py-4 px-4 text-white font-medium bg-neutral-900/60 border-r border-l border-neutral-800">
                       <div className="flex items-center gap-2 text-white">
                         <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
                         <span>Protected in the WITHUS vault</span>
@@ -257,14 +257,14 @@ export default function PublicWithusPage() {
                     </td>
                   </tr>
                   <tr>
-                    <td className="py-4 px-4 font-semibold text-neutral-200">Verification Code Sharing</td>
+                    <td className="py-4 px-4 font-medium text-neutral-200">Verification Code Sharing</td>
                     <td className="py-4 px-4 text-neutral-400 bg-neutral-950/40">
                       <div className="flex items-center gap-2">
                         <XCircle className="w-4 h-4 text-neutral-500 shrink-0" />
                         <span>Manual admin forwarding bottlenecks</span>
                       </div>
                     </td>
-                    <td className="py-4 px-4 text-white font-semibold bg-neutral-900/60 border-r border-l border-neutral-800">
+                    <td className="py-4 px-4 text-white font-medium bg-neutral-900/60 border-r border-l border-neutral-800">
                       <div className="flex items-center gap-2 text-white">
                         <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
                         <span>Automated verification assistance</span>
@@ -272,14 +272,14 @@ export default function PublicWithusPage() {
                     </td>
                   </tr>
                   <tr>
-                    <td className="py-4 px-4 font-semibold text-neutral-200">Session Duration</td>
+                    <td className="py-4 px-4 font-medium text-neutral-200">Session Duration</td>
                     <td className="py-4 px-4 text-neutral-400 bg-neutral-950/40">
                       <div className="flex items-center gap-2">
                         <XCircle className="w-4 h-4 text-neutral-500 shrink-0" />
                         <span>Indefinite static access</span>
                       </div>
                     </td>
-                    <td className="py-4 px-4 text-white font-semibold bg-neutral-900/60 border-r border-l border-neutral-800">
+                    <td className="py-4 px-4 text-white font-medium bg-neutral-900/60 border-r border-l border-neutral-800">
                       <div className="flex items-center gap-2 text-white">
                         <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
                         <span>Time-limited access</span>
@@ -287,14 +287,14 @@ export default function PublicWithusPage() {
                     </td>
                   </tr>
                   <tr>
-                    <td className="py-4 px-4 font-semibold text-neutral-200">Activity History</td>
+                    <td className="py-4 px-4 font-medium text-neutral-200">Activity History</td>
                     <td className="py-4 px-4 text-neutral-400 bg-neutral-950/40">
                       <div className="flex items-center gap-2">
                         <XCircle className="w-4 h-4 text-neutral-500 shrink-0" />
                         <span>Limited visibility into access activity</span>
                       </div>
                     </td>
-                    <td className="py-4 px-4 text-white font-semibold bg-neutral-900/60 border-r border-l border-neutral-800">
+                    <td className="py-4 px-4 text-white font-medium bg-neutral-900/60 border-r border-l border-neutral-800">
                       <div className="flex items-center gap-2 text-white">
                         <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
                         <span>Timestamped activity history</span>
@@ -302,14 +302,14 @@ export default function PublicWithusPage() {
                     </td>
                   </tr>
                   <tr>
-                    <td className="py-4 px-4 font-semibold text-neutral-200">Access Revocation</td>
+                    <td className="py-4 px-4 font-medium text-neutral-200">Access Revocation</td>
                     <td className="py-4 px-4 text-neutral-400 bg-neutral-950/40 rounded-bl-xl">
                       <div className="flex items-center gap-2">
                         <XCircle className="w-4 h-4 text-neutral-500 shrink-0" />
                         <span>Tedious manual password resets</span>
                       </div>
                     </td>
-                    <td className="py-4 px-4 text-white font-semibold bg-neutral-900/60 border-b border-r border-l border-neutral-800 rounded-br-xl">
+                    <td className="py-4 px-4 text-white font-medium bg-neutral-900/60 border-b border-r border-l border-neutral-800 rounded-br-xl">
                       <div className="flex items-center gap-2 text-white">
                         <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
                         <span>Quick access revocation</span>
@@ -329,7 +329,7 @@ export default function PublicWithusPage() {
               <Key className="w-3.5 h-3.5 text-white" />
               <span>How WITHUS Helps</span>
             </div>
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-[1.15] mt-1 mb-4">
+            <h2 className="text-3xl sm:text-5xl font-medium text-white tracking-tight leading-[1.15] mt-1 mb-4">
               Give Access Without Handing Over the Password
             </h2>
             <p className="text-base sm:text-lg text-neutral-400 font-normal leading-relaxed">
@@ -343,7 +343,7 @@ export default function PublicWithusPage() {
                 <div className="w-12 h-12 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center mb-6 text-white shadow-inner">
                   <Key className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3 tracking-tight">Controlled Platform Access</h3>
+                <h3 className="text-xl font-medium text-white mb-3 tracking-tight">Controlled Platform Access</h3>
                 <p className="text-neutral-400 text-xs leading-relaxed mb-6">
                   Give authorized team members access to supported platforms without directly giving them the stored password.
                 </p>
@@ -361,7 +361,7 @@ export default function PublicWithusPage() {
               <div className="mt-8 pt-4 border-t border-neutral-850">
                 <button
                   onClick={() => setIsDemoModalOpen(true)}
-                  className="text-xs font-semibold text-white hover:text-neutral-300 flex items-center gap-1.5 cursor-pointer group"
+                  className="text-xs font-medium text-white hover:text-neutral-300 flex items-center gap-1.5 cursor-pointer group"
                 >
                   <span>Learn about Vault Security</span>
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -374,7 +374,7 @@ export default function PublicWithusPage() {
                 <div className="w-12 h-12 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center mb-6 text-white shadow-inner">
                   <Activity className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3 tracking-tight">Access Control</h3>
+                <h3 className="text-xl font-medium text-white mb-3 tracking-tight">Access Control</h3>
                 <p className="text-neutral-400 text-xs leading-relaxed mb-6">
                   Manage who receives access, how long it lasts, and when it should be removed.
                 </p>
@@ -392,7 +392,7 @@ export default function PublicWithusPage() {
               <div className="mt-8 pt-4 border-t border-neutral-850">
                 <button
                   onClick={() => setIsDemoModalOpen(true)}
-                  className="text-xs font-semibold text-white hover:text-neutral-300 flex items-center gap-1.5 cursor-pointer group"
+                  className="text-xs font-medium text-white hover:text-neutral-300 flex items-center gap-1.5 cursor-pointer group"
                 >
                   <span>Explore Activity Logging</span>
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -405,7 +405,7 @@ export default function PublicWithusPage() {
                 <div className="w-12 h-12 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center mb-6 text-white shadow-inner">
                   <Zap className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3 tracking-tight">Verification Code Assistance</h3>
+                <h3 className="text-xl font-medium text-white mb-3 tracking-tight">Verification Code Assistance</h3>
                 <p className="text-neutral-400 text-xs leading-relaxed mb-6">
                   Reduce manual verification-code sharing for supported workflows.
                 </p>
@@ -423,7 +423,7 @@ export default function PublicWithusPage() {
               <div className="mt-8 pt-4 border-t border-neutral-850">
                 <button
                   onClick={() => setIsDemoModalOpen(true)}
-                  className="text-xs font-semibold text-white hover:text-neutral-300 flex items-center gap-1.5 cursor-pointer group"
+                  className="text-xs font-medium text-white hover:text-neutral-300 flex items-center gap-1.5 cursor-pointer group"
                 >
                   <span>Request Solution Demo</span>
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -440,7 +440,7 @@ export default function PublicWithusPage() {
               <Layers className="w-3.5 h-3.5 text-white" />
               <span>How Access Works</span>
             </div>
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-[1.15] mt-1 mb-4">
+            <h2 className="text-3xl sm:text-5xl font-medium text-white tracking-tight leading-[1.15] mt-1 mb-4">
               How Access Works
             </h2>
             <p className="text-base sm:text-lg text-neutral-400 font-normal leading-relaxed">
@@ -450,40 +450,40 @@ export default function PublicWithusPage() {
 
           <div className="grid md:grid-cols-4 gap-6">
             <div className="p-7 rounded-2xl bg-neutral-900/40 border border-neutral-850 relative">
-              <div className="w-8 h-8 rounded-full bg-neutral-800 text-white font-mono text-xs font-bold flex items-center justify-center mb-5">
+              <div className="w-8 h-8 rounded-full bg-neutral-800 text-white font-mono text-xs font-medium flex items-center justify-center mb-5">
                 01
               </div>
-              <h3 className="text-base font-bold text-white mb-2">Protect</h3>
+              <h3 className="text-base font-medium text-white mb-2">Protect</h3>
               <p className="text-xs text-neutral-400 leading-relaxed">
                 Keep the platform credential protected within WITHUS.
               </p>
             </div>
 
             <div className="p-7 rounded-2xl bg-neutral-900/40 border border-neutral-850 relative">
-              <div className="w-8 h-8 rounded-full bg-neutral-800 text-white font-mono text-xs font-bold flex items-center justify-center mb-5">
+              <div className="w-8 h-8 rounded-full bg-neutral-800 text-white font-mono text-xs font-medium flex items-center justify-center mb-5">
                 02
               </div>
-              <h3 className="text-base font-bold text-white mb-2">Grant</h3>
+              <h3 className="text-base font-medium text-white mb-2">Grant</h3>
               <p className="text-xs text-neutral-400 leading-relaxed">
                 Give an authorized team member access for the work they need to perform.
               </p>
             </div>
 
             <div className="p-7 rounded-2xl bg-neutral-900/40 border border-neutral-850 relative">
-              <div className="w-8 h-8 rounded-full bg-neutral-800 text-white font-mono text-xs font-bold flex items-center justify-center mb-5">
+              <div className="w-8 h-8 rounded-full bg-neutral-800 text-white font-mono text-xs font-medium flex items-center justify-center mb-5">
                 03
               </div>
-              <h3 className="text-base font-bold text-white mb-2">Control</h3>
+              <h3 className="text-base font-medium text-white mb-2">Control</h3>
               <p className="text-xs text-neutral-400 leading-relaxed">
                 Set access duration and permissions.
               </p>
             </div>
 
             <div className="p-7 rounded-2xl bg-neutral-900/40 border border-neutral-850 relative">
-              <div className="w-8 h-8 rounded-full bg-neutral-800 text-white font-mono text-xs font-bold flex items-center justify-center mb-5">
+              <div className="w-8 h-8 rounded-full bg-neutral-800 text-white font-mono text-xs font-medium flex items-center justify-center mb-5">
                 04
               </div>
-              <h3 className="text-base font-bold text-white mb-2">Revoke</h3>
+              <h3 className="text-base font-medium text-white mb-2">Revoke</h3>
               <p className="text-xs text-neutral-400 leading-relaxed">
                 End access when it is no longer required.
               </p>
@@ -498,7 +498,7 @@ export default function PublicWithusPage() {
               <Users className="w-3.5 h-3.5 text-white" />
               <span>Workflow Personas</span>
             </div>
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-[1.15] mt-1 mb-4">
+            <h2 className="text-3xl sm:text-5xl font-medium text-white tracking-tight leading-[1.15] mt-1 mb-4">
               Tailored access governance for technical operations
             </h2>
             <p className="text-base sm:text-lg text-neutral-400 font-normal leading-relaxed">
@@ -512,7 +512,7 @@ export default function PublicWithusPage() {
                 <div className="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center mb-5 text-white">
                   <Briefcase className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-bold text-white mb-2">Founders & Executives</h3>
+                <h3 className="text-base font-medium text-white mb-2">Founders & Executives</h3>
                 <p className="text-xs text-neutral-400 leading-relaxed mb-4">
                   Delegate domain management, cloud console access, or billing portals to team leaders without surrendering master account credentials.
                 </p>
@@ -530,7 +530,7 @@ export default function PublicWithusPage() {
                 <div className="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center mb-5 text-white">
                   <Building2 className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-bold text-white mb-2">Agencies & MSPs</h3>
+                <h3 className="text-base font-medium text-white mb-2">Agencies & MSPs</h3>
                 <p className="text-xs text-neutral-400 leading-relaxed mb-4">
                   Request temporary client platform access effortlessly. Perform required configurations and hand back clean, logged sessions upon project completion.
                 </p>
@@ -548,7 +548,7 @@ export default function PublicWithusPage() {
                 <div className="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center mb-5 text-white">
                   <Users className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-bold text-white mb-2">DevOps & Contractors</h3>
+                <h3 className="text-base font-medium text-white mb-2">DevOps & Contractors</h3>
                 <p className="text-xs text-neutral-400 leading-relaxed mb-4">
                   Onboard contractors for specific deployment tasks. Grant strictly time-limited sessions that expire when work concludes.
                 </p>
@@ -566,7 +566,7 @@ export default function PublicWithusPage() {
                 <div className="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center mb-5 text-white">
                   <ShieldCheck className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-bold text-white mb-2">Operations & Security Teams</h3>
+                <h3 className="text-base font-medium text-white mb-2">Operations & Security Teams</h3>
                 <p className="text-xs text-neutral-400 leading-relaxed mb-4">
                   Keep better visibility into shared access and important access activity across the organization.
                 </p>
@@ -588,7 +588,7 @@ export default function PublicWithusPage() {
               <Sliders className="w-3.5 h-3.5 text-white" />
               <span>Platform Capabilities</span>
             </div>
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-[1.15] mt-1 mb-4">
+            <h2 className="text-3xl sm:text-5xl font-medium text-white tracking-tight leading-[1.15] mt-1 mb-4">
               Practical Tools for Access Management
             </h2>
             <p className="text-base sm:text-lg text-neutral-400 font-normal leading-relaxed">
@@ -599,7 +599,7 @@ export default function PublicWithusPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="p-7 rounded-2xl bg-neutral-900/50 border border-neutral-850 hover:border-neutral-700 transition-all">
               <Lock className="w-6 h-6 text-white mb-5" />
-              <h3 className="text-sm font-bold text-white mb-2">Protected Credential Vault</h3>
+              <h3 className="text-sm font-medium text-white mb-2">Protected Credential Vault</h3>
               <p className="text-xs text-neutral-400 leading-relaxed">
                 Store organizational credentials in a protected central location instead of spreading them across messages and documents.
               </p>
@@ -607,7 +607,7 @@ export default function PublicWithusPage() {
 
             <div className="p-7 rounded-2xl bg-neutral-900/50 border border-neutral-850 hover:border-neutral-700 transition-all">
               <Clock className="w-6 h-6 text-white mb-5" />
-              <h3 className="text-sm font-bold text-white mb-2">Time-Limited Access</h3>
+              <h3 className="text-sm font-medium text-white mb-2">Time-Limited Access</h3>
               <p className="text-xs text-neutral-400 leading-relaxed">
                 Set access duration and allow sessions to expire when they are no longer needed.
               </p>
@@ -615,7 +615,7 @@ export default function PublicWithusPage() {
 
             <div className="p-7 rounded-2xl bg-neutral-900/50 border border-neutral-850 hover:border-neutral-700 transition-all">
               <Activity className="w-6 h-6 text-white mb-5" />
-              <h3 className="text-sm font-bold text-white mb-2">Activity History</h3>
+              <h3 className="text-sm font-medium text-white mb-2">Activity History</h3>
               <p className="text-xs text-neutral-400 leading-relaxed">
                 Keep a clear record of important access and authorization events.
               </p>
@@ -623,7 +623,7 @@ export default function PublicWithusPage() {
 
             <div className="p-7 rounded-2xl bg-neutral-900/50 border border-neutral-850 hover:border-neutral-700 transition-all">
               <Globe className="w-6 h-6 text-white mb-5" />
-              <h3 className="text-sm font-bold text-white mb-2">Multi-Platform Support</h3>
+              <h3 className="text-sm font-medium text-white mb-2">Multi-Platform Support</h3>
               <p className="text-xs text-neutral-400 leading-relaxed">
                 Support for delegated access workflows across the current WITHUS platform ecosystem.
               </p>
@@ -631,7 +631,7 @@ export default function PublicWithusPage() {
 
             <div className="p-7 rounded-2xl bg-neutral-900/50 border border-neutral-850 hover:border-neutral-700 transition-all">
               <RefreshCw className="w-6 h-6 text-white mb-5" />
-              <h3 className="text-sm font-bold text-white mb-2">Quick Access Revocation</h3>
+              <h3 className="text-sm font-medium text-white mb-2">Quick Access Revocation</h3>
               <p className="text-xs text-neutral-400 leading-relaxed">
                 Remove delegated access when it is no longer needed.
               </p>
@@ -639,7 +639,7 @@ export default function PublicWithusPage() {
 
             <div className="p-7 rounded-2xl bg-neutral-900/50 border border-neutral-850 hover:border-neutral-700 transition-all">
               <Sliders className="w-6 h-6 text-white mb-5" />
-              <h3 className="text-sm font-bold text-white mb-2">Role-Based Permissions</h3>
+              <h3 className="text-sm font-medium text-white mb-2">Role-Based Permissions</h3>
               <p className="text-xs text-neutral-400 leading-relaxed">
                 Give different team members appropriate levels of access based on their responsibilities.
               </p>
@@ -653,7 +653,7 @@ export default function PublicWithusPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] font-semibold text-neutral-500 uppercase tracking-widest font-mono">Supported Platform Ecosystem</span>
                 </div>
-                <h4 className="text-base sm:text-lg font-bold text-white mt-1">Pre-Configured Platform Workflows</h4>
+                <h4 className="text-base sm:text-lg font-medium text-white mt-1">Pre-Configured Platform Workflows</h4>
               </div>
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-900 border border-neutral-800 text-xs font-mono text-neutral-300 w-fit">
                 <CheckCircle2 className="w-3.5 h-3.5 text-white" />
@@ -672,11 +672,11 @@ export default function PublicWithusPage() {
                     <span className="text-[10px] font-mono text-neutral-400 uppercase font-bold tracking-wider">Developer Tools</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-semibold text-neutral-200 hover:bg-neutral-850 hover:border-neutral-700 transition-all">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-medium text-neutral-200 hover:bg-neutral-850 hover:border-neutral-700 transition-all">
                       <CheckCircle2 className="w-3.5 h-3.5 text-white shrink-0" />
                       <span>GitHub</span>
                     </div>
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-semibold text-neutral-200 hover:bg-neutral-850 hover:border-neutral-700 transition-all">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-medium text-neutral-200 hover:bg-neutral-850 hover:border-neutral-700 transition-all">
                       <CheckCircle2 className="w-3.5 h-3.5 text-white shrink-0" />
                       <span>Vercel</span>
                     </div>
@@ -692,11 +692,11 @@ export default function PublicWithusPage() {
                     <span className="text-[10px] font-mono text-neutral-400 uppercase font-bold tracking-wider">Domain & Infrastructure</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-semibold text-neutral-200 hover:bg-neutral-850 hover:border-neutral-700 transition-all">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-medium text-neutral-200 hover:bg-neutral-850 hover:border-neutral-700 transition-all">
                       <CheckCircle2 className="w-3.5 h-3.5 text-white shrink-0" />
                       <span>GoDaddy</span>
                     </div>
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-semibold text-neutral-200 hover:bg-neutral-850 hover:border-neutral-700 transition-all">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-medium text-neutral-200 hover:bg-neutral-850 hover:border-neutral-700 transition-all">
                       <CheckCircle2 className="w-3.5 h-3.5 text-white shrink-0" />
                       <span>LinkedIn</span>
                     </div>
@@ -712,15 +712,15 @@ export default function PublicWithusPage() {
                     <span className="text-[10px] font-mono text-neutral-400 uppercase font-bold tracking-wider">Commerce & Payments</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-semibold text-neutral-200 hover:bg-neutral-850 hover:border-neutral-700 transition-all">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-medium text-neutral-200 hover:bg-neutral-850 hover:border-neutral-700 transition-all">
                       <CheckCircle2 className="w-3.5 h-3.5 text-white shrink-0" />
                       <span>Shopify</span>
                     </div>
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-semibold text-neutral-200 hover:bg-neutral-850 hover:border-neutral-700 transition-all">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-medium text-neutral-200 hover:bg-neutral-850 hover:border-neutral-700 transition-all">
                       <CheckCircle2 className="w-3.5 h-3.5 text-white shrink-0" />
                       <span>Stripe</span>
                     </div>
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-semibold text-neutral-200 hover:bg-neutral-850 hover:border-neutral-700 transition-all">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-medium text-neutral-200 hover:bg-neutral-850 hover:border-neutral-700 transition-all">
                       <CheckCircle2 className="w-3.5 h-3.5 text-white shrink-0" />
                       <span>Razorpay</span>
                     </div>
@@ -736,15 +736,15 @@ export default function PublicWithusPage() {
                     <span className="text-[10px] font-mono text-neutral-400 uppercase font-bold tracking-wider">Business Registries</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-semibold text-neutral-200 hover:bg-neutral-850 hover:border-neutral-700 transition-all">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-medium text-neutral-200 hover:bg-neutral-850 hover:border-neutral-700 transition-all">
                       <CheckCircle2 className="w-3.5 h-3.5 text-white shrink-0" />
                       <span>MCA</span>
                     </div>
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-semibold text-neutral-200 hover:bg-neutral-850 hover:border-neutral-700 transition-all">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-medium text-neutral-200 hover:bg-neutral-850 hover:border-neutral-700 transition-all">
                       <CheckCircle2 className="w-3.5 h-3.5 text-white shrink-0" />
                       <span>GST</span>
                     </div>
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-semibold text-neutral-200 hover:bg-neutral-850 hover:border-neutral-700 transition-all">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-medium text-neutral-200 hover:bg-neutral-850 hover:border-neutral-700 transition-all">
                       <CheckCircle2 className="w-3.5 h-3.5 text-white shrink-0" />
                       <span>Udyam</span>
                     </div>
@@ -760,7 +760,7 @@ export default function PublicWithusPage() {
                     <span className="text-[10px] font-mono text-neutral-400 uppercase font-bold tracking-wider">Communications</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-semibold text-neutral-200 hover:bg-neutral-850 hover:border-neutral-700 transition-all">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-medium text-neutral-200 hover:bg-neutral-850 hover:border-neutral-700 transition-all">
                       <CheckCircle2 className="w-3.5 h-3.5 text-white shrink-0" />
                       <span>Gmail</span>
                     </div>
@@ -779,7 +779,7 @@ export default function PublicWithusPage() {
               <Eye className="w-3.5 h-3.5 text-white" />
               <span>Product Preview</span>
             </div>
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-[1.15] mt-1 mb-4">
+            <h2 className="text-3xl sm:text-5xl font-medium text-white tracking-tight leading-[1.15] mt-1 mb-4">
               Access Overview
             </h2>
             <p className="text-base sm:text-lg text-neutral-400 font-normal leading-relaxed">
@@ -799,19 +799,19 @@ export default function PublicWithusPage() {
                   <div className="w-3 h-3 rounded-full bg-neutral-800" />
                 </div>
                 <div className="h-4 w-px bg-neutral-800 hidden sm:block" />
-                <span className="text-xs font-bold text-white tracking-wide font-mono">WITHUS Governance Console</span>
-                <span className="px-2 py-0.5 rounded bg-neutral-800 text-neutral-300 text-[10px] font-mono font-semibold">Demo Sandbox</span>
+                <span className="text-xs font-medium text-white tracking-wide font-mono">WITHUS Governance Console</span>
+                <span className="px-2 py-0.5 rounded bg-neutral-800 text-neutral-300 text-[10px] font-mono font-medium">Demo Sandbox</span>
               </div>
               
               <div className="flex items-center gap-3">
                 <div
-                  className="px-3.5 py-1.5 rounded-lg bg-neutral-850 border border-neutral-750 text-xs font-semibold text-neutral-200 flex items-center gap-1.5 select-none"
+                  className="px-3.5 py-1.5 rounded-lg bg-neutral-850 border border-neutral-750 text-xs font-medium text-neutral-200 flex items-center gap-1.5 select-none"
                 >
                   <Globe className="w-3.5 h-3.5 text-neutral-400" />
                   <span>Browser Extension</span>
                 </div>
                 <div
-                  className="px-4 py-1.5 rounded-lg bg-white text-neutral-950 text-xs font-bold shadow-xs flex items-center gap-1.5 select-none"
+                  className="px-4 py-1.5 rounded-lg bg-white text-neutral-950 text-xs font-medium shadow-xs flex items-center gap-1.5 select-none"
                 >
                   <span>Vault</span>
                 </div>
@@ -824,7 +824,7 @@ export default function PublicWithusPage() {
               {/* Greeting Header */}
               <div>
                 <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest font-mono">WITHUS</span>
-                <h3 className="text-2xl font-extrabold text-white mt-0.5 tracking-tight flex items-center gap-2">
+                <h3 className="text-2xl font-medium text-white mt-0.5 tracking-tight flex items-center gap-2">
                   <span>Welcome, Alex</span>
                   <span className="text-xl">👋</span>
                 </h3>
@@ -840,7 +840,7 @@ export default function PublicWithusPage() {
                     <div className="w-9 h-9 rounded-lg bg-neutral-800 border border-neutral-750 flex items-center justify-center text-white mb-3">
                       <Key className="w-4.5 h-4.5" />
                     </div>
-                    <div className="text-3xl font-extrabold text-white font-mono">11</div>
+                    <div className="text-3xl font-medium text-white font-mono">11</div>
                     <div className="text-[11px] font-mono uppercase tracking-wider text-neutral-400 font-semibold mt-1">Active Vaults</div>
                   </div>
                   <ChevronRight className="w-5 h-5 text-neutral-600" />
@@ -851,7 +851,7 @@ export default function PublicWithusPage() {
                     <div className="w-9 h-9 rounded-lg bg-neutral-800 border border-neutral-750 flex items-center justify-center text-white mb-3">
                       <FileCheck className="w-4.5 h-4.5" />
                     </div>
-                    <div className="text-3xl font-extrabold text-white font-mono">0</div>
+                    <div className="text-3xl font-medium text-white font-mono">0</div>
                     <div className="text-[11px] font-mono uppercase tracking-wider text-neutral-400 font-semibold mt-1">Pending Approvals</div>
                   </div>
                   <ChevronRight className="w-5 h-5 text-neutral-600" />
@@ -862,7 +862,7 @@ export default function PublicWithusPage() {
                     <div className="w-9 h-9 rounded-lg bg-neutral-800 border border-neutral-750 flex items-center justify-center text-white mb-3">
                       <Users className="w-4.5 h-4.5" />
                     </div>
-                    <div className="text-3xl font-extrabold text-white font-mono">3</div>
+                    <div className="text-3xl font-medium text-white font-mono">3</div>
                     <div className="text-[11px] font-mono uppercase tracking-wider text-neutral-400 font-semibold mt-1">Active Sessions</div>
                   </div>
                   <ChevronRight className="w-5 h-5 text-neutral-600" />
@@ -873,7 +873,7 @@ export default function PublicWithusPage() {
               <div className="p-6 rounded-xl bg-neutral-900/60 border border-neutral-850 shadow-xs">
                 <div className="flex items-center justify-between mb-4 pb-3 border-b border-neutral-800">
                   <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono">Recent Vaults</h4>
-                  <div className="text-[11px] font-semibold text-neutral-400 flex items-center gap-1">
+                  <div className="text-[11px] font-medium text-neutral-400 flex items-center gap-1">
                     <span>VIEW ALL</span>
                     <ChevronRight className="w-3 h-3" />
                   </div>
@@ -883,10 +883,10 @@ export default function PublicWithusPage() {
                   <table className="w-full text-left text-xs border-collapse min-w-[500px]">
                     <thead>
                       <tr className="text-neutral-500 font-mono uppercase tracking-wider text-[10px] border-b border-neutral-850">
-                        <th className="pb-3 px-2 font-bold">Vault Name</th>
-                        <th className="pb-3 px-2 font-bold">Description</th>
-                        <th className="pb-3 px-2 font-bold">Created</th>
-                        <th className="pb-3 px-2 text-right font-bold">Actions</th>
+                        <th className="pb-3 px-2 font-medium">Vault Name</th>
+                        <th className="pb-3 px-2 font-medium">Description</th>
+                        <th className="pb-3 px-2 font-medium">Created</th>
+                        <th className="pb-3 px-2 text-right font-medium">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-850/50 text-neutral-300">
@@ -898,7 +898,7 @@ export default function PublicWithusPage() {
                         { name: 'Gmail', desc: 'Organizational communications', date: '10/08/2026' },
                       ].map((vault, i) => (
                         <tr key={i} className="hover:bg-neutral-850/40 transition-colors">
-                          <td className="py-3 px-2 font-semibold text-white flex items-center gap-2.5">
+                          <td className="py-3 px-2 font-medium text-white flex items-center gap-2.5">
                             <div className="w-6 h-6 rounded bg-neutral-800 border border-neutral-750 flex items-center justify-center text-neutral-300 shrink-0">
                               <Key className="w-3 h-3" />
                             </div>
@@ -907,7 +907,7 @@ export default function PublicWithusPage() {
                           <td className="py-3 px-2 text-neutral-400">{vault.desc}</td>
                           <td className="py-3 px-2 text-neutral-500 font-mono text-[11px]">{vault.date}</td>
                           <td className="py-3 px-2 text-right">
-                            <span className="text-[11px] font-semibold text-neutral-300 inline-flex items-center gap-1">
+                            <span className="text-[11px] font-medium text-neutral-300 inline-flex items-center gap-1">
                               <span>OPEN</span>
                               <ChevronRight className="w-3 h-3" />
                             </span>
@@ -927,7 +927,7 @@ export default function PublicWithusPage() {
                   <div className="w-8 h-8 rounded-lg bg-neutral-850 border border-neutral-750 flex items-center justify-center text-neutral-200 mb-3">
                     <Key className="w-4 h-4" />
                   </div>
-                  <h5 className="text-xs font-bold text-white">Manage Vaults</h5>
+                  <h5 className="text-xs font-medium text-white">Manage Vaults</h5>
                   <p className="text-[10px] text-neutral-400 mt-0.5">View and create storage keys</p>
                 </div>
 
@@ -937,7 +937,7 @@ export default function PublicWithusPage() {
                   <div className="w-8 h-8 rounded-lg bg-neutral-850 border border-neutral-750 flex items-center justify-center text-neutral-200 mb-3">
                     <Users className="w-4 h-4" />
                   </div>
-                  <h5 className="text-xs font-bold text-white">Sessions</h5>
+                  <h5 className="text-xs font-medium text-white">Sessions</h5>
                   <p className="text-[10px] text-neutral-400 mt-0.5">Manage access allocations</p>
                 </div>
 
@@ -947,7 +947,7 @@ export default function PublicWithusPage() {
                   <div className="w-8 h-8 rounded-lg bg-neutral-850 border border-neutral-750 flex items-center justify-center text-neutral-200 mb-3">
                     <FileCheck className="w-4 h-4" />
                   </div>
-                  <h5 className="text-xs font-bold text-white">Approvals</h5>
+                  <h5 className="text-xs font-medium text-white">Approvals</h5>
                   <p className="text-[10px] text-neutral-400 mt-0.5">Authorize request workflows</p>
                 </div>
 
@@ -957,7 +957,7 @@ export default function PublicWithusPage() {
                   <div className="w-8 h-8 rounded-lg bg-neutral-850 border border-neutral-750 flex items-center justify-center text-neutral-200 mb-3">
                     <ShieldCheck className="w-4 h-4" />
                   </div>
-                  <h5 className="text-xs font-bold text-white">Team Roles</h5>
+                  <h5 className="text-xs font-medium text-white">Team Roles</h5>
                   <p className="text-[10px] text-neutral-400 mt-0.5">Manage team role access</p>
                 </div>
               </div>
@@ -973,7 +973,7 @@ export default function PublicWithusPage() {
               <BarChart3 className="w-3.5 h-3.5 text-white" />
               <span>Simple Pricing</span>
             </div>
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-[1.15] mt-1 mb-4">
+            <h2 className="text-3xl sm:text-5xl font-medium text-white tracking-tight leading-[1.15] mt-1 mb-4">
               Transparent plans tailored to your team scale
             </h2>
             <p className="text-base sm:text-lg text-neutral-400 font-normal leading-relaxed">
@@ -985,9 +985,9 @@ export default function PublicWithusPage() {
             {/* FREE TIER */}
             <div className="p-8 rounded-2xl bg-neutral-900/40 border border-neutral-850 flex flex-col justify-between hover:border-neutral-800 transition-all">
               <div>
-                <h3 className="text-lg font-bold text-white">FREE</h3>
+                <h3 className="text-lg font-medium text-white">FREE</h3>
                 <p className="text-xs text-neutral-400 mt-1">Get started with essential platform delegation.</p>
-                <div className="mt-6 text-3xl font-extrabold text-white">₹0 <span className="text-xs font-normal text-neutral-400">/ month</span></div>
+                <div className="mt-6 text-3xl font-medium text-white">₹0 <span className="text-xs font-normal text-neutral-400">/ month</span></div>
                 <ul className="mt-6 space-y-3.5 text-xs text-neutral-300">
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-white shrink-0" />
@@ -1009,7 +1009,7 @@ export default function PublicWithusPage() {
               </div>
               <button
                 onClick={() => setIsDemoModalOpen(true)}
-                className="mt-8 w-full py-3.5 rounded-xl bg-neutral-800 hover:bg-neutral-750 text-white font-semibold text-xs transition-colors cursor-pointer"
+                className="mt-8 w-full py-3.5 rounded-xl bg-neutral-800 hover:bg-neutral-750 text-white font-medium text-xs transition-colors cursor-pointer"
               >
                 Request Access
               </button>
@@ -1017,13 +1017,13 @@ export default function PublicWithusPage() {
 
             {/* PRO TIER */}
             <div className="p-8 rounded-2xl bg-neutral-900 border border-neutral-700 relative flex flex-col justify-between shadow-2xl">
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-white text-neutral-950 text-[10px] font-extrabold uppercase tracking-wider shadow-md">
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-white text-neutral-950 text-[10px] font-bold uppercase tracking-wider shadow-md">
                 Most Popular
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">PRO</h3>
+                <h3 className="text-lg font-medium text-white">PRO</h3>
                 <p className="text-xs text-neutral-400 mt-1">For growing teams that need broader platform access and supported OTP assistance.</p>
-                <div className="mt-6 text-3xl font-extrabold text-white">₹499 <span className="text-xs font-normal text-neutral-400">/ month (₹4,990/yr)</span></div>
+                <div className="mt-6 text-3xl font-medium text-white">₹499 <span className="text-xs font-normal text-neutral-400">/ month (₹4,990/yr)</span></div>
                 <ul className="mt-6 space-y-3.5 text-xs text-neutral-300">
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-white shrink-0" />
@@ -1049,7 +1049,7 @@ export default function PublicWithusPage() {
               </div>
               <button
                 onClick={() => setIsDemoModalOpen(true)}
-                className="mt-8 w-full py-3.5 rounded-xl bg-white hover:bg-neutral-100 text-neutral-950 font-bold text-xs transition-colors cursor-pointer shadow-md"
+                className="mt-8 w-full py-3.5 rounded-xl bg-white hover:bg-neutral-100 text-neutral-950 font-medium text-xs transition-colors cursor-pointer shadow-md"
               >
                 Request Demo
               </button>
@@ -1058,9 +1058,9 @@ export default function PublicWithusPage() {
             {/* BUSINESS TIER */}
             <div className="p-8 rounded-2xl bg-neutral-900/40 border border-neutral-850 flex flex-col justify-between hover:border-neutral-800 transition-all">
               <div>
-                <h3 className="text-lg font-bold text-white">BUSINESS</h3>
+                <h3 className="text-lg font-medium text-white">BUSINESS</h3>
                 <p className="text-xs text-neutral-400 mt-1">Advanced access control, health monitoring & unlimited admins.</p>
-                <div className="mt-6 text-3xl font-extrabold text-white">₹1,999 <span className="text-xs font-normal text-neutral-400">/ month (₹19,990/yr)</span></div>
+                <div className="mt-6 text-3xl font-medium text-white">₹1,999 <span className="text-xs font-normal text-neutral-400">/ month (₹19,990/yr)</span></div>
                 <ul className="mt-6 space-y-3.5 text-xs text-neutral-300">
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-white shrink-0" />
@@ -1086,7 +1086,7 @@ export default function PublicWithusPage() {
               </div>
               <button
                 onClick={() => setIsDemoModalOpen(true)}
-                className="mt-8 w-full py-3.5 rounded-xl bg-neutral-800 hover:bg-neutral-750 text-white font-semibold text-xs transition-colors cursor-pointer"
+                className="mt-8 w-full py-3.5 rounded-xl bg-neutral-800 hover:bg-neutral-750 text-white font-medium text-xs transition-colors cursor-pointer"
               >
                 Contact Team
               </button>
@@ -1101,7 +1101,7 @@ export default function PublicWithusPage() {
               <CheckSquare className="w-3.5 h-3.5 text-white" />
               <span>Current Stage</span>
             </div>
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-[1.15] mt-1 mb-4">
+            <h2 className="text-3xl sm:text-5xl font-medium text-white tracking-tight leading-[1.15] mt-1 mb-4">
               Core Product Implemented
             </h2>
             <p className="text-base sm:text-lg text-neutral-400 font-normal leading-relaxed">
@@ -1111,7 +1111,7 @@ export default function PublicWithusPage() {
 
           <div className="grid md:grid-cols-3 gap-6">
             <div className="p-7 rounded-2xl bg-neutral-900/40 border border-neutral-850">
-              <div className="flex items-center gap-2.5 text-neutral-200 font-semibold text-sm mb-3">
+              <div className="flex items-center gap-2.5 text-neutral-200 font-medium text-sm mb-3">
                 <CheckCircle2 className="w-4.5 h-4.5 text-white" />
                 <span>Core Product Implemented</span>
               </div>
@@ -1121,7 +1121,7 @@ export default function PublicWithusPage() {
             </div>
 
             <div className="p-7 rounded-2xl bg-neutral-900/40 border border-neutral-850">
-              <div className="flex items-center gap-2.5 text-neutral-200 font-semibold text-sm mb-3">
+              <div className="flex items-center gap-2.5 text-neutral-200 font-medium text-sm mb-3">
                 <Globe className="w-4.5 h-4.5 text-white" />
                 <span>Platform Support</span>
               </div>
@@ -1131,7 +1131,7 @@ export default function PublicWithusPage() {
             </div>
 
             <div className="p-7 rounded-2xl bg-neutral-900/40 border border-neutral-850">
-              <div className="flex items-center gap-2.5 text-neutral-200 font-semibold text-sm mb-3">
+              <div className="flex items-center gap-2.5 text-neutral-200 font-medium text-sm mb-3">
                 <FileCheck className="w-4.5 h-4.5 text-white" />
                 <span>Public Product Stage</span>
               </div>
@@ -1146,7 +1146,7 @@ export default function PublicWithusPage() {
         <section id="cta" className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pt-16 border-t border-neutral-900/80 scroll-mt-28">
           <div className="p-12 md:p-16 rounded-3xl bg-gradient-to-b from-neutral-900 via-neutral-900/90 to-neutral-950 border border-neutral-800 text-center relative overflow-hidden shadow-2xl">
             <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-widest font-mono">Get Started</span>
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight mt-2">
+            <h2 className="text-3xl sm:text-5xl font-medium text-white tracking-tight mt-2">
               Ready to simplify shared platform access?
             </h2>
             <p className="mt-4 text-base text-neutral-400 max-w-xl mx-auto leading-relaxed">
@@ -1155,13 +1155,13 @@ export default function PublicWithusPage() {
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <button
                 onClick={() => setIsDemoModalOpen(true)}
-                className="w-full sm:w-auto px-9 py-4 rounded-xl bg-white text-neutral-950 font-bold text-sm hover:bg-neutral-100 transition-all shadow-xl cursor-pointer"
+                className="w-full sm:w-auto px-9 py-4 rounded-xl bg-white text-neutral-950 font-medium text-sm hover:bg-neutral-100 transition-all shadow-xl cursor-pointer"
               >
                 Request Product Demo
               </button>
               <button
                 onClick={() => setIsDemoModalOpen(true)}
-                className="w-full sm:w-auto px-9 py-4 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-200 font-semibold text-sm hover:bg-neutral-850 hover:text-white transition-all cursor-pointer"
+                className="w-full sm:w-auto px-9 py-4 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-200 font-medium text-sm hover:bg-neutral-850 hover:text-white transition-all cursor-pointer"
               >
                 Contact Sales Team
               </button>

@@ -19,7 +19,7 @@ export function PolicyPageLayout({
   children,
 }: PolicyPageLayoutProps) {
   return (
-    <div className="min-h-screen w-full relative flex flex-col justify-between overflow-x-hidden overflow-y-auto text-white font-sans antialiased selection:bg-white selection:text-zinc-950">
+    <div className="min-h-screen w-full relative flex flex-col justify-between overflow-x-hidden overflow-y-auto text-white font-geist antialiased selection:bg-white selection:text-zinc-950">
       {/* High-Resolution Clean Twilight Horizon Wallpaper */}
       <div
         className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none -z-10"
@@ -46,7 +46,7 @@ export function PolicyPageLayout({
           </Link>
           <Link
             href="/register"
-            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white text-zinc-950 font-bold hover:bg-zinc-100 transition-all shadow-sm"
+            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white text-zinc-950 font-medium hover:bg-zinc-100 transition-all shadow-sm"
           >
             <span>Create Workspace</span>
           </Link>
@@ -60,7 +60,7 @@ export function PolicyPageLayout({
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.12] border border-white/20 text-[11px] font-bold tracking-widest uppercase text-white/90 backdrop-blur-md">
             <span>{badge}</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)]">
+          <h1 className="font-geist text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)]">
             {title}
           </h1>
           <p className="text-xs sm:text-sm text-white/75 font-normal">

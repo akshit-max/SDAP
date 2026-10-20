@@ -9,7 +9,7 @@ export default function RefundPolicyPage() {
     <PolicyPageLayout title="Refund & Cancellation Policy" lastUpdated="August 24, 2026" badge="BILLING & SUBSCRIPTIONS">
       {/* Section 1 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <Info className="w-5 h-5 text-sky-300" />
           <span>1. Commercial Terms &amp; Subscriptions</span>
         </h2>
