@@ -237,7 +237,8 @@ function LoginForm() {
                     type="email"
                     required
                     autoComplete="email"
-                    className="w-full h-11 pl-10 pr-4 bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-sm font-medium text-white placeholder:text-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]"
+                    style={{ colorScheme: 'dark' }}
+                    className="w-full h-11 pl-10 pr-4 bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-sm font-medium text-white placeholder:text-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)] [color-scheme:dark]"
                     placeholder="name@company.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -256,7 +257,8 @@ function LoginForm() {
                     type={showPassword ? "text" : "password"}
                     required
                     autoComplete="current-password"
-                    className="w-full h-11 pl-10 pr-10 bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-sm font-medium text-white placeholder:text-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]"
+                    style={{ colorScheme: 'dark' }}
+                    className="w-full h-11 pl-10 pr-10 bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-sm font-medium text-white placeholder:text-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)] [color-scheme:dark]"
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -305,13 +307,12 @@ function LoginForm() {
               </button>
 
               {/* Divider: OR CONTINUE WITH */}
-              <div className="relative my-4 text-center">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/20" />
-                </div>
-                <span className="relative px-3 bg-transparent text-[10px] font-bold tracking-[0.15em] text-white/60 uppercase">
+              <div className="flex items-center my-4">
+                <div className="flex-1 border-t border-white/20" />
+                <span className="px-3 text-[10px] font-bold tracking-[0.15em] text-white/60 uppercase shrink-0 select-none">
                   OR CONTINUE WITH
                 </span>
+                <div className="flex-1 border-t border-white/20" />
               </div>
 
               {/* Social / SSO Buttons */}

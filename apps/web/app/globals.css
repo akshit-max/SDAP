@@ -59,6 +59,23 @@ input:-webkit-autofill:active {
   caret-color: #0071E3 !important;
 }
 
+/* Force pure white text and caret for inputs with text-white class, including during browser autofill */
+input.text-white,
+input[class*="text-white"],
+input[class*="text-white"]:-webkit-autofill,
+input[class*="text-white"]:-webkit-autofill:hover,
+input[class*="text-white"]:-webkit-autofill:focus,
+input[class*="text-white"]:-webkit-autofill:active,
+input.text-white:-webkit-autofill,
+input.text-white:-webkit-autofill:hover,
+input.text-white:-webkit-autofill:focus,
+input.text-white:-webkit-autofill:active {
+  -webkit-text-fill-color: #FFFFFF !important;
+  color: #FFFFFF !important;
+  caret-color: #FFFFFF !important;
+  transition: background-color 5000000s ease-in-out 0s, color 5000000s ease-in-out 0s;
+}
+
 .font-mono {
   font-family: var(--font-geist-mono), var(--font-space-mono), monospace !important;
 }

@@ -272,7 +272,8 @@ function RegisterForm() {
                         type="text"
                         required
                         autoComplete="name"
-                        className="w-full h-11 pl-10 pr-3.5 bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-sm font-medium text-white placeholder:text-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]"
+                        style={{ colorScheme: 'dark' }}
+                        className="w-full h-11 pl-10 pr-3.5 bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-sm font-medium text-white placeholder:text-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)] [color-scheme:dark]"
                         placeholder="Jane Doe"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
@@ -290,7 +291,8 @@ function RegisterForm() {
                       <input
                         type="text"
                         required
-                        className="w-full h-11 pl-10 pr-3.5 bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-sm font-medium text-white placeholder:text-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]"
+                        style={{ colorScheme: 'dark' }}
+                        className="w-full h-11 pl-10 pr-3.5 bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-sm font-medium text-white placeholder:text-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)] [color-scheme:dark]"
                         placeholder="Acme Corp"
                         value={companyName}
                         onChange={(e) => setCompanyName(e.target.value)}
@@ -310,7 +312,8 @@ function RegisterForm() {
                       type="text"
                       required
                       autoComplete="name"
-                      className="w-full h-11 pl-10 pr-4 bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-sm font-medium text-white placeholder:text-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]"
+                      style={{ colorScheme: 'dark' }}
+                      className="w-full h-11 pl-10 pr-4 bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-sm font-medium text-white placeholder:text-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)] [color-scheme:dark]"
                       placeholder="Jane Doe"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
@@ -331,7 +334,8 @@ function RegisterForm() {
                     required
                     autoComplete="email"
                     disabled={isInviteFlow}
-                    className={`w-full h-11 pl-10 pr-4 bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-sm font-medium text-white placeholder:text-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)] ${isInviteFlow ? 'opacity-60 cursor-not-allowed' : ''
+                    style={{ colorScheme: 'dark' }}
+                    className={`w-full h-11 pl-10 pr-4 bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-sm font-medium text-white placeholder:text-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)] [color-scheme:dark] ${isInviteFlow ? 'opacity-60 cursor-not-allowed' : ''
                       }`}
                     placeholder="admin@company.com"
                     value={email}
@@ -354,7 +358,8 @@ function RegisterForm() {
                     type={showPassword ? 'text' : 'password'}
                     required
                     autoComplete="new-password"
-                    className="w-full h-11 pl-10 pr-10 bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-sm font-medium text-white placeholder:text-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]"
+                    style={{ colorScheme: 'dark' }}
+                    className="w-full h-11 pl-10 pr-10 bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-sm font-medium text-white placeholder:text-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)] [color-scheme:dark]"
                     placeholder="Min. 8 characters"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -380,7 +385,8 @@ function RegisterForm() {
                     type={showConfirmPassword ? 'text' : 'password'}
                     required
                     autoComplete="new-password"
-                    className="w-full h-11 pl-10 pr-10 bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-sm font-medium text-white placeholder:text-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]"
+                    style={{ colorScheme: 'dark' }}
+                    className="w-full h-11 pl-10 pr-10 bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-sm font-medium text-white placeholder:text-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)] [color-scheme:dark]"
                     placeholder="Confirm your password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}

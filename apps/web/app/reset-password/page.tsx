@@ -132,7 +132,8 @@ function ResetPasswordForm() {
               minLength={8}
               value={password}
               onChange={(e) => { setPassword(e.target.value); setError(''); }}
-              className="w-full h-11 pl-10 pr-10 text-sm bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-white placeholder-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]"
+              style={{ colorScheme: 'dark' }}
+              className="w-full h-11 pl-10 pr-10 text-sm bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-white placeholder-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)] [color-scheme:dark]"
               placeholder="Minimum 8 characters"
             />
             <button
@@ -161,7 +162,8 @@ function ResetPasswordForm() {
               required
               value={confirm}
               onChange={(e) => { setConfirm(e.target.value); setError(''); }}
-              className="w-full h-11 pl-10 pr-10 text-sm bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-white placeholder-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]"
+              style={{ colorScheme: 'dark' }}
+              className="w-full h-11 pl-10 pr-10 text-sm bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-white placeholder-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)] [color-scheme:dark]"
               placeholder="Repeat your password"
             />
           </div>
