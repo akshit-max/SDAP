@@ -9,7 +9,7 @@ export default function PrivacyPolicyPage() {
     <PolicyPageLayout title="Privacy Policy" lastUpdated="August 24, 2026">
       {/* Section 1 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <Shield className="w-5 h-5 text-sky-300" />
           <span>1. Introduction</span>
         </h2>
@@ -25,7 +25,7 @@ export default function PrivacyPolicyPage() {
 
       {/* Section 2 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <FileText className="w-5 h-5 text-sky-300" />
           <span>2. Data Accessed by the Extension</span>
         </h2>
@@ -52,7 +52,7 @@ export default function PrivacyPolicyPage() {
 
       {/* Section 3 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <Lock className="w-5 h-5 text-sky-300" />
           <span>3. Authentication &amp; Local Storage</span>
         </h2>
@@ -81,7 +81,7 @@ export default function PrivacyPolicyPage() {
 
       {/* Section 4 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <Server className="w-5 h-5 text-sky-300" />
           <span>4. Data Transmission</span>
         </h2>
@@ -110,7 +110,7 @@ export default function PrivacyPolicyPage() {
 
       {/* Section 5 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <Users className="w-5 h-5 text-sky-300" />
           <span>5. Authorized Use Only</span>
         </h2>
@@ -121,7 +121,7 @@ export default function PrivacyPolicyPage() {
 
       {/* Section 6 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <Users className="w-5 h-5 text-sky-300" />
           <span>6. Data Sharing</span>
         </h2>
@@ -132,7 +132,7 @@ export default function PrivacyPolicyPage() {
 
       {/* Section 7 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <FileText className="w-5 h-5 text-sky-300" />
           <span>7. Policy Updates</span>
         </h2>
@@ -143,7 +143,7 @@ export default function PrivacyPolicyPage() {
 
       {/* Section 8 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <Mail className="w-5 h-5 text-sky-300" />
           <span>8. Contact Us</span>
         </h2>
@@ -152,7 +152,7 @@ export default function PrivacyPolicyPage() {
             For privacy-related inquiries, please contact our security team:
           </p>
           <div className="inline-block p-4 bg-white/[0.08] border border-white/20 rounded-2xl">
-            <a href="mailto:contact@makewithus.in" className="text-white font-semibold hover:underline flex items-center gap-2">
+            <a href="mailto:contact@makewithus.in" className="text-white font-medium hover:underline flex items-center gap-2">
               <Mail className="w-4 h-4 text-sky-300" />
               <span>contact@makewithus.in</span>
             </a>

@@ -9,7 +9,7 @@ export default function SecurityPage() {
     <PolicyPageLayout title="Security & Data Protection" lastUpdated="August 24, 2026" badge="ENTERPRISE SECURITY">
       {/* Section 1 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <Shield className="w-5 h-5 text-sky-300" />
           <span>1. Our Security Commitment</span>
         </h2>
@@ -20,7 +20,7 @@ export default function SecurityPage() {
 
       {/* Section 2 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <Key className="w-5 h-5 text-sky-300" />
           <span>2. Credential Encryption</span>
         </h2>
@@ -42,7 +42,7 @@ export default function SecurityPage() {
 
       {/* Section 3 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <Lock className="w-5 h-5 text-sky-300" />
           <span>3. Access Controls &amp; Authentication</span>
         </h2>
@@ -73,7 +73,7 @@ export default function SecurityPage() {
 
       {/* Section 4 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <Search className="w-5 h-5 text-sky-300" />
           <span>4. Immutable Audit Logging</span>
         </h2>
@@ -84,7 +84,7 @@ export default function SecurityPage() {
 
       {/* Section 5 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <Database className="w-5 h-5 text-sky-300" />
           <span>5. Infrastructure &amp; Tenant Isolation</span>
         </h2>
@@ -108,7 +108,7 @@ export default function SecurityPage() {
 
       {/* Section 6 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <Activity className="w-5 h-5 text-sky-300" />
           <span>6. Monitoring &amp; Incident Response</span>
         </h2>

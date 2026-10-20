@@ -9,7 +9,7 @@ export default function TermsPage() {
     <PolicyPageLayout title="Terms & Conditions" lastUpdated="August 24, 2026">
       {/* Section 1 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <Shield className="w-5 h-5 text-sky-300" />
           <span>1. Eligibility &amp; Acceptance</span>
         </h2>
@@ -20,7 +20,7 @@ export default function TermsPage() {
 
       {/* Section 2 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <Users className="w-5 h-5 text-sky-300" />
           <span>2. Account Responsibilities</span>
         </h2>
@@ -31,7 +31,7 @@ export default function TermsPage() {
 
       {/* Section 3 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <Lock className="w-5 h-5 text-sky-300" />
           <span>3. Acceptable Use &amp; Credential Responsibility</span>
         </h2>
@@ -50,7 +50,7 @@ export default function TermsPage() {
 
       {/* Section 4 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <Link2 className="w-5 h-5 text-sky-300" />
           <span>4. Third-Party Integrations</span>
         </h2>
@@ -86,7 +86,7 @@ export default function TermsPage() {
 
       {/* Section 5 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <DollarSign className="w-5 h-5 text-sky-300" />
           <span>5. Subscription &amp; Payment Terms</span>
         </h2>
@@ -97,7 +97,7 @@ export default function TermsPage() {
 
       {/* Section 6 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <AlertTriangle className="w-5 h-5 text-sky-300" />
           <span>6. Suspension &amp; Termination</span>
         </h2>
@@ -108,7 +108,7 @@ export default function TermsPage() {
 
       {/* Section 7 */}
       <section className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
+        <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <FileCheck className="w-5 h-5 text-sky-300" />
           <span>7. Legal Safeguards</span>
         </h2>

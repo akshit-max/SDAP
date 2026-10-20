@@ -118,7 +118,7 @@ function RegisterForm() {
   };
 
   return (
-    <div className="min-h-screen w-full relative flex flex-col justify-between overflow-x-hidden overflow-y-auto text-white font-sans antialiased selection:bg-white selection:text-zinc-950">
+    <div className="min-h-screen min-h-[100dvh] w-full relative flex flex-col overflow-x-hidden text-white font-geist antialiased selection:bg-white selection:text-zinc-950">
       {/* High-Resolution Clean Twilight Horizon Wallpaper */}
       <div
         className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none -z-10"
@@ -126,7 +126,7 @@ function RegisterForm() {
       />
 
       {/* Top Navbar */}
-      <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7 flex items-center justify-between relative z-20">
+      <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5 flex items-center justify-between relative z-20 shrink-0">
         {/* Logo */}
         <Link href="/" className="flex items-center hover:opacity-90 transition-opacity group">
           <img
@@ -149,7 +149,7 @@ function RegisterForm() {
       </header>
 
       {/* Main Grid: Left Narrative + Right Frosted Glass Card */}
-      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center">
+      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-5 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
         {/* Left Column: Brand & Product Showcase */}
         <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-center space-y-6 sm:space-y-7 select-none max-w-xl mx-auto lg:mx-0 text-center lg:text-left">
           {/* Badge: Thin line + uppercase tracking text */}
@@ -160,8 +160,8 @@ function RegisterForm() {
             </span>
           </div>
 
-          {/* Main Headline with sky-300 highlight */}
-          <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold tracking-tight text-white leading-[1.08] drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)]">
+          {/* Main Headline with font-geist */}
+          <h1 className="font-geist text-4xl sm:text-5xl lg:text-[56px] font-medium tracking-tight text-white leading-[1.08] drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)]">
             Create your<br />
             enterprise<br />
             <span className="text-sky-300 drop-shadow-[0_0_24px_rgba(125,211,252,0.45)]">workspace.</span>
@@ -179,7 +179,7 @@ function RegisterForm() {
                 <Users className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="text-sm sm:text-[15px] font-bold text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">Invite team members</p>
+                <p className="text-sm sm:text-[15px] font-medium text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">Invite team members</p>
                 <p className="text-xs sm:text-[13px] text-white/80 font-medium">Effortless provisioning</p>
               </div>
             </div>
@@ -189,7 +189,7 @@ function RegisterForm() {
                 <Package className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="text-sm sm:text-[15px] font-bold text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">Role-based permissions</p>
+                <p className="text-sm sm:text-[15px] font-medium text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">Role-based permissions</p>
                 <p className="text-xs sm:text-[13px] text-white/80 font-medium">Granular access control</p>
               </div>
             </div>
@@ -199,7 +199,7 @@ function RegisterForm() {
                 <Zap className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="text-sm sm:text-[15px] font-bold text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">Start in minutes</p>
+                <p className="text-sm sm:text-[15px] font-medium text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">Start in minutes</p>
                 <p className="text-xs sm:text-[13px] text-white/80 font-medium">No complex setup</p>
               </div>
             </div>
@@ -209,7 +209,7 @@ function RegisterForm() {
                 <ShieldCheck className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="text-sm sm:text-[15px] font-bold text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">Enterprise ready</p>
+                <p className="text-sm sm:text-[15px] font-medium text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">Enterprise ready</p>
                 <p className="text-xs sm:text-[13px] text-white/80 font-medium">SOC-2 compliant</p>
               </div>
             </div>
@@ -218,7 +218,7 @@ function RegisterForm() {
 
         {/* Right Column: Floating Frosted Glass Card */}
         <div className="lg:col-span-6 xl:col-span-5 flex justify-center w-full">
-          <div className="w-full max-w-[430px] rounded-[32px] p-8 sm:p-9 bg-white/[0.10] backdrop-blur-2xl border border-white/25 shadow-[0_28px_60px_-12px_rgba(0,0,0,0.45),inset_0_1px_1px_rgba(255,255,255,0.35)] text-white">
+          <div className="w-full max-w-[450px] rounded-[32px] p-6 sm:p-9 bg-white/[0.10] backdrop-blur-2xl border border-white/25 shadow-[0_28px_60px_-12px_rgba(0,0,0,0.45),inset_0_1px_1px_rgba(255,255,255,0.35)] text-white">
             {/* Card Header with Logo */}
             <div className="text-center mb-5">
               <div className="flex justify-center mb-3">
@@ -228,7 +228,7 @@ function RegisterForm() {
                   className="h-7 sm:h-8 w-auto object-contain select-none"
                 />
               </div>
-              <h2 className="text-2xl sm:text-[26px] font-bold tracking-tight text-white">
+              <h2 className="text-2xl sm:text-[26px] font-medium tracking-tight text-white">
                 {isInviteFlow ? 'Accept Team Invitation' : 'Create your workspace'}
               </h2>
               <p className="text-xs sm:text-sm text-white/80 mt-1 font-normal">
@@ -239,7 +239,7 @@ function RegisterForm() {
             {/* Invite Banner */}
             {isInviteFlow && (
               <div className="mb-4 p-3.5 bg-white/15 border border-white/25 rounded-2xl text-center text-xs leading-relaxed">
-                <p className="text-white font-semibold mb-0.5">First time joining WithUs?</p>
+                <p className="text-white font-medium mb-0.5">First time joining WithUs?</p>
                 <p className="text-white/80 text-[11px]">
                   You are creating an account with your invited email.
                 </p>
@@ -247,7 +247,7 @@ function RegisterForm() {
                   Already have an account?{' '}
                   <Link
                     href={`/login?redirect=${encodeURIComponent(redirectParam)}`}
-                    className="text-white font-bold underline underline-offset-2 hover:text-white/90"
+                    className="text-white font-medium underline underline-offset-2 hover:text-white/90"
                   >
                     Sign In
                   </Link>{' '}
@@ -258,40 +258,62 @@ function RegisterForm() {
 
             {/* Form */}
             <form onSubmit={handleRegister} className="space-y-3.5">
-              {/* Full Name */}
-              <div className="space-y-1.5">
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-white/90">
-                  FULL NAME
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" />
-                  <input
-                    type="text"
-                    required
-                    autoComplete="name"
-                    className="w-full h-11 pl-10 pr-4 bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-sm font-medium text-white placeholder:text-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]"
-                    placeholder="Jane Doe"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                  />
-                </div>
-              </div>
+              {/* Full Name & Company Name */}
+              {!isInviteFlow ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
+                  {/* Full Name */}
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-white/90">
+                      FULL NAME
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" />
+                      <input
+                        type="text"
+                        required
+                        autoComplete="name"
+                        className="w-full h-11 pl-10 pr-3.5 bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-sm font-medium text-white placeholder:text-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]"
+                        placeholder="Jane Doe"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                      />
+                    </div>
+                  </div>
 
-              {/* Company Name (only if not invite) */}
-              {!isInviteFlow && (
+                  {/* Company Name */}
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-white/90">
+                      COMPANY NAME
+                    </label>
+                    <div className="relative">
+                      <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" />
+                      <input
+                        type="text"
+                        required
+                        className="w-full h-11 pl-10 pr-3.5 bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-sm font-medium text-white placeholder:text-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]"
+                        placeholder="Acme Corp"
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Full Name single row if invite */
                 <div className="space-y-1.5">
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-white/90">
-                    COMPANY NAME
+                    FULL NAME
                   </label>
                   <div className="relative">
-                    <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" />
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" />
                     <input
                       type="text"
                       required
+                      autoComplete="name"
                       className="w-full h-11 pl-10 pr-4 bg-white/[0.12] hover:bg-white/[0.16] focus:bg-white/[0.20] border border-white/25 focus:border-white/60 focus:ring-2 focus:ring-white/20 rounded-full text-sm font-medium text-white placeholder:text-white/50 focus:outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]"
-                      placeholder="Acme Corp"
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
+                      placeholder="Jane Doe"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
                     />
                   </div>
                 </div>
@@ -384,11 +406,11 @@ function RegisterForm() {
                   />
                   <span className="text-white/90 font-medium">
                     I agree to the{' '}
-                    <Link href="/terms" className="text-white font-bold underline-offset-2 hover:underline">
+                    <Link href="/terms" className="text-white font-medium underline-offset-2 hover:underline">
                       Terms & Conditions
                     </Link>{' '}
                     and{' '}
-                    <Link href="/privacy" className="text-white font-bold underline-offset-2 hover:underline">
+                    <Link href="/privacy" className="text-white font-medium underline-offset-2 hover:underline">
                       Privacy Policy
                     </Link>
                   </span>
@@ -414,7 +436,7 @@ function RegisterForm() {
               Already have an account?{' '}
               <Link
                 href={isInviteFlow ? `/login?redirect=${encodeURIComponent(redirectParam)}` : '/login'}
-                className="text-white font-bold underline-offset-4 hover:underline transition-colors"
+                className="text-white font-medium underline-offset-4 hover:underline transition-colors"
               >
                 Sign In
               </Link>
@@ -424,9 +446,9 @@ function RegisterForm() {
       </main>
 
       {/* Footer */}
-      <footer className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 relative z-20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/75">
+      <footer className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 relative z-20 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-white/75 shrink-0">
         <div>&copy; {new Date().getFullYear()} WithUs Inc. All rights reserved.</div>
-        <div className="flex items-center gap-6">
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1">
           <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
           <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
           <Link href="/security" className="hover:text-white transition-colors">Security</Link>

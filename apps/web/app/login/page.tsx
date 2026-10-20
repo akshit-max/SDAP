@@ -78,7 +78,7 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen w-full relative flex flex-col justify-between overflow-x-hidden overflow-y-auto text-white font-sans antialiased selection:bg-white selection:text-zinc-950">
+    <div className="min-h-screen min-h-[100dvh] w-full relative flex flex-col overflow-x-hidden text-white font-geist antialiased selection:bg-white selection:text-zinc-950">
       {/* High-Resolution Clean Twilight Horizon Wallpaper */}
       <div
         className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none -z-10"
@@ -86,7 +86,7 @@ function LoginForm() {
       />
 
       {/* Top Navbar */}
-      <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7 flex items-center justify-between relative z-20">
+      <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5 flex items-center justify-between relative z-20 shrink-0">
         {/* Logo */}
         <Link href="/" className="flex items-center hover:opacity-90 transition-opacity group">
           <img
@@ -109,7 +109,7 @@ function LoginForm() {
       </header>
 
       {/* Main Two-Sided Content Area */}
-      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center">
+      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-5 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
         {/* Left Column: Product Showcase */}
         <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-center space-y-6 sm:space-y-7 select-none max-w-xl mx-auto lg:mx-0 text-center lg:text-left">
           {/* Badge: Thin line + uppercase tracking text */}
@@ -120,8 +120,8 @@ function LoginForm() {
             </span>
           </div>
 
-          {/* Main Headline with sky-300 highlight */}
-          <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold tracking-tight text-white leading-[1.08] drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)]">
+          {/* Main Headline with font-geist */}
+          <h1 className="font-geist text-4xl sm:text-5xl lg:text-[56px] font-medium tracking-tight text-white leading-[1.08] drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)]">
             Give access<br />
             without giving<br />
             away <span className="text-sky-300 drop-shadow-[0_0_24px_rgba(125,211,252,0.45)]">control.</span>
@@ -139,7 +139,7 @@ function LoginForm() {
                 <Lock className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="text-sm sm:text-[15px] font-bold text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">Passwordless access</p>
+                <p className="text-sm sm:text-[15px] font-medium text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">Passwordless access</p>
                 <p className="text-xs sm:text-[13px] text-white/80 font-medium">No shared credentials</p>
               </div>
             </div>
@@ -149,7 +149,7 @@ function LoginForm() {
                 <Shield className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="text-sm sm:text-[15px] font-bold text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">Scoped permissions</p>
+                <p className="text-sm sm:text-[15px] font-medium text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">Scoped permissions</p>
                 <p className="text-xs sm:text-[13px] text-white/80 font-medium">Least privilege access</p>
               </div>
             </div>
@@ -159,7 +159,7 @@ function LoginForm() {
                 <Clock className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="text-sm sm:text-[15px] font-bold text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">Auto expiry sessions</p>
+                <p className="text-sm sm:text-[15px] font-medium text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">Auto expiry sessions</p>
                 <p className="text-xs sm:text-[13px] text-white/80 font-medium">Time-bound access</p>
               </div>
             </div>
@@ -169,7 +169,7 @@ function LoginForm() {
                 <FileText className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="text-sm sm:text-[15px] font-bold text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">Immutable audit trails</p>
+                <p className="text-sm sm:text-[15px] font-medium text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">Immutable audit trails</p>
                 <p className="text-xs sm:text-[13px] text-white/80 font-medium">Complete session logs</p>
               </div>
             </div>
@@ -178,7 +178,7 @@ function LoginForm() {
 
         {/* Right Column: Premium Frosted Glass Card */}
         <div className="lg:col-span-6 xl:col-span-5 flex justify-center w-full">
-          <div className="w-full max-w-[430px] rounded-[32px] p-8 sm:p-9 bg-white/[0.10] backdrop-blur-2xl border border-white/25 shadow-[0_28px_60px_-12px_rgba(0,0,0,0.45),inset_0_1px_1px_rgba(255,255,255,0.35)] text-white">
+          <div className="w-full max-w-[430px] rounded-[32px] p-6 sm:p-9 bg-white/[0.10] backdrop-blur-2xl border border-white/25 shadow-[0_28px_60px_-12px_rgba(0,0,0,0.45),inset_0_1px_1px_rgba(255,255,255,0.35)] text-white">
             {/* Card Header with Logo */}
             <div className="text-center mb-6">
               <div className="flex justify-center mb-3">
@@ -188,7 +188,7 @@ function LoginForm() {
                   className="h-7 sm:h-8 w-auto object-contain select-none"
                 />
               </div>
-              <h2 className="text-2xl sm:text-[26px] font-bold tracking-tight text-white">
+              <h2 className="text-2xl sm:text-[26px] font-medium tracking-tight text-white">
                 Welcome back
               </h2>
               <p className="text-xs sm:text-sm text-white/80 mt-1 font-normal">
@@ -199,10 +199,10 @@ function LoginForm() {
             {/* Invite Banner */}
             {redirectParam?.includes('/invite') && (
               <div className="mb-5 p-3.5 bg-white/15 border border-white/25 rounded-2xl text-center text-xs leading-relaxed">
-                <p className="text-white font-semibold mb-0.5">Invited to join a workspace?</p>
+                <p className="text-white font-medium mb-0.5">Invited to join a workspace?</p>
                 <p className="text-white/80 text-[11px]">
                   Sign in with your invited email, or{' '}
-                  <Link href={`/register?redirect=${encodeURIComponent(redirectParam)}`} className="text-white font-bold underline underline-offset-2">
+                  <Link href={`/register?redirect=${encodeURIComponent(redirectParam)}`} className="text-white font-medium underline underline-offset-2">
                     create an account
                   </Link>.
                 </p>
@@ -215,7 +215,7 @@ function LoginForm() {
                 <div className="flex items-start gap-2.5">
                   <MonitorSmartphone className="w-4 h-4 text-amber-300 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-semibold text-amber-200">Active on another device</p>
+                    <p className="font-medium text-amber-200">Active on another device</p>
                     <p className="text-amber-200/80 text-[11px]">
                       Your account was opened elsewhere. Sign in again to resume.
                     </p>
@@ -362,7 +362,7 @@ function LoginForm() {
               Don't have an account?{' '}
               <Link
                 href={redirectParam ? `/register?redirect=${encodeURIComponent(redirectParam)}` : '/register'}
-                className="text-white font-bold underline-offset-4 hover:underline transition-colors"
+                className="text-white font-medium underline-offset-4 hover:underline transition-colors"
               >
                 Create Workspace
               </Link>
@@ -372,9 +372,9 @@ function LoginForm() {
       </main>
 
       {/* Footer */}
-      <footer className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 relative z-20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/75">
+      <footer className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 relative z-20 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-white/75 shrink-0">
         <div>&copy; {new Date().getFullYear()} WithUs Inc. All rights reserved.</div>
-        <div className="flex items-center gap-6">
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1">
           <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
           <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
           <Link href="/security" className="hover:text-white transition-colors">Security</Link>

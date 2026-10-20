@@ -25,7 +25,7 @@ function ResetPasswordForm() {
           <AlertCircle className="w-7 h-7 text-rose-300" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
+          <h2 className="text-2xl font-medium tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
             Invalid reset link
           </h2>
           <p className="text-xs sm:text-sm text-white/80 mt-2 leading-relaxed">
@@ -34,7 +34,7 @@ function ResetPasswordForm() {
         </div>
         <Link
           href="/forgot-password"
-          className="w-full mt-4 inline-flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-zinc-100 text-zinc-950 rounded-2xl text-xs sm:text-sm font-bold shadow-[0_12px_28px_-6px_rgba(0,0,0,0.35)] transition-all active:scale-[0.99]"
+          className="w-full mt-4 inline-flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-zinc-100 text-zinc-950 rounded-2xl text-xs sm:text-sm font-medium shadow-[0_12px_28px_-6px_rgba(0,0,0,0.35)] transition-all active:scale-[0.99]"
         >
           <span>Request new reset link</span>
           <ArrowRight className="w-4 h-4" />
@@ -78,7 +78,7 @@ function ResetPasswordForm() {
           <CheckCircle2 className="w-7 h-7 text-emerald-300" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
+          <h2 className="text-2xl font-medium tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
             Password updated!
           </h2>
           <p className="text-xs sm:text-sm text-white/80 mt-2 leading-relaxed">
@@ -87,7 +87,7 @@ function ResetPasswordForm() {
         </div>
         <Link
           href="/login"
-          className="w-full mt-4 inline-flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-zinc-100 text-zinc-950 rounded-2xl text-xs sm:text-sm font-bold shadow-[0_12px_28px_-6px_rgba(0,0,0,0.35)] transition-all active:scale-[0.99]"
+          className="w-full mt-4 inline-flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-zinc-100 text-zinc-950 rounded-2xl text-xs sm:text-sm font-medium shadow-[0_12px_28px_-6px_rgba(0,0,0,0.35)] transition-all active:scale-[0.99]"
         >
           <span>Sign In Now</span>
           <ArrowRight className="w-4 h-4" />
@@ -107,7 +107,7 @@ function ResetPasswordForm() {
             className="h-7 sm:h-8 w-auto object-contain select-none"
           />
         </div>
-        <h1 className="text-2xl sm:text-[26px] font-bold tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
+        <h1 className="text-2xl sm:text-[26px] font-medium tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
           Set new password
         </h1>
         <p className="text-xs sm:text-sm text-white/80 mt-1 font-normal">
@@ -197,7 +197,7 @@ function ResetPasswordForm() {
       <div className="mt-6 text-center">
         <Link
           href="/login"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-white/80 hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-white/80 hover:text-white transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to Sign In</span>
@@ -209,7 +209,7 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="min-h-screen w-full relative flex flex-col justify-between overflow-x-hidden overflow-y-auto text-white font-sans antialiased selection:bg-white selection:text-zinc-950">
+    <div className="min-h-screen w-full relative flex flex-col justify-between overflow-x-hidden overflow-y-auto text-white font-geist antialiased selection:bg-white selection:text-zinc-950">
       {/* High-Resolution Clean Twilight Horizon Wallpaper */}
       <div
         className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none -z-10"

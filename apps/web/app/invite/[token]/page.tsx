@@ -45,7 +45,7 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
 
   // Unified Apple Frosted Glass Wrapper
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
-    <div className="min-h-screen w-full relative flex flex-col justify-between overflow-x-hidden overflow-y-auto text-white font-sans antialiased selection:bg-white selection:text-zinc-950">
+    <div className="min-h-screen w-full relative flex flex-col justify-between overflow-x-hidden overflow-y-auto text-white font-geist antialiased selection:bg-white selection:text-zinc-950">
       {/* High-Resolution Clean Twilight Horizon Wallpaper */}
       <div
         className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none -z-10"
@@ -106,7 +106,7 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
         <Card>
           <div className="py-8 space-y-4">
             <Loader2 className="w-10 h-10 text-white mx-auto animate-spin" />
-            <p className="text-base font-bold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
+            <p className="text-base font-medium text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
               Loading invitation details…
             </p>
             <p className="text-xs text-white/70">
@@ -128,7 +128,7 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
               <AlertCircle className="w-7 h-7 text-rose-300" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
+              <h2 className="text-2xl font-medium tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
                 Invalid Invitation
               </h2>
               <p className="text-xs sm:text-sm text-white/80 mt-2 leading-relaxed">
@@ -137,7 +137,7 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
             </div>
             <button
               onClick={() => router.push('/')}
-              className="w-full mt-4 flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-zinc-100 text-zinc-950 rounded-2xl text-xs sm:text-sm font-bold shadow-[0_12px_28px_-6px_rgba(0,0,0,0.35)] transition-all active:scale-[0.99]"
+              className="w-full mt-4 flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-zinc-100 text-zinc-950 rounded-2xl text-xs sm:text-sm font-medium shadow-[0_12px_28px_-6px_rgba(0,0,0,0.35)] transition-all active:scale-[0.99]"
             >
               <span>Return to Homepage</span>
               <ArrowRight className="w-4 h-4" />
@@ -157,7 +157,7 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
               <CalendarX className="w-7 h-7 text-amber-300" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
+              <h2 className="text-2xl font-medium tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
                 Invitation Expired
               </h2>
               <p className="text-xs sm:text-sm text-white/80 mt-2 leading-relaxed">
@@ -166,7 +166,7 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
             </div>
             <button
               onClick={() => router.push('/')}
-              className="w-full mt-4 flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-zinc-100 text-zinc-950 rounded-2xl text-xs sm:text-sm font-bold shadow-[0_12px_28px_-6px_rgba(0,0,0,0.35)] transition-all active:scale-[0.99]"
+              className="w-full mt-4 flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-zinc-100 text-zinc-950 rounded-2xl text-xs sm:text-sm font-medium shadow-[0_12px_28px_-6px_rgba(0,0,0,0.35)] transition-all active:scale-[0.99]"
             >
               <span>Return to Homepage</span>
               <ArrowRight className="w-4 h-4" />
@@ -186,7 +186,7 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
               <CheckCircle2 className="w-7 h-7 text-emerald-300" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
+              <h2 className="text-2xl font-medium tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
                 Already Accepted
               </h2>
               <p className="text-xs sm:text-sm text-white/80 mt-2 leading-relaxed">
@@ -195,7 +195,7 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
             </div>
             <button
               onClick={() => router.push('/login')}
-              className="w-full mt-4 flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-zinc-100 text-zinc-950 rounded-2xl text-xs sm:text-sm font-bold shadow-[0_12px_28px_-6px_rgba(0,0,0,0.35)] transition-all active:scale-[0.99]"
+              className="w-full mt-4 flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-zinc-100 text-zinc-950 rounded-2xl text-xs sm:text-sm font-medium shadow-[0_12px_28px_-6px_rgba(0,0,0,0.35)] transition-all active:scale-[0.99]"
             >
               <span>Sign In to Workspace</span>
               <ArrowRight className="w-4 h-4" />
@@ -215,7 +215,7 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
               <XCircle className="w-7 h-7 text-rose-300" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
+              <h2 className="text-2xl font-medium tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
                 Invitation Revoked
               </h2>
               <p className="text-xs sm:text-sm text-white/80 mt-2 leading-relaxed">
@@ -224,7 +224,7 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
             </div>
             <button
               onClick={() => router.push('/')}
-              className="w-full mt-4 flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-zinc-100 text-zinc-950 rounded-2xl text-xs sm:text-sm font-bold shadow-[0_12px_28px_-6px_rgba(0,0,0,0.35)] transition-all active:scale-[0.99]"
+              className="w-full mt-4 flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-zinc-100 text-zinc-950 rounded-2xl text-xs sm:text-sm font-medium shadow-[0_12px_28px_-6px_rgba(0,0,0,0.35)] transition-all active:scale-[0.99]"
             >
               <span>Return to Homepage</span>
               <ArrowRight className="w-4 h-4" />
@@ -254,11 +254,11 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
               <Building2 className="w-4 h-4" />
               <span>Workspace Invitation</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-medium text-white tracking-tight">
               Join {inviteDetails.organizationName}
             </h2>
             <p className="text-xs text-white/80">
-              Invited by <span className="text-white font-semibold">{inviteDetails.inviterName}</span>
+              Invited by <span className="text-white font-medium">{inviteDetails.inviterName}</span>
             </p>
           </div>
 
@@ -270,7 +270,7 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
               </label>
               <button 
                 onClick={() => router.push(`/login?redirect=/invite/${token}`)}
-                className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-zinc-100 text-zinc-950 rounded-2xl text-xs sm:text-sm font-bold shadow-[0_12px_28px_-6px_rgba(0,0,0,0.35)] transition-all active:scale-[0.99]"
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-zinc-100 text-zinc-950 rounded-2xl text-xs sm:text-sm font-medium shadow-[0_12px_28px_-6px_rgba(0,0,0,0.35)] transition-all active:scale-[0.99]"
               >
                 <span>Sign In to Accept</span>
                 <ArrowRight className="w-4 h-4" />
@@ -291,7 +291,7 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
               </label>
               <button 
                 onClick={() => router.push(`/register?redirect=/invite/${token}`)}
-                className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white/[0.12] hover:bg-white/[0.20] border border-white/30 text-white rounded-2xl text-xs sm:text-sm font-bold transition-all backdrop-blur-md active:scale-[0.99]"
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white/[0.12] hover:bg-white/[0.20] border border-white/30 text-white rounded-2xl text-xs sm:text-sm font-medium transition-all backdrop-blur-md active:scale-[0.99]"
               >
                 <span>Create Workspace Account</span>
                 <ArrowRight className="w-4 h-4" />
@@ -313,7 +313,7 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
         {isAccepting && (
           <div className="py-8 space-y-4">
             <Loader2 className="w-10 h-10 text-white mx-auto animate-spin" />
-            <h2 className="text-xl font-bold text-white">
+            <h2 className="text-xl font-medium text-white">
               Joining {inviteDetails.organizationName}…
             </h2>
             <p className="text-xs text-white/70">
@@ -327,7 +327,7 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
             <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center mx-auto shadow-[inset_0_1px_1px_rgba(255,255,255,0.35)]">
               <CheckCircle2 className="w-7 h-7 text-emerald-300" />
             </div>
-            <h2 className="text-2xl font-bold text-white">Welcome to the team!</h2>
+            <h2 className="text-2xl font-medium text-white">Welcome to the team!</h2>
             <p className="text-xs sm:text-sm text-white/80">
               Redirecting you to the dashboard…
             </p>
@@ -339,7 +339,7 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
             <div className="w-14 h-14 rounded-2xl bg-rose-500/20 border border-rose-400/30 flex items-center justify-center mx-auto shadow-[inset_0_1px_1px_rgba(255,255,255,0.35)]">
               <XCircle className="w-7 h-7 text-rose-300" />
             </div>
-            <h2 className="text-2xl font-bold text-white">Invitation Failed</h2>
+            <h2 className="text-2xl font-medium text-white">Invitation Failed</h2>
             <p className="text-xs sm:text-sm text-rose-200">
               {(error as Error)?.message || 'There was a problem joining the organization.'}
             </p>
@@ -353,7 +353,7 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
                 AuthSession.clear();
                 router.push('/login');
               }} 
-              className="mt-4 w-full flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-zinc-100 text-zinc-950 rounded-2xl text-xs sm:text-sm font-bold shadow-[0_12px_28px_-6px_rgba(0,0,0,0.35)] transition-all active:scale-[0.99]"
+              className="mt-4 w-full flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-zinc-100 text-zinc-950 rounded-2xl text-xs sm:text-sm font-medium shadow-[0_12px_28px_-6px_rgba(0,0,0,0.35)] transition-all active:scale-[0.99]"
             >
               <span>Sign Out & Try Again</span>
               <ArrowRight className="w-4 h-4" />
