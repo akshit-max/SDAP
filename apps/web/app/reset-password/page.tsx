@@ -212,11 +212,27 @@ function ResetPasswordForm() {
 export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen w-full relative flex flex-col justify-between overflow-x-hidden overflow-y-auto text-white font-geist antialiased selection:bg-white selection:text-zinc-950">
-      {/* High-Resolution Clean Twilight Horizon Wallpaper */}
-      <div
-        className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none -z-10"
-        style={{ backgroundImage: "url('/bg-dunes.jpg')" }}
-      />
+      {/* WithUs Hero Rainbow Blue Atmosphere */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-gradient-to-b from-[#2b416c] to-[#5879b0]">
+        <img
+          src="/shadow-bg.png"
+          alt=""
+          className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover mix-blend-color-burn opacity-70"
+        />
+        <img
+          src="/sun-halo.png"
+          alt=""
+          className="pointer-events-none select-none absolute inset-0 h-full w-full object-cover object-center opacity-90 mix-blend-screen"
+        />
+        <div
+          className="pointer-events-none absolute h-screen w-[16rem] rounded-full right-[24rem] top-0 rotate-45 opacity-40"
+          style={{
+            background: '#ffffff',
+            boxShadow: '0 6.719px 50.393px 0 #ffffff inset',
+            filter: 'blur(200px)',
+          }}
+        />
+      </div>
 
       {/* Top Navbar */}
       <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7 flex items-center justify-between relative z-20">
