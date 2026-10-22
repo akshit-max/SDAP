@@ -159,7 +159,7 @@ function LoginForm() {
       </header>
 
       {/* Main Two-Sided Content Area */}
-      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-5 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-3 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
         {/* Left Column: Product Showcase */}
         <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-center space-y-6 sm:space-y-7 select-none max-w-xl mx-auto lg:mx-0 text-center lg:text-left">
           {/* Badge: Thin line + uppercase tracking text */}
@@ -228,9 +228,9 @@ function LoginForm() {
 
         {/* Right Column: Premium Frosted Glass Card */}
         <div className="lg:col-span-6 xl:col-span-5 flex justify-center w-full">
-          <div className="w-full max-w-[430px] rounded-[32px] p-6 sm:p-9 bg-white/[0.10] backdrop-blur-2xl border border-white/25 shadow-[0_28px_60px_-12px_rgba(0,0,0,0.45),inset_0_1px_1px_rgba(255,255,255,0.35)] text-white">
+          <div className="w-full max-w-[430px] rounded-[32px] p-6 sm:p-9 lg:py-7 bg-white/[0.10] backdrop-blur-2xl border border-white/25 shadow-[0_28px_60px_-12px_rgba(0,0,0,0.45),inset_0_1px_1px_rgba(255,255,255,0.35)] text-white">
             {/* Card Header with Logo */}
-            <div className="text-center mb-6">
+            <div className="text-center mb-6 lg:mb-5">
               <div className="flex justify-center mb-3">
                 <img
                   src="/withus_white_full.png"
