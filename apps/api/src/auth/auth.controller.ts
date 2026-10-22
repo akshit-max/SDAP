@@ -11,8 +11,13 @@ import {
   Param,
   HttpCode,
   HttpStatus,
+  Query,
+  UseGuards,
+  Logger,
 } from '@nestjs/common';
-import { AuthService } from './auth.service';
+import { AuthService, GoogleOAuthError } from './auth.service';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import * as crypto from 'crypto';
 import {
   RegisterSchema,
   LoginSchema,
@@ -35,6 +40,8 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(private readonly authService: AuthService) {}
 
   private setAuthCookies(
@@ -212,4 +219,116 @@ export class AuthController {
     }
     return this.authService.checkSessionStatus(token);
   }
+
+  /**
+   * GET /api/v1/auth/google
+   * Redirects the browser to Google's consent screen. A random CSRF nonce is
+   * embedded in `state` and bound to this browser via a short-lived httpOnly cookie.
+   */
+  @Get('google')
+  @ApiOperation({ summary: 'Initiate Google OAuth login flow' })
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  googleAuth(@Query('redirect') redirect: string, @Res() res: Response) {
+    try {
+      const { url, csrf } = this.authService.buildGoogleAuthUrl(redirect);
+      res.cookie(GOOGLE_STATE_COOKIE, csrf, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax', // must survive the top-level redirect back from Google
+        path: GOOGLE_STATE_COOKIE_PATH,
+        maxAge: 10 * 60 * 1000, // 10 minutes
+      });
+      return res.redirect(url);
+    } catch (err: unknown) {
+      return res.redirect(`/login?error=${googleErrorCode(err)}`);
+    }
+  }
+
+  /**
+   * GET /api/v1/auth/google/callback
+   * Verifies state against the CSRF cookie, exchanges the code, issues the same
+   * session cookies as /login, then hands off to the frontend callback page.
+   * Only error codes (never raw messages or profile data) are put in URLs.
+   */
+  @Get('google/callback')
+  @ApiOperation({ summary: 'Google OAuth callback handler' })
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  async googleCallback(
+    @Query('code') code: string,
+    @Query('state') state: string,
+    @Query('error') error: string,
+    @Req() req: Request,
+    @Res() res: Response,
+    @Ip() ip: string,
+  ) {
+    const expectedCsrf: string | undefined = (req as any).cookies?.[
+      GOOGLE_STATE_COOKIE
+    ];
+    res.clearCookie(GOOGLE_STATE_COOKIE, { path: GOOGLE_STATE_COOKIE_PATH });
+
+    if (error) {
+      const reason =
+        error === 'access_denied' ? 'google_cancelled' : 'google_failed';
+      return res.redirect(`/login?error=${reason}`);
+    }
+
+    const parsedState = AuthService.parseGoogleState(state);
+    if (
+      !code ||
+      !parsedState ||
+      !expectedCsrf ||
+      !safeEqual(parsedState.csrf, expectedCsrf)
+    ) {
+      return res.redirect('/login?error=google_state_mismatch');
+    }
+
+    try {
+      const result = await this.authService.handleGoogleAuth(
+        code,
+        parsedState.redirect,
+        ip,
+        req.headers['user-agent'],
+      );
+      this.setAuthCookies(res, result.accessToken, result.refreshToken);
+
+      const params = new URLSearchParams({ redirect: result.redirect });
+      if (result.isNewUser) params.set('new', '1');
+      return res.redirect(`/auth/callback/google?${params.toString()}`);
+    } catch (err: unknown) {
+      if (!(err instanceof GoogleOAuthError)) {
+        this.logger.error('Google OAuth callback failed', err as Error);
+      }
+      // Keep the original destination (e.g. an invite link) so the user can retry.
+      const params = new URLSearchParams({ error: googleErrorCode(err) });
+      if (parsedState.redirect !== '/dashboard') {
+        params.set('redirect', parsedState.redirect);
+      }
+      return res.redirect(`/login?${params.toString()}`);
+    }
+  }
+
+  /**
+   * GET /api/v1/auth/session
+   * Returns { user, organization } in the same shape as POST /login for the
+   * cookie-authenticated user. Used by the Google callback page.
+   */
+  @Get('session')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get the current session user and organization' })
+  async session(@Req() req: Request) {
+    return this.authService.getSessionContext((req as any).user.id);
+  }
+}
+
+const GOOGLE_STATE_COOKIE = 'sdap_oauth_state';
+const GOOGLE_STATE_COOKIE_PATH = '/api/v1/auth/google';
+
+function googleErrorCode(err: unknown): string {
+  return err instanceof GoogleOAuthError ? err.code : 'google_failed';
+}
+
+function safeEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  return bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB);
 }
