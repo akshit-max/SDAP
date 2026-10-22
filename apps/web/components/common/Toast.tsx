@@ -3,6 +3,8 @@
 import React, { useEffect, useCallback } from 'react';
 import { X, CheckCircle2, AlertCircle, AlertTriangle, Info } from 'lucide-react';
 
+import { usePathname } from 'next/navigation';
+
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
 interface ToastItem {
@@ -17,7 +19,8 @@ interface ToastContextType {
 
 const ToastContext = React.createContext<ToastContextType>({ toast: () => {} });
 
-const config = {
+// Standard dashboard toast theme (preserved for dashboard light & dark modes)
+const dashboardConfig = {
   success: {
     icon: CheckCircle2,
     bar: 'bg-emerald-500',
@@ -52,12 +55,76 @@ const config = {
   },
 };
 
+// Professional Precision-Crafted Outer Page Toast Theme
+const outerConfig = {
+  success: {
+    icon: CheckCircle2,
+    bar: 'bg-emerald-500',
+    dot: 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]',
+    badge: 'bg-emerald-500/10 border border-emerald-500/25',
+    iconColor: 'text-emerald-400',
+    labelColor: 'text-emerald-400',
+    label: 'Success',
+  },
+  error: {
+    icon: AlertCircle,
+    bar: 'bg-rose-500',
+    dot: 'bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.9)]',
+    badge: 'bg-rose-500/10 border border-rose-500/25',
+    iconColor: 'text-rose-400',
+    labelColor: 'text-rose-400',
+    label: 'Error',
+  },
+  warning: {
+    icon: AlertTriangle,
+    bar: 'bg-amber-500',
+    dot: 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)]',
+    badge: 'bg-amber-500/10 border border-amber-500/25',
+    iconColor: 'text-amber-400',
+    labelColor: 'text-amber-400',
+    label: 'Warning',
+  },
+  info: {
+    icon: Info,
+    bar: 'bg-sky-500',
+    dot: 'bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.9)]',
+    badge: 'bg-sky-500/10 border border-sky-500/25',
+    iconColor: 'text-sky-400',
+    labelColor: 'text-sky-400',
+    label: 'Info',
+  },
+};
+
+const OUTER_PAGE_PREFIXES = [
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
+  '/invite',
+  '/auth',
+  '/privacy',
+  '/terms',
+  '/security',
+  '/cookie-policy',
+  '/refund-policy',
+  '/withus',
+];
+
+function isOuterPage(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return OUTER_PAGE_PREFIXES.some(prefix => pathname === prefix || pathname.startsWith(prefix + '/'));
+}
+
 interface ToastProps extends ToastItem {
   onDismiss: (id: string) => void;
 }
 
-function Toast({ id, type, message, onDismiss }: ToastProps) {
-  const c = config[type];
+/**
+ * Toast rendered on all outer pages (Login, Register, Forgot Password, Invite, Legal).
+ * Sharp, high-contrast, professional deep sapphire glass notification.
+ */
+function OuterToast({ id, type, message, onDismiss }: ToastProps) {
+  const c = outerConfig[type];
   const Icon = c.icon;
 
   useEffect(() => {
@@ -67,7 +134,62 @@ function Toast({ id, type, message, onDismiss }: ToastProps) {
 
   return (
     <div
-      className="relative flex items-start gap-3 w-80 sm:w-88 p-3.5 rounded-2xl shadow-[0_16px_40px_-8px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_50px_-10px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.12)] bg-white/85 dark:bg-[#11131a]/90 backdrop-blur-2xl border border-zinc-200/80 dark:border-white/15 overflow-hidden animate-in slide-in-from-right-5 fade-in duration-300 transition-all select-none"
+      className="pointer-events-auto relative flex items-start gap-3 w-[21.5rem] max-w-[calc(100vw-2rem)] sm:w-[24.5rem] p-3.5 sm:p-4 rounded-2xl bg-[#0d1527]/92 backdrop-blur-xl border border-white/20 shadow-[0_18px_40px_-6px_rgba(0,0,0,0.65),0_0_0_1px_rgba(255,255,255,0.08),inset_0_1px_0_0_rgba(255,255,255,0.25)] overflow-hidden animate-in slide-in-from-bottom-3 sm:slide-in-from-right-4 fade-in duration-200 transition-all select-none"
+      role="alert"
+    >
+      {/* Icon badge */}
+      <div className="flex-shrink-0 mt-0.5">
+        <div className={`w-8 h-8 rounded-xl ${c.badge} flex items-center justify-center shadow-sm`}>
+          <Icon className={`w-4 h-4 ${c.iconColor} stroke-[2.2]`} />
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0 pt-0.5">
+        <div className="flex items-center gap-1.5 mb-1">
+          <span className={`w-1.5 h-1.5 rounded-full ${c.dot} animate-pulse`} />
+          <p className={`text-[11px] font-bold uppercase tracking-wider ${c.labelColor}`}>
+            {c.label}
+          </p>
+        </div>
+        <p className="text-xs sm:text-[13px] text-zinc-200 font-normal leading-snug break-words">
+          {message}
+        </p>
+      </div>
+
+      {/* Dismiss button */}
+      <button
+        onClick={() => onDismiss(id)}
+        className="flex-shrink-0 -mr-1 -mt-1 p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 active:scale-95 transition-all"
+        aria-label="Dismiss notification"
+      >
+        <X className="w-3.5 h-3.5" />
+      </button>
+
+      {/* Auto-dismiss progress bar */}
+      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/[0.08] overflow-hidden">
+        <div className={`h-full ${c.bar} opacity-90 animate-[shrink_4.5s_linear_forwards]`} />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Standard Dashboard Toast.
+ * Preserves the exact light & dark dashboard theme with zero regression.
+ */
+function DashboardToast({ id, type, message, onDismiss }: ToastProps) {
+  const c = dashboardConfig[type];
+  const Icon = c.icon;
+
+  useEffect(() => {
+    const timer = setTimeout(() => onDismiss(id), 4500);
+    return () => clearTimeout(timer);
+  }, [id, onDismiss]);
+
+  return (
+    <div
+      className="pointer-events-auto relative flex items-start gap-3 w-80 sm:w-88 p-3.5 rounded-2xl shadow-[0_16px_40px_-8px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_50px_-10px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.12)] bg-white/85 dark:bg-[#11131a]/90 backdrop-blur-2xl border border-zinc-200/80 dark:border-white/15 overflow-hidden animate-in slide-in-from-right-5 fade-in duration-300 transition-all select-none"
       role="alert"
     >
       {/* Icon badge */}
@@ -107,7 +229,15 @@ function Toast({ id, type, message, onDismiss }: ToastProps) {
   );
 }
 
+function Toast(props: ToastProps) {
+  const pathname = usePathname();
+  const isOuter = isOuterPage(pathname);
+  return isOuter ? <OuterToast {...props} /> : <DashboardToast {...props} />;
+}
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isOuter = isOuterPage(pathname);
   const [toasts, setToasts] = React.useState<ToastItem[]>([]);
 
   const toast = useCallback((type: ToastType, message: string) => {
@@ -125,7 +255,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       <div
         aria-live="polite"
         aria-label="Notifications"
-        className="fixed bottom-5 right-5 z-[200] flex flex-col gap-3 items-end"
+        className={
+          isOuter
+            ? "fixed bottom-8 right-6 sm:bottom-10 sm:right-10 z-[200] flex flex-col gap-3 items-end pointer-events-none"
+            : "fixed bottom-5 right-5 z-[200] flex flex-col gap-3 items-end"
+        }
       >
         {toasts.map(t => (
           <Toast key={t.id} {...t} onDismiss={dismiss} />
