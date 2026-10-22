@@ -55,30 +55,34 @@ const dashboardConfig = {
   },
 };
 
-// Outer page toast theme: frosted glass matching the auth card, status shown only via icon + bar
+// Outer page toast theme: high-contrast deep sapphire frosted glass with sharp status accents
 const outerConfig = {
   success: {
     icon: CheckCircle2,
-    bar: 'bg-emerald-300',
-    iconColor: 'text-emerald-300',
+    bar: 'bg-emerald-400',
+    badge: 'bg-emerald-500/15 border border-emerald-400/30 text-emerald-400',
+    iconColor: 'text-emerald-400',
     label: 'Success',
   },
   error: {
     icon: AlertCircle,
-    bar: 'bg-rose-300',
-    iconColor: 'text-rose-300',
+    bar: 'bg-rose-400',
+    badge: 'bg-rose-500/15 border border-rose-400/30 text-rose-400',
+    iconColor: 'text-rose-400',
     label: 'Something went wrong',
   },
   warning: {
     icon: AlertTriangle,
-    bar: 'bg-amber-300',
-    iconColor: 'text-amber-300',
+    bar: 'bg-amber-400',
+    badge: 'bg-amber-500/15 border border-amber-400/30 text-amber-400',
+    iconColor: 'text-amber-400',
     label: 'Warning',
   },
   info: {
     icon: Info,
-    bar: 'bg-sky-300',
-    iconColor: 'text-sky-300',
+    bar: 'bg-sky-400',
+    badge: 'bg-sky-500/15 border border-sky-400/30 text-sky-400',
+    iconColor: 'text-sky-400',
     label: 'Notice',
   },
 };
@@ -109,7 +113,7 @@ interface ToastProps extends ToastItem {
 
 /**
  * Toast rendered on all outer pages (Login, Register, Forgot Password, Invite, Legal).
- * Frosted glass notification matching the auth card surface — no glow or pulsing effects.
+ * High-contrast, sharp, deep sapphire frosted glass notification matching the atmospheric theme.
  */
 function OuterToast({ id, type, message, onDismiss }: ToastProps) {
   const c = outerConfig[type];
@@ -122,20 +126,20 @@ function OuterToast({ id, type, message, onDismiss }: ToastProps) {
 
   return (
     <div
-      className="pointer-events-auto relative flex items-start gap-3 w-[22.5rem] max-w-[calc(100vw-2rem)] pl-4 pr-3 py-3.5 rounded-[22px] bg-white/[0.10] backdrop-blur-2xl border border-white/25 shadow-[0_28px_60px_-12px_rgba(0,0,0,0.45),inset_0_1px_1px_rgba(255,255,255,0.35)] text-white font-geist overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-200 select-none"
+      className="pointer-events-auto relative flex items-start gap-3 w-[22.5rem] max-w-[calc(100vw-2rem)] pl-4 pr-3 py-3.5 rounded-[18px] bg-[#142038]/88 hover:bg-[#142038]/94 backdrop-blur-2xl border border-white/20 shadow-[0_20px_45px_-8px_rgba(0,0,0,0.55),0_0_0_1px_rgba(255,255,255,0.06),inset_0_1px_0_0_rgba(255,255,255,0.22)] text-white font-geist overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-200 select-none"
       role="alert"
     >
       {/* Icon badge matching outer feature icon container */}
-      <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-white/[0.12] border border-white/20 flex items-center justify-center shadow-[inset_0_1px_1px_rgba(255,255,255,0.25)] mt-0.5">
-        <Icon className={`w-[18px] h-[18px] ${c.iconColor}`} />
+      <div className={`flex-shrink-0 w-9 h-9 rounded-xl ${c.badge} flex items-center justify-center shadow-sm mt-0.5`}>
+        <Icon className={`w-[18px] h-[18px] ${c.iconColor} stroke-[2.2]`} />
       </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0 pt-px">
-        <p className="text-[13px] font-semibold text-white tracking-tight leading-5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">
+        <p className="text-[13px] font-semibold text-white tracking-tight leading-5">
           {c.label}
         </p>
-        <p className="text-[13px] text-white/80 leading-snug break-words">
+        <p className="text-[13px] text-zinc-200 font-normal leading-snug break-words">
           {message}
         </p>
       </div>
@@ -143,14 +147,14 @@ function OuterToast({ id, type, message, onDismiss }: ToastProps) {
       {/* Dismiss button */}
       <button
         onClick={() => onDismiss(id)}
-        className="flex-shrink-0 p-1 rounded-full text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+        className="flex-shrink-0 p-1 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition-colors"
         aria-label="Dismiss notification"
       >
         <X className="w-3.5 h-3.5" />
       </button>
 
       {/* Auto-dismiss progress bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/10 overflow-hidden">
+      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/[0.08] overflow-hidden">
         <div className={`h-full ${c.bar} opacity-90 animate-[shrink_4.5s_linear_forwards]`} />
       </div>
     </div>
