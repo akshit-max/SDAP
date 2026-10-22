@@ -5,6 +5,8 @@ import { TokenService } from './token.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailerService } from '../notifications/mailer.service';
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ConfigService } from '@nestjs/config';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -33,15 +35,21 @@ describe('AuthService', () => {
       create: jest.fn().mockResolvedValue({ id: 'org-1', name: 'Test Org' }),
     },
     user: {
-      create: jest.fn().mockResolvedValue({ id: '1', email: 'new@test.com', fullName: 'Test User' }),
+      create: jest.fn().mockResolvedValue({
+        id: '1',
+        email: 'new@test.com',
+        fullName: 'Test User',
+      }),
     },
     organizationMember: {
       create: jest.fn(),
-      findFirst: jest.fn().mockResolvedValue({ organization: { id: 'org-1', name: 'Test Org' } }),
+      findFirst: jest
+        .fn()
+        .mockResolvedValue({ organization: { id: 'org-1', name: 'Test Org' } }),
     },
     $transaction: jest.fn(async (cb) => {
       if (typeof cb === 'function') {
-         return cb(mockPrismaService);
+        return cb(mockPrismaService);
       }
       return Promise.all(cb);
     }),
@@ -61,6 +69,15 @@ describe('AuthService', () => {
         { provide: TokenService, useValue: mockTokenService },
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: MailerService, useValue: mockMailerService },
+        { provide: EventEmitter2, useValue: { emit: jest.fn() } },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn((key: string) =>
+              key === 'GOOGLE_CLIENT_ID' ? 'test-client-id' : undefined,
+            ),
+          },
+        },
       ],
     }).compile();
 
@@ -82,7 +99,12 @@ describe('AuthService', () => {
       });
 
       await expect(
-        service.register({ email: 'test@test.com', password: 'password123', fullName: 'Test User', companyName: 'Acme Corp' }),
+        service.register({
+          email: 'test@test.com',
+          password: 'password123',
+          fullName: 'Test User',
+          companyName: 'Acme Corp',
+        }),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -93,7 +115,7 @@ describe('AuthService', () => {
         email: 'new@test.com',
         password: 'password123',
         fullName: 'Test User',
-        companyName: 'Acme Corp'
+        companyName: 'Acme Corp',
       });
       expect(result.accessToken).toBe('mock-access-token');
       expect(result.refreshToken).toBeDefined();
@@ -136,6 +158,53 @@ describe('AuthService', () => {
       const result = await service.logout('raw-token');
       expect(result.success).toBe(true);
       expect(mockPrismaService.refreshToken.updateMany).toHaveBeenCalled();
+    });
+  });
+
+  describe('buildGoogleAuthUrl()', () => {
+    it('should generate a Google OAuth URL with a CSRF nonce bound to state', () => {
+      const { url, csrf } = service.buildGoogleAuthUrl('/vaults');
+      expect(url).toContain('https://accounts.google.com/o/oauth2/v2/auth');
+      expect(url).toContain('response_type=code');
+      expect(url).toContain('scope=openid+email+profile');
+      expect(url).not.toContain('access_type=offline');
+
+      const state = new URL(url).searchParams.get('state')!;
+      expect(AuthService.parseGoogleState(state)).toEqual({
+        csrf,
+        redirect: '/vaults',
+      });
+    });
+
+    it('should drop unsafe redirects from state', () => {
+      const { url } = service.buildGoogleAuthUrl('//evil.com');
+      const state = new URL(url).searchParams.get('state')!;
+      expect(AuthService.parseGoogleState(state)?.redirect).toBe('/dashboard');
+    });
+  });
+
+  describe('sanitizeRedirect()', () => {
+    it.each([
+      ['/dashboard', '/dashboard'],
+      ['/invite/abc123', '/invite/abc123'],
+      ['https://evil.com', '/dashboard'],
+      ['//evil.com', '/dashboard'],
+      ['/\\evil.com', '/dashboard'],
+      ['javascript:alert(1)', '/dashboard'],
+      [undefined, '/dashboard'],
+    ])('%s -> %s', (input, expected) => {
+      expect(AuthService.sanitizeRedirect(input)).toBe(expected);
+    });
+  });
+
+  describe('parseGoogleState()', () => {
+    it('should reject malformed or nonce-less state', () => {
+      expect(AuthService.parseGoogleState(undefined)).toBeNull();
+      expect(AuthService.parseGoogleState('not-base64-json')).toBeNull();
+      const noCsrf = Buffer.from(JSON.stringify({ redirect: '/x' })).toString(
+        'base64url',
+      );
+      expect(AuthService.parseGoogleState(noCsrf)).toBeNull();
     });
   });
 });

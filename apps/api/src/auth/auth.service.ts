@@ -13,6 +13,7 @@ import { MailerService } from '../notifications/mailer.service';
 import * as crypto from 'crypto';
 import { randomUUID } from 'crypto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ConfigService } from '@nestjs/config';
 import {
   OrganizationCreatedEvent,
   InvitationAcceptedEvent,
@@ -28,6 +29,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly mailer: MailerService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly config: ConfigService,
   ) {}
 
   async register(dto: RegisterDto, ipAddress?: string, userAgent?: string) {
@@ -609,5 +611,451 @@ export class AuthService {
       invitedEmail: invitation.email,
       expiresAt: invitation.expiresAt,
     };
+  }
+
+  // ── Google OAuth 2.0 ────────────────────────────────────────────────────────
+  // Additive flow. login(), register() and refresh() are intentionally untouched;
+  // the session issuance below mirrors login() so both paths behave identically.
+
+  /**
+   * Only same-origin relative paths are allowed as post-login destinations.
+   * Rejects absolute URLs, protocol-relative (//evil.com) and backslash tricks.
+   */
+  static sanitizeRedirect(redirect?: unknown): string {
+    if (typeof redirect !== 'string' || redirect.length > 512) {
+      return '/dashboard';
+    }
+    if (
+      !redirect.startsWith('/') ||
+      redirect.startsWith('//') ||
+      /[\\\s]/.test(redirect)
+    ) {
+      return '/dashboard';
+    }
+    return redirect;
+  }
+
+  /** Decodes the OAuth `state` param. Returns null if it is malformed. */
+  static parseGoogleState(
+    state?: string,
+  ): { redirect: string; csrf: string } | null {
+    if (!state) return null;
+    try {
+      const decoded = JSON.parse(
+        Buffer.from(state, 'base64url').toString('utf8'),
+      );
+      if (typeof decoded?.csrf !== 'string' || !decoded.csrf) return null;
+      return {
+        csrf: decoded.csrf,
+        redirect: AuthService.sanitizeRedirect(decoded.redirect),
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  private getGoogleOAuthConfig() {
+    return {
+      clientId: this.config.get<string>('GOOGLE_CLIENT_ID'),
+      clientSecret: this.config.get<string>('GOOGLE_CLIENT_SECRET'),
+      redirectUri:
+        this.config.get<string>('GOOGLE_AUTH_REDIRECT_URI') ||
+        'http://localhost:3000/api/v1/auth/google/callback',
+    };
+  }
+
+  /**
+   * Builds the Google OAuth 2.0 authorization URL.
+   * Returns the CSRF nonce so the controller can bind it to the browser via cookie;
+   * the callback rejects any `state` whose nonce does not match that cookie.
+   */
+  buildGoogleAuthUrl(redirect?: string): { url: string; csrf: string } {
+    const { clientId, redirectUri } = this.getGoogleOAuthConfig();
+    if (!clientId) {
+      throw new GoogleOAuthError('google_not_configured');
+    }
+
+    const csrf = crypto.randomBytes(32).toString('hex');
+    const state = Buffer.from(
+      JSON.stringify({
+        redirect: AuthService.sanitizeRedirect(redirect),
+        csrf,
+      }),
+    ).toString('base64url');
+
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope: 'openid email profile',
+      prompt: 'select_account',
+      state,
+    });
+
+    return {
+      url: `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`,
+      csrf,
+    };
+  }
+
+  /**
+   * Exchanges the Google authorization code, finds or creates the user,
+   * and issues a session exactly like login() (one active session policy).
+   * New users either join the organization they were invited to (when arriving
+   * from an /invite/:token link) or get a default "<Name>'s Workspace".
+   */
+  async handleGoogleAuth(
+    code: string,
+    redirect: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
+    const profile = await this.fetchGoogleProfile(code);
+
+    if (!profile.email) {
+      throw new GoogleOAuthError('google_failed');
+    }
+    if (profile.email_verified !== true) {
+      throw new GoogleOAuthError('google_email_unverified');
+    }
+
+    const email = profile.email.toLowerCase().trim();
+    const fullName = profile.name?.trim() || email.split('@')[0] || 'User';
+    const googleIdentity: GoogleIdentity = {
+      id: profile.sub,
+      email,
+      picture: profile.picture,
+      lastLogin: new Date().toISOString(),
+    };
+
+    // Case-insensitive: register() stores emails as typed, Google returns lowercase.
+    let user = await this.prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
+      orderBy: { createdAt: 'asc' },
+    });
+    let isNewUser = false;
+    let finalRedirect = redirect;
+
+    if (user) {
+      if (!user.isActive || user.deletedAt) {
+        throw new GoogleOAuthError('account_disabled');
+      }
+
+      const currentProfiles =
+        (user.providerProfiles as Record<string, unknown> | null) || {};
+
+      user = await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          providerProfiles: { ...currentProfiles, google: googleIdentity },
+          emailVerifiedAt: user.emailVerifiedAt || new Date(),
+          fullName: user.fullName || fullName,
+        },
+      });
+      // Existing users keep their redirect — /invite/:token auto-accepts for logged-in users.
+    } else {
+      isNewUser = true;
+      const inviteToken = /^\/invite\/([^/?#]+)/.exec(redirect)?.[1];
+      user = inviteToken
+        ? await this.createGoogleUserFromInvite(
+            email,
+            fullName,
+            googleIdentity,
+            decodeURIComponent(inviteToken),
+          )
+        : await this.createGoogleUserWithWorkspace(
+            email,
+            fullName,
+            googleIdentity,
+          );
+      // The invitation is already accepted inside the transaction.
+      if (inviteToken) finalRedirect = '/dashboard';
+    }
+
+    const { refreshToken, rawToken } = this.generateRefreshToken();
+    const newLoginFamilyId = randomUUID();
+
+    // ── One Active Session Per User (same as login()) ────────────────────────
+    await this.prisma.refreshToken.updateMany({
+      where: {
+        userId: user.id,
+        isRevoked: false,
+        expiresAt: { gt: new Date() },
+      },
+      data: {
+        isRevoked: true,
+        revokedAt: new Date(),
+        replacedByTokenId: 'SESSION_DISPLACED',
+      },
+    });
+
+    await this.prisma.refreshToken.create({
+      data: {
+        userId: user.id,
+        tokenHash: refreshToken.hash,
+        familyId: newLoginFamilyId,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        ipAddress,
+        userAgent,
+      },
+    });
+
+    const accessToken = this.tokenService.generateAccessToken(
+      user.id,
+      user.email,
+      newLoginFamilyId,
+    );
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
+
+    const firstMembership = await this.prisma.organizationMember.findFirst({
+      where: { userId: user.id },
+      orderBy: { joinedAt: 'asc' },
+    });
+
+    if (firstMembership?.organizationId) {
+      this.eventEmitter.emit('audit.log', {
+        organizationId: firstMembership.organizationId,
+        action: 'user.login.google',
+        actorId: user.id,
+        resourceType: 'USER',
+        resourceId: user.id,
+        metadata: { ipAddress, userAgent, provider: 'GOOGLE' },
+      });
+    }
+
+    return {
+      accessToken,
+      refreshToken: rawToken,
+      redirect: finalRedirect,
+      isNewUser,
+    };
+  }
+
+  /**
+   * Returns the same { user, organization } shape that login() returns, for the
+   * currently authenticated user. Used by the OAuth callback page to hydrate the
+   * client session without passing profile data through the URL.
+   */
+  async getSessionContext(userId: string) {
+    const user = await this.usersService.findById(userId);
+    if (!user || !user.isActive || user.deletedAt) {
+      throw new UnauthorizedException('Session is no longer valid');
+    }
+
+    const firstMembership = await this.prisma.organizationMember.findFirst({
+      where: { userId: user.id },
+      include: { organization: true },
+      orderBy: { joinedAt: 'asc' },
+    });
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        isSuperAdmin: user.isSuperAdmin ?? false,
+      },
+      organization: firstMembership
+        ? { ...firstMembership.organization, role: firstMembership.role }
+        : null,
+    };
+  }
+
+  private async fetchGoogleProfile(code: string) {
+    const { clientId, clientSecret, redirectUri } = this.getGoogleOAuthConfig();
+    if (!clientId || !clientSecret) {
+      throw new GoogleOAuthError('google_not_configured');
+    }
+
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
+        grant_type: 'authorization_code',
+      }).toString(),
+    });
+
+    if (!tokenRes.ok) {
+      const errText = await tokenRes.text().catch(() => '');
+      this.logger.error(
+        `Google token exchange failed: ${tokenRes.status} ${errText}`,
+      );
+      throw new GoogleOAuthError('google_failed');
+    }
+
+    const tokenData = (await tokenRes.json()) as { access_token?: string };
+    if (!tokenData.access_token) {
+      throw new GoogleOAuthError('google_failed');
+    }
+
+    const profileRes = await fetch(
+      'https://openidconnect.googleapis.com/v1/userinfo',
+      { headers: { Authorization: `Bearer ${tokenData.access_token}` } },
+    );
+    if (!profileRes.ok) {
+      this.logger.error(`Google userinfo failed: ${profileRes.status}`);
+      throw new GoogleOAuthError('google_failed');
+    }
+
+    return (await profileRes.json()) as {
+      sub: string;
+      email?: string;
+      email_verified?: boolean;
+      name?: string;
+      picture?: string;
+    };
+  }
+
+  /**
+   * Google-only accounts get an unusable random password so the existing
+   * non-null passwordHash column is satisfied. They can set a real password
+   * later through the forgot-password flow.
+   */
+  private async unusablePasswordHash() {
+    return HashService.hash(crypto.randomBytes(32).toString('hex'));
+  }
+
+  private async createGoogleUserWithWorkspace(
+    email: string,
+    fullName: string,
+    googleIdentity: GoogleIdentity,
+  ) {
+    const passwordHash = await this.unusablePasswordHash();
+
+    const baseSlug =
+      fullName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)+/g, '') || 'workspace';
+    let slug = baseSlug;
+    const existingOrg = await this.prisma.organization.findUnique({
+      where: { slug },
+    });
+    if (existingOrg) {
+      slug = `${baseSlug}-${randomUUID().substring(0, 6)}`;
+    }
+
+    const { user, organization } = await this.prisma.$transaction(
+      async (tx) => {
+        const createdUser = await tx.user.create({
+          data: {
+            email,
+            fullName,
+            passwordHash,
+            emailVerifiedAt: new Date(),
+            providerProfiles: { google: googleIdentity },
+          },
+        });
+        const createdOrg = await tx.organization.create({
+          data: {
+            name: `${fullName}'s Workspace`,
+            slug,
+            createdBy: createdUser.id,
+          },
+        });
+        await tx.organizationMember.create({
+          data: {
+            userId: createdUser.id,
+            organizationId: createdOrg.id,
+            role: 'OWNER',
+          },
+        });
+        return { user: createdUser, organization: createdOrg };
+      },
+    );
+
+    this.eventEmitter.emit(
+      'organization.created',
+      new OrganizationCreatedEvent(organization.id, organization.name, user.id),
+    );
+
+    return user;
+  }
+
+  private async createGoogleUserFromInvite(
+    email: string,
+    fullName: string,
+    googleIdentity: GoogleIdentity,
+    inviteToken: string,
+  ) {
+    const tokenHash = crypto
+      .createHash('sha256')
+      .update(inviteToken)
+      .digest('hex');
+    const invitation = await this.prisma.organizationInvitation.findUnique({
+      where: { tokenHash },
+    });
+    if (
+      !invitation ||
+      invitation.status !== 'PENDING' ||
+      new Date() > invitation.expiresAt
+    ) {
+      throw new GoogleOAuthError('invite_invalid');
+    }
+    if (invitation.email.toLowerCase() !== email) {
+      throw new GoogleOAuthError('invite_email_mismatch');
+    }
+
+    const passwordHash = await this.unusablePasswordHash();
+
+    const user = await this.prisma.$transaction(async (tx) => {
+      const createdUser = await tx.user.create({
+        data: {
+          email,
+          fullName,
+          passwordHash,
+          emailVerifiedAt: new Date(),
+          providerProfiles: { google: googleIdentity },
+        },
+      });
+      await tx.organizationInvitation.update({
+        where: { id: invitation.id },
+        data: { status: 'ACCEPTED', updatedBy: createdUser.id },
+      });
+      await tx.organizationMember.create({
+        data: {
+          organizationId: invitation.organizationId,
+          userId: createdUser.id,
+          role: 'MEMBER', // Default role — admin can promote later
+          invitedBy: invitation.invitedBy,
+          createdBy: createdUser.id,
+          updatedBy: createdUser.id,
+        },
+      });
+      return createdUser;
+    });
+
+    this.eventEmitter.emit(
+      'invitation.accepted',
+      new InvitationAcceptedEvent(invitation.organizationId, user.id),
+    );
+
+    return user;
+  }
+}
+
+type GoogleIdentity = {
+  id: string;
+  email: string;
+  picture?: string;
+  lastLogin: string;
+};
+
+/**
+ * Error carrying a stable, user-safe code. The controller passes only the code
+ * to the frontend (never raw messages), which maps it to fixed copy.
+ */
+export class GoogleOAuthError extends Error {
+  constructor(public readonly code: string) {
+    super(code);
+    this.name = 'GoogleOAuthError';
   }
 }
