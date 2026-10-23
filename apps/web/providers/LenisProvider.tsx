@@ -37,7 +37,7 @@ export function LenisProvider({ children }: { children: React.ReactNode }) {
       const lenis = new Lenis({
         wrapper: wrapper,
         content: content,
-        eventsTarget: wrapper,
+        eventsTarget: window,
         lerp: 0.08,
         wheelMultiplier: 0.9,
         orientation: 'vertical',
