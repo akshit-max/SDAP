@@ -45,7 +45,7 @@ export default function AcceptInvitePage({ params }: { params: Promise<{ token: 
 
   // Unified Apple Frosted Glass Wrapper
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
-    <div className="min-h-screen w-full relative flex flex-col justify-between overflow-x-hidden overflow-y-auto text-white font-geist antialiased selection:bg-white selection:text-zinc-950">
+    <div className="min-h-screen w-full relative flex flex-col justify-between overflow-x-hidden text-white font-geist antialiased selection:bg-white selection:text-zinc-950">
       {/* WithUs Hero Rainbow Blue Atmosphere */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-gradient-to-b from-[#2b416c] to-[#5879b0]">
         <img

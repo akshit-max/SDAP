@@ -583,7 +583,7 @@ export default function PricingPage() {
 
   return (
     <DashboardShell>
-      <div className="flex flex-col h-full overflow-y-auto">
+      <div className="flex flex-col min-h-full">
         <div className="max-w-6xl mx-auto w-full px-6 py-6 space-y-6">
           <PaymentConfirmationModal
             orderId={successOrderId}
