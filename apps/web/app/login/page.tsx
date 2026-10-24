@@ -356,8 +356,7 @@ function LoginForm() {
                 )}
               </button>
 
-              {/* Google SSO Button & Divider - UI hidden per request; backend & handlers fully preserved */}
-              {/*
+              {/* Google SSO Button & Divider */}
               <div className="flex items-center my-4">
                 <div className="flex-1 border-t border-white/20" />
                 <span className="px-3 text-[10px] font-bold tracking-[0.15em] text-white/60 uppercase shrink-0 select-none">
@@ -394,7 +393,6 @@ function LoginForm() {
                 </div>
                 <span>Continue with Google</span>
               </button>
-              */}
             </form>
 
             {/* Bottom Card Switcher */}

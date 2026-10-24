@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ArrowRight, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { PublicFooter } from './PublicFooter';
 
 interface PolicyPageLayoutProps {
@@ -54,17 +54,11 @@ export function PolicyPageLayout({
 
         <div className="flex items-center gap-3 text-xs">
           <Link
-            href="/login"
+            href="/"
             className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-white/30 hover:border-white/70 hover:bg-white/10 text-white font-medium transition-all shadow-sm backdrop-blur-md"
           >
-            <span>Sign In</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-          <Link
-            href="/register"
-            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white text-zinc-950 font-medium hover:bg-zinc-100 transition-all shadow-sm"
-          >
-            <span>Create Workspace</span>
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to Home</span>
           </Link>
         </div>
       </header>

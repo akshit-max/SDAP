@@ -56,7 +56,12 @@ export function CustomSelect({
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 mt-1 w-full max-h-60 overflow-y-auto bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg shadow-xl z-50 py-1">
+        <div
+          role="listbox"
+          data-lenis-prevent="true"
+          className="absolute left-0 mt-1 w-full max-h-60 overflow-y-auto bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg shadow-xl z-50 py-1 custom-scrollbar"
+          style={{ overscrollBehavior: 'contain' }}
+        >
           {options.length === 0 ? (
             <div className="px-3.5 py-2 text-xs text-slate-450 dark:text-zinc-500 italic">
               No options available

@@ -529,7 +529,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Clean Apple Canvas (Zero AI Glow Blobs) */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-[#F5F5F7] dark:bg-[#000000] relative">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-[#F5F5F7] dark:bg-[#000000] relative custom-scrollbar">
           {children}
         </main>
       </div>

@@ -37,7 +37,7 @@ export function LenisProvider({ children }: { children: React.ReactNode }) {
       const lenis = new Lenis({
         wrapper: wrapper,
         content: content,
-        eventsTarget: window,
+        eventsTarget: wrapper === window ? window : wrapper,
         lerp: 0.08,
         wheelMultiplier: 0.9,
         orientation: 'vertical',
@@ -48,11 +48,18 @@ export function LenisProvider({ children }: { children: React.ReactNode }) {
         prevent: (node) => {
           if (!node || !(node instanceof HTMLElement)) return false;
           // Never intercept scroll inside Modals, Dialogs, Select dropdowns, or Sidebar
-          return Boolean(
+          if (
             node.closest(
               '[data-lenis-prevent], [role="dialog"], [role="menu"], [role="listbox"], aside, [data-radix-popper-content-wrapper]'
             )
-          );
+          ) {
+            return true;
+          }
+          const scrollable = node.closest('.overflow-y-auto, .overflow-auto, .overflow-y-scroll, .custom-scrollbar');
+          if (scrollable && scrollable !== wrapper) {
+            return true;
+          }
+          return false;
         },
       });
 
