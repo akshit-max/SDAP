@@ -22,6 +22,7 @@ export const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_REDIRECT_URI: z.string().optional(),
   GOOGLE_AUTH_REDIRECT_URI: z.string().optional(),
+  APP_URL: z.string().optional(),
   // ── HDFC Payment Gateway ────────────────────────────────────────────────────
   // All optional — billing module will throw ConfigService.getOrThrow() at runtime
   // if a billing operation is attempted without credentials set.

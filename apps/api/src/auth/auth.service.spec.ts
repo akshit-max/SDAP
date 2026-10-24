@@ -168,6 +168,9 @@ describe('AuthService', () => {
       expect(url).toContain('response_type=code');
       expect(url).toContain('scope=openid+email+profile');
       expect(url).not.toContain('access_type=offline');
+      expect(new URL(url).searchParams.get('redirect_uri')).toBe(
+        'http://localhost:3000/api/v1/auth/google/callback',
+      );
 
       const state = new URL(url).searchParams.get('state')!;
       expect(AuthService.parseGoogleState(state)).toEqual({
@@ -180,6 +183,19 @@ describe('AuthService', () => {
       const { url } = service.buildGoogleAuthUrl('//evil.com');
       const state = new URL(url).searchParams.get('state')!;
       expect(AuthService.parseGoogleState(state)?.redirect).toBe('/dashboard');
+    });
+
+    it('should fallback to production domain when NODE_ENV is production', () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      try {
+        const { url } = service.buildGoogleAuthUrl('/vaults');
+        expect(new URL(url).searchParams.get('redirect_uri')).toBe(
+          'https://withus.makewithus.in/api/v1/auth/google/callback',
+        );
+      } finally {
+        process.env.NODE_ENV = originalEnv;
+      }
     });
   });
 
