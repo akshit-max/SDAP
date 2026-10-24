@@ -372,7 +372,7 @@ export function CreateSessionModal({
   const granteeOptions = members.filter((m) => m.role !== 'OWNER' || members.length > 1);
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Grant Access">
+    <Modal isOpen={isOpen} onClose={handleClose} title="Grant Access" maxWidth="max-w-lg">
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Step 1: Who */}
         <div>
@@ -616,7 +616,11 @@ export function CreateSessionModal({
                     {accessRestriction === 'restricted' && (
                       <div className="mt-3 space-y-2">
                         <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Allowed Modules</p>
-                        <div className="max-h-56 overflow-y-auto space-y-2 pr-1.5 custom-scrollbar">
+                        <div
+                          data-lenis-prevent="true"
+                          className="max-h-56 overflow-y-auto space-y-2 pr-1.5 custom-scrollbar"
+                          style={{ overscrollBehavior: 'contain' }}
+                        >
                           {availableCapabilities.map(cap => (
                             <label
                               key={cap.key}

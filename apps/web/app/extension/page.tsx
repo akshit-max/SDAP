@@ -84,7 +84,7 @@ export default function ExtensionPage() {
           </div>
           <div className="flex-shrink-0 flex items-center gap-2.5 flex-wrap">
             <a
-              href="https://chromewebstore.google.com/detail/withus-vault/ccelghkaoejlmljlhcefnkbcbfmoge"
+              href="https://chromewebstore.google.com/detail/withus-vault/ecelghkaoeljmiljchcefnhchbcfmoge"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E5E5EA] dark:border-[#38383A] bg-white dark:bg-[#2C2C2E] hover:bg-[#F5F5F7] dark:hover:bg-[#38383A]/80 text-[#1D1D1F] dark:text-[#F5F5F7] text-xs font-medium transition-colors shadow-sm"
