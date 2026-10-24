@@ -655,12 +655,20 @@ export class AuthService {
   }
 
   private getGoogleOAuthConfig() {
+    const isProd =
+      this.config.get<string>('NODE_ENV') === 'production' ||
+      process.env.NODE_ENV === 'production';
+    const appUrl =
+      this.config.get<string>('APP_URL') ||
+      process.env.APP_URL ||
+      (isProd ? 'https://withus.makewithus.in' : 'http://localhost:3000');
+    const defaultRedirect = `${appUrl.replace(/\/+$/, '')}/api/v1/auth/google/callback`;
+
     return {
       clientId: this.config.get<string>('GOOGLE_CLIENT_ID'),
       clientSecret: this.config.get<string>('GOOGLE_CLIENT_SECRET'),
       redirectUri:
-        this.config.get<string>('GOOGLE_AUTH_REDIRECT_URI') ||
-        'http://localhost:3000/api/v1/auth/google/callback',
+        this.config.get<string>('GOOGLE_AUTH_REDIRECT_URI') || defaultRedirect,
     };
   }
 
