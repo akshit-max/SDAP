@@ -13,6 +13,7 @@ node_modules
 # Testing & Coverage
 coverage
 .nyc_output
+.playwright-mcp/
 
 # Turbo & Vercel
 .turbo
