@@ -33,7 +33,8 @@ export const OTP_PATTERNS: OtpPattern[] = [
     platform: 'GITHUB',
     senderDomains: ['github.com', 'noreply.github.com'],
     // GitHub: "Your one-time password is: 123456"
-    regex: /(?:one.time\s+password\s+is[:：]\s*|authentication code[:：]\s*)(\d{6})/i,
+    regex:
+      /(?:one.time\s+password\s+is[:：]\s*|authentication code[:：]\s*)(\d{6})/i,
     group: 1,
   },
   {
@@ -46,8 +47,10 @@ export const OTP_PATTERNS: OtpPattern[] = [
   {
     platform: 'SHOPIFY',
     senderDomains: ['shopify.com', 'mail.shopify.com'],
-    // Shopify: "Your verification code is 123456" or "Enter: 123456"
-    regex: /(?:verification\s+code\s+is\s+|Enter:\s*)(\d{6})/i,
+    // Shopify: "Your verification code is 123456" or "Enter: 123456".
+    // Shopify Help documents 10-digit codes for unusual-activity sign-ins; (?!\d) stops
+    // a 10-digit code being truncated to its first 6 digits.
+    regex: /(?:verification\s+code\s+is\s+|Enter:\s*)(\d{10}|\d{6})(?!\d)/i,
     group: 1,
   },
   {
@@ -62,7 +65,8 @@ export const OTP_PATTERNS: OtpPattern[] = [
     senderDomains: ['razorpay.com'],
     // Razorpay: "Use the following verification code: 542284"
     // Also matches older format: "OTP for login is 123456"
-    regex: /(?:verification\s+code[:：]\s*|OTP\s+(?:for\s+login\s+)?is\s+)(\d{4,6})/i,
+    regex:
+      /(?:verification\s+code[:：]\s*|OTP\s+(?:for\s+login\s+)?is\s+)(\d{4,6})/i,
     group: 1,
   },
 
@@ -96,7 +100,8 @@ export const OTP_PATTERNS: OtpPattern[] = [
     //
     // Note: uses a negative lookbehind for hyphens to avoid matching numbers
     // embedded in usernames like "navyabhandula-3225".
-    regex: /(?:code|otp|passcode|token|verify|verification)[\s\S]{0,80}?(?<![a-zA-Z0-9-])(\b\d{4,8}\b)/i,
+    regex:
+      /(?:code|otp|passcode|token|verify|verification)[\s\S]{0,80}?(?<![a-zA-Z0-9-])(\b\d{4,8}\b)/i,
     group: 1,
   },
 ];

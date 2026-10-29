@@ -628,7 +628,6 @@ async function fetchAndFillOtp(
     }
 
     otpCode = response.data.otp;
-    console.log('✅ WITHUS EXTRACTED OTP:', otpCode);
 
     let otpField = resolvedOtpField;
 
