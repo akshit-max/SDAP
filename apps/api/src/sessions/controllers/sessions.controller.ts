@@ -7,6 +7,7 @@ import {
   UseGuards,
   Request,
   ServiceUnavailableException,
+  ForbiddenException,
   Optional,
 } from '@nestjs/common';
 import { SessionsService } from '../sessions.service';
@@ -228,10 +229,34 @@ export class SessionsController {
       return { error: 'Session has expired.' };
     }
 
-    // ── Resolve platform — prefer body (sent by extension from current URL) over DB value ──
-    // The extension knows what page it's on (VERCEL, RAZORPAY, etc.) even when the
-    // session's integrationProvider column is null (legacy sessions created before this field).
-    const platform = body?.platform ?? session.integrationProvider ?? null;
+    // ── Resolve platform from trusted session data — the request body cannot override it ──
+    // Plain vault sessions have no integrationProvider; their platform is the vault's platformId.
+    // body.platform (sent by the extension from the current URL) is only used for legacy
+    // generic vaults with no stored platform; GmailOtpService rejects unknown platforms.
+    let trustedPlatform: string | null = session.integrationProvider ?? null;
+    if (!trustedPlatform && session.scope === 'SECRET') {
+      const secret = await this.prisma.secret.findUnique({
+        where: { id: session.resourceId },
+        select: { vault: { select: { platformId: true } } },
+      });
+      trustedPlatform = secret?.vault?.platformId ?? null;
+    } else if (!trustedPlatform && session.scope === 'VAULT') {
+      const vault = await this.prisma.vault.findUnique({
+        where: { id: session.resourceId },
+        select: { platformId: true },
+      });
+      trustedPlatform = vault?.platformId ?? null;
+    }
+    if (
+      trustedPlatform &&
+      body?.platform &&
+      body.platform !== trustedPlatform
+    ) {
+      throw new ForbiddenException(
+        'OTP request does not match the platform of this session.',
+      );
+    }
+    const platform = trustedPlatform ?? body?.platform ?? null;
     const loginStartTime = body?.loginStartTime ?? Date.now() - 30_000;
 
     // ── Get a valid access token for the GRANTOR's Gmail ──────────────────
