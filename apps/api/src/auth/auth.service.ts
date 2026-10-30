@@ -203,7 +203,12 @@ export class AuthService {
     };
   }
 
-  async login(dto: LoginDto, ipAddress?: string, userAgent?: string) {
+  async login(
+    dto: LoginDto,
+    ipAddress?: string,
+    userAgent?: string,
+    isExtension: boolean = false,
+  ) {
     const user = await this.usersService.findByEmail(dto.email);
     if (!user || !user.isActive || user.deletedAt) {
       throw new UnauthorizedException('Invalid credentials');
@@ -217,15 +222,21 @@ export class AuthService {
     const { refreshToken, rawToken } = this.generateRefreshToken();
     const newLoginFamilyId = randomUUID();
 
-    // ── One Active Session Per User ──────────────────────────────────────────
-    // Revoke all existing non-expired refresh tokens for this user before
-    // creating the new one. This ensures only one browser session is active
-    // at a time. Old sessions will receive SESSION_DISPLACED on next refresh.
+    // ── One Active Session Per User (Scoped by Client Type) ──────────────────
+    // Web logins displace previous Web logins.
+    // Extension logins displace previous Extension logins.
+    // This allows a user to be logged into both the Web Dashboard and the
+    // Browser Extension simultaneously, without kicking each other out.
+    const clientFilter = isExtension
+      ? { deviceInfo: { path: ['client'], equals: 'extension' } }
+      : { NOT: { deviceInfo: { path: ['client'], equals: 'extension' } } };
+
     await this.prisma.refreshToken.updateMany({
       where: {
         userId: user.id,
         isRevoked: false,
         expiresAt: { gt: new Date() },
+        ...clientFilter,
       },
       data: {
         isRevoked: true,
@@ -242,6 +253,7 @@ export class AuthService {
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         ipAddress,
         userAgent,
+        deviceInfo: { client: isExtension ? 'extension' : 'web' },
       },
     });
 
@@ -358,6 +370,7 @@ export class AuthService {
           expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
           ipAddress,
           userAgent,
+          deviceInfo: oldTokenRecord.deviceInfo as any,
         },
       }),
     ]);
@@ -783,12 +796,13 @@ export class AuthService {
     const { refreshToken, rawToken } = this.generateRefreshToken();
     const newLoginFamilyId = randomUUID();
 
-    // ── One Active Session Per User (same as login()) ────────────────────────
+    // ── One Active Session Per User (Web login) ──────────────────────────────
     await this.prisma.refreshToken.updateMany({
       where: {
         userId: user.id,
         isRevoked: false,
         expiresAt: { gt: new Date() },
+        NOT: { deviceInfo: { path: ['client'], equals: 'extension' } },
       },
       data: {
         isRevoked: true,
@@ -805,6 +819,7 @@ export class AuthService {
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         ipAddress,
         userAgent,
+        deviceInfo: { client: 'web' },
       },
     });
 

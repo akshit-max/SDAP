@@ -17,8 +17,8 @@ const loadEnv = (path) => {
   }
 };
 
-loadEnv('.env');
 loadEnv('../../.env');
+loadEnv('.env');
 
 const isWatch = argv.includes('--watch');
 

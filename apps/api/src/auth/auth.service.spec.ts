@@ -40,6 +40,7 @@ describe('AuthService', () => {
         email: 'new@test.com',
         fullName: 'Test User',
       }),
+      update: jest.fn().mockResolvedValue({ id: '1' }),
     },
     organizationMember: {
       create: jest.fn(),
@@ -149,6 +150,39 @@ describe('AuthService', () => {
       await expect(
         service.login({ email: 'test@test.com', password: 'wrong' }),
       ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should revoke previous web sessions with SESSION_DISPLACED when a new web login occurs', async () => {
+      const { HashService } = require('@repo/security');
+      const validHash = await HashService.hash('password123');
+      mockUsersService.findByEmail.mockResolvedValue({
+        id: 'user-1',
+        email: 'test@test.com',
+        isActive: true,
+        deletedAt: null,
+        passwordHash: validHash,
+      });
+
+      await service.login(
+        { email: 'test@test.com', password: 'password123' },
+        '1.2.3.4',
+        'Mozilla',
+        false,
+      );
+
+      expect(mockPrismaService.refreshToken.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            userId: 'user-1',
+            isRevoked: false,
+            NOT: { deviceInfo: { path: ['client'], equals: 'extension' } },
+          }),
+          data: expect.objectContaining({
+            isRevoked: true,
+            replacedByTokenId: 'SESSION_DISPLACED',
+          }),
+        }),
+      );
     });
   });
 

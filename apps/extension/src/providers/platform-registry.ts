@@ -41,6 +41,11 @@ platformRegistry.register({
     passwordSelector: 'input[name="password"], input#password',
     submitSelector: 'input[name="commit"], input[type="submit"], button[type="submit"]',
   },
+  otp: {
+    type: 'EMAIL',
+    inputSelector: 'input#otp, input[name="otp"]',
+    submitSelector: 'button[type="submit"]',
+  },
   principalType: 'GITHUB_USERNAME',
   supportsDelegation: true,
   /**
@@ -219,7 +224,12 @@ platformRegistry.register({
     url: 'https://admin.shopify.com/login',
     usernameSelector: 'input[type="email"], input[autocomplete="username"], #account_email',
     passwordSelector: 'input[type="password"], input[autocomplete="current-password"], #account_password',
-    submitSelector: 'button[type="submit"], button[name="commit"]',
+    submitSelector: 'button.primary.full-width[type="submit"], button[part="button"][type="submit"], button[type="submit"], button[name="commit"]',
+  },
+  otp: {
+    type: 'EMAIL',
+    inputSelector: 'input#account_one_time_code, input[name="account[one_time_code]"], input[autocomplete="one-time-code"]',
+    submitSelector: 'button.primary.full-width[type="submit"], button[part="button"][type="submit"], button.primary[type="submit"], button[type="submit"]',
   },
   hideElementsCSS: [
     'button.js-password-button',
@@ -352,18 +362,37 @@ platformRegistry.register({
 platformRegistry.register({
   id: 'LINKEDIN',
   name: 'LinkedIn',
-  domains: ['linkedin.com'],
+  domains: ['linkedin.com', 'www.linkedin.com'],
   login: {
     url: 'https://www.linkedin.com/login',
     usernameSelector: 'input[name="session_key"], input#username, input[type="text"]:not([placeholder*="Search" i]):not(.search-global-typeahead__input), input[type="email"]',
     passwordSelector: 'input[name="session_password"], input#password, input[type="password"]',
     submitSelector: 'button[type="submit"], input[type="submit"], button[data-litms-control-urn="login-submit"]',
   },
+  otp: {
+    type: 'EMAIL',
+    inputSelector: 'input#input__email_verification_pin, input[name="pin"], input.input_verification_pin',
+    submitSelector: 'button#pin-submit-button, button[type="submit"]',
+  },
   hideElementsCSS: [
     'input[type="password"][autocomplete="current-password"]',
     'button[aria-label="Show password" i]',
     'button:has(svg#visibility-small)',
-    'div:has(> input[type="password"][autocomplete="current-password"])'
+    'div:has(> input[type="password"][autocomplete="current-password"])',
+    '#password-visibility-toggle',
+    '.button__password-visibility',
+    'span#password-visibility-toggle',
+    '[id="password-visibility-toggle"]',
+    'button[data-id="sign-in-form__password-visibility-toggle"]',
+    'input#newPassword',
+    '#newPassword',
+    'input[name="newPassword"]',
+    'div:has(> input#newPassword)',
+    'div:has(> #newPassword)',
+    'div:has(> #password-visibility-toggle)',
+    '.form__input--floating:has(#newPassword)',
+    '.form__input--floating:has(#password-visibility-toggle)',
+    '.form__input--floating:has(input[name="newPassword"])'
   ],
   capabilityRestrictions: {
     'linkedin.my_network': {

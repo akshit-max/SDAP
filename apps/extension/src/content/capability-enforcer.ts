@@ -24,6 +24,9 @@ function injectCSS(config: ReturnType<typeof platformRegistry.getForHost>, restr
   if (!config) return;
   const styleId = 'withus-capability-enforcer-css';
   const stylesToInject: string[] = [];
+  if (config.hideElementsCSS && config.hideElementsCSS.length > 0) {
+    stylesToInject.push(...config.hideElementsCSS);
+  }
   for (const cap of restrictions) {
     const rule = config.capabilityRestrictions?.[cap];
     if (rule?.hideElementsCSS) stylesToInject.push(...rule.hideElementsCSS);
@@ -46,8 +49,8 @@ function injectCSS(config: ReturnType<typeof platformRegistry.getForHost>, restr
 
 async function initEnforcer() {
   const config = platformRegistry.getForHost(location.hostname);
-  if (!config || !config.capabilityRestrictions) {
-    return; // Not a supported platform, or no capability restrictions defined
+  if (!config || (!config.capabilityRestrictions && !config.hideElementsCSS)) {
+    return; // Not a supported platform, or no capability restrictions/hiding defined
   }
 
   // ── INSTANT PAINT: apply cached restrictions before any network call ────────
@@ -103,26 +106,37 @@ async function initEnforcer() {
     // (The "Allowed Modules" checklist in the web dashboard sets this.)
     // Restrictions = all capability keys defined for this platform MINUS the allowed ones.
     if (!session.capabilities || session.capabilities.length === 0) {
-      // No capability restrictions defined — full access, nothing to hide.
-      chrome.storage.session.remove(WITHUS_CACHE_KEY).catch(() => {});
-      document.getElementById('withus-capability-enforcer-css')?.remove();
-      return;
+      if (config.hideElementsCSS && config.hideElementsCSS.length > 0) {
+        restrictionsToApply = [];
+      } else {
+        chrome.storage.session.remove(WITHUS_CACHE_KEY).catch(() => {});
+        document.getElementById('withus-capability-enforcer-css')?.remove();
+        return;
+      }
+    } else {
+      const allPlatformCaps = Object.keys(config.capabilityRestrictions || {});
+      const restricted = allPlatformCaps.filter(cap => !session.capabilities!.includes(cap));
+      if (restricted.length === 0) {
+        if (config.hideElementsCSS && config.hideElementsCSS.length > 0) {
+          restrictionsToApply = [];
+        } else {
+          chrome.storage.session.remove(WITHUS_CACHE_KEY).catch(() => {});
+          document.getElementById('withus-capability-enforcer-css')?.remove();
+          return;
+        }
+      } else {
+        restrictionsToApply = restricted;
+      }
     }
-    const allPlatformCaps = Object.keys(config.capabilityRestrictions!);
-    const restricted = allPlatformCaps.filter(cap => !session.capabilities!.includes(cap));
-    if (restricted.length === 0) {
-      // All modules are allowed — nothing to hide.
-      chrome.storage.session.remove(WITHUS_CACHE_KEY).catch(() => {});
-      document.getElementById('withus-capability-enforcer-css')?.remove();
-      return;
-    }
-    restrictionsToApply = restricted;
   }
 
   // Update cache for the next page load
   chrome.storage.session.set({ [WITHUS_CACHE_KEY]: restrictionsToApply }).catch(() => {});
 
   const stylesToInject: string[] = [];
+  if (config.hideElementsCSS && config.hideElementsCSS.length > 0) {
+    stylesToInject.push(...config.hideElementsCSS);
+  }
   const restrictedRoutes: string[] = [];
   const allowedRoutes: string[] = [];
 
