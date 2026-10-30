@@ -115,12 +115,16 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
     @Ip() ip: string,
   ) {
+    const isExtension = req.headers['x-extension-client'] === 'withus-mv3';
     const result = await this.authService.login(
       dto,
       ip,
       req.headers['user-agent'],
+      isExtension,
     );
-    this.setAuthCookies(res, result.accessToken, result.refreshToken);
+    if (!isExtension) {
+      this.setAuthCookies(res, result.accessToken, result.refreshToken);
+    }
     return result;
   }
 
@@ -134,6 +138,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
     @Ip() ip: string,
   ) {
+    const isExtension = req.headers['x-extension-client'] === 'withus-mv3';
     const token = dto.refreshToken || req.cookies['sdap_refresh_token'];
     if (!token) {
       throw new UnauthorizedException('Refresh token missing');
@@ -143,7 +148,9 @@ export class AuthController {
       ip,
       req.headers['user-agent'],
     );
-    this.setAuthCookies(res, result.accessToken, result.refreshToken);
+    if (!isExtension) {
+      this.setAuthCookies(res, result.accessToken, result.refreshToken);
+    }
     return result;
   }
 

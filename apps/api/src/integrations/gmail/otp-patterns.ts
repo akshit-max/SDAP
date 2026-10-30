@@ -32,9 +32,9 @@ export const OTP_PATTERNS: OtpPattern[] = [
   {
     platform: 'GITHUB',
     senderDomains: ['github.com', 'noreply.github.com'],
-    // GitHub: "Your one-time password is: 123456"
+    // GitHub: "Your one-time password is: 123456" or "Verification code: 123456"
     regex:
-      /(?:one.time\s+password\s+is[:：]\s*|authentication code[:：]\s*)(\d{6})/i,
+      /(?:one.time\s+password\s+is[:：]\s*|authentication\s+code[:：]\s*|verification\s+code[:：]\s*)(\d{6})/i,
     group: 1,
   },
   {
@@ -47,17 +47,19 @@ export const OTP_PATTERNS: OtpPattern[] = [
   {
     platform: 'SHOPIFY',
     senderDomains: ['shopify.com', 'mail.shopify.com'],
-    // Shopify: "Your verification code is 123456" or "Enter: 123456".
+    // Shopify: "Your verification code is 123456", "Enter: 123456", or "Use this one time code to continue: 123456"
     // Shopify Help documents 10-digit codes for unusual-activity sign-ins; (?!\d) stops
     // a 10-digit code being truncated to its first 6 digits.
-    regex: /(?:verification\s+code\s+is\s+|Enter:\s*)(\d{10}|\d{6})(?!\d)/i,
+    regex:
+      /(?:verification\s+code\s+is\s+|Enter:\s*|Use this (?:one.time\s+)?code to continue[:：]?\s*)(\d{10}|\d{6})(?!\d)/i,
     group: 1,
   },
   {
     platform: 'LINKEDIN',
     senderDomains: ['linkedin.com', 'e.linkedin.com'],
-    // LinkedIn: "Use this code: 123456"
-    regex: /(?:Use this code[:：]\s*)(\d{6})/i,
+    // LinkedIn: "Use this code: 123456", "Enter this code to complete the reset. 123456", or "here's your PIN 123456"
+    regex:
+      /(?:(?:Use|Enter)\s+this\s+code[^\d]{0,50}|here's your PIN\s+|verification\s+code\s+is\s+)(\d{6})/i,
     group: 1,
   },
   {

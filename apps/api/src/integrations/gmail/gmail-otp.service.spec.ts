@@ -85,6 +85,18 @@ describe('GmailOtpService', () => {
         'Your OTP for login is 1234',
         '1234',
       ],
+      [
+        'GITHUB',
+        'GitHub <noreply@github.com>',
+        'Hey akshit-max-creator!\nDevice: Microsoft Edge on Windows\nVerification code: 213351\nIf you did not attempt...',
+        '213351',
+      ],
+      [
+        'LINKEDIN',
+        'LinkedIn <security-noreply@linkedin.com>',
+        'Hi Navya,\nEnter this code to complete the reset.\n371206\nIf you did not request this pin...',
+        '371206',
+      ],
     ])('%s extracts the code', async (platform, from, body, expected) => {
       mockGmail([gmailMessage(from, body)]);
       await expect(
@@ -96,6 +108,8 @@ describe('GmailOtpService', () => {
       ['VERCEL', 'from:vercel.com'],
       ['STRIPE', 'from:stripe.com'],
       ['RAZORPAY', 'from:razorpay.com'],
+      ['GITHUB', 'from:(github.com OR noreply.github.com)'],
+      ['LINKEDIN', 'from:(linkedin.com OR e.linkedin.com)'],
     ])('%s searches only its own sender', async (platform, senderFilter) => {
       const fetchMock = mockGmail([
         gmailMessage(
@@ -145,6 +159,18 @@ describe('GmailOtpService', () => {
       await expect(
         service.fetchLatestOtp('tok', 'SHOPIFY', LOGIN_START),
       ).resolves.toBe('654321');
+    });
+
+    it('returns a 6-digit code from real account verification email format', async () => {
+      mockGmail([
+        gmailMessage(
+          'Shopify <mailer@shopify.com>',
+          'Your verification code\nWe received a request to verify your account. Use this one time code to continue:\n363241\nThis code expires in 10 minutes.',
+        ),
+      ]);
+      await expect(
+        service.fetchLatestOtp('tok', 'SHOPIFY', LOGIN_START),
+      ).resolves.toBe('363241');
     });
   });
 

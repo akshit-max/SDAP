@@ -75,8 +75,24 @@ describe('AuthController', () => {
       dto,
       '127.0.0.1',
       'jest',
+      false,
     );
     expect(result.accessToken).toBe('access');
+  });
+
+  it('login() should identify extension client via X-Extension-Client header', async () => {
+    const dto = { email: 'test@test.com', password: 'password123' };
+    const mockReq = {
+      headers: { 'user-agent': 'jest', 'x-extension-client': 'withus-mv3' },
+    } as any;
+    const mockRes = { cookie: jest.fn() } as any;
+    await controller.login(dto, mockReq, mockRes, '127.0.0.1');
+    expect(mockAuthService.login).toHaveBeenCalledWith(
+      dto,
+      '127.0.0.1',
+      'jest',
+      true,
+    );
   });
 
   it('logout() should call authService.logout', async () => {

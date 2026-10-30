@@ -77,6 +77,23 @@ async function discoverSessions(): Promise<void> {
   activeSessions = response.data.sessions;
   activeOrgId = response.data.orgId;
 
+  // ── Generic V2 CSS Injection: apply immediately upon session discovery ─────
+  if (config?.hideElementsCSS && config.hideElementsCSS.length > 0) {
+    const styleId = 'withus-hide-elements';
+    let style = document.getElementById(styleId) as HTMLStyleElement | null;
+    if (!style) {
+      style = document.createElement('style');
+      style.id = styleId;
+      (document.head || document.documentElement).appendChild(style);
+    }
+    style.textContent = `${config.hideElementsCSS.join(', ')} {
+      display: none !important;
+      pointer-events: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+    }`;
+  }
+
   // ── Presence heartbeat signal ──────────────────────────────────────────────
   // Notify the service worker that we're on an active-session platform so it
   // can persist the platform name (keyed by tab ID) and fire heartbeats via
@@ -311,7 +328,6 @@ async function handleAutofillRequest(): Promise<void> {
           opacity: 0 !important;
         }`;
         document.head.appendChild(style);
-        setTimeout(() => document.getElementById(styleId)?.remove(), 30_000);
       }
     }
 
