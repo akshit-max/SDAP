@@ -97,6 +97,12 @@ describe('GmailOtpService', () => {
         'Hi Navya,\nEnter this code to complete the reset.\n371206\nIf you did not request this pin...',
         '371206',
       ],
+      [
+        'GODADDY',
+        'GoDaddy <donotreply@godaddy.com>',
+        'Verify your email.\nHere is your email verification code:\n000900\nJust a heads up, this code will expire...',
+        '000900',
+      ],
     ])('%s extracts the code', async (platform, from, body, expected) => {
       mockGmail([gmailMessage(from, body)]);
       await expect(
@@ -110,6 +116,7 @@ describe('GmailOtpService', () => {
       ['RAZORPAY', 'from:razorpay.com'],
       ['GITHUB', 'from:(github.com OR noreply.github.com)'],
       ['LINKEDIN', 'from:(linkedin.com OR e.linkedin.com)'],
+      ['GODADDY', 'from:godaddy.com'],
     ])('%s searches only its own sender', async (platform, senderFilter) => {
       const fetchMock = mockGmail([
         gmailMessage(

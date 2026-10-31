@@ -140,6 +140,11 @@ platformRegistry.register({
     submitSelector: 'button#submitBtn, button[type="submit"], input[type="submit"]',
     requirePasswordOnDOM: true,
   },
+  otp: {
+    type: 'EMAIL',
+    inputSelector: 'input#verification-code-input, input[autocomplete="one-time-code"], input[placeholder*="6-digit code" i]',
+    submitSelector: 'button#action-btn, button[data-eid*="verify_code"], button.ux-button-primary, button[type="submit"]',
+  },
   hideElementsCSS: [
     'button[aria-label="Show password" i]',
     'button[aria-label="Hide password" i]',
