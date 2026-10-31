@@ -63,6 +63,14 @@ export const OTP_PATTERNS: OtpPattern[] = [
     group: 1,
   },
   {
+    platform: 'GODADDY',
+    senderDomains: ['godaddy.com'],
+    // GoDaddy: "Here is your email verification code:\n000900", "verification code is 123456", or "one-time passcode: 123456"
+    regex:
+      /(?:(?:email\s+)?verification\s+code[:：\s]?\s*(?:is[:：\s]*)?|one.time\s+(?:passcode|code|password)[:：\s]?\s*(?:is[:：\s]*)?)(\d{6})(?!\d)/i,
+    group: 1,
+  },
+  {
     platform: 'RAZORPAY',
     senderDomains: ['razorpay.com'],
     // Razorpay: "Use the following verification code: 542284"
