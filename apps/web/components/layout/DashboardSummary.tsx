@@ -22,9 +22,11 @@ export function DashboardSummary() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
-  const activeSessionsCount = 
-    (incomingSessions?.filter(s => s.status === 'ACTIVE').length ?? 0) + 
-    (outgoingSessions?.filter(s => s.status === 'ACTIVE').length ?? 0);
+  const activeSessionsCount = React.useMemo(() => {
+    const activeIncoming = incomingSessions?.filter(s => s.status === 'ACTIVE') ?? [];
+    const activeOutgoing = outgoingSessions?.filter(s => s.status === 'ACTIVE') ?? [];
+    return new Set([...activeIncoming, ...activeOutgoing].map(s => s.id)).size;
+  }, [incomingSessions, outgoingSessions]);
 
   const stats = [
     {
