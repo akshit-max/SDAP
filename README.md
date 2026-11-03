@@ -17,5 +17,4 @@ WITHUS allows organizations to delegate secure access (passwords, PATs, and sess
 - **Browser Extension:** Native autofill injection blocking default password managers.
 - **Audit Logs:** Full traceability.
 
-## Production Status
-This repository is configured for production. See `DEPLOYMENT.md` for deployment instructions.
+
