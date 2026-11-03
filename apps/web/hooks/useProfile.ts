@@ -19,6 +19,7 @@ export function useUpdateProfile() {
     mutationFn: (data: { fullName?: string; githubUsername?: string }) => usersApi.updateProfile(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: userKeys.profile() });
+      queryClient.invalidateQueries({ queryKey: ['organization'] }); // prefix of orgKeys.detail/members
     },
   });
 }

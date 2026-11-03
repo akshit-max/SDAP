@@ -27,13 +27,19 @@ const GITHUB_API = 'https://api.github.com';
  * GitHub API docs: https://docs.github.com/en/rest
  */
 @Injectable()
-export class GitHubAdapter implements IIntegrationAdapter, IProviderIdentityResolver {
+export class GitHubAdapter
+  implements IIntegrationAdapter, IProviderIdentityResolver
+{
   readonly provider = IntegrationProvider.GITHUB;
   private readonly logger = new Logger(GitHubAdapter.name);
 
   // ─── Identity Resolution ────────────────────────────────────────────────────
 
-  resolvePrincipalId(user: { id: string; email: string; providerProfiles?: unknown }): string {
+  resolvePrincipalId(user: {
+    id: string;
+    email: string;
+    providerProfiles?: unknown;
+  }): string {
     const githubUsername = (user.providerProfiles as any)?.githubUsername;
     if (!githubUsername) {
       // Use standard Error; IntegrationsService will handle/rethrow as needed,
@@ -47,9 +53,14 @@ export class GitHubAdapter implements IIntegrationAdapter, IProviderIdentityReso
 
   // ─── Validate Token ─────────────────────────────────────────────────────────
 
-  async validateToken(token: string): Promise<{ identity: string; meta?: Record<string, unknown> }> {
+  async validateToken(
+    token: string,
+  ): Promise<{ identity: string; meta?: Record<string, unknown> }> {
     const user = await this.get('/user', token);
-    if (!user?.login) throw new Error('Could not retrieve user info from GitHub. Check your PAT scopes.');
+    if (!user?.login)
+      throw new Error(
+        'Could not retrieve user info from GitHub. Check your PAT scopes.',
+      );
     return {
       identity: `${user.name || user.login} (${user.email || user.login})`,
       meta: { login: user.login, userId: user.id, avatarUrl: user.avatar_url },
@@ -62,8 +73,13 @@ export class GitHubAdapter implements IIntegrationAdapter, IProviderIdentityReso
     const checkedAt = new Date();
     try {
       const user = await this.get('/user', token);
-      if (!user?.login) return { healthy: false, error: 'No user data returned', checkedAt };
-      return { healthy: true, identity: `${user.name || user.login}`, checkedAt };
+      if (!user?.login)
+        return { healthy: false, error: 'No user data returned', checkedAt };
+      return {
+        healthy: true,
+        identity: `${user.name || user.login}`,
+        checkedAt,
+      };
     } catch (err: unknown) {
       return { healthy: false, error: (err as Error).message, checkedAt };
     }
@@ -78,7 +94,10 @@ export class GitHubAdapter implements IIntegrationAdapter, IProviderIdentityReso
   async listResources(token: string): Promise<IntegrationResource[]> {
     const [orgs, repos] = await Promise.all([
       this.get('/user/orgs?per_page=100', token).catch(() => []),
-      this.get('/user/repos?per_page=100&affiliation=owner,organization_member', token).catch(() => []),
+      this.get(
+        '/user/repos?per_page=100&affiliation=owner,organization_member',
+        token,
+      ).catch(() => []),
     ]);
 
     const orgResources: IntegrationResource[] = (orgs as any[]).map((o) => ({
@@ -109,7 +128,10 @@ export class GitHubAdapter implements IIntegrationAdapter, IProviderIdentityReso
    *
    * Idempotent: if the user already has the requested access, returns success without error.
    */
-  async grantAccess(token: string, input: GrantAccessInput): Promise<GrantAccessResult> {
+  async grantAccess(
+    token: string,
+    input: GrantAccessInput,
+  ): Promise<GrantAccessResult> {
     const resourceType = input.resourceType ?? 'ORGANIZATION';
     const role = input.role || 'member';
 
@@ -120,14 +142,29 @@ export class GitHubAdapter implements IIntegrationAdapter, IProviderIdentityReso
     switch (resourceType) {
       case 'REPOSITORY': {
         // resourceId = "owner/repo"
-        const permission = role === 'admin' ? 'admin' : role === 'write' ? 'push' : 'pull';
+        const permission =
+          role === 'admin'
+            ? 'admin'
+            : role === 'pull' || role === 'read'
+              ? 'pull'
+              : 'push';
+        // GitHub re-uses an existing pending invite and sends no new email — clear it so a fresh one goes out.
+        await this.cancelPendingInvite(
+          input.resourceId,
+          input.principalEmail,
+          token,
+        );
+        // Existing collaborator = 204 (success). Any 422 is a real rejection, so it must surface, not be swallowed.
         const res = await this.put(
           `/repos/${input.resourceId}/collaborators/${input.principalEmail}`,
           token,
           { permission },
         ).catch((err) => {
-          // 422 = already a collaborator — treat as success
-          if (String(err.message).includes('422')) return { referenceId: input.principalEmail };
+          if (/repository owner/i.test(String(err.message))) {
+            throw new Error(
+              'The repository owner already has full access and cannot be invited as a collaborator.',
+            );
+          }
           throw err;
         });
         return {
@@ -146,7 +183,8 @@ export class GitHubAdapter implements IIntegrationAdapter, IProviderIdentityReso
           token,
           { role: teamRole },
         );
-        const status = (res as any)?.state === 'active' ? 'ACTIVE' : 'PENDING_INVITE';
+        const status =
+          (res as any)?.state === 'active' ? 'ACTIVE' : 'PENDING_INVITE';
         return { referenceId: input.principalEmail, status, meta: res as any };
       }
 
@@ -163,7 +201,8 @@ export class GitHubAdapter implements IIntegrationAdapter, IProviderIdentityReso
           if (String(err.message).includes('422')) return { state: 'active' };
           throw err;
         });
-        const status = (res as any)?.state === 'active' ? 'ACTIVE' : 'PENDING_INVITE';
+        const status =
+          (res as any)?.state === 'active' ? 'ACTIVE' : 'PENDING_INVITE';
         return { referenceId: input.principalEmail, status, meta: res as any };
       }
     }
@@ -186,23 +225,57 @@ export class GitHubAdapter implements IIntegrationAdapter, IProviderIdentityReso
     switch (resourceType) {
       case 'REPOSITORY': {
         // DELETE /repos/{owner}/{repo}/collaborators/{username}
-        await this.delete(`/repos/${input.resourceId}/collaborators/${username}`, token);
+        await this.delete(
+          `/repos/${input.resourceId}/collaborators/${username}`,
+          token,
+        );
+        await this.cancelPendingInvite(input.resourceId, username, token);
         break;
       }
 
       case 'TEAM': {
         // DELETE /orgs/{org}/teams/{team_slug}/memberships/{username}
         const [org, teamSlug] = input.resourceId.split('/');
-        await this.delete(`/orgs/${org}/teams/${teamSlug}/memberships/${username}`, token);
+        await this.delete(
+          `/orgs/${org}/teams/${teamSlug}/memberships/${username}`,
+          token,
+        );
         break;
       }
 
       case 'ORGANIZATION':
       default: {
         // DELETE /orgs/{org}/members/{username}
-        await this.delete(`/orgs/${input.resourceId}/members/${username}`, token);
+        await this.delete(
+          `/orgs/${input.resourceId}/members/${username}`,
+          token,
+        );
         break;
       }
+    }
+  }
+
+  /** Non-fatal: deletes a pending repo invitation for `username`, if one exists. */
+  private async cancelPendingInvite(
+    repo: string,
+    username: string,
+    token: string,
+  ): Promise<void> {
+    try {
+      const invitations = await this.get(
+        `/repos/${repo}/invitations?per_page=100`,
+        token,
+      );
+      const pending = (Array.isArray(invitations) ? invitations : []).find(
+        (inv: any) =>
+          inv.invitee?.login?.toLowerCase() === username.toLowerCase(),
+      );
+      if (pending?.id)
+        await this.delete(`/repos/${repo}/invitations/${pending.id}`, token);
+    } catch (err) {
+      this.logger.warn(
+        `[GITHUB] could not clear pending invite on ${repo}: ${(err as Error).message}`,
+      );
     }
   }
 

@@ -238,7 +238,7 @@ export function RequestAccessModal({
                 <CustomSelect
                   value={selectedIntegrationResource}
                   onChange={setSelectedIntegrationResource}
-                  options={providerResources.map((r) => ({
+                  options={(selectedProvider === 'GITHUB' ? repositories : providerResources).map((r) => ({
                     value: r.id,
                     label: r.name,
                   }))}
