@@ -6,10 +6,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SessionsService } from '../sessions/sessions.service';
-import {
-  ApprovalRequestStatus,
-  ApprovalType,
-} from '@repo/types';
+import { ApprovalRequestStatus, ApprovalType } from '@repo/types';
 import { CreateSessionDto } from '../sessions/dto/sessions.dto';
 import { ApprovalRequestedEvent } from './events/approval-requested.event';
 import { ApprovalApprovedEvent } from './events/approval-approved.event';
@@ -137,7 +134,7 @@ export class ApprovalsService {
   }
 
   async getPendingApprovals(organizationId: string) {
-    return this.prisma.approvalRequest.findMany({
+    const requests = await this.prisma.approvalRequest.findMany({
       where: {
         organizationId,
         status: 'PENDING',
@@ -147,15 +144,38 @@ export class ApprovalsService {
         requester: { select: { fullName: true, email: true } },
       },
     });
+    return this.withResourceNames(requests);
   }
 
   async getMyRequests(organizationId: string, requesterId: string) {
-    return this.prisma.approvalRequest.findMany({
+    const requests = await this.prisma.approvalRequest.findMany({
       where: {
         organizationId,
         requesterId,
       },
       orderBy: { createdAt: 'desc' },
     });
+    return this.withResourceNames(requests);
+  }
+
+  // Adds resourceName + platformId (from the vault) so reviewers can see what platform is being requested.
+  private async withResourceNames<T extends { requestPayload: unknown }>(
+    requests: T[],
+  ) {
+    const enriched = await this.sessionsService.enrichSessionsWithResourceNames(
+      requests.map((r) => {
+        const p = (r.requestPayload ?? {}) as Partial<CreateSessionDto>;
+        return {
+          scope: p.scope ?? 'SECRET',
+          resourceId: p.resourceId ?? '',
+          integrationProvider: p.integrationProvider,
+        };
+      }),
+    );
+    return requests.map((r, i) => ({
+      ...r,
+      resourceName: enriched[i]?.resourceName ?? null,
+      platformId: enriched[i]?.platformId ?? null,
+    }));
   }
 }

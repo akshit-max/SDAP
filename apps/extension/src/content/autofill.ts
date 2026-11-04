@@ -67,6 +67,73 @@ if (!provider) {
 let activeSessions: ExtensionSession[] = [];
 let activeOrgId = '';
 
+// Password fields stay visible (autofill skips hidden fields), so block every reveal path instead.
+const PASSWORD_GUARD_CSS = `
+    input[type="password"], #password {
+      -webkit-text-security: disc !important;
+      user-select: none !important;
+    }
+    input::-ms-reveal, input::-ms-clear { display: none !important; }`;
+
+let passwordTypeLocked = false;
+// Site "show password" toggles flip type="password" → "text"; flip it straight back.
+function lockPasswordInputType(): void {
+  if (passwordTypeLocked) return;
+  passwordTypeLocked = true;
+  // Own style tag so the guard applies even on platforms without hideElementsCSS.
+  const guard = document.createElement('style');
+  guard.id = 'withus-password-guard';
+  guard.textContent = PASSWORD_GUARD_CSS;
+  (document.head || document.documentElement).appendChild(guard);
+  new MutationObserver(mutations => {
+    for (const m of mutations) {
+      const el = m.target as HTMLInputElement;
+      if (m.oldValue?.toLowerCase() === 'password' && el.type !== 'password') el.type = 'password';
+    }
+  }).observe(document.documentElement, {
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['type'],
+    attributeOldValue: true,
+  });
+
+  // Hide site eye/toggle buttons drawn inside a password box (their selectors differ per site).
+  let scheduled = false;
+  const scan = () => { scheduled = false; hideButtonsInsidePasswordBoxes(); };
+  new MutationObserver(() => {
+    if (!scheduled) { scheduled = true; requestAnimationFrame(scan); }
+  }).observe(document.documentElement, { subtree: true, childList: true });
+  scan();
+  // Fields can get their size after the last DOM change (fonts, animations), so re-check briefly.
+  setTimeout(scan, 600);
+  setTimeout(scan, 2000);
+}
+
+function hideButtonsInsidePasswordBoxes(): void {
+  for (const input of Array.from(document.querySelectorAll<HTMLInputElement>('input[type="password"]'))) {
+    const r = input.getBoundingClientRect();
+    if (!r.width || !r.height) continue;
+    // Toggles live a few levels up next to the input; don't search the whole page.
+    const scope = input.parentElement?.parentElement?.parentElement ?? input.parentElement;
+    const area = scope?.getBoundingClientRect();
+    // Eye icons may be a <button>, a clickable span, or a bare svg; and they often sit just
+    // right of the <input> inside the visual box, so match the input's row, not its rect.
+    scope?.querySelectorAll<HTMLElement>('button, [role="button"], svg').forEach(btn => {
+      if (btn === input || btn.contains(input)) return;
+      const b = btn.getBoundingClientRect();
+      const cx = b.left + b.width / 2;
+      const cy = b.top + b.height / 2;
+      const inRow = cy > r.top && cy < r.bottom;
+      const inBox = cx > r.left && (!area || cx < area.right);
+      if (inRow && inBox) {
+        // visibility (not display) keeps its box, so re-scans still measure it correctly.
+        btn.style.setProperty('visibility', 'hidden', 'important');
+        btn.style.setProperty('pointer-events', 'none', 'important');
+      }
+    });
+  }
+}
+
 async function discoverSessions(): Promise<void> {
   const response = await sendMessage<{ sessions: ExtensionSession[]; orgId: string }>({
     type: 'GET_ACTIVE_SESSION',
@@ -91,8 +158,9 @@ async function discoverSessions(): Promise<void> {
       pointer-events: none !important;
       visibility: hidden !important;
       opacity: 0 !important;
-    }`;
+    }${PASSWORD_GUARD_CSS}`;
   }
+  lockPasswordInputType();
 
   // ── Presence heartbeat signal ──────────────────────────────────────────────
   // Notify the service worker that we're on an active-session platform so it
@@ -253,6 +321,7 @@ function removeToast(): void {
 async function handleAutofillRequest(): Promise<void> {
   const session = activeSessions.sort((a, b) => a.revealCount - b.revealCount)[0];
   if (!session) return;
+  lockPasswordInputType();
 
   loginStartTime = Date.now(); // Capture exact time the login attempt started
 
@@ -326,7 +395,7 @@ async function handleAutofillRequest(): Promise<void> {
           pointer-events: none !important;
           visibility: hidden !important;
           opacity: 0 !important;
-        }`;
+        }${PASSWORD_GUARD_CSS}`;
         document.head.appendChild(style);
       }
     }
@@ -745,6 +814,7 @@ function sendMessage<T>(msg: ExtensionMessage): Promise<ExtensionResponse<T>> {
 
 window.addEventListener('withus:autofill', async (e: Event) => {
   const { sessionId, orgId } = (e as CustomEvent<{ sessionId: string; orgId: string }>).detail;
+  lockPasswordInputType(); // before any credential reaches the page
 
   const response = await sendMessage<AutofillPayload>({
     type: 'LAUNCH_SESSION',

@@ -349,7 +349,7 @@ export class SessionsService {
    * Batch-enriches a list of sessions with their resource names.
    * Executes exactly 2 queries total regardless of list size.
    */
-  private async enrichSessionsWithResourceNames<
+  async enrichSessionsWithResourceNames<
     T extends { scope: string; resourceId: string },
   >(sessions: T[]) {
     const secretIds = sessions

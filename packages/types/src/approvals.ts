@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import { CreateSessionSchema, CreateSessionDto } from './sessions';
+import { z } from "zod";
+import { CreateSessionSchema, CreateSessionDto } from "./sessions";
 
 import { ApprovalRequestStatus, ApprovalType } from "@repo/db";
 export { ApprovalRequestStatus, ApprovalType };
@@ -9,14 +9,21 @@ export const CreateApprovalRequestSchema = z.object({
   requestPayload: CreateSessionSchema,
 });
 
-export type CreateApprovalRequestDto = z.infer<typeof CreateApprovalRequestSchema>;
+export type CreateApprovalRequestDto = z.infer<
+  typeof CreateApprovalRequestSchema
+>;
 
 export const ResolveApprovalRequestSchema = z.object({
-  status: z.enum([ApprovalRequestStatus.APPROVED, ApprovalRequestStatus.REJECTED]),
+  status: z.enum([
+    ApprovalRequestStatus.APPROVED,
+    ApprovalRequestStatus.REJECTED,
+  ]),
   reason: z.string().optional(),
 });
 
-export type ResolveApprovalRequestDto = z.infer<typeof ResolveApprovalRequestSchema>;
+export type ResolveApprovalRequestDto = z.infer<
+  typeof ResolveApprovalRequestSchema
+>;
 
 export interface ApprovalRequestDto {
   id: string;
@@ -28,6 +35,8 @@ export interface ApprovalRequestDto {
   };
   type: ApprovalType;
   requestPayload: CreateSessionDto;
+  resourceName?: string | null;
+  platformId?: string | null;
   status: ApprovalRequestStatus;
   createdAt: Date | string;
   updatedAt: Date | string;

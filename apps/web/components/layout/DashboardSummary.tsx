@@ -4,7 +4,8 @@ import React from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../lib/auth/AuthContext';
 import { useVaults } from '../../hooks/useVaults';
-import { usePendingApprovals } from '../../hooks/useApprovals';
+import { useMyRequests, usePendingApprovals } from '../../hooks/useApprovals';
+import { hasPermission } from '../../lib/auth/permissions';
 import { useIncomingSessions, useOutgoingSessions } from '../../hooks/useSessions';
 import { Shield, Key, CheckSquare, Users, ArrowRight, Plus, Puzzle, Lock } from 'lucide-react';
 import { formatDate } from '../../lib/formatters';
@@ -16,23 +17,34 @@ export function DashboardSummary() {
 
   const { data: vaults } = useVaults(orgId);
   const { data: pendingApprovals } = usePendingApprovals(orgId);
+  const { data: myRequests } = useMyRequests(orgId);
   const { data: incomingSessions } = useIncomingSessions(orgId);
   const { data: outgoingSessions } = useOutgoingSessions(orgId);
+
+  // Same rule as the sidebar badge: admins see others' requests to review, members see their own pending ones.
+  const canReview = hasPermission(organization?.role as string | undefined, 'AUDIT_READ');
+  const pendingCount = canReview
+    ? (pendingApprovals?.filter((r: any) => r.requesterId !== user?.id).length ?? 0)
+    : (myRequests?.filter((r: any) => r.status === 'PENDING').length ?? 0);
+  // `total` is the full count; items is only the first page (limit 20).
+  const vaultCount = vaults?.total ?? vaults?.items?.length ?? 0;
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
   const activeSessionsCount = React.useMemo(() => {
-    const activeIncoming = incomingSessions?.filter(s => s.status === 'ACTIVE') ?? [];
-    const activeOutgoing = outgoingSessions?.filter(s => s.status === 'ACTIVE') ?? [];
-    return new Set([...activeIncoming, ...activeOutgoing].map(s => s.id)).size;
+    // Same rule as the Sessions page: ACTIVE and not yet past expiry (the expiry sweep can lag).
+    const now = new Date();
+    const isActive = (s: { status: string; expiresAt: string | Date }) => s.status === 'ACTIVE' && new Date(s.expiresAt) > now;
+    const active = [...(incomingSessions ?? []), ...(outgoingSessions ?? [])].filter(isActive);
+    return new Set(active.map(s => s.id)).size;
   }, [incomingSessions, outgoingSessions]);
 
   const stats = [
     {
       label: 'Secure Vaults',
-      value: vaults?.items?.length ?? 0,
-      subtext: `${vaults?.items?.length ?? 0} active ${vaults?.items?.length === 1 ? 'vault' : 'vaults'}`,
+      value: vaultCount,
+      subtext: `${vaultCount} active ${vaultCount === 1 ? 'vault' : 'vaults'}`,
       icon: Key,
       href: '/vaults',
       color: 'text-[#0071E3]',
@@ -43,14 +55,14 @@ export function DashboardSummary() {
     },
     {
       label: 'Pending Approvals',
-      value: pendingApprovals?.length ?? 0,
-      subtext: (pendingApprovals && pendingApprovals.length > 0) ? 'Requires your attention' : 'All requests resolved',
+      value: pendingCount,
+      subtext: pendingCount > 0 ? (canReview ? 'Requires your attention' : 'Awaiting approval') : 'All requests resolved',
       icon: CheckSquare,
       href: '/approvals',
       color: 'text-[#FF9500]',
       bg: 'bg-[#FF9500]/10',
-      badge: pendingApprovals && pendingApprovals.length > 0 ? 'ATTENTION' : 'UP TO DATE',
-      badgeStyle: pendingApprovals && pendingApprovals.length > 0 
+      badge: pendingCount > 0 ? 'ATTENTION' : 'UP TO DATE',
+      badgeStyle: pendingCount > 0 
         ? 'bg-[#FF9500]/10 text-[#FF9500] border-[#FF9500]/20' 
         : 'bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#86868B] dark:text-[#8E8E93] border-[#E5E5EA] dark:border-[#38383A]',
       isLive: false,
@@ -58,7 +70,7 @@ export function DashboardSummary() {
     {
       label: 'Active Sessions',
       value: activeSessionsCount,
-      subtext: activeSessionsCount > 0 ? `${activeSessionsCount} platform connected` : 'No active sessions',
+      subtext: activeSessionsCount > 0 ? `${activeSessionsCount} live ${activeSessionsCount === 1 ? 'session' : 'sessions'}` : 'No active sessions',
       icon: Users,
       href: '/sessions',
       color: 'text-[#34C759]',

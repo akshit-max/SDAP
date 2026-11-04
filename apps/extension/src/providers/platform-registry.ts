@@ -148,8 +148,13 @@ platformRegistry.register({
   hideElementsCSS: [
     'button[aria-label="Show password" i]',
     'button[aria-label="Hide password" i]',
-    '#password',
-    'div:has(> input#password)'
+    'button[aria-label*="password" i]',
+    'button[data-eid*="password" i]',
+    '[data-eid*="password_toggle" i]',
+    '[data-eid*="show_password" i]',
+    '[data-eid*="hide_password" i]',
+    'button:has(svg[data-testid*="eye" i])',
+    'button:has(svg[data-testid*="visibility" i])',
   ],
   principalType: 'EMAIL',
   supportsDelegation: true,
@@ -239,8 +244,7 @@ platformRegistry.register({
   hideElementsCSS: [
     'button.js-password-button',
     'button[aria-controls="account_password"]',
-    '#account_password',
-    '.password-wrapper:has(#account_password)'
+    // Never hide #account_password itself: autofill skips zero-size fields. Reveal is blocked in autofill.ts.
   ],
   capabilityRestrictions: {
     'shopify.orders': {
@@ -290,10 +294,14 @@ platformRegistry.register({
     submitSelector: 'button[type="submit"], input[type="submit"], button[data-testid="login-button"]',
   },
   hideElementsCSS: [
-    'input[data-testid="login-password-input"]',
-    '#old-password',
-    'div:has(> input[data-testid="login-password-input"])',
-    'div:has(> input#old-password)'
+    // Login password (Stripe gives it id="old-password") stays visible so autofill can fill it;
+    // only its show/hide toggle is hidden. Reveal is blocked by the type lock in autofill.ts.
+    'button[aria-label="Show password" i]',
+    'button[aria-label="Hide password" i]',
+    // Stripe's eye toggle: hashed classes, so match its fixed icon path; scoped to password forms
+    // so the same eye icon elsewhere in the dashboard is untouched.
+    'form:has(input[type="password"]) button:has(svg path[d^="M8 6a2 2 0 1 0 0 4"])',
+    'form:has(input[type="password"]) svg:has(path[d^="M8 6a2 2 0 1 0 0 4"])',
   ],
   otp: {
     type: 'EMAIL',
@@ -380,10 +388,8 @@ platformRegistry.register({
     submitSelector: 'button#pin-submit-button, button[type="submit"]',
   },
   hideElementsCSS: [
-    'input[type="password"][autocomplete="current-password"]',
     'button[aria-label="Show password" i]',
     'button:has(svg#visibility-small)',
-    'div:has(> input[type="password"][autocomplete="current-password"])',
     '#password-visibility-toggle',
     '.button__password-visibility',
     'span#password-visibility-toggle',
@@ -394,9 +400,7 @@ platformRegistry.register({
     'input[name="newPassword"]',
     'div:has(> input#newPassword)',
     'div:has(> #newPassword)',
-    'div:has(> #password-visibility-toggle)',
     '.form__input--floating:has(#newPassword)',
-    '.form__input--floating:has(#password-visibility-toggle)',
     '.form__input--floating:has(input[name="newPassword"])'
   ],
   capabilityRestrictions: {

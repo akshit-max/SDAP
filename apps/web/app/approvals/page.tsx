@@ -9,6 +9,25 @@ import { ApprovalRequestStatus } from '@repo/types';
 import { useAuth } from '../../lib/auth/AuthContext';
 import { useToast } from '../../components/common/Toast';
 import { formatDate, formatDateTime } from '../../lib/formatters';
+import { PLATFORM_LABELS } from '../../lib/api/billing';
+
+// Platform label (e.g. "GitHub") and the secret/vault name the user asked for.
+function platformParts(request: { platformId?: string | null; resourceName?: string | null }) {
+  const platform = request.platformId ? (PLATFORM_LABELS as Record<string, string>)[request.platformId] ?? request.platformId : null;
+  const name = request.resourceName?.split('_deleted_')[0] || null;
+  const secondary = platform && name && name.toLowerCase() !== platform.toLowerCase() ? name : null;
+  return { primary: platform || name || 'Unknown', secondary };
+}
+
+function PlatformCell({ request }: { request: { platformId?: string | null; resourceName?: string | null } }) {
+  const { primary, secondary } = platformParts(request);
+  return (
+    <td className="px-6 py-4 whitespace-nowrap">
+      <p className="text-sm font-medium text-zinc-900 dark:text-white">{primary}</p>
+      {secondary && <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{secondary}</p>}
+    </td>
+  );
+}
 
 export default function ApprovalsPage() {
   const { organization, user } = useAuth();
@@ -160,6 +179,9 @@ export default function ApprovalsPage() {
                           Requester & Scope
                         </th>
                         <th scope="col" className="px-6 py-3.5 text-left text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                          Platform
+                        </th>
+                        <th scope="col" className="px-6 py-3.5 text-left text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                           Request Details
                         </th>
                         <th scope="col" className="px-6 py-3.5 text-left text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
@@ -181,6 +203,7 @@ export default function ApprovalsPage() {
                               Scope: <span className="font-medium text-zinc-800 dark:text-zinc-200">{String(request.requestPayload?.scope || 'SECRET').replace('_', ' ')}</span>
                             </p>
                           </td>
+                          <PlatformCell request={request} />
                           <td className="px-6 py-4">
                             <div className="text-xs text-zinc-500 dark:text-zinc-400 space-y-1">
                               {request.requestPayload?.expiresAt && (
@@ -280,6 +303,9 @@ export default function ApprovalsPage() {
                         Request Type
                       </th>
                       <th scope="col" className="px-6 py-3.5 text-left text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                        Platform
+                      </th>
+                      <th scope="col" className="px-6 py-3.5 text-left text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                         Scope & Expiry
                       </th>
                       <th scope="col" className="px-6 py-3.5 text-left text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
@@ -303,6 +329,7 @@ export default function ApprovalsPage() {
                             </p>
                           )}
                         </td>
+                        <PlatformCell request={request} />
                         <td className="px-6 py-4 text-xs text-zinc-500 dark:text-zinc-400">
                           {request.requestPayload?.scope && (
                             <div>Scope: <span className="font-medium text-zinc-800 dark:text-zinc-200">{String(request.requestPayload.scope).replace('_', ' ')}</span></div>
