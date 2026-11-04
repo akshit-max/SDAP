@@ -480,6 +480,21 @@ function fillField(
 
 
 
+/** Matches `selector` inside every open shadow root on the page (nested included). */
+function queryShadowRoots<T extends Element = HTMLElement>(selector: string): T[] {
+  const out: T[] = [];
+  const walk = (root: Document | ShadowRoot) => {
+    for (const el of Array.from(root.querySelectorAll('*'))) {
+      if (el.shadowRoot) {
+        out.push(...Array.from(el.shadowRoot.querySelectorAll<T>(selector)));
+        walk(el.shadowRoot);
+      }
+    }
+  };
+  walk(document);
+  return out;
+}
+
 /**
  * Finds the submit / primary action button on the page.
  * Tries the CSS selector first. If that doesn't match, falls back to finding
@@ -766,7 +781,24 @@ async function fetchAndFillOtp(
     // Multi-box OTP (e.g. Razorpay 6-digit): React needs to process ALL digit events
     // before it re-enables the Verify button. Use a longer delay and re-query at
     // click time so we get the post-React-update state of the button.
-    if (submitSelector) {
+    if (submitSelector && platform === 'SHOPIFY') {
+      // Shopify's Verify <button part="button"> lives in a web component's shadow root,
+      // so document.querySelector can't reach it. Search shadow roots too, and retry
+      // while the button renders / re-enables (10 × 150ms).
+      let attempts = 0;
+      const form = otpField.form;
+      const tryClick = () => {
+        const btn = [
+          ...Array.from(document.querySelectorAll<HTMLButtonElement>(submitSelector)),
+          ...queryShadowRoots<HTMLButtonElement>(submitSelector),
+        ].find(b => isOtpFieldVisible(b as unknown as HTMLInputElement));
+        if (btn) btn.click();
+        else if (++attempts < 10) setTimeout(tryClick, 150);
+        // Closed shadow root → button unreachable; submit the OTP form directly.
+        else if (form?.isConnected) form.requestSubmit();
+      };
+      setTimeout(tryClick, 120);
+    } else if (submitSelector) {
       const isMultiBox = allOtpBoxes.length > 1;
       const submitDelay = isMultiBox ? 700 : 120;
       setTimeout(() => {
