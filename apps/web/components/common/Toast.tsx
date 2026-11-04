@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useCallback } from 'react';
-import { X, CheckCircle2, AlertCircle, AlertTriangle, Info } from 'lucide-react';
+import { X, Check, CheckCircle2, AlertCircle, AlertTriangle, Info } from 'lucide-react';
 
 import { usePathname } from 'next/navigation';
 
@@ -21,10 +21,11 @@ const ToastContext = React.createContext<ToastContextType>({ toast: () => {} });
 
 // Dashboard toast theme — matches dashboard cards (#1C1C1E / #E5E5EA surfaces)
 const dashboardConfig = {
-  success: { icon: CheckCircle2, bar: 'bg-emerald-500', chip: 'bg-emerald-500/10 dark:bg-emerald-400/10 ring-emerald-500/20', icon_color: 'text-emerald-600 dark:text-emerald-400', label: 'Success' },
-  error: { icon: AlertCircle, bar: 'bg-rose-500', chip: 'bg-rose-500/10 dark:bg-rose-400/10 ring-rose-500/20', icon_color: 'text-rose-600 dark:text-rose-400', label: 'Error' },
-  warning: { icon: AlertTriangle, bar: 'bg-amber-500', chip: 'bg-amber-500/10 dark:bg-amber-400/10 ring-amber-500/20', icon_color: 'text-amber-600 dark:text-amber-400', label: 'Warning' },
-  info: { icon: Info, bar: 'bg-[#0071E3]', chip: 'bg-[#0071E3]/10 dark:bg-[#2997FF]/10 ring-[#0071E3]/20', icon_color: 'text-[#0071E3] dark:text-[#2997FF]', label: 'Info' },
+  // Apple system colours, same as the dashboard KPI cards and badges. Solid icon disc, white glyph.
+  success: { icon: Check, disc: 'bg-[#34C759]', label: 'Success' },
+  error: { icon: X, disc: 'bg-[#FF3B30] dark:bg-[#FF453A]', label: 'Error' },
+  warning: { icon: AlertTriangle, disc: 'bg-[#FF9500] dark:bg-[#FF9F0A]', label: 'Warning' },
+  info: { icon: Info, disc: 'bg-[#0071E3] dark:bg-[#0A84FF]', label: 'Info' },
 };
 
 // Outer page toast theme: high-contrast deep sapphire frosted glass with sharp status accents
@@ -137,48 +138,52 @@ function OuterToast({ id, type, message, onDismiss }: ToastProps) {
  * Standard Dashboard Toast.
  * Preserves the exact light & dark dashboard theme with zero regression.
  */
+const DASHBOARD_TOAST_MS = 4500;
+
 function DashboardToast({ id, type, message, onDismiss }: ToastProps) {
   const c = dashboardConfig[type];
   const Icon = c.icon;
+  const [paused, setPaused] = React.useState(false);
+  const remaining = React.useRef(DASHBOARD_TOAST_MS);
 
+  // Auto-dismiss; hovering pauses the countdown and resumes with the time that was left.
   useEffect(() => {
-    const timer = setTimeout(() => onDismiss(id), 4500);
-    return () => clearTimeout(timer);
-  }, [id, onDismiss]);
+    if (paused) return;
+    const started = Date.now();
+    const timer = setTimeout(() => onDismiss(id), remaining.current);
+    return () => {
+      clearTimeout(timer);
+      remaining.current -= Date.now() - started;
+    };
+  }, [paused, id, onDismiss]);
 
   return (
     <div
-      className="group pointer-events-auto relative flex items-center gap-3 w-[372px] max-w-[calc(100vw-2rem)] pl-4 pr-3 py-3.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#2C2C2E] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_32px_-8px_rgba(0,0,0,0.14)] dark:shadow-[0_1px_0_rgba(255,255,255,0.04)_inset,0_16px_40px_-10px_rgba(0,0,0,0.75)] overflow-hidden animate-in slide-in-from-bottom-3 fade-in duration-300 ease-out select-none"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      className="group pointer-events-auto flex items-center gap-3 min-w-[280px] max-w-[min(380px,calc(100vw-2rem))] pl-3 pr-1.5 py-2.5 rounded-xl bg-white dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#38383A] shadow-[0_2px_6px_rgba(0,0,0,0.04),0_12px_32px_-8px_rgba(0,0,0,0.16)] dark:shadow-[0_12px_32px_-8px_rgba(0,0,0,0.85)] animate-in slide-in-from-bottom-2 fade-in duration-200 ease-out select-none"
       role={type === 'error' ? 'alert' : 'status'}
     >
-      {/* Status accent */}
-      <span className={`absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full ${c.bar}`} aria-hidden />
+      <span className={`flex-shrink-0 w-6 h-6 rounded-full ${c.disc} flex items-center justify-center shadow-[inset_0_-1px_0_rgba(0,0,0,0.12)]`} aria-hidden>
+        <Icon className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+      </span>
 
-      <div className={`flex-shrink-0 w-9 h-9 rounded-xl ring-1 ring-inset ${c.chip} flex items-center justify-center`}>
-        <Icon className={`w-[18px] h-[18px] ${c.icon_color}`} strokeWidth={2.2} />
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-semibold leading-5 tracking-tight text-[#1D1D1F] dark:text-[#F5F5F7]">
+      <div className="flex-1 min-w-0 py-0.5">
+        <p className="text-[13px] font-semibold leading-[18px] text-[#1D1D1F] dark:text-[#F5F5F7]">
           {c.label}
         </p>
-        <p className="text-[12.5px] leading-snug text-[#6E6E73] dark:text-[#98989D] break-words">
+        <p className="text-xs leading-4 text-[#86868B] dark:text-[#98989D] break-words">
           {message}
         </p>
       </div>
 
       <button
         onClick={() => onDismiss(id)}
-        className="flex-shrink-0 self-start p-1.5 rounded-lg text-zinc-400 opacity-70 group-hover:opacity-100 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/10 transition-all"
+        className="flex-shrink-0 ml-1 p-1.5 rounded-lg text-[#AEAEB2] dark:text-[#636366] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] hover:bg-[#F5F5F7] dark:hover:bg-[#2C2C2E] transition-colors"
         aria-label="Dismiss notification"
       >
-        <X className="w-3.5 h-3.5" />
+        <X className="w-3.5 h-3.5" strokeWidth={2.25} />
       </button>
-
-      {/* Auto-dismiss progress bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-zinc-100 dark:bg-white/[0.04] overflow-hidden">
-        <div className={`h-full ${c.bar} opacity-60 animate-[shrink_4.5s_linear_forwards]`} />
-      </div>
     </div>
   );
 }
