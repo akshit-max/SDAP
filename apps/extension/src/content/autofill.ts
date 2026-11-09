@@ -410,6 +410,11 @@ async function handleAutofillRequest(): Promise<void> {
     // This is intentionally generic. No CAPTCHA-specific logic.
     // Architecture Preservation Directive: do not add captchaSelector or similar.
     if (config?.manualStepMessage) {
+      // Only platforms with a submitSelector (MCA) get the click: their CAPTCHA appears after Login.
+      if (fields.submitSelector) {
+        await new Promise(r => setTimeout(r, 200));
+        clickSubmitButton(fields.submitSelector);
+      }
       showToast(config.manualStepMessage);
       return;
     }

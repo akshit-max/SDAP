@@ -503,9 +503,11 @@ platformRegistry.register({
       'input[name="password"]',
       'input[id="password"]',
     ].join(', '),
-    // No submitSelector — manualStepMessage prevents auto-submit
+    // MCA asks for CAPTCHA in a popup only AFTER Login is clicked, so we click it.
+    // name is stable; the id contains an AEM-generated panel number that can change.
+    submitSelector: 'button[name="loginBtn"]',
   },
-  manualStepMessage: 'WithUs Vault: Secure session activated. Please resolve the CAPTCHA to proceed.',
+  manualStepMessage: 'WithUs Vault: Credentials filled. Please enter the CAPTCHA and click Submit.',
   capabilityRestrictions: {
     'mca.master_data': { hideElementsCSS: ['li.level-1:has(> a[href$="/mca/master-data.html"])'] },
     'mca.llp_efiling': { hideElementsCSS: ['li.level-1:has(> a[href$="/mca/llp-e-filling.html"])'] },
