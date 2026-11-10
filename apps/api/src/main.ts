@@ -73,20 +73,21 @@ async function bootstrap() {
       console.log(
         `[CORS DEBUG] origin="${origin}" cleanOrigin="${cleanOrigin}"`,
       );
+      // Security (F-001): exact-match only. Origin "null" and substring matches
+      // (smartgateway/juspay/hdfcbank/loca.lt) are NOT trusted with credentials.
+      // The HDFC return is a top-level navigation (form POST / redirect) and its
+      // webhook is server-to-server — neither needs CORS response headers.
       if (
         !origin ||
-        origin === 'null' || // HDFC form POST from HTTPS→HTTP sends literal string "null"
         origin.startsWith('chrome-extension://') ||
-        allowedOrigins.includes(cleanOrigin) ||
-        // HDFC SmartGateway redirects the browser back via form POST — allow both UAT and prod domains
-        cleanOrigin.includes('smartgateway') ||
-        cleanOrigin.includes('juspay') ||
-        cleanOrigin.includes('hdfcbank') ||
-        cleanOrigin.includes('loca.lt')
+        allowedOrigins.includes(cleanOrigin)
       ) {
         callback(null, true);
       } else {
-        callback(new Error('Not allowed by CORS'));
+        // Send no CORS headers but still process the request, so navigations such
+        // as the HDFC return (which may carry Origin: null) keep reaching their
+        // controller. Browsers block scripts on other origins from reading the response.
+        callback(null, false);
       }
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

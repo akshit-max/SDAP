@@ -6,7 +6,7 @@ import { PolicyPageLayout } from '../../components/layout/PolicyPageLayout';
 
 export default function SecurityPage() {
   return (
-    <PolicyPageLayout title="Security & Data Protection" lastUpdated="August 24, 2026" badge="ENTERPRISE SECURITY">
+    <PolicyPageLayout title="Security & Data Protection" lastUpdated="November 10, 2026" badge="ENTERPRISE SECURITY">
       {/* Section 1 */}
       <section className="space-y-4">
         <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
@@ -29,13 +29,13 @@ export default function SecurityPage() {
             Sensitive credential secrets managed within the WithUs Vault are encrypted using industry-standard <strong className="text-white">AES-256-GCM</strong> authenticated encryption prior to resting in our secure databases.
           </p>
           <div className="p-4 bg-white/[0.08] border border-white/20 rounded-2xl">
-            <strong className="text-white block mb-1">Zero Raw Credential Exposure</strong>
+            <strong className="text-white block mb-1">No Credential Storage in the Browser</strong>
             <p className="text-white/80">
-              Browser extension autofill operates through encrypted channels with memory wiped clean immediately upon session handoff or OTP verification completion.
+              For an authorized autofill, the browser extension receives the credential over HTTPS, enters it into the login form, and does not save it to browser or extension storage.
             </p>
           </div>
           <p>
-            Data transmission between your browser, the extension, and our services is strictly enforced over modern TLS 1.3 / HTTPS cipher suites.
+            Data transmission between your browser, the extension, and our services takes place over encrypted HTTPS (TLS) connections.
           </p>
         </div>
       </section>
@@ -51,14 +51,14 @@ export default function SecurityPage() {
             <span className="w-1.5 h-1.5 rounded-full bg-sky-300 mt-2.5 flex-shrink-0" />
             <div>
               <strong className="text-white block mb-0.5">Session Security</strong>
-              Authentication sessions utilize secure, HTTP-only cookies preventing client-side script injection attacks, configured with SameSite and strict domain pinning.
+              Web authentication sessions use Secure, HTTP-only cookies, so session tokens cannot be read by page scripts.
             </div>
           </li>
           <li className="flex gap-3 items-start">
             <span className="w-1.5 h-1.5 rounded-full bg-sky-300 mt-2.5 flex-shrink-0" />
             <div>
               <strong className="text-white block mb-0.5">Role-Based Access Control (RBAC)</strong>
-              Access to credentials and workspace settings is strictly governed by granular user roles (Owner, Admin, Member, Delegate).
+              Access to credentials and workspace settings is governed by user roles (Owner, Admin, Member) and time-limited delegated access sessions.
             </div>
           </li>
           <li className="flex gap-3 items-start">
@@ -75,10 +75,10 @@ export default function SecurityPage() {
       <section className="space-y-4">
         <h2 className="text-lg sm:text-xl font-medium text-white flex items-center gap-2.5 pb-3 border-b border-white/20">
           <Search className="w-5 h-5 text-sky-300" />
-          <span>4. Immutable Audit Logging</span>
+          <span>4. Audit Logging</span>
         </h2>
         <p className="text-sm sm:text-[15px] text-white/90 leading-relaxed font-normal">
-          WithUs maintains immutable, tamper-evident audit records for every authentication attempt, credential autofill, session launch, and administrative policy change. Logs capture the workspace ID, actor ID, action type, platform resource metadata, IP fingerprint, and exact timestamp.
+          WithUs records audit events for credential creation, updates and deletion, successful credential access (including browser extension autofill), delegated session creation, revocation and expiry, and approval decisions. Each record captures the workspace ID, actor ID, action type, affected resource, and timestamp.
         </p>
       </section>
 
@@ -93,7 +93,7 @@ export default function SecurityPage() {
             <span className="w-1.5 h-1.5 rounded-full bg-sky-300 mt-2.5 flex-shrink-0" />
             <div>
               <strong className="text-white block mb-0.5">Logical Data Separation</strong>
-              Every organization operates within isolated logical boundaries, cryptographically segmented to prevent multi-tenant data cross-contamination.
+              Every organization operates within isolated logical boundaries enforced by access checks, and each encrypted credential is cryptographically bound to its own organization.
             </div>
           </li>
           <li className="flex gap-3 items-start">
@@ -113,7 +113,7 @@ export default function SecurityPage() {
           <span>6. Monitoring &amp; Incident Response</span>
         </h2>
         <p className="text-sm sm:text-[15px] text-white/90 leading-relaxed font-normal">
-          Our cloud infrastructure is monitored 24/7 with automated anomaly detection, rate limiting, and incident alerting. In the event of an infrastructure alert or suspected breach, automated containment protocols activate immediately.
+          Our services use request rate limiting and application error monitoring. Infrastructure alerts and suspected security incidents are investigated and addressed by our engineering team.
         </p>
       </section>
     </PolicyPageLayout>

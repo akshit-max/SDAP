@@ -1,4 +1,5 @@
 import {
+  NotFoundException,
   Controller,
   Get,
   Post,
@@ -53,6 +54,7 @@ export class SecretsController {
     @Request() req: RequestWithUser,
     @Body(new ZodValidationPipe(CreateSecretSchema)) dto: CreateSecretDto,
   ) {
+    await this.assertVaultInOrg(orgId, vaultId);
     return this.secretService.createSecret({
       vaultId,
       name: dto.name,
@@ -67,15 +69,42 @@ export class SecretsController {
   @Get()
   @ApiOperation({ summary: 'List secrets in a vault (metadata only)' })
   @RequirePermissions(Permission.SECRET_READ)
-  async getSecrets(@Param('vaultId') vaultId: string) {
+  async getSecrets(
+    @Param('orgId') orgId: string,
+    @Param('vaultId') vaultId: string,
+  ) {
+    await this.assertVaultInOrg(orgId, vaultId);
     return this.secretService.getSecretsByVaultId(vaultId);
   }
 
   @Get(':secretId')
   @ApiOperation({ summary: 'Get secret details (metadata only)' })
   @RequirePermissions(Permission.SECRET_READ)
-  async getSecretById(@Param('secretId') secretId: string) {
-    return this.secretService.getSecretMetadataById(secretId);
+  async getSecretById(
+    @Param('orgId') orgId: string,
+    @Param('vaultId') vaultId: string,
+    @Param('secretId') secretId: string,
+  ) {
+    await this.assertVaultInOrg(orgId, vaultId);
+    const secret = await this.secretService.getSecretMetadataById(secretId);
+    if (secret.vaultId !== vaultId) {
+      throw new NotFoundException('Secret not found');
+    }
+    return secret;
+  }
+
+  /**
+   * Security (F-004): PermissionsGuard only proves membership of :orgId, so the
+   * :vaultId in the URL must be checked to belong to that org (tenant isolation).
+   */
+  private async assertVaultInOrg(orgId: string, vaultId: string) {
+    const vault = await this.prisma.vault.findFirst({
+      where: { id: vaultId, organizationId: orgId },
+      select: { id: true },
+    });
+    if (!vault) {
+      throw new NotFoundException('Vault not found');
+    }
   }
 
   @Post(':secretId/reveal')

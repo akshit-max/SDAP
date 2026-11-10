@@ -572,6 +572,23 @@ export class SessionsService {
     return updated;
   }
 
+  /**
+   * Security (F-003): /reveal and /launch carry no @RequirePermissions, so the membership
+   * guard never runs. A grantee removed from the org (removeMember keeps sessions ACTIVE)
+   * must not keep retrieving credentials through an old delegated session.
+   */
+  private async assertActiveMember(organizationId: string, userId: string) {
+    const membership = await this.prisma.organizationMember.findUnique({
+      where: { organizationId_userId: { organizationId, userId } },
+      select: { removedAt: true },
+    });
+    if (!membership || membership.removedAt !== null) {
+      throw new ForbiddenException(
+        'You are no longer a member of this organization.',
+      );
+    }
+  }
+
   async revealSecretViaSession(
     organizationId: string,
     sessionId: string,
@@ -589,6 +606,7 @@ export class SessionsService {
     // validateSessionForReveal checks: granteeId, status, expiry, maxReveals,
     // AND permission === REVEAL. EXTENSION sessions are rejected here with 403.
     this.validationService.validateSessionForReveal(session, granteeId);
+    await this.assertActiveMember(organizationId, granteeId);
 
     if (session.scope !== 'SECRET') {
       throw new BadRequestException(
@@ -675,6 +693,7 @@ export class SessionsService {
     // validateSessionForUse enforces: granteeId match, ACTIVE status, expiry, maxReveals.
     // It does NOT check permission — both EXTENSION and REVEAL sessions are valid for autofill.
     this.validationService.validateSessionForUse(session, granteeId);
+    await this.assertActiveMember(organizationId, granteeId);
 
     if (session.scope !== 'SECRET') {
       throw new BadRequestException(

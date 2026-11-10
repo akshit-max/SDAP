@@ -108,15 +108,16 @@ describe('EncryptionService', () => {
       expect(decrypted.equals(plaintext)).toBe(true);
     });
 
-    it('should generate a valid fingerprint for the plaintext', () => {
+    it('should not derive any fingerprint from the plaintext (F-002)', () => {
       const plaintext = Buffer.from('SuperSecretPassword123');
       const encrypted = service.encryptPayload(plaintext, dek, mockContext);
 
-      const expectedHash = crypto
+      const plaintextHash = crypto
         .createHash('sha256')
         .update(plaintext)
         .digest('hex');
-      expect(encrypted.fingerprint).toBe(expectedHash);
+      expect(encrypted.fingerprint).toBe('');
+      expect(encrypted.fingerprint).not.toBe(plaintextHash);
     });
 
     it('should fail decryption if DEK is wrong', () => {

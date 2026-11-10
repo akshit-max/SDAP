@@ -32,7 +32,13 @@ export function csrfMiddleware(
   const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
   const isExtensionWithBearer =
     req.header('X-Extension-Client') === 'withus-mv3' &&
-    !!req.header('Authorization');
+    (req.header('Authorization') ?? '').startsWith('Bearer ');
+  if (isExtensionWithBearer && req.cookies) {
+    // Security (F-001): CSRF is skipped here only because a Bearer token can't be
+    // forged cross-site, so this request must authenticate with that token — never
+    // with the sdap_token cookie (the JWT extractor reads the cookie first).
+    delete req.cookies['sdap_token'];
+  }
   const isAuthEndpoint =
     req.path.includes('/auth/login') ||
     req.path.includes('/auth/logout') ||

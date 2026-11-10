@@ -228,6 +228,16 @@ export class SessionsController {
     if (new Date(session.expiresAt) < new Date()) {
       return { error: 'Session has expired.' };
     }
+    // Security (F-003): a removed member must not keep using an old delegated session.
+    const membership = await this.prisma.organizationMember.findUnique({
+      where: {
+        organizationId_userId: { organizationId: orgId, userId: req.user.id },
+      },
+      select: { removedAt: true },
+    });
+    if (!membership || membership.removedAt !== null) {
+      return { error: 'You are no longer a member of this organization.' };
+    }
 
     // ── Resolve platform from trusted session data — the request body cannot override it ──
     // Plain vault sessions have no integrationProvider; their platform is the vault's platformId.

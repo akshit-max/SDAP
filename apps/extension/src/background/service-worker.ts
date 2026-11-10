@@ -266,7 +266,7 @@ async function handleMessage(
       } else if (result.plaintext.includes(' ')) {
         // Space-separated: split on FIRST space only.
         // Treat first token as username if it looks like email/username (no spaces, has @).
-        // E.g. "akshitaksir@gmail.com Akshitbhan@2005" → user="akshitaksir@gmail.com", pass="Akshitbhan@2005"
+        // E.g. "user@example.com examplePassword" → user="user@example.com", pass="examplePassword"
         const spaceIdx = result.plaintext.indexOf(' ');
         const firstToken = result.plaintext.slice(0, spaceIdx);
         const rest = result.plaintext.slice(spaceIdx + 1);

@@ -107,7 +107,9 @@ export class EncryptionService {
       ciphertext,
       iv,
       authTag,
-      fingerprint: this.computeFingerprint(plaintext),
+      // Security (F-002): never derive a hash from the plaintext credential — an unsalted
+      // SHA-256 enables offline guessing from a DB copy. Column is non-nullable, so store ''.
+      fingerprint: '',
     };
   }
 
@@ -174,7 +176,9 @@ export class EncryptionService {
     }
 
     if (dek.length !== 32) {
-      throw new InternalServerErrorException('Invalid DEK length after decryption');
+      throw new InternalServerErrorException(
+        'Invalid DEK length after decryption',
+      );
     }
 
     const newIv = crypto.randomBytes(12);

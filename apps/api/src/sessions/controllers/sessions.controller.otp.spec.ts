@@ -40,9 +40,16 @@ describe('SessionsController.fetchOtp — platform binding', () => {
     };
   }
 
-  function setup(sess: any, vaultPlatformId: string | null) {
+  function setup(
+    sess: any,
+    vaultPlatformId: string | null,
+    membership: any = { removedAt: null },
+  ) {
     prisma = {
       delegatedSession: { findUnique: jest.fn().mockResolvedValue(sess) },
+      organizationMember: {
+        findUnique: jest.fn().mockResolvedValue(membership),
+      },
       secret: {
         findUnique: jest
           .fn()
@@ -129,4 +136,17 @@ describe('SessionsController.fetchOtp — platform binding', () => {
     ).resolves.toEqual({ error: 'You are not the grantee of this session.' });
     expect(prisma.secret.findUnique).not.toHaveBeenCalled();
   });
+
+  it.each([null, { removedAt: new Date() }])(
+    'F-003: refuses a grantee who is no longer an org member (%p), without touching Gmail',
+    async (membership) => {
+      setup(session(), 'VERCEL', membership);
+      await expect(
+        controller.fetchOtp('org-1', 'sess-1', req, { platform: 'VERCEL' }),
+      ).resolves.toEqual({
+        error: 'You are no longer a member of this organization.',
+      });
+      expect(gmailOtpService.fetchLatestOtp).not.toHaveBeenCalled();
+    },
+  );
 });
