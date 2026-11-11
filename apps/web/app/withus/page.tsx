@@ -1060,7 +1060,7 @@ export default function PublicWithusPage() {
               <div>
                 <h3 className="text-lg font-medium text-white">BUSINESS</h3>
                 <p className="text-xs text-neutral-400 mt-1">Advanced access control, health monitoring & unlimited admins.</p>
-                <div className="mt-6 text-3xl font-medium text-white">₹1,999 <span className="text-xs font-normal text-neutral-400">/ month (₹19,990/yr)</span></div>
+                <div className="mt-6 text-3xl font-medium text-white">₹999 <span className="text-xs font-normal text-neutral-400">/ month (₹9,990/yr)</span></div>
                 <ul className="mt-6 space-y-3.5 text-xs text-neutral-300">
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-white shrink-0" />

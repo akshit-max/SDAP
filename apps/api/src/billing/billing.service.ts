@@ -35,7 +35,7 @@ import * as crypto from 'crypto';
 // NEVER trust amounts from the client.
 const PLAN_BASE_PRICES: Record<string, Record<string, number | null>> = {
   PRO: { MONTHLY: 499, ANNUAL: 4990 },
-  BUSINESS: { MONTHLY: 1999, ANNUAL: 19990 },
+  BUSINESS: { MONTHLY: 999, ANNUAL: 9990 },
 };
 const INCLUDED_SEATS: Record<string, number> = { PRO: 5, BUSINESS: 15 };
 const EXTRA_USER_RATES: Record<string, Record<string, number | null>> = {

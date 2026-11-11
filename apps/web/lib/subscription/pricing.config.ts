@@ -12,7 +12,7 @@
  * CONFIRMED PRICING (as of client approval 2026-09-02):
  *   Free:     ₹0 / 2 users / any 2 of 10 platforms
  *   Pro:      ₹499/month | ₹4,990/year / 5 users / ₹50 extra/month | ₹500 extra/year
- *   Business: ₹1,999/month | ₹19,990/year / 15 users / ₹50 extra/month | annual extra TBD
+ *   Business: ₹999/month | ₹9,990/year / 15 users / ₹50 extra/month | annual extra TBD
  *
  * PENDING:
  *   businessAnnualExtraUserRate — client has NOT confirmed this value yet.
@@ -53,8 +53,8 @@ export const PRICING_CONFIG = {
   },
 
   BUSINESS: {
-    baseMonthly: 1999,
-    baseAnnual: 19990,
+    baseMonthly: 999,
+    baseAnnual: 9990,
     baseUsers: 15,
     /** ₹50 per additional user per month */
     extraUserMonthly: 50,

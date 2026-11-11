@@ -9,8 +9,8 @@
  *   PRO Monthly:  ₹499 + ₹50 × max(0, activeUsers − 5)
  *   PRO Annual:   ₹4,990 + ₹500 × max(0, activeUsers − 5)
  *
- *   BUSINESS Monthly:  ₹1,999 + ₹50 × max(0, activeUsers − 15)
- *   BUSINESS Annual:   ₹19,990 + TBD × max(0, activeUsers − 15)
+ *   BUSINESS Monthly:  ₹999 + ₹50 × max(0, activeUsers − 15)
+ *   BUSINESS Annual:   ₹9,990 + TBD × max(0, activeUsers − 15)
  *                      → returns null until extra rate is confirmed
  *
  *   FREE: always ₹0. Extra users not allowed.
@@ -156,8 +156,8 @@ export function formatAnnual(amount: number): string {
     8 users  → ₹4,990 + ₹500×3 = ₹6,490  ✓
 
   Business Monthly:
-    15 users → ₹1,999 + ₹50×0  = ₹1,999  ✓
-    16 users → ₹1,999 + ₹50×1  = ₹2,049  ✓
+    15 users → ₹999 + ₹50×0  = ₹999   ✓
+    16 users → ₹999 + ₹50×1  = ₹1,049 ✓
 
   Business Annual extra: null until confirmed  ✓
 */
