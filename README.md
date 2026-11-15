@@ -20,7 +20,7 @@ The primary engineering focus of this project is **Zero Raw Exposure** and **tam
 - [Capability Enforcement & UI Shielding System](#capability-enforcement--ui-shielding-system)
 - [Enterprise Billing & Reconciliation Engine](#enterprise-billing--reconciliation-engine)
 - [Security & Data Integrity](#security--data-integrity)
-- [Database Design & Performance Indexes](#database-design--performance-indexes)
+- [Database Design](#database-design)
 - [Project Structure](#project-structure)
 - [Installation & Local Development](#installation--local-development)
 - [Environment Variables](#environment-variables)
@@ -314,34 +314,158 @@ The billing subsystem (`apps/api/src/billing/`) manages subscription lifecycles 
 
 ---
 
-## Database Design & Performance Indexes
+## Database Design
 
-The data model is managed via Prisma ORM (`packages/db/prisma/schema.prisma`) on PostgreSQL:
+The data layer uses PostgreSQL managed through Prisma ORM (`packages/db/prisma/schema.prisma`).
 
+```mermaid
+erDiagram
+    Organization ||--o{ OrganizationMember : "has many (cascade delete)"
+    Organization ||--o{ Vault : "has many (cascade delete)"
+    Organization ||--o{ DelegatedSession : "has many (cascade delete)"
+    Organization ||--o| Subscription : "has one (1:1)"
+    Organization ||--o{ AuditEvent : "logs activity"
+    User ||--o{ OrganizationMember : "has many (cascade delete)"
+    User ||--o{ RefreshToken : "has many (cascade delete)"
+    User ||--o{ DelegatedSession : "grantor / grantee"
+    Vault ||--o{ Secret : "has many (cascade delete)"
+    Secret ||--o{ SecretVersion : "has many (cascade delete)"
+    Secret ||--o{ DelegatedSession : "authorizes target"
+    DelegatedSession ||--o{ ApprovalRequest : "originates from"
+    Subscription ||--o{ Payment : "has many"
+
+    Organization {
+        string id PK "uuid()"
+        string name
+        string slug UK "Unique"
+        json settings "Optional JSON"
+        boolean isActive "Default: true"
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    User {
+        string id PK "uuid()"
+        string email UK "Unique"
+        string fullName
+        string passwordHash "Argon2id"
+        boolean isActive "Default: true"
+        boolean isSuperAdmin "Platform Flag"
+        datetime lastLoginAt "Nullable"
+        datetime createdAt
+    }
+
+    OrganizationMember {
+        string id PK "uuid()"
+        string organizationId FK "Indexed"
+        string userId FK "Indexed"
+        string role "OWNER | ADMIN | MEMBER"
+        datetime joinedAt
+        datetime lastActiveAt "Nullable"
+    }
+
+    RefreshToken {
+        string id PK "uuid()"
+        string userId FK "Indexed"
+        string tokenHash UK "Unique hash"
+        string familyId "Indexed for reuse detection"
+        boolean isRevoked "Default: false"
+        datetime expiresAt
+    }
+
+    Vault {
+        string id PK "uuid()"
+        string organizationId FK "Indexed"
+        string name
+        string description "Optional"
+        string platformId "Nullable catalog link"
+        datetime createdAt
+    }
+
+    Secret {
+        string id PK "uuid()"
+        string vaultId FK "Indexed"
+        string name "Unique per vault"
+        string type "SecretType enum"
+        string status "ACTIVE | DISABLED | DELETED"
+        string encryptedDek "Wrapped under MEK"
+        datetime lastRevealedAt "Nullable"
+        int revealCount
+    }
+
+    SecretVersion {
+        string id PK "uuid()"
+        string secretId FK "Indexed"
+        int version "Unique per secret"
+        string ciphertext "AES-256-GCM"
+        string iv "96-bit CSPRNG"
+        string authTag "128-bit GCM Tag"
+        string algorithm "Default: AES-256-GCM"
+        datetime createdAt
+    }
+
+    DelegatedSession {
+        string id PK "uuid()"
+        string organizationId FK "Indexed"
+        string grantorId FK "User reference"
+        string granteeId FK "User reference"
+        string scope "VAULT | SECRET | INTEGRATION"
+        string resourceId "Target resource UUID"
+        string status "ACTIVE | REVOKED | EXPIRED"
+        datetime expiresAt "TTL window"
+        json capabilities "Module-level CSS rules"
+    }
+
+    ApprovalRequest {
+        string id PK "uuid()"
+        string organizationId FK "Indexed"
+        string requesterId FK "User reference"
+        string type "DELEGATED_SESSION"
+        json requestPayload "Session parameters"
+        string status "PENDING | APPROVED | REJECTED"
+        datetime createdAt
+    }
+
+    Subscription {
+        string id PK "uuid()"
+        string organizationId FK "Unique (1:1)"
+        string plan "FREE | PRO | BUSINESS"
+        string billingCycle "MONTHLY | ANNUAL"
+        string status "ACTIVE | PENDING | CANCELLED"
+        string hdfcMandateId "Nullable mandate ref"
+        int totalAmount "Calculated in INR"
+        datetime currentPeriodEnd "Renewal date"
+    }
+
+    Payment {
+        string id PK "uuid()"
+        string subscriptionId FK "Indexed"
+        string type "NEW_REGISTRATION | RECURRING"
+        string status "PENDING | SUCCESS | FAILED"
+        string hdfcOrderId "Unique order ref"
+        int amount "Captured in INR"
+        datetime createdAt
+    }
+
+    AuditEvent {
+        string id PK "uuid()"
+        string organizationId FK "Indexed"
+        string actorId FK "Nullable user reference"
+        string action "LOGIN | REVEAL | LAUNCH"
+        string resourceType "Target entity type"
+        string resourceId "Target entity UUID"
+        json metadata "Contextual payload"
+        datetime createdAt "Immutable timestamp"
+    }
 ```
-  +------------------+         +-----------------------+         +--------------------+
-  |       User       | 1 --- * |  OrganizationMember   | * --- 1 |    Organization    |
-  +------------------+         +-----------------------+         +--------------------+
-           |                                                                |
-           | 1                                                              | 1
-           *                                                                *
-  +------------------+                                           +--------------------+
-  |   RefreshToken   |                                           |       Vault        |
-  +------------------+                                           +--------------------+
-           |                                                                |
-           |                                                                | 1
-           v                                                                *
-  +------------------+         +-----------------------+         +--------------------+
-  | DelegatedSession | * --- 1 |     SecretVersion     | * --- 1 |       Secret       |
-  +------------------+         +-----------------------+         +--------------------+
-```
 
-### Critical Performance & Security Indexes
-- `RefreshToken`: `@@unique([tokenHash])`, `@@index([userId, familyId])` — Enables O(1) token rotation checks.
-- `Secret`: `@@index([vaultId, status])` — Accelerates vault listing and filtering operations.
-- `SecretVersion`: `@@index([secretId, version])` — Ensures rapid retrieval of active cryptographic versions.
-- `DelegatedSession`: `@@index([granteeId, status, expiresAt])`, `@@index([organizationId, status])` — Powers efficient session discovery and presence lookups.
-- `AuditEvent`: `@@index([organizationId, createdAt])`, `@@index([actorId, action])` — Speeds up paginated governance audit views.
+### Performance Indexes
+- `refresh_tokens`: `@@unique([tokenHash])`, `@@index([userId, familyId])`, `@@index([userId, isRevoked])` — Scopes token lifecycle and speeds up family invalidation checks.
+- `secrets`: `@@unique([vaultId, name])`, `@@index([vaultId, status])` — Accelerates vault listing and prevents duplicate secret naming.
+- `secret_versions`: `@@unique([secretId, version])`, `@@index([secretId])` — Speeds up active revision resolution and cryptographic payload lookups.
+- `delegated_sessions`: `@@index([granteeId, status])`, `@@index([organizationId, status])`, `@@index([resourceId])` — Powers extension domain matching and real-time dashboard queries.
+- `audit_events`: `@@index([organizationId, createdAt])`, `@@index([actorId, action])` — Speeds up paginated governance audit views and filterable event timelines.
+- `subscriptions`: `@@index([organizationId])`, `@@index([status])`, `@@index([currentPeriodEnd])` — Optimizes daily renewal sweeps (`BillingRenewalScheduler`).
 
 ---
 
