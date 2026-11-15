@@ -1,138 +1,121 @@
-# WITHUS — Secure Delegation & Credential Management Platform
+# WITHUS
 
-> **Enterprise-grade credential management, ephemeral delegated access, and automated OTP forwarding with Zero Raw Exposure.**
+**Enterprise-grade credential delegation, ephemeral session governance, and automated headless 2FA/OTP forwarding with Zero Raw Exposure.**
 
-WITHUS (formerly SDAP — Secure Delegation & Approval Platform) is a full-stack, enterprise-grade credential management, access delegation, and governance platform. Engineered as a high-performance monorepo utilizing **NestJS 11**, **Next.js 16 (App Router & Turbopack)**, **PostgreSQL (Neon Serverless)**, **Prisma ORM**, **Redis 7**, and a dedicated **Chrome Manifest V3 Extension**, WITHUS enables organizations, founders, and security teams to grant time-bounded, capability-restricted, and strictly audited access to third-party web portals (such as GitHub, Vercel, GoDaddy, Shopify, Stripe, Razorpay, MCA, GST, Udyam, LinkedIn, and Google Workspace) **without ever disclosing raw master passwords or sharing two-factor authentication (2FA/OTP) verification codes over insecure channels**.
+WITHUS is a secure credential management and delegated access platform designed for organizations, founders, and security teams. Built with **NestJS 11**, **Next.js 16 (App Router)**, **PostgreSQL (Neon Serverless)**, **Prisma ORM**, **Redis 7**, and a dedicated **Chrome Manifest V3 Extension**, the platform allows businesses to grant time-bounded, capability-restricted, and strictly audited access to third-party portals (such as GitHub, Vercel, GoDaddy, Shopify, Stripe, Razorpay, MCA, GST, Udyam, LinkedIn, and Google Workspace) **without ever disclosing raw master passwords or sharing two-factor authentication (2FA/OTP) verification codes over insecure channels**.
+
+The primary engineering focus of this project is **Zero Raw Exposure** and **tamper-evident multi-tenant isolation**. This includes prototype-level DOM injection, continuous input type-locking via `MutationObserver`, two-tier envelope encryption (AES-256-GCM) with contextual Additional Authenticated Data (AAD), automated headless Gmail OTP extraction, dynamic dashboard capability masking, and cryptographically verified HDFC SmartGateway subscription billing.
 
 ---
 
 ## Table of Contents
 
-- [Overview](#overview)
 - [Key Features](#key-features)
-  - [Zero Raw Exposure & Extension Autofill](#zero-raw-exposure--extension-autofill)
-  - [Multi-Tenant Vault & Secret Hierarchy](#multi-tenant-vault--secret-hierarchy)
-  - [Ephemeral Delegated Access & Dual-Control Approvals](#ephemeral-delegated-access--dual-control-approvals)
-  - [Automated Headless Gmail OTP Forwarding](#automated-headless-gmail-otp-forwarding)
-  - [Capability Enforcement & Dashboard UI Shielding](#capability-enforcement--dashboard-ui-shielding)
-  - [Programmatic Secret API & Webhooks](#programmatic-secret-api--webhooks)
-  - [Enterprise Billing & HDFC SmartGateway](#enterprise-billing--hdfc-smartgateway)
-  - [Platform Governance, Super Admin & Audit Trails](#platform-governance-super-admin--audit-trails)
-- [Tech Stack](#tech-stack)
-- [System Architecture](#system-architecture)
-- [Core Engineering Decisions](#core-engineering-decisions)
-- [Delegated Access & Lifecycle Workflow](#delegated-access--lifecycle-workflow)
-- [Supported Platforms Catalog](#supported-platforms-catalog)
+- [Screenshots](#screenshots)
+- [Technology Stack](#technology-stack)
+- [Architecture Overview](#architecture-overview)
+- [Cryptographic Vault & Envelope Encryption Pipeline](#cryptographic-vault--envelope-encryption-pipeline)
+- [Zero Raw Exposure DOM Shielding Engine](#zero-raw-exposure-dom-shielding-engine)
+- [Automated Headless Gmail OTP Extraction Pipeline](#automated-headless-gmail-otp-extraction-pipeline)
+- [Capability Enforcement & UI Shielding System](#capability-enforcement--ui-shielding-system)
+- [Enterprise Billing & Reconciliation Engine](#enterprise-billing--reconciliation-engine)
+- [Security & Data Integrity](#security--data-integrity)
+- [Database Design & Performance Indexes](#database-design--performance-indexes)
 - [Project Structure](#project-structure)
-- [Prerequisites & Installation](#prerequisites--installation)
+- [Installation & Local Development](#installation--local-development)
 - [Environment Variables](#environment-variables)
-- [Local Development](#local-development)
-- [Running Automated Tests](#running-automated-tests)
-- [Docker Setup](#docker-setup)
-- [Production Build & Deployment](#production-build--deployment)
-- [API Reference](#api-reference)
-- [Security Considerations](#security-considerations)
-- [Current Limitations](#current-limitations)
+- [Testing & Quality Assurance](#testing--quality-assurance)
+- [Engineering Decisions & Trade-offs](#engineering-decisions--trade-offs)
+- [Known Limitations](#known-limitations)
 - [Future Improvements](#future-improvements)
-- [Author & License](#author--license)
-
----
-
-## Overview
-
-In modern engineering and business operations, granting team members or contractors access to third-party dashboards introduces critical operational and security risks:
-
-1. **Credential Sprawl & Leakage:** Sharing passwords via Slack, WhatsApp, or standard password managers permanently puts raw credentials in the hands of individuals who eventually leave the company.
-2. **2FA / OTP Interruption:** When third-party portals enforce multi-factor authentication, founders or system administrators are continually interrupted to relay one-time verification codes.
-3. **Over-Privileged Access:** Traditional shared logins grant team members unfettered access to sensitive billing receipts, customer databases, API keys, or team permission settings.
-4. **Relocation & Extraction Attacks:** Untrusted browser content scripts or malicious extensions can read input values, copy credentials from the DOM, or capture credentials using eye-toggle password reveal controls.
-5. **Lack of Ephemerality:** Shared passwords lack automated expiration, making offboarding tedious, error-prone, and reliant on manual password rotation across dozens of websites.
-
-**WITHUS resolves these vulnerabilities through a multi-tier, zero-exposure access delegation framework:**
-
-- **Zero Raw Exposure:** Plaintext credentials never appear in DOM attributes or accessible extension variables. Inputs are injected using prototype-level value setters, protected against password reveal toggles, masked with `-webkit-text-security: disc`, and wiped from memory in milliseconds.
-- **Two-Tier Envelope Encryption (AES-256-GCM):** Secrets are encrypted using ephemeral Data Encryption Keys (DEKs), wrapped under a 256-bit Master Encryption Key (MEK) with contextual Additional Authenticated Data (AAD) bound to the organization and secret hierarchy.
-- **Automated OTP Streaming:** Dedicated OAuth integration with Google Workspace reads incoming 2FA verification emails in real time, extracts provider-specific security tokens via regex patterns, and forwards them directly to active delegated sessions.
-- **Capability Enforcer:** Dynamic CSS rules and DOM guards injected into third-party dashboards prevent delegated operators from navigating to billing, team member management, or account deletion screens.
+- [License](#license)
 
 ---
 
 ## Key Features
 
-### Zero Raw Exposure & Extension Autofill
-- **Prototype Setter Injection:** Bypasses framework synthetic event traps (React, Vue, Angular) by dispatching native DOM `input` and `change` events directly on `HTMLInputElement.prototype`.
-- **Password Reveal Interception:** Overrides site eye-toggle icons, keyboard inspect shortcuts, and CSS pseudo-elements (`::-ms-reveal`). Active `MutationObserver` instances instantly flip any attempted `type="text"` tamper back to `type="password"`.
-- **Visual Shielding:** Enforces `-webkit-text-security: disc !important; user-select: none !important;` to block screenshot tools and shoulder surfing.
-- **Memory Purging:** In-flight plaintext credentials exist in extension memory only for the duration of the autofill operation (under 50 milliseconds) and are zeroed immediately after submission.
-- **Shadow DOM Traversal:** Recursively penetrates open Shadow DOM roots (e.g., Shopify web components) to find dynamically nested username and password fields.
+### 1. Zero Raw Exposure Form Injection
+- Evaluates target login forms using declarative platform selectors and injects credentials using prototype-level property descriptor setters (`HTMLInputElement.prototype`).
+- Bypasses framework synthetic event traps (React, Vue, Angular) by dispatching native DOM `input` and `change` events directly.
+- Plaintext credentials exist in extension memory only for the duration of the autofill operation (under 50 milliseconds) and are zeroed immediately after submission.
+- Recursively penetrates open Shadow DOM roots (e.g., Shopify web components) to locate deeply nested input fields.
 
-### Multi-Tenant Vault & Secret Hierarchy
-- **Organization-Scoped Boundaries:** Secrets are partitioned into logical, isolated vaults with strict role-based access control (`OWNER`, `ADMIN`, `MEMBER`).
-- **Platform Association:** Vaults can be linked directly to catalog platforms (e.g., `GITHUB`, `VERCEL`, `STRIPE`) or configured as generic vaults for arbitrary credentials.
-- **Secret Versioning:** Every credential update creates a new immutable `SecretVersion` record with fresh cryptographic IVs and authentication tags, preserving audit history while keeping previous revisions encrypted.
-- **Granular Secret Types:** Supports `PASSWORD`, `API_KEY`, `TOKEN`, `SSH_KEY`, `CERTIFICATE`, `OAUTH`, `COOKIE`, `TEXT`, and `JSON`.
+### 2. Password Reveal Interception & DOM Shielding
+- Active `MutationObserver` instances continuously monitor password input fields. Any script or user action attempting to mutate `type="password"` to `type="text"` is instantly flipped back to `type="password"`.
+- Bounding-box proximity scanning identifies and hides third-party eye-toggle reveal buttons (both SVG icons and custom interactive elements).
+- Injects high-specificity CSS (`-webkit-text-security: disc !important; user-select: none !important;`) to neutralize screen-recording and shoulder-surfing risks.
 
-### Ephemeral Delegated Access & Dual-Control Approvals
-- **Time-Bounded Sessions:** Delegated access is issued with an explicit Time-To-Live (TTL). When the session window lapses, session tokens expire automatically across the platform.
-- **Dual-Control Approval Pipeline:** Members submit access requests with business justification; owners or admins review, approve, or reject them with mandatory audit logging.
-- **Cross-Organization Delegation:** Sessions can be safely delegated to external contractors (grantees outside the grantor's organization), accessible via `/sessions/incoming`.
-- **Instant Revocation & Offboarding:** Platform administrators can terminate active sessions immediately or offboard members in a single click, invalidating tokens across both the backend and extension.
+### 3. Two-Tier Envelope Encryption (AES-256-GCM + Contextual AAD)
+- Implements two-tier cryptographic key segregation: unique 256-bit symmetric Data Encryption Keys (DEKs) are generated per secret version via `crypto.randomBytes(32)` and wrapped under a 256-bit Master Encryption Key (MEK).
+- Additional Authenticated Data (AAD) is cryptographically bound to ciphertext during encryption using the format `${orgId}:${vaultId}:${secretId}:${version}`. Any cross-tenant relocation attack immediately causes authentication tag verification to fail.
+- Fully eliminates plaintext hash storage (`fingerprint: ''`), ensuring offline dictionary attacks cannot be mounted against database copies (Security Remediation F-002).
 
-### Automated Headless Gmail OTP Forwarding
-- **Server-Side Mailbox Listener:** Connects via Google OAuth 2.0 to scan incoming authentication emails without exposing the owner's mailbox to team members.
-- **Heuristic Pattern Matching:** Pre-compiled regex extractors (`otp-patterns.ts`) recognize verification codes from Stripe, Razorpay, GitHub, GoDaddy, Shopify, LinkedIn, Vercel, and Google.
-- **Safe Extraction Window:** Enforces a timestamp boundary (`receivedAfter >= loginStartTime`) to prevent stale or historic OTP codes from being fetched.
-- **Automated Fill:** Extracted OTPs are transmitted over encrypted TLS channels directly to the extension service worker and autofilled into the 2FA prompt.
+### 4. Ephemeral Delegated Access & Dual Approvals
+- Grants time-limited, revocable session tokens (`DelegatedSession`) configured with explicit Time-To-Live (TTL) expiration timestamps.
+- Dual-control approval workflow: team members request platform access with business justification, and vault owners/admins review, approve, or reject requests with mandatory audit logging.
+- Cross-organization delegation support allows granting ephemeral sessions to external contractors without adding them to internal organization vaults (`/sessions/incoming`).
+- Immediate administrative revocation invalidates session tokens across the backend and extension in real time.
 
-### Capability Enforcement & Dashboard UI Shielding
-- **Client-Side Element Redaction:** Injects hardened, high-priority CSS rules into host web pages to hide sensitive UI elements:
-  - Financial dashboards, billing tabs, and invoice download buttons.
-  - Team management, invite links, and permission selectors.
-  - Secret keys, API tokens, and credential export options.
-- **DOM Tamper Trapping:** Prevents operators from using browser DevTools to remove hiding styles or inspect underlying form values.
+### 5. Automated Headless Gmail OTP Extraction
+- Connects securely via Google OAuth 2.0 to scan incoming authentication emails without exposing the owner's inbox to delegated users.
+- An ordered regex pattern registry (`otp-patterns.ts`) extracts 4- to 10-digit 2FA codes for 11+ providers (Stripe, Razorpay, GitHub, GoDaddy, Shopify, LinkedIn, Vercel, Google).
+- Enforces a strict timestamp boundary (`receivedAfter >= loginStartTime`) to prevent historical verification codes from being processed.
+- Automatically streams extracted OTPs to the Chrome extension service worker to complete two-factor authentication prompts without manual human relay.
 
-### Programmatic Secret API & Webhooks
-- **Machine-to-Machine Secret Access:** Scoped programmatic access via `ApiKeyGuard` (`wk_live_...` prefix) for automated CI/CD deployment pipelines.
-- **Audited Reveals:** Programmatic secret access requires a mandatory `reason` parameter and generates an immutable audit event.
-- **Outgoing Webhooks:** Organizations can subscribe to lifecycle webhooks (`secret.created`, `secret.revealed`, `session.created`, `session.revoked`) with HMAC signatures.
+### 6. Capability Enforcement & Dashboard UI Shielding
+- Injects hardened CSS rules into third-party dashboards to redact sensitive administrative pages based on session capability configurations.
+- Hides billing tabs, invoice downloads, team member settings, API keys, and account deletion buttons on target platforms (GitHub, Vercel, Stripe, Razorpay, GoDaddy, Shopify).
+- Employs DOM tamper traps to prevent delegated operators from removing redaction styles via browser DevTools.
 
-### Enterprise Billing & HDFC SmartGateway
-- **HDFC SmartGateway (Juspay) Integration:** Cryptographically verified HMAC-SHA256 webhooks, server-side return URL handling, and automated mandate registration.
-- **Flexible Subscription Tiers:**
-  - **Free Tier (₹0):** Up to 2 team members, 2 platform integrations, 15-day platform change cooldown.
-  - **Pro Tier (₹499/month | ₹4,990/year):** Up to 5 team members, all 11 supported platforms, extra seats at ₹50/user/month (₹500/year).
-  - **Business Tier (₹999/month | ₹9,990/year):** Up to 15 team members, all 11 supported platforms, capability-level UI element masking, extra seats at ₹50/user/month.
-- **Automated Schedulers:**
-  - `BillingRenewalScheduler`: Automated daily renewal sweep for recurring mandates.
-  - `BillingReconciliationScheduler`: Automated reconciliation job comparing internal payment states with HDFC SmartGateway APIs to resolve dropped checkout sessions.
+### 7. Enterprise Billing & HDFC SmartGateway Integration
+- Built on HDFC Bank SmartGateway (Juspay API) with cryptographically verified HMAC-SHA256 webhook signatures (`HDFC_RESPONSE_KEY`).
+- Server-side authoritative seat calculations (Free ₹0, Pro ₹499/mo, Business ₹999/mo with ₹50/user/mo extra seat expansion).
+- Automated schedulers: `BillingRenewalScheduler` executes daily recurring mandate sweeps, and `BillingReconciliationScheduler` automatically reconciles pending checkout orders against gateway records.
 
-### Platform Governance, Super Admin & Audit Trails
-- **Tamper-Evident Audit Logging:** Captures actor ID, IP address, user agent, target entity, action type (`LOGIN`, `SECRET_REVEAL`, `SESSION_LAUNCH`, `SESSION_REVOKE`), and execution timestamps.
-- **Real-Time Presence Tracking:** Service-worker-backed 30-second heartbeat mapping which team members are currently operating inside delegated third-party portals.
-- **Platform-Level Super Admin Panel:** Platform overview metrics, organization governance, system analytics, and system audit log exports.
+### 8. Programmatic Secret API & Webhooks
+- Provides an API-key-authenticated interface (`ApiKeyGuard` with `wk_live_...` prefix) for automated CI/CD deployment pipelines.
+- Requires mandatory audit justification parameters on programmatic secret reveals.
+- Outgoing webhook dispatcher transmits signed event notifications (`secret.created`, `secret.revealed`, `session.created`, `session.revoked`) to organization endpoints.
 
 ---
 
-## Tech Stack
+## Screenshots
 
-| Layer | Technologies & Frameworks | Description |
-| :--- | :--- | :--- |
-| **Monorepo Engine** | Turborepo, npm Workspaces | Build orchestration, incremental caching, shared type systems |
-| **Backend API** | NestJS 11, Express 5, Node.js 20+ | Enterprise modular backend, DI container, controller-service pattern |
-| **Database & ORM** | PostgreSQL 15 (Neon Serverless), Prisma ORM | Relational persistence, automated migrations, type-safe queries |
-| **Cache & Throttling** | Redis 7 (ioredis), `rate-limit-redis` | Distributed token bucket rate-limiting, session presence caching |
-| **Security & Crypto** | AES-256-GCM, Argon2id, RS256 JWT, Node `crypto` | Two-tier envelope encryption, AAD context binding, asymmetric tokens |
-| **Frontend Web App** | Next.js 16 (App Router), React 19, Turbopack | Server components, standalone output, responsive dashboard |
-| **Styling & Icons** | Tailwind CSS v3.4, Lucide React, Lenis | Modern glassmorphic theme, smooth inertial scrolling |
-| **State & Data Fetching** | TanStack React Query v5, Axios | Optimistic mutations, background revalidation, automated token retry |
-| **Browser Extension** | Chrome Manifest V3, TypeScript, esbuild | Declarative content scripts, background service worker, alarms API |
-| **Payment Gateway** | HDFC SmartGateway (Juspay API) | Mandate management, recurring subscriptions, HMAC-SHA256 webhooks |
-| **Email & OTP** | Google Workspace APIs, Nodemailer, Resend | OAuth 2.0 Gmail token polling, regex OTP extraction, transactional mail |
-| **Testing & Quality** | Jest 30, ts-jest, Supertest, ESLint, Prettier | Unit tests, security regression suites, automated linting |
+> *Note: Screenshot placeholders are documented below (`docs/screenshots/`). Real dashboard captures can be embedded prior to public demonstration.*
+
+- **Vault & Secret Management:** `docs/screenshots/vault-secrets-management.png`
+- **Delegated Access Approval Workflow:** `docs/screenshots/delegated-access-approval.png`
+- **Zero-Exposure Extension Autofill:** `docs/screenshots/extension-zero-exposure-fill.png`
+- **Real-Time Team Presence Monitor:** `docs/screenshots/team-presence-monitor.png`
+- **Super Admin Platform Overview:** `docs/screenshots/superadmin-overview.png`
 
 ---
 
-## System Architecture
+## Technology Stack
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Monorepo Engine** | [Turborepo 2.10](https://turbo.build/), [npm Workspaces](https://docs.npmjs.com/cli/using-npm/workspaces), [TypeScript 5.9](https://www.typescriptlang.org/) |
+| **Backend API** | [NestJS 11](https://nestjs.com/), [Express 5](https://expressjs.com/), [Passport JWT](http://www.passportjs.org/), [Terminus](https://docs.nestjs.com/recipes/terminus), Node.js 20+ runtime |
+| **Database & ORM** | [PostgreSQL 15](https://www.postgresql.org/) (Neon Serverless), [Prisma ORM 6](https://www.prisma.io/) |
+| **Caching & Throttling** | [Redis 7](https://redis.io/) ([ioredis 5.11](https://github.com/redis/ioredis)), [rate-limit-redis 6.0](https://github.com/express-rate-limit/rate-limit-redis), [@nestjs/throttler 6.5](https://github.com/nestjs/throttler) |
+| **Security & Cryptography** | [Argon2id](https://github.com/ranisalt/node-argon2), [AES-256-GCM](https://nodejs.org/api/crypto.html#crypto_crypto_createcipheriv_algorithm_key_iv_options), RS256 Asymmetric JWT, Helmet 8, Cookie-Parser |
+| **Frontend Web App** | [Next.js 16](https://nextjs.org/) (App Router, Turbopack, Standalone Output), [React 19](https://react.dev/) |
+| **Styling & Motion** | [Tailwind CSS 3.4](https://tailwindcss.com/), [Lucide React](https://lucide.dev/), [Lenis 1.3](https://github.com/darkroomengineering/lenis) smooth scrolling |
+| **State & Data Fetching** | [TanStack React Query 5.101](https://tanstack.com/query/latest), [Axios 1.18](https://axios-http.com/) |
+| **Browser Extension** | Chrome Manifest V3, [esbuild 0.20](https://esbuild.github.io/), Chrome Alarms API, Chrome Storage API, MutationObservers |
+| **Payment Gateway** | [HDFC SmartGateway (Juspay)](https://smartgateway.hdfcbank.com/), HMAC-SHA256 signature verification |
+| **Email & OTP Delivery** | [Google Workspace OAuth 2.0](https://developers.google.com/gmail/api), [Nodemailer 9.0](https://nodemailer.com/), [Resend 6.28](https://resend.com/) |
+| **Validation & Testing** | [Zod 3.25](https://zod.dev/), [Jest 30](https://jestjs.io/), [ts-jest 29.2](https://kulshekhar.github.io/ts-jest/), [Supertest 7.0](https://github.com/ladjs/supertest), [ESLint 9](https://eslint.org/) |
+| **Containerization** | [Docker Compose](https://docs.docker.com/compose/), Multi-stage Docker builds |
+
+---
+
+## Architecture Overview
+
+WITHUS is architected around the core principle of **separating raw credential persistence from operator visibility**, ensuring zero plaintext credential exposure across network, storage, DOM, and memory vectors.
+
+### High-Level System Architecture
 
 ```
                                   +---------------------------------------+
@@ -140,7 +123,7 @@ In modern engineering and business operations, granting team members or contract
                                   |                                       |
                                   |  +---------------------------------+  |
                                   |  |   WITHUS Extension (MV3)        |  |
-                                  |  |   - Service Worker (Token/Auth) |  |
+                                  |  |   - Service Worker (Alarms)     |  |
                                   |  |   - Content Script (Autofill)   |  |
                                   |  |   - Capability Enforcer (CSS)   |  |
                                   |  +-----------------+---------------+  |
@@ -169,91 +152,196 @@ In modern engineering and business operations, granting team members or contract
         +---------------------------+
 ```
 
----
+### Request Flow & Execution Cycles
 
-## Core Engineering Decisions
-
-### 1. Two-Tier Envelope Encryption with Contextual AAD (ADR-007)
-* **Problem:** Storing raw secrets or encrypting all database rows with a single shared symmetric key means that a single database dump or memory leak exposes all secrets across all tenants.
-* **Decision:** We implemented a two-tier key hierarchy using **AES-256-GCM**:
-  - **Data Encryption Key (DEK):** A unique, cryptographically random 256-bit key (`crypto.randomBytes(32)`) generated per secret version.
-  - **Master Encryption Key (MEK):** A 256-bit root key stored strictly in system environment variables (`VAULT_ENCRYPTION_KEY`), never persisted in the database.
-  - **Additional Authenticated Data (AAD):** During encryption, context metadata is serialized as `${orgId}:${vaultId}:${secretId}:${version}` and supplied as AAD. If an attacker tampers with database IDs to relocate ciphertext from one organization to another, GCM authentication tag verification fails immediately.
-  - **Zero Fingerprint Exposure (Remediation F-002):** Unsalted plaintext SHA-256 hashes are strictly prohibited to prevent rainbow table or offline dictionary attacks from database dumps.
-
-### 2. Zero Raw Exposure DOM Shielding
-* **Problem:** Standard browser autofill fills form elements directly, allowing users to inspect input values via Chrome DevTools, click "Show Password" eye icons, or execute DOM script extraction.
-* **Decision:** The content script implements an anti-inspection sandbox:
-  - **Prototype-Level Setter:** Directly invokes `HTMLInputElement.prototype` value descriptors to avoid exposing credential parameters in global window objects.
-  - **Input Type Locking:** A continuous `MutationObserver` monitors password elements. If any script or user attempts to modify `type="password"` to `type="text"`, it is instantly reverted.
-  - **Visual Shielding:** Injects high-specificity CSS (`-webkit-text-security: disc !important; user-select: none !important;`) and permanently hides native and custom eye-toggle buttons.
-  - **Immediate Memory Purge:** Plaintext variables in the content script and service worker are explicitly reassigned and garbage-collected within milliseconds of form injection.
-
-### 3. Ephemeral MV3 Service Worker Presence Heartbeats
-* **Problem:** Chrome Manifest V3 service workers terminate automatically after 30 seconds of inactivity, which breaks long-polling connections and traditional WebSocket heartbeats.
-* **Decision:** We use `chrome.alarms` to drive presence reporting:
-  - An alarm fires every 30 seconds (`presence-heartbeat`).
-  - Active platform tabs are indexed in `chrome.storage.local`.
-  - Heartbeat requests are deduplicated by `orgId::platform`, ensuring network calls remain minimal and survive background worker restarts.
-
-### 4. Authoritative Server-Side Pricing & Billing Validation
-* **Problem:** Clients could manipulate checkout amounts, platform limits, or extra user seat calculations in client-side code.
-* **Decision:** All plan pricing (Free ₹0, Pro ₹499/mo, Business ₹999/mo) and seat rates (₹50/user/mo) are computed authoritatively on the backend (`billing.service.ts`). Webhook payloads from HDFC SmartGateway are verified using HMAC-SHA256 signatures before provisioning resources.
-
-### 5. Strict Cross-Tenant Boundary Enforcement
-* **Problem:** In multi-tenant systems, broken object-level authorization (BOLA) can allow members of Organization A to access secrets belonging to Organization B if they guess UUIDs.
-* **Decision:** Every database query in `secrets.controller.ts` and `sessions.service.ts` joins through `OrganizationMember`, verifying that the requesting user's membership is active and matches the targeted tenant.
+1. **Access Request Cycle:** The grantee selects a credential and submits a request. The grantor approves, generating a `DelegatedSession` with an active TTL.
+2. **Session Launch Cycle:** The grantee navigates to the target login page. The extension content script detects the platform host and queries the background service worker via `GET_ACTIVE_SESSION`.
+3. **Autofill Execution Cycle:** The service worker validates the user's JWT, obtains an ephemeral launch token, decrypts the DEK, decrypts the payload, and transmits credentials to the content script.
+4. **DOM Injection & Guard Cycle:** The content script applies `-webkit-text-security: disc`, locks the input type, sets input values using prototype descriptors, hides eye-icons, and clears credential variables from memory.
+5. **Headless OTP Polling Cycle:** If a two-factor challenge is detected, the extension invokes `/sessions/:id/otp`. The API queries the grantor's connected Gmail account via OAuth, runs regex pattern matching, and returns the OTP to the extension for automatic fill.
+6. **Presence & Heartbeat Cycle:** A 30-second `chrome.alarms` listener collects active tab URLs, deduplicates them by `orgId::platform`, and sends a heartbeat to `/presence/heartbeat` to populate real-time activity dashboards.
 
 ---
 
-## Delegated Access & Lifecycle Workflow
+## Cryptographic Vault & Envelope Encryption Pipeline
+
+All secrets stored in WITHUS are governed by a two-tier key hierarchy managed by `EncryptionService` (`apps/api/src/vaults/encryption.service.ts`):
 
 ```
-[ Team Member ]              [ Admin / Owner ]               [ WITHUS API ]             [ Chrome Extension ]         [ Third-Party Site ]
-      |                             |                             |                             |                             |
-      |-- 1. Request Access ------->|                             |                             |                             |
-      |                              |-- 2. Approve Request ----->|                             |                             |
-      |                             |                             |-- 3. Create Session Token ->|                             |
-      |                             |                             |      (Time-limited TTL)     |                             |
-      |                                                           |                             |-- 4. Navigate to Login ---->|
-      |                                                           |                             |      (e.g., github.com)     |
-      |                                                           |<-- 5. Query Active Session -|                             |
-      |                                                           |-- 6. Return Payload ------->|                             |
-      |                                                           |      (Encrypted DEK)        |-- 7. Shield DOM Input ----->|
-      |                                                           |                             |      (Type-locked & Masked) |
-      |                                                           |                             |-- 8. Autofill & Submit ---->|
-      |                                                           |<-- 9. Poll Gmail for OTP ---|                             |
-      |                                                           |-- 10. Forward Extracted OTP>|-- 11. Autofill OTP -------->|
-      |                                                           |                             |                             |
-      |                             |-- 12. Revoke / Expire ----->|-- 13. Invalidate Session -->|-- 14. Purge Local Storage   |
++-------------------------------------------------------------+
+| Master Encryption Key (MEK)                                 |
+| - 256-bit root key stored in VAULT_ENCRYPTION_KEY env var   |
+| - Never persisted in database or written to disk            |
++-------------------------------------------------------------+
+                              |
+                     Encrypts / Decrypts
+                              v
++-------------------------------------------------------------+
+| Data Encryption Key (DEK)                                   |
+| - Ephemeral 256-bit symmetric key per secret version        |
+| - Generated via crypto.randomBytes(32)                      |
+| - Stored encrypted (encryptedDEK, dekIv, dekAuthTag)        |
++-------------------------------------------------------------+
+                              |
+                     Encrypts / Decrypts
+                              v
++-------------------------------------------------------------+
+| Secret Payload (Ciphertext)                                 |
+| - Encrypted with DEK using AES-256-GCM                      |
+| - Authenticated using Contextual AAD:                       |
+|   "${organizationId}:${vaultId}:${secretId}:${version}"     |
+| - 96-bit CSPRNG IV + 128-bit Authentication Tag             |
++-------------------------------------------------------------+
 ```
 
-1. **Access Request:** The team member selects a platform credential from the dashboard and submits an access request specifying reason and duration.
-2. **Dual-Control Approval:** The vault owner receives the request and authorizes it. An ephemeral `DelegatedSession` record is minted with an active TTL.
-3. **Session Discovery:** When the operator navigates to the third-party login portal, the extension content script identifies the host domain and queries the background service worker.
-4. **Credential Retrieval & Zero-Exposure Fill:** The service worker validates the user's JWT and requests a one-time launch token from `/sessions/:id/launch`. The content script locks the input field type, injects the credentials, and triggers the login form submission.
-5. **Headless OTP Handling:** If the platform prompts for a one-time passcode, the backend's Gmail OTP listener detects the incoming verification email, extracts the numerical code, and delivers it to the extension to complete login.
-6. **Presence & Revocation:** The extension transmits periodic presence heartbeats. Once work is complete, or if the administrator clicks "Revoke Session", access tokens are invalidated and local caches are wiped.
+### AAD Context Serialization
+To prevent ciphertext relocation attacks (e.g., modifying database UUIDs to shift encrypted secrets into an unauthorized tenant's vault), contextual metadata is passed to AES-GCM as Additional Authenticated Data:
+
+```typescript
+computeAAD(context: EncryptionContext): Buffer {
+  const serialized = `${context.organizationId}:${context.vaultId}:${context.secretId}:${context.version}`;
+  return Buffer.from(serialized, 'utf8');
+}
+```
+
+If any portion of the organization ID, vault ID, secret ID, or version counter is manipulated in database storage, tag verification fails immediately and throws a decryption exception.
 
 ---
 
-## Supported Platforms Catalog
+## Zero Raw Exposure DOM Shielding Engine
 
-WITHUS provides native autofill selectors, submission adapters, and UI redaction rules for 11 core platforms out of the box:
+The Chrome extension content script (`apps/extension/src/content/autofill.ts`) enforces multiple defensive barriers on third-party login pages:
 
-| Platform ID | Platform Name | Supported Domains | OTP Extraction | Capability Redaction Support |
-| :--- | :--- | :--- | :---: | :---: |
-| `GITHUB` | GitHub | `github.com` | Email OTP | Repository Settings, Security, Actions, Billing |
-| `VERCEL` | Vercel | `vercel.com` | Email OTP | Team Settings, Billing, Environment Variables |
-| `GODADDY` | GoDaddy | `godaddy.com`, `sso.godaddy.com` | Email OTP | Account Settings, Payment Methods, Renewals |
-| `LINKEDIN` | LinkedIn | `linkedin.com` | Email OTP | Settings & Privacy, Billing, Company Admin |
-| `SHOPIFY` | Shopify | `shopify.com`, `admin.shopify.com` | Email OTP | Store Settings, Payments, User Permissions |
-| `STRIPE` | Stripe | `stripe.com`, `dashboard.stripe.com` | Email OTP | Developers Tab, API Keys, Bank Account Settings |
-| `RAZORPAY` | Razorpay | `razorpay.com`, `dashboard.razorpay.com` | Email OTP | API Keys, Webhooks, Settlements, Banking |
-| `MCA` | MCA Portal | `mca.gov.in` | Portal OTP | Ministry of Corporate Affairs Filings & Submissions |
-| `GST` | GST Portal | `gst.gov.in`, `services.gst.gov.in` | Portal OTP | Returns Filing, Tax Payments, Registration |
-| `UDYAM` | Udyam Portal | `udyamregistration.gov.in` | Portal OTP | MSME Registration & Certificate Management |
-| `GMAIL` | Google / Gmail | `accounts.google.com`, `mail.google.com`| OAuth / Email | Account Security, 2-Step Verification, Subscriptions |
+### 1. Prototype Setter Injection
+To bypass JavaScript framework state wrappers (React synthetic events, Vue reactive bindings), fields are filled by invoking the native DOM property descriptor directly:
+
+```typescript
+const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+  window.HTMLInputElement.prototype,
+  'value'
+)?.set;
+
+nativeInputValueSetter?.call(targetInput, credentialValue);
+targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+targetInput.dispatchEvent(new Event('change', { bubbles: true }));
+```
+
+### 2. Continuous Input Type-Locking
+A persistent `MutationObserver` traps any external script or browser inspection tool that attempts to mutate `type="password"` to `type="text"`:
+
+```typescript
+new MutationObserver(mutations => {
+  for (const m of mutations) {
+    const el = m.target as HTMLInputElement;
+    if (m.oldValue?.toLowerCase() === 'password' && el.type !== 'password') {
+      el.type = 'password';
+    }
+  }
+}).observe(document.documentElement, {
+  subtree: true,
+  attributes: true,
+  attributeFilter: ['type'],
+  attributeOldValue: true,
+});
+```
+
+### 3. Password Box Eye-Icon Suppression
+Bounding-box proximity scans identify interactive buttons, spans, or SVGs situated adjacent to password fields, permanently hiding them:
+
+```css
+input[type="password"], #password {
+  -webkit-text-security: disc !important;
+  user-select: none !important;
+}
+input::-ms-reveal, input::-ms-clear { display: none !important; }
+```
+
+---
+
+## Automated Headless Gmail OTP Extraction Pipeline
+
+When multi-factor authentication is required, `GmailOtpService` (`apps/api/src/integrations/gmail/gmail-otp.service.ts`) executes an automated extraction pipeline:
+
+1. **Authorization Check:** Verifies active session validity, non-expired status, and grantor Gmail OAuth token availability.
+2. **Timestamp-Bounded Mailbox Query:** Polls messages matching `after:${loginStartTime}` to ignore previously consumed OTP emails.
+3. **Pattern Matching Hierarchy:** Iterates through `OTP_PATTERNS` in order of specificity:
+   - **Platform-Specific Patterns:** Matches target provider ID (e.g. `GITHUB`, `STRIPE`, `SHOPIFY`, `RAZORPAY`, `GODADDY`, `LINKEDIN`, `VERCEL`).
+   - **Sender-Domain Patterns:** Matches sender domain (e.g. `accounts.google.com`).
+   - **Generic Keyword Fallback:** Standalone 4- to 8-digit numeric token bounded by negative lookbehinds (e.g. `(?<![a-zA-Z0-9-])(\b\d{4,8}\b)`).
+4. **Secure Return:** Extracted code is delivered over encrypted HTTPS to the extension, triggering automatic input filling and submission.
+
+---
+
+## Capability Enforcement & UI Shielding System
+
+When a user operates inside a delegated third-party dashboard under a restricted session, `capability-enforcer.ts` injects tenant-defined CSS redaction rules to prevent unauthorized actions:
+
+- **GitHub:** Hides `a[data-tab-item="settings"]`, `a[data-tab-item="security"]`, repository transfer controls, and collaborator invite menus.
+- **Vercel:** Hides team settings, billing sections, and environment variable configuration forms.
+- **Stripe:** Redacts the Developers menu, API keys, webhook configurations, and banking details.
+- **Razorpay:** Hides API keys, webhook endpoints, and balance settlement forms.
+- **Shopify:** Conceals store settings, payment providers, and user management screens.
+- **GoDaddy:** Hides renewal settings, payment methods, and account profile controls.
+
+---
+
+## Enterprise Billing & Reconciliation Engine
+
+The billing subsystem (`apps/api/src/billing/`) manages subscription lifecycles through HDFC SmartGateway (Juspay API):
+
+### Subscription Plans & Entitlements
+
+| Plan | Monthly Base | Annual Base | Included Users | Additional User Rate | Platform Entitlement | Capability UI Redaction |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Free** | ₹0 | ₹0 | 2 users | N/A | Any 2 of 11 platforms | No |
+| **Pro** | ₹499/mo | ₹4,990/yr | 5 users | ₹50/user/mo (₹500/yr) | All 11 platforms | No |
+| **Business**| ₹999/mo | ₹9,990/yr | 15 users | ₹50/user/mo | All 11 platforms | **Yes (Full Module Control)** |
+
+### Schedulers & Reconciliation
+- **`BillingRenewalScheduler`:** Executes a daily sweep to process recurring mandate payments for active subscriptions nearing expiration.
+- **`BillingReconciliationScheduler`:** Periodically queries the HDFC SmartGateway order status API for checkouts stuck in pending states, recovering or expiring them without administrator intervention.
+- **HMAC-SHA256 Verification:** Inbound webhook payloads from HDFC are checked against `HDFC_RESPONSE_KEY` before modifying subscription statuses.
+
+---
+
+## Security & Data Integrity
+
+- **Password Hashing:** Implemented with `Argon2id` via `HashService` (`packages/security/src/hash.ts`) configured with `memoryCost: 65536` (64 MB), `timeCost: 3`, and `parallelism: 1`.
+- **Token Family Rotation:** Refresh tokens store `familyId` and track `replacedByTokenId`. If a previously consumed refresh token is presented, the entire token family is immediately revoked to neutralize token replay attacks.
+- **Strict CORS Policy:** Wildcard origins (`*`) are prohibited; only explicit, exact-match client origins defined in configuration are accepted.
+- **Double-Submit CSRF Defense:** Authenticated state-changing endpoints require matching cryptographic tokens presented via HTTP-only cookies and custom request headers.
+- **Active Membership Verification:** All session launch, secret reveal, and OTP endpoints join against `OrganizationMember` to ensure suspended or offboarded users are instantly blocked.
+
+---
+
+## Database Design & Performance Indexes
+
+The data model is managed via Prisma ORM (`packages/db/prisma/schema.prisma`) on PostgreSQL:
+
+```
+  +------------------+         +-----------------------+         +--------------------+
+  |       User       | 1 --- * |  OrganizationMember   | * --- 1 |    Organization    |
+  +------------------+         +-----------------------+         +--------------------+
+           |                                                                |
+           | 1                                                              | 1
+           *                                                                *
+  +------------------+                                           +--------------------+
+  |   RefreshToken   |                                           |       Vault        |
+  +------------------+                                           +--------------------+
+           |                                                                |
+           |                                                                | 1
+           v                                                                *
+  +------------------+         +-----------------------+         +--------------------+
+  | DelegatedSession | * --- 1 |     SecretVersion     | * --- 1 |       Secret       |
+  +------------------+         +-----------------------+         +--------------------+
+```
+
+### Critical Performance & Security Indexes
+- `RefreshToken`: `@@unique([tokenHash])`, `@@index([userId, familyId])` — Enables O(1) token rotation checks.
+- `Secret`: `@@index([vaultId, status])` — Accelerates vault listing and filtering operations.
+- `SecretVersion`: `@@index([secretId, version])` — Ensures rapid retrieval of active cryptographic versions.
+- `DelegatedSession`: `@@index([granteeId, status, expiresAt])`, `@@index([organizationId, status])` — Powers efficient session discovery and presence lookups.
+- `AuditEvent`: `@@index([organizationId, createdAt])`, `@@index([actorId, action])` — Speeds up paginated governance audit views.
 
 ---
 
@@ -320,275 +408,191 @@ SDAP/
 
 ---
 
-## Prerequisites & Installation
+## Installation & Local Development
 
 ### Prerequisites
-- **Node.js:** `v20.x` or higher (LTS recommended; engines define `>=18`)
-- **Package Manager:** `npm` version `10.8.2` or higher
-- **Database:** PostgreSQL 15+ (Local instance or Neon Serverless PostgreSQL)
-- **Cache:** Redis 7+ (Local or managed Redis instance)
-- **Browser:** Google Chrome (for unpacking and running the MV3 extension)
+- **Node.js:** `v20.x` or higher (LTS recommended)
+- **Package Manager:** `npm` `10.8.2` or higher
+- **PostgreSQL:** Accessible instance (local PostgreSQL 15+ or Neon Serverless)
+- **Redis:** Local Redis 7+ instance on port 6379
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-org/withus.git
-cd withus
+git clone https://github.com/akshit-max/SDAP.git
+cd SDAP
 ```
 
 ### 2. Install Dependencies
-Install all packages across the entire monorepo using npm workspaces:
 ```bash
 npm install
 ```
 
 ### 3. Generate Prisma Database Client
-Generate the type-safe Prisma client from `packages/db/prisma/schema.prisma`:
 ```bash
 npx prisma generate --schema=packages/db/prisma/schema.prisma
 ```
 
-### 4. Run Database Migrations
-Apply all schema migrations to your PostgreSQL database:
+### 4. Apply Database Migrations
 ```bash
 npx prisma migrate deploy --schema=packages/db/prisma/schema.prisma
 ```
+
+### 5. Running the Application
+
+#### Option A: Full Monorepo Development Mode
+Starts all services (API, Web Dashboard, Marketing, Docs) concurrently with hot-reloading:
+```bash
+npm run dev
+```
+
+#### Option B: Granular Service Execution
+Run specific targets in isolated terminal instances:
+```bash
+# Terminal 1: Backend API (port 4000)
+npm run dev -w api
+
+# Terminal 2: Web Dashboard (port 3000)
+npm run dev -w web
+
+# Terminal 3: Extension watch bundler
+npm run dev -w withus-extension
+```
+
+#### Option C: Docker Compose (Local Infrastructure)
+Spin up PostgreSQL, Redis, and pgAdmin containers automatically:
+```bash
+docker compose up -d
+```
+
+### Loading the Extension into Google Chrome
+1. Navigate to `chrome://extensions/` in Google Chrome.
+2. Enable the **Developer mode** toggle in the top-right corner.
+3. Click **Load unpacked**.
+4. Select the `apps/extension/dist` directory.
 
 ---
 
 ## Environment Variables
 
-Copy the `.env.example` templates in each app before starting the system.
+### Core Variables (Always Required)
 
-### Backend API (`apps/api/.env`)
+| Variable Name | Description | Default / Example |
+| :--- | :--- | :--- |
+| `DATABASE_URL` | PostgreSQL connection string (pooled connection, e.g. Neon) | `postgresql://user:pass@localhost:5432/sdap_db` |
+| `VAULT_ENCRYPTION_KEY` | 32-byte Base64 encoded Master Encryption Key (MEK) | `node -e "console.log(crypto.randomBytes(32).toString('base64'))"` |
+| `JWT_PRIVATE_KEY` | RSA Private Key for RS256 JWT signing (PEM string) | `-----BEGIN RSA PRIVATE KEY-----...` |
+| `JWT_PUBLIC_KEY` | RSA Public Key for RS256 JWT verification (PEM string) | `-----BEGIN PUBLIC KEY-----...` |
+| `CORS_ORIGIN` | Exact frontend URL permitted for cross-origin requests | `http://localhost:3000` |
+| `NEXT_PUBLIC_API_URL` | Web dashboard API base endpoint URL | `http://localhost:4000/api/v1` |
+| `WITHUS_API_URL` | Extension API connection endpoint URL | `http://localhost:4000/api/v1` |
 
-| Variable | Description | Required | Default / Example |
-| :--- | :--- | :--- | :--- |
-| `DATABASE_URL` | PostgreSQL connection string (PgBouncer pooled) | **Yes** | `postgresql://user:pass@localhost:5432/sdap_db` |
-| `DIRECT_URL` | Direct PostgreSQL connection string (for migrations) | Optional | `postgresql://user:pass@localhost:5432/sdap_db` |
-| `VAULT_ENCRYPTION_KEY` | 32-byte Base64 encoded Master Encryption Key (MEK) | **Yes** | `node -e "console.log(crypto.randomBytes(32).toString('base64'))"` |
-| `JWT_PRIVATE_KEY` | RSA Private Key for RS256 token signing (PEM format) | **Yes** | `-----BEGIN RSA PRIVATE KEY-----...` |
-| `JWT_PUBLIC_KEY` | RSA Public Key for RS256 token verification (PEM format) | **Yes** | `-----BEGIN PUBLIC KEY-----...` |
-| `PORT` | HTTP Port for the NestJS API | Optional | `4000` |
-| `NODE_ENV` | Application environment (`development`, `production`, `test`) | Optional | `development` |
-| `CORS_ORIGIN` | Exact frontend URL permitted for CORS | **Yes** | `http://localhost:3000` |
-| `REDIS_URL` | Redis connection URL for distributed throttling | Optional | `redis://localhost:6379` |
-| `GOOGLE_CLIENT_ID` | OAuth Client ID for Gmail OTP integration | Optional | `xxx.apps.googleusercontent.com` |
-| `GOOGLE_CLIENT_SECRET` | OAuth Client Secret for Gmail OTP integration | Optional | `GOCSPX-xxx` |
-| `HDFC_BASE_URL` | HDFC SmartGateway / Juspay API Base URL | Prod | `https://smartgateway.hdfcbank.com` |
-| `HDFC_MERCHANT_ID` | HDFC SmartGateway Merchant Identifier | Prod | `WITHUS_PROD_MERCHANT` |
-| `HDFC_API_KEY` | HDFC Gateway API Secret Key | Prod | `sec_key_xxx` |
-| `HDFC_RESPONSE_KEY` | HMAC-SHA256 Key for validating webhook callbacks | Prod | `res_key_xxx` |
-| `HDFC_WEBHOOK_USERNAME` | Basic Auth username for receiving Juspay webhooks | Prod | `withus_wh_user` |
-| `HDFC_WEBHOOK_PASSWORD` | Basic Auth password for receiving Juspay webhooks | Prod | `withus_wh_secure_password` |
+### Conditional Variables (Feature-Dependent)
 
-### Web Portal (`apps/web/.env.local`)
+| Variable Name | Condition / Requirement | Default / Example |
+| :--- | :--- | :--- |
+| `HDFC_BASE_URL` | Required in production: HDFC SmartGateway API base endpoint | `https://smartgateway.hdfcbank.com` |
+| `HDFC_MERCHANT_ID` | Required in production: HDFC SmartGateway Merchant Identifier | `WITHUS_PROD_MERCHANT` |
+| `HDFC_API_KEY` | Required in production: HDFC Gateway API Secret Key | `sec_key_...` |
+| `HDFC_RESPONSE_KEY` | Required in production: HMAC-SHA256 callback signature key | `res_key_...` |
+| `HDFC_WEBHOOK_USERNAME`| Required in production: Basic Auth user for Juspay webhooks | `withus_wh_user` |
+| `HDFC_WEBHOOK_PASSWORD`| Required in production: Basic Auth password for Juspay webhooks | `withus_wh_secure_password` |
+| `GOOGLE_CLIENT_ID` | Required for Gmail OTP: OAuth 2.0 Client Identifier | `...apps.googleusercontent.com` |
+| `GOOGLE_CLIENT_SECRET` | Required for Gmail OTP: OAuth 2.0 Client Secret | `GOCSPX-...` |
 
-| Variable | Description | Required | Default / Example |
-| :--- | :--- | :--- | :--- |
-| `NEXT_PUBLIC_API_URL` | Target URL pointing to the NestJS API | **Yes** | `http://localhost:4000/api/v1` |
-| `PORT` | Port for the Next.js frontend | Optional | `3000` |
-| `LANDING_URL` | URL of the separately deployed marketing site | Optional | `http://localhost:3002` |
+### Optional Configuration & Toggles
 
-### Chrome Extension (`apps/extension/.env`)
-
-| Variable | Description | Required | Default / Example |
-| :--- | :--- | :--- | :--- |
-| `WITHUS_API_URL` | Target API URL reachable by client browsers | **Yes** | `http://localhost:4000/api/v1` |
-
----
-
-## Local Development
-
-### Running the Entire Monorepo
-Start all applications concurrently using Turborepo:
-```bash
-npm run dev
-```
-
-### Running Targeted Applications
-To run individual applications without loading the full suite:
-
-- **Run Backend API only:**
-  ```bash
-  npm run dev -w api
-  ```
-- **Run Web Portal only:**
-  ```bash
-  npm run dev -w web
-  ```
-- **Build Extension in watch mode:**
-  ```bash
-  npm run dev -w withus-extension
-  ```
-
-### Loading the Extension into Google Chrome
-1. Open Google Chrome and navigate to `chrome://extensions/`.
-2. Enable the **Developer mode** toggle in the top-right corner.
-3. Click **Load unpacked**.
-4. Select the `apps/extension/dist` folder generated by the build script.
+| Variable Name | Description | Default |
+| :--- | :--- | :---: |
+| `PORT` | Backend API HTTP server port | `4000` |
+| `NODE_ENV` | Application runtime environment (`development`, `production`, `test`) | `development` |
+| `REDIS_URL` | Redis connection URL for distributed rate limiting and presence | `redis://localhost:6379` |
+| `RATE_LIMIT_TTL` | Sliding rate limiter time-to-live window in seconds | `60` |
+| `RATE_LIMIT_LIMIT` | Maximum allowed requests per TTL window | `100` |
+| `LANDING_URL` | URL of the separately deployed marketing landing page | `http://localhost:3002` |
+| `HDFC_RECONCILE_MODE`| Reconciliation scheduler execution mode (`off`, `dry-run`, `live`) | `dry-run` |
+| `BILLING_RENEWAL_SWEEP_ENABLED`| Toggles daily recurring mandate renewal sweep | `true` |
 
 ---
 
-## Running Automated Tests
+## Testing & Quality Assurance
 
-The testing suite contains unit tests, integration specs, and security regression suites covering encryption safety, tenant isolation, and billing logic.
+The codebase enforces strict quality gates via Jest unit tests, TypeScript type checks, and security regression suites:
 
-### Execute All Tests
 ```bash
+# Run complete test suite across all workspace packages
 npm test
-```
 
-### Run API Unit & Security Tests
-```bash
+# Run API test suites specifically
 npm test -w api
-```
 
-### Run Dedicated Security Regression Suites
-```bash
-# Verify envelope encryption and AAD context binding
-npx jest apps/api/src/vaults/encryption.service.spec.ts
+# Run TypeScript compile-time verification across all packages
+npm run check-types
 
-# Verify CORS exact allowlist & CSRF protection
-npx jest apps/api/src/common/middleware/csrf-cors.security.spec.ts
+# Run ESLint analysis
+npm run lint
 
-# Verify cross-tenant isolation and active membership guards
-npx jest apps/api/src/sessions/sessions.service.membership.spec.ts
-
-# Verify HDFC SmartGateway billing security and signature validation
-npx jest apps/api/src/billing/billing.security.spec.ts
-```
-
----
-
-## Docker Setup
-
-### Local Infrastructure (PostgreSQL + Redis + pgAdmin)
-A development compose file is provided in the repository root to start backend infrastructure:
-
-```bash
-docker compose up -d
-```
-
-This spins up:
-- **PostgreSQL 15:** Port `5432` (User: `postgres`, Password: `password`, DB: `sdap`)
-- **Redis 7:** Port `6379`
-- **pgAdmin 4 (optional profile):** Port `5050`
-
-### Full Production Stack Deployment
-To run containerized production builds of the API and Web applications:
-
-```bash
-docker compose -f docker-compose.prod.yml up -d --build
-```
-
----
-
-## Production Build & Deployment
-
-### Monorepo Build Execution
-Compile all TypeScript packages, bundle Next.js standalone outputs, and package the Chrome extension:
-```bash
+# Production monorepo build verification
 npm run build
 ```
 
-### Build Artifacts
-- **Backend API:** Compiled into `apps/api/dist/src/main.js`.
-- **Web App:** Next.js standalone output in `apps/web/.next/standalone`.
-- **Extension:** Packaged zip bundle created at `apps/extension/withus-extension.zip` ready for Chrome Web Store distribution.
+### Verified Test Suite (56+ Tests across 8 Security Suites)
+
+- `apps/api/src/vaults/encryption.service.spec.ts` (7 tests): Two-tier AES-256-GCM envelope encryption, DEK generation, AAD mismatch rejection, and zero-fingerprint storage.
+- `apps/api/src/common/middleware/csrf-cors.security.spec.ts` (8 tests): Exact-match CORS allowlist verification, wildcard origin rejection, and double-submit CSRF token validation.
+- `apps/api/src/sessions/sessions.service.membership.spec.ts` (6 tests): Active organization membership enforcement, preventing offboarded users from launching sessions or revealing secrets.
+- `apps/api/src/billing/billing.security.spec.ts` (11 tests): HDFC SmartGateway HMAC-SHA256 signature verification, idempotent webhook replay protection, and authoritative seat calculation.
+- `apps/api/src/integrations/gmail/gmail-otp.service.spec.ts` (5 tests): Regex pattern matching across 11+ providers, timestamp boundary enforcement, and fallback parsing.
+- `apps/api/src/vaults/controllers/secrets.controller.tenant.spec.ts` (7 tests): Cross-tenant BOLA rejection and organization boundary verification on secret lookups.
+- `apps/api/src/authorization/authorization.service.spec.ts` (6 tests): Role-to-permission mapping and membership resolution.
+- `apps/api/src/auth/auth.service.spec.ts` (6 tests): Argon2id password hashing, RS256 token issuance, and refresh token family rotation.
+
+### Test Scope & Limitations
+- Unit and integration tests thoroughly validate cryptographic safety, tenant boundaries, rate limits, and failure handling.
+- Third-party external endpoints (HDFC SmartGateway APIs, Google OAuth endpoints) are tested against simulated payloads and deterministic mocks to guarantee isolated, offline CI verification.
 
 ---
 
-## API Reference
+## Engineering Decisions & Trade-offs
 
-All backend routes are prefixed with `/api/v1`.
+### Envelope Encryption (AES-256-GCM) with Contextual AAD over Single Key Encryption
+- **Trade-off:** Generating and storing encrypted DEKs increases database storage overhead by ~120 bytes per secret version and requires two cryptographic passes during decryption.
+- **Decision:** Eliminates single-point database decryption breaches. Contextual AAD (`${orgId}:${vaultId}:${secretId}:${version}`) prevents attackers from relocating encrypted records between organizations in a compromised database.
 
-### 1. Authentication (`/auth`)
-| Method | Endpoint | Access | Description |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/auth/register` | Public | Register user account and create primary organization |
-| `POST` | `/auth/login` | Public | Authenticate user; returns RS256 access and refresh tokens |
-| `POST` | `/auth/refresh` | Public | Rotate refresh token and issue fresh access token |
-| `POST` | `/auth/logout` | Authenticated | Revoke refresh token family and clear session cookies |
-| `GET` | `/auth/me` | Authenticated | Retrieve authenticated user profile and memberships |
-| `GET` | `/auth/google` | Public | Initiate Google OAuth 2.0 redirection |
-| `GET` | `/auth/google/callback` | Public | Google OAuth 2.0 authentication callback |
+### Prototype-Level DOM Injection over Synthetic Event Dispatch
+- **Trade-off:** Direct prototype invocation bypasses certain modern browser autofill heuristics and requires custom DOM traversal logic.
+- **Decision:** Guarantees compatibility with complex single-page application frameworks (React, Angular, Vue) whose internal state managers reject standard `.value = x` property assignments without synthetic event cycles.
 
-### 2. Vaults & Secrets (`/organizations/:orgId`)
-| Method | Endpoint | Access | Description |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/organizations/:orgId/vaults` | Admin / Owner | Create an isolated credential vault |
-| `GET` | `/organizations/:orgId/vaults` | Member | List vaults accessible to the user |
-| `POST` | `/organizations/:orgId/vaults/:vaultId/secrets` | Admin / Owner | Store and encrypt a new secret payload |
-| `GET` | `/organizations/:orgId/vaults/:vaultId/secrets` | Member | List secret metadata in a vault |
-| `POST` | `/organizations/:orgId/vaults/:vaultId/secrets/:id/reveal` | Admin / Owner | Decrypt and reveal secret payload (audited) |
-| `DELETE`| `/organizations/:orgId/vaults/:vaultId/secrets/:id` | Admin / Owner | Soft-delete a secret record |
+### Headless Server-Side Gmail OAuth Polling over Client-Side Mail Scraping
+- **Trade-off:** Grantors must complete a one-time Google OAuth authorization flow on the dashboard.
+- **Decision:** Keeps the grantor's personal inbox completely hidden from team members while eliminating the need for manual, interruptive 2FA code relays over communication channels.
 
-### 3. Delegated Sessions (`/organizations/:orgId/sessions`)
-| Method | Endpoint | Access | Description |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/organizations/:orgId/sessions` | Admin / Owner | Create an ephemeral delegated session |
-| `GET` | `/organizations/:orgId/sessions/incoming` | Grantee | List active sessions delegated to the caller |
-| `GET` | `/organizations/:orgId/sessions/outgoing` | Grantor | List active sessions granted by the caller |
-| `POST` | `/organizations/:orgId/sessions/:id/launch` | Grantee | Issue single-use autofill token for extension fill |
-| `POST` | `/organizations/:orgId/sessions/:id/otp` | Grantee | Request latest automated OTP for active session |
-| `POST` | `/organizations/:orgId/sessions/:id/revoke` | Admin / Owner | Instantly invalidate and terminate a delegated session |
+### Authoritative Server-Side Pricing over Client-Reported Seat Calculations
+- **Trade-off:** Upgrading team seat counts requires an active backend round-trip to compute prorated order totals.
+- **Decision:** Prevents malicious client-side tampering with payment amounts, subscription plans, or platform limits prior to HDFC SmartGateway order initialization.
 
-### 4. Billing & Subscriptions (`/organizations/:orgId/billing`)
-| Method | Endpoint | Access | Description |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/organizations/:orgId/billing/initiate` | Owner | Create HDFC SmartGateway order for plan upgrade |
-| `GET` | `/organizations/:orgId/billing/status` | Member | Check active subscription tier, seats, and entitlements |
-| `POST` | `/organizations/:orgId/billing/cancel` | Owner | Cancel auto-renewal for current subscription |
-| `POST` | `/billing/webhook` | HDFC Webhook | Ingest and verify signed Juspay payment events |
-| `POST` | `/billing/return` | HDFC Gateway | Process client redirect upon payment completion |
-
-### 5. Super Admin Governance (`/super-admin`)
-| Method | Endpoint | Access | Description |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/super-admin/overview` | Super Admin | System health, tenant count, active sessions, MRR |
-| `GET` | `/super-admin/organizations` | Super Admin | Paginated tenant organization registry |
-| `GET` | `/super-admin/audit` | Super Admin | System-wide immutable security audit stream |
+### Chrome Alarms API over WebSockets for Extension Presence Heartbeats
+- **Trade-off:** Presence updates are delivered at discrete 30-second intervals rather than sub-second continuous streams.
+- **Decision:** Chrome Manifest V3 service workers automatically terminate after 30 seconds of inactivity. Persistent WebSockets disconnect upon worker suspension; `chrome.alarms` survive worker termination and consume zero background memory between ticks.
 
 ---
 
-## Security Considerations
+## Known Limitations
 
-### Cryptographic Rigor
-- **Symmetric Cipher:** `aes-256-gcm` using 96-bit (12-byte) initialization vectors generated per encryption operation via `crypto.randomBytes(12)`.
-- **Authentication Tags:** 128-bit (16-byte) GCM tags verified before returning decrypted plaintext.
-- **Master Key Segregation:** Root encryption keys are injected strictly via environment variables (`VAULT_ENCRYPTION_KEY`) and are never written to disk, database, or logs.
-- **Zero Plaintext Hash Storage:** SHA-256 credential hashing in `SecretVersion` was eliminated (F-002 remediation) to ensure that a database leak cannot be used for offline brute-force attacks.
-
-### Transport & Network Defenses
-- **Exact-Match CORS Allowlist:** Wildcard origins (`*`) are prohibited. Preflight requests validate exact origin matching against configured production domains.
-- **Double-Submit CSRF Protection:** State-changing requests must present matching cryptographic tokens in both request headers and HTTP-only cookies.
-- **Secure Token Attributes:** Authentication cookies enforce `SameSite=None` (production) / `Lax` (development), `Secure=true`, and `HttpOnly=true`.
-
-### Client-Side Isolation
-- **Input Masking:** Password fields are secured using `-webkit-text-security: disc !important` to ensure credentials remain invisible to over-the-shoulder observation and screenshot utilities.
-- **Type-Locking Watchers:** DOM mutation observers continuously detect and revert attempts by malicious scripts or browser inspectors to change password field types.
-- **Short-Lived Memory Footprint:** Secret buffers in the Chrome extension are zeroed out immediately following DOM input submission.
-
----
-
-## Current Limitations
-
-1. **Desktop Browser Scope:** The current browser extension is built for Chromium-based desktop browsers (Google Chrome, Brave, Microsoft Edge). Support for Safari Web Extensions and Android/iOS mobile autofill requires separate native adapters.
-2. **Third-Party DOM Volatility:** Platform autofill relies on DOM element selectors. If upstream services (e.g., GitHub or Shopify) overhaul their login page markup, selector mappings in `platform-registry.ts` may require periodic updates.
-3. **Single-Node Schedulers:** Billing renewal and reconciliation cron jobs run on NestJS instance timers. Clustered multi-instance deployments require Redis Redlock synchronization to prevent duplicate scheduler runs.
+- **Chromium Desktop Scope:** The current browser extension is built specifically for Chromium-based desktop browsers (Google Chrome, Brave, Microsoft Edge). Mobile platforms (iOS Safari, Android Chrome) do not support desktop MV3 content script injection.
+- **Third-Party Selector Volatility:** Platform autofill depends on CSS selectors in `platform-registry.ts`. Upstream redesigns by third-party services (e.g. GitHub or Shopify) require periodic selector reconciliation.
+- **Single-Node Schedulers:** Billing renewal and reconciliation cron jobs run on NestJS instance timers. Clustered deployments with multiple API replicas require Redis Redlock synchronization to prevent duplicate scheduler execution.
 
 ---
 
 ## Future Improvements
 
-- [ ] **Native Mobile Autofill Integration:** Native Android (`AutofillService`) and iOS (`ASCredentialProviderViewController`) applications for mobile credential delegation.
-- [ ] **Distributed Queue Architecture:** Migration of billing renewal sweeps and email listeners to BullMQ backed by Redis for horizontal scalability.
-- [ ] **FIDO2 / WebAuthn Support:** Hardware security key authentication (YubiKey) for platform authorization and vault decryption.
-- [ ] **Dynamic Platform Selector Updates:** Remote configuration endpoint allowing zero-downtime updates to platform CSS selectors without republishing the Chrome extension.
+- [ ] **Native Mobile Autofill Integration:** Native Android (`AutofillService`) and iOS (`ASCredentialProviderViewController`) credential provider extensions.
+- [ ] **Distributed Queue Architecture:** Migrating recurring billing sweeps and email polling to BullMQ backed by persistent TCP Redis.
+- [ ] **Hardware Security Keys (WebAuthn / FIDO2):** Support for YubiKey hardware tokens for administrative login and vault decryption approval.
+- [ ] **Dynamic Remote Selectors:** Remote selector manifest distribution endpoint allowing zero-downtime selector updates without requiring Chrome Web Store releases.
 
 ---
 
-## Author & License
+## License
 
-- **Platform Engineering Team:** WITHUS Core Development Team
-- **License:** Proprietary — All Rights Reserved. Unauthorized copying, modification, or distribution of this software is strictly prohibited.
+This repository is proprietary and confidential. All rights reserved. Unauthorized copying, modification, or distribution of this software is strictly prohibited.
