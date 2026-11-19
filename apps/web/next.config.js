@@ -66,7 +66,7 @@ const securityHeaders = [
   },
   {
     key: 'X-DNS-Prefetch-Control',
-    value: 'off',
+    value: 'on',
   },
   // HSTS — applied only in production (CDN/proxy should handle this, belt+suspenders)
   ...(isDev
@@ -98,6 +98,16 @@ const nextConfig = {
         // Apply security headers to all routes
         source: '/(.*)',
         headers: securityHeaders,
+      },
+      {
+        // Safe revalidation cache for stable public assets (images, icons, vectors)
+        source: '/:path*(png|jpg|jpeg|svg|webp|ico)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, stale-while-revalidate=604800',
+          },
+        ],
       },
     ];
   },

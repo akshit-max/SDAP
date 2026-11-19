@@ -10,7 +10,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["'Plus Jakarta Sans'", "var(--font-inter)", "var(--font-geist-sans)", "-apple-system", "BlinkMacSystemFont", "'SF Pro Display'", "'SF Pro Text'", "system-ui", "sans-serif"],
+        sans: ["var(--font-plus-jakarta-sans)", "'Plus Jakarta Sans'", "var(--font-inter)", "var(--font-geist-sans)", "-apple-system", "BlinkMacSystemFont", "'SF Pro Display'", "'SF Pro Text'", "system-ui", "sans-serif"],
         mono: ["var(--font-geist-mono)", "var(--font-space-mono)", "monospace"],
         geist: ["var(--font-geist-sans)", "'Geist'", "sans-serif"],
       },

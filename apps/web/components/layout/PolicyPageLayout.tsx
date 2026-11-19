@@ -22,16 +22,22 @@ export function PolicyPageLayout({
     <div className="min-h-screen w-full relative flex flex-col justify-between overflow-x-hidden text-white font-geist antialiased selection:bg-white selection:text-zinc-950">
       {/* WithUs Hero Rainbow Blue Atmosphere */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-gradient-to-b from-[#2b416c] to-[#5879b0]">
-        <img
-          src="/shadow-bg.png"
-          alt=""
-          className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover mix-blend-color-burn opacity-70"
-        />
-        <img
-          src="/sun-halo.png"
-          alt=""
-          className="pointer-events-none select-none absolute inset-0 h-full w-full object-cover object-center opacity-90 mix-blend-screen"
-        />
+        <picture>
+          <source srcSet="/shadow-bg.webp" type="image/webp" />
+          <img
+            src="/shadow-bg.png"
+            alt=""
+            className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover mix-blend-color-burn opacity-70"
+          />
+        </picture>
+        <picture>
+          <source srcSet="/sun-halo.webp" type="image/webp" />
+          <img
+            src="/sun-halo.png"
+            alt=""
+            className="pointer-events-none select-none absolute inset-0 h-full w-full object-cover object-center opacity-90 mix-blend-screen"
+          />
+        </picture>
         <div
           className="pointer-events-none absolute h-screen w-[16rem] rounded-full right-[24rem] top-0 rotate-45 opacity-40"
           style={{

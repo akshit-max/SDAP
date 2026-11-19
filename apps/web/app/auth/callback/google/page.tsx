@@ -62,16 +62,22 @@ function GoogleCallbackContent() {
   return (
     <div className="min-h-screen min-h-[100dvh] w-full relative flex flex-col items-center justify-center overflow-hidden text-white font-geist antialiased bg-gradient-to-b from-[#2b416c] to-[#5879b0]">
       {/* WithUs Hero Rainbow Blue Atmosphere */}
-      <img
-        src="/shadow-bg.png"
-        alt=""
-        className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover mix-blend-color-burn opacity-70"
-      />
-      <img
-        src="/sun-halo.png"
-        alt=""
-        className="pointer-events-none select-none absolute inset-0 h-full w-full object-cover object-center opacity-90 mix-blend-screen"
-      />
+      <picture>
+        <source srcSet="/shadow-bg.webp" type="image/webp" />
+        <img
+          src="/shadow-bg.png"
+          alt=""
+          className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover mix-blend-color-burn opacity-70"
+        />
+      </picture>
+      <picture>
+        <source srcSet="/sun-halo.webp" type="image/webp" />
+        <img
+          src="/sun-halo.png"
+          alt=""
+          className="pointer-events-none select-none absolute inset-0 h-full w-full object-cover object-center opacity-90 mix-blend-screen"
+        />
+      </picture>
 
       <div className="relative z-10 p-8 sm:p-10 rounded-[28px] bg-white/[0.12] backdrop-blur-2xl border border-white/25 shadow-2xl flex flex-col items-center gap-4 text-center max-w-sm mx-4">
         <div className="w-12 h-12 rounded-2xl bg-white/[0.15] border border-white/20 flex items-center justify-center shadow-inner">
