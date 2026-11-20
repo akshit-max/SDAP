@@ -33,6 +33,26 @@ export class ApiService {
   private static refreshInProgressPromise: Promise<string> | null = null;
 
   /**
+   * Helper to perform fetch with a safe timeout (prevents hanging indefinitely on offline/cold connections)
+   */
+  private static async fetchWithTimeout(
+    url: string,
+    options: RequestInit = {},
+    timeoutMs: number = 7000,
+  ): Promise<Response> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  /**
    * Helper to perform fetch with base URL and default JSON headers
    */
   private static async request<T>(
@@ -60,7 +80,7 @@ export class ApiService {
     let response: Response;
 
     try {
-      response = await fetch(fullUrl, {
+      response = await this.fetchWithTimeout(fullUrl, {
         ...options,
         headers,
       });
@@ -76,7 +96,7 @@ export class ApiService {
       try {
         const newAccessToken = await this.refreshTokenSafely();
         headers['Authorization'] = `Bearer ${newAccessToken}`;
-        const retryResponse = await fetch(fullUrl, {
+        const retryResponse = await this.fetchWithTimeout(fullUrl, {
           ...options,
           headers,
         });
@@ -126,7 +146,7 @@ export class ApiService {
         }
 
         const baseUrl = await SecureStorageService.getApiBaseUrl();
-        const response = await fetch(`${baseUrl.replace(/\/+$/, '')}/auth/refresh`, {
+        const response = await this.fetchWithTimeout(`${baseUrl.replace(/\/+$/, '')}/auth/refresh`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -83,13 +83,31 @@ export const PLATFORM_SECURITY_REGISTRY: Record<string, PlatformSecurityConfig> 
   GMAIL: {
     id: 'GMAIL',
     name: 'Gmail',
-    allowedDomains: ['mail.google.com', 'accounts.google.com'],
+    allowedDomains: [
+      'mail.google.com',
+      'accounts.google.com',
+      'gds.google.com',
+      'myaccount.google.com',
+      'google.co.in',
+      'accounts.google.co.in',
+      'mail.google.co.in',
+      'gds.google.co.in',
+      'myaccount.google.co.in',
+    ],
     defaultLoginUrl: 'https://mail.google.com',
   },
   GOOGLE_ADS: {
     id: 'GOOGLE_ADS',
     name: 'Google Ads',
-    allowedDomains: ['ads.google.com', 'accounts.google.com'],
+    allowedDomains: [
+      'ads.google.com',
+      'accounts.google.com',
+      'gds.google.com',
+      'myaccount.google.com',
+      'google.co.in',
+      'accounts.google.co.in',
+      'ads.google.co.in',
+    ],
     defaultLoginUrl: 'https://ads.google.com/',
   },
 };

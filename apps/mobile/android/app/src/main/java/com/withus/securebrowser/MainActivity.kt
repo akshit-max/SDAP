@@ -18,11 +18,11 @@ class MainActivity : ReactActivity() {
     // This is required for expo-splash-screen.
     setTheme(R.style.AppTheme);
 
-    // Security Hardening: Prevent screenshots, screen recording, and recent-apps snapshot leakage
-    window.setFlags(
-      WindowManager.LayoutParams.FLAG_SECURE,
-      WindowManager.LayoutParams.FLAG_SECURE
-    )
+    // Temporarily disabled for debugging/testing on user request (re-enable before production release)
+    // window.setFlags(
+    //   WindowManager.LayoutParams.FLAG_SECURE,
+    //   WindowManager.LayoutParams.FLAG_SECURE
+    // )
 
     super.onCreate(null)
   }

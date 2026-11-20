@@ -203,6 +203,14 @@ export const SecureBrowserScreen: React.FC<SecureBrowserScreenProps> = ({
     }
 
     setHasError(false);
+
+    // Reapply DOM hiding CSS on navigation / SPA transitions if domain is allowed
+    const evaluation = NavigationSecurityService.evaluateNavigation(navState.url, platformKey);
+    if (evaluation.isAllowed && webViewRef.current) {
+      try {
+        webViewRef.current.injectJavaScript(AutofillService.buildDomHidingScript(platformKey));
+      } catch (_) {}
+    }
   };
 
   /**
@@ -333,17 +341,26 @@ export const SecureBrowserScreen: React.FC<SecureBrowserScreenProps> = ({
       const data = JSON.parse(event.nativeEvent.data);
       if (data.type === 'AUTOFILL_RESULT') {
         const payload = data.payload || {};
+        console.log('[AUTOFILL_RESULT]', JSON.stringify(payload));
         if (payload.success) {
           setAutofillStatus('FILLED');
-          setAutofillFeedback(
-            payload.usernameFilled && payload.passwordFilled
-              ? 'Username and password inserted into login form.'
-              : payload.usernameFilled
-              ? 'Username inserted (password field not found on this step).'
-              : payload.passwordFilled
-              ? 'Password inserted into login form.'
-              : 'Credentials inserted into visible inputs.',
-          );
+          if (payload.step === 'BOTH') {
+            setAutofillFeedback('Username and password filled.');
+          } else if (payload.step === 'USERNAME_ONLY') {
+            setAutofillFeedback('Username entered. Tap Next on page to proceed to password.');
+          } else if (payload.step === 'PASSWORD_ONLY') {
+            setAutofillFeedback('Password entered. Submit sign-in on page.');
+          } else {
+            setAutofillFeedback(
+              payload.usernameFilled && payload.passwordFilled
+                ? 'Username and password filled.'
+                : payload.usernameFilled
+                ? 'Username entered. Tap Next on page to proceed to password.'
+                : payload.passwordFilled
+                ? 'Password entered. Submit sign-in on page.'
+                : 'Credentials inserted into visible inputs.',
+            );
+          }
         } else {
           setAutofillStatus('ERROR');
           setAutofillFeedback(
@@ -593,6 +610,8 @@ export const SecureBrowserScreen: React.FC<SecureBrowserScreenProps> = ({
           geolocationEnabled={false}
           mediaPlaybackRequiresUserAction={true}
           incognito={true} // Isolated session cookie jar
+          // Early DOM Hiding Injection for Show-Password Toggles & Restricted Navigation
+          injectedJavaScriptBeforeContentLoaded={AutofillService.buildDomHidingScript(platformKey)}
           // Navigation Guards
           onShouldStartLoadWithRequest={handleShouldStartLoad}
           onNavigationStateChange={handleNavigationStateChange}
@@ -606,6 +625,11 @@ export const SecureBrowserScreen: React.FC<SecureBrowserScreenProps> = ({
           }}
           onLoadEnd={() => {
             setIsLoading(false);
+            if (webViewRef.current) {
+              try {
+                webViewRef.current.injectJavaScript(AutofillService.buildDomHidingScript(platformKey));
+              } catch (_) {}
+            }
           }}
           onError={(syntheticEvent: any) => {
             const { nativeEvent } = syntheticEvent;

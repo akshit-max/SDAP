@@ -39,22 +39,34 @@ export default function App() {
         return;
       }
 
-      // Session exists: attempt safe token refresh to validate lifecycle
+      // Fast-path: Instant restoration from local Keystore cache (under 15ms)
+      const cachedUser = await SecureStorageService.getUserProfile();
+      const cachedOrg = await SecureStorageService.getOrganization();
+
+      if (cachedUser) {
+        setCurrentUser(cachedUser);
+        setCurrentOrg(cachedOrg);
+        setIsAuthenticated(true);
+        setIsInitializing(false); // Unblock splash screen instantly
+
+        // Validate/refresh session in background asynchronously without blocking UI
+        ApiService.refreshTokenSafely().catch(async () => {
+          // If refresh token is expired or revoked: clear and prompt login
+          await SecureStorageService.clearAllAuthData();
+          setCurrentUser(null);
+          setCurrentOrg(null);
+          setIsAuthenticated(false);
+        });
+        return;
+      }
+
+      // Fallback path if profile was not cached
       try {
         await ApiService.refreshTokenSafely();
-        const user = await SecureStorageService.getUserProfile();
-        const org = await SecureStorageService.getOrganization();
-
-        if (user) {
-          setCurrentUser(user);
-          setCurrentOrg(org);
-          setIsAuthenticated(true);
-        } else {
-          const profile = await ApiService.getCurrentUser();
-          setCurrentUser(profile);
-          setCurrentOrg(org);
-          setIsAuthenticated(true);
-        }
+        const profile = await ApiService.getCurrentUser();
+        setCurrentUser(profile);
+        setCurrentOrg(cachedOrg);
+        setIsAuthenticated(true);
       } catch {
         // Stored refresh token is expired or revoked: clear and prompt login
         await SecureStorageService.clearAllAuthData();
