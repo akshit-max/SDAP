@@ -18,6 +18,15 @@ import {
   Organization,
   DelegatedSession,
 } from '../types/auth.types';
+import {
+  VaultResponse,
+  SecretMetadata,
+  ApprovalRequest,
+  PresenceRecord,
+  AuditEvent,
+  IntegrationConnection,
+  OrganizationMember,
+} from '../types/module.types';
 
 export class ApiError extends Error {
   statusCode: number;
@@ -406,5 +415,230 @@ export class ApiService {
       },
       true,
     );
+  }
+
+  /**
+   * Fetch organization vaults (GET /api/v1/organizations/:orgId/vaults)
+   */
+  static async getVaults(
+    orgId: string,
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<{ items: VaultResponse[]; total: number }> {
+    if (!orgId) {
+      throw new ApiError('Organization ID is required to fetch vaults', 400);
+    }
+    const response = await this.request<any>(
+      `organizations/${orgId}/vaults?page=${page}&limit=${limit}`,
+      { method: 'GET' },
+      true,
+    );
+
+    if (Array.isArray(response)) {
+      return { items: response, total: response.length };
+    }
+    return {
+      items: response.items || [],
+      total: typeof response.total === 'number' ? response.total : (response.items || []).length,
+    };
+  }
+
+  /**
+   * Fetch vault secret metadata (GET /api/v1/organizations/:orgId/vaults/:vaultId/secrets)
+   * Strictly returns metadata only. NEVER exposes plaintext secrets.
+   */
+  static async getVaultSecrets(orgId: string, vaultId: string): Promise<SecretMetadata[]> {
+    if (!orgId || !vaultId) {
+      throw new ApiError('Organization ID and Vault ID are required', 400);
+    }
+    const response = await this.request<any>(
+      `organizations/${orgId}/vaults/${vaultId}/secrets`,
+      { method: 'GET' },
+      true,
+    );
+
+    const list = Array.isArray(response) ? response : response.data || [];
+    return list.map((item: any) => ({
+      id: item.id,
+      vaultId: item.vaultId || vaultId,
+      name: item.name,
+      description: item.description,
+      type: item.type,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+    }));
+  }
+
+  /**
+   * Fetch pending approval requests to review (GET /api/v1/organizations/:orgId/approvals/pending)
+   */
+  static async getPendingApprovals(orgId: string): Promise<ApprovalRequest[]> {
+    if (!orgId) {
+      throw new ApiError('Organization ID is required to fetch pending approvals', 400);
+    }
+    const response = await this.request<any>(
+      `organizations/${orgId}/approvals/pending`,
+      { method: 'GET' },
+      true,
+    );
+    return Array.isArray(response) ? response : response.data || [];
+  }
+
+  /**
+   * Fetch current user's submitted approval requests (GET /api/v1/organizations/:orgId/approvals/requests)
+   */
+  static async getMyRequests(orgId: string): Promise<ApprovalRequest[]> {
+    if (!orgId) {
+      throw new ApiError('Organization ID is required to fetch requests', 400);
+    }
+    const response = await this.request<any>(
+      `organizations/${orgId}/approvals/requests`,
+      { method: 'GET' },
+      true,
+    );
+    return Array.isArray(response) ? response : response.data || [];
+  }
+
+  /**
+   * Resolve access approval (POST /api/v1/organizations/:orgId/approvals/:approvalId/resolve)
+   */
+  static async resolveApproval(
+    orgId: string,
+    approvalId: string,
+    data: { status: 'APPROVED' | 'REJECTED'; reason?: string },
+  ): Promise<ApprovalRequest> {
+    if (!orgId || !approvalId) {
+      throw new ApiError('Organization ID and Approval ID are required', 400);
+    }
+    return this.request<ApprovalRequest>(
+      `organizations/${orgId}/approvals/${approvalId}/resolve`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      },
+      true,
+    );
+  }
+
+  /**
+   * Fetch outgoing delegated sessions (GET /api/v1/organizations/:orgId/sessions/outgoing)
+   */
+  static async getOutgoingSessions(orgId: string): Promise<DelegatedSession[]> {
+    if (!orgId) {
+      throw new ApiError('Organization ID is required to fetch outgoing sessions', 400);
+    }
+    const rawSessions = await this.request<any[]>(
+      `organizations/${orgId}/sessions/outgoing`,
+      { method: 'GET' },
+      true,
+    );
+    return (rawSessions || []).map((raw) => ({
+      ...raw,
+      platform: (raw.platform || raw.platformId || raw.resourceName || 'UNKNOWN').toUpperCase(),
+      permittedUsername: raw.permittedUsername || raw.grantee?.email || 'Grantee',
+      secretName: raw.secretName || raw.resourceName || raw.platform,
+    }));
+  }
+
+  /**
+   * Revoke delegated session (POST /api/v1/organizations/:orgId/sessions/:sessionId/revoke)
+   */
+  static async revokeSession(orgId: string, sessionId: string): Promise<any> {
+    if (!orgId || !sessionId) {
+      throw new ApiError('Organization ID and Session ID are required to revoke session', 400);
+    }
+    return this.request<any>(
+      `organizations/${orgId}/sessions/${sessionId}/revoke`,
+      { method: 'POST' },
+      true,
+    );
+  }
+
+  /**
+   * Fetch live organization presence (GET /api/v1/organizations/:orgId/presence)
+   */
+  static async getPresence(orgId: string): Promise<PresenceRecord[]> {
+    if (!orgId) {
+      throw new ApiError('Organization ID is required to fetch presence', 400);
+    }
+    const response = await this.request<any>(
+      `organizations/${orgId}/presence`,
+      { method: 'GET' },
+      true,
+    );
+    return Array.isArray(response) ? response : response.data || [];
+  }
+
+  /**
+   * Fetch organization audit logs (GET /api/v1/organizations/:orgId/audit)
+   */
+  static async getAuditEvents(
+    orgId: string,
+    query: { page?: number; limit?: number; action?: string } = {},
+  ): Promise<{ items: AuditEvent[]; total: number }> {
+    if (!orgId) {
+      throw new ApiError('Organization ID is required to fetch audit events', 400);
+    }
+    const params = new URLSearchParams();
+    if (query.page) params.append('page', String(query.page));
+    if (query.limit) params.append('limit', String(query.limit));
+    if (query.action) params.append('action', query.action);
+
+    const queryString = params.toString();
+    const endpoint = `organizations/${orgId}/audit${queryString ? `?${queryString}` : ''}`;
+    const response = await this.request<any>(endpoint, { method: 'GET' }, true);
+
+    if (Array.isArray(response)) {
+      return { items: response, total: response.length };
+    }
+    return {
+      items: response.items || response.data || [],
+      total: typeof response.total === 'number' ? response.total : (response.items || []).length,
+    };
+  }
+
+  /**
+   * Fetch connected platform integrations (GET /api/v1/organizations/:orgId/integrations)
+   */
+  static async getIntegrations(orgId: string): Promise<IntegrationConnection[]> {
+    if (!orgId) {
+      throw new ApiError('Organization ID is required to fetch integrations', 400);
+    }
+    const response = await this.request<any>(
+      `organizations/${orgId}/integrations`,
+      { method: 'GET' },
+      true,
+    );
+    return Array.isArray(response) ? response : response.data || [];
+  }
+
+  /**
+   * Fetch organization members (GET /api/v1/organizations/:orgId/members)
+   */
+  static async getMembers(orgId: string): Promise<OrganizationMember[]> {
+    if (!orgId) {
+      throw new ApiError('Organization ID is required to fetch members', 400);
+    }
+    const response = await this.request<any>(
+      `organizations/${orgId}/members`,
+      { method: 'GET' },
+      true,
+    );
+    return Array.isArray(response) ? response : response.data || [];
+  }
+
+  /**
+   * Fetch organization details (GET /api/v1/organizations/:orgId)
+   */
+  static async getOrganizationDetails(orgId: string): Promise<any> {
+    if (!orgId) {
+      throw new ApiError('Organization ID is required', 400);
+    }
+    const response = await this.request<any>(
+      `organizations/${orgId}`,
+      { method: 'GET' },
+      true,
+    );
+    return response.data || response;
   }
 }

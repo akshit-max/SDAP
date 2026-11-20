@@ -34,6 +34,7 @@ interface SessionsDashboardScreenProps {
   onSelectOrganization: (org: Organization) => void;
   onLaunchSession: (session: DelegatedSession) => void;
   onLogout: () => void;
+  onOpenDrawer?: () => void;
 }
 
 export const SessionsDashboardScreen: React.FC<SessionsDashboardScreenProps> = ({
@@ -42,6 +43,7 @@ export const SessionsDashboardScreen: React.FC<SessionsDashboardScreenProps> = (
   onSelectOrganization,
   onLaunchSession,
   onLogout,
+  onOpenDrawer,
 }) => {
   const [sessions, setSessions] = useState<DelegatedSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -226,6 +228,17 @@ export const SessionsDashboardScreen: React.FC<SessionsDashboardScreenProps> = (
       {/* Top Application Bar */}
       <View style={styles.header}>
         <View style={styles.headerTopRow}>
+          {onOpenDrawer ? (
+            <TouchableOpacity
+              style={styles.drawerTriggerButton}
+              onPress={onOpenDrawer}
+              accessibilityLabel="Open Navigation Menu"
+              activeOpacity={0.7}
+            >
+              <Text style={styles.drawerTriggerIcon}>☰</Text>
+            </TouchableOpacity>
+          ) : null}
+
           {/* Brand & User Avatar */}
           <View style={styles.userSection}>
             <View style={styles.userAvatar}>
@@ -478,6 +491,22 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: SPACING.md,
+  },
+  drawerTriggerButton: {
+    width: 36,
+    height: 36,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.bgTertiary,
+    borderWidth: 1,
+    borderColor: COLORS.borderMedium,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SPACING.sm + 2,
+  },
+  drawerTriggerIcon: {
+    fontSize: 18,
+    color: COLORS.textWhite,
+    fontWeight: 'bold',
   },
   userSection: {
     flexDirection: 'row',
