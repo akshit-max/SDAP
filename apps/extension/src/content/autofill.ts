@@ -360,7 +360,7 @@ async function handleAutofillRequest(): Promise<void> {
       // Safety: the username and password selectors must not match the SAME element.
       if (usernameEl && usernameEl !== pwEl) {
         fillField(usernameEl, username);
-        if (!pwEl) {
+        if (!pwEl && config?.id === 'INCOMETAX') {
           usernameEl.dispatchEvent(new Event('blur', { bubbles: true }));
         }
         await new Promise(r => setTimeout(r, 150));
@@ -375,21 +375,24 @@ async function handleAutofillRequest(): Promise<void> {
     if (fields.passwordSelector && password) {
       if (pwEl) {
         try {
-          const confirmCheckbox = document.querySelector<HTMLInputElement>(
-            'mat-checkbox input[type="checkbox"], input[type="checkbox"]'
-          );
-          if (confirmCheckbox && !confirmCheckbox.checked) {
-            confirmCheckbox.click();
-            const matCheckbox = confirmCheckbox.closest('mat-checkbox');
-            if (matCheckbox && !confirmCheckbox.checked) {
-              (matCheckbox as HTMLElement).click();
+          const checkboxSelector = config?.login?.confirmationCheckboxSelector;
+          if (checkboxSelector) {
+            const confirmCheckbox = document.querySelector<HTMLInputElement>(checkboxSelector);
+            if (confirmCheckbox && !confirmCheckbox.checked) {
+              confirmCheckbox.click();
+              const matCheckbox = confirmCheckbox.closest('mat-checkbox');
+              if (matCheckbox && !confirmCheckbox.checked) {
+                (matCheckbox as HTMLElement).click();
+              }
+              confirmCheckbox.checked = true;
+              confirmCheckbox.dispatchEvent(new Event('input', { bubbles: true }));
+              confirmCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
             }
-            confirmCheckbox.checked = true;
-            confirmCheckbox.dispatchEvent(new Event('input', { bubbles: true }));
-            confirmCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
           }
           fillField(pwEl, password, config?.id !== 'MCA');
-          pwEl.dispatchEvent(new Event('blur', { bubbles: true }));
+          if (config?.id === 'INCOMETAX') {
+            pwEl.dispatchEvent(new Event('blur', { bubbles: true }));
+          }
         } catch { /* ignore */ }
       } else {
         startPasswordWatcher(
@@ -666,23 +669,26 @@ function startPasswordWatcher(
     clearTimeout(timeout);
 
     try {
-      // Check confirmation checkbox if present (e.g. Income Tax Secure Access Message)
-      const confirmCheckbox = document.querySelector<HTMLInputElement>(
-        'mat-checkbox input[type="checkbox"], input[type="checkbox"]'
-      );
-      if (confirmCheckbox && !confirmCheckbox.checked) {
-        confirmCheckbox.click();
-        const matCheckbox = confirmCheckbox.closest('mat-checkbox');
-        if (matCheckbox && !confirmCheckbox.checked) {
-          (matCheckbox as HTMLElement).click();
+      // Check confirmation checkbox if explicitly configured for this platform (e.g. Income Tax Secure Access Message)
+      const checkboxSelector = config?.login?.confirmationCheckboxSelector;
+      if (checkboxSelector) {
+        const confirmCheckbox = document.querySelector<HTMLInputElement>(checkboxSelector);
+        if (confirmCheckbox && !confirmCheckbox.checked) {
+          confirmCheckbox.click();
+          const matCheckbox = confirmCheckbox.closest('mat-checkbox');
+          if (matCheckbox && !confirmCheckbox.checked) {
+            (matCheckbox as HTMLElement).click();
+          }
+          confirmCheckbox.checked = true;
+          confirmCheckbox.dispatchEvent(new Event('input', { bubbles: true }));
+          confirmCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
         }
-        confirmCheckbox.checked = true;
-        confirmCheckbox.dispatchEvent(new Event('input', { bubbles: true }));
-        confirmCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
       }
 
       fillField(pwEl, password);
-      pwEl.dispatchEvent(new Event('blur', { bubbles: true }));
+      if (config?.id === 'INCOMETAX') {
+        pwEl.dispatchEvent(new Event('blur', { bubbles: true }));
+      }
 
       // Hand off to OTP watcher if this platform expects an OTP after password
       if (config?.otp) startOtpWatcher(sessionId, orgId, loginStartTime);

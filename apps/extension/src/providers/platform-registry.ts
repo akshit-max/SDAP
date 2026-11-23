@@ -812,6 +812,7 @@ platformRegistry.register({
       'input[type="password"]',
     ].join(', '),
     submitSelector: 'button.large-button-primary, button.large-buttonprimary, button.primary-button, button[type="submit"]',
+    confirmationCheckboxSelector: 'mat-checkbox input[type="checkbox"], mat-checkbox',
   },
   hideElementsCSS: [
     '.mat-mdc-form-field-icon-suffix button',

@@ -102,6 +102,7 @@ export interface PlatformConfig {
     passwordSelector?: string;
     submitSelector?: string;
     requirePasswordOnDOM?: boolean;
+    confirmationCheckboxSelector?: string;
   };
   otp?: {
     type: 'EMAIL' | 'SMS' | 'NONE';
