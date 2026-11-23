@@ -138,11 +138,11 @@ function getPlatformBranding(resourceName: string): { svg: string; color: string
     };
   }
 
-  if (name.includes('incometax') || name.includes('income tax')) {
+  if (name.includes('incometax') || name.includes('income tax') || name === 'itr' || name.includes('itr') || name.includes('tax')) {
     return {
       name: 'Income Tax Portal',
-      color: '#1e3a8a',
-      svg: `<svg class="platform-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 10h18M5 10v11M19 10v11M9 10v11M15 10v11M12 2L2 7h20L12 2z"/></svg>`
+      color: '#0A2558',
+      svg: `<svg class="platform-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="5" fill="#0A2558"/><circle cx="12" cy="7" r="2.5" stroke="#F59E0B" stroke-width="0.8" fill="#1E3A8A"/><path d="M12 5.2v3.6M10.2 7h3.6M10.8 5.8l2.4 2.4M13.2 5.8l-2.4 2.4" stroke="#F59E0B" stroke-width="0.5"/><path d="M12 9.5v8.5M8 12.5h8" stroke="#FFFFFF" stroke-width="1.3" stroke-linecap="round"/><path d="M6.5 15.5l1.5-3 1.5 3c-.4.4-2.6.4-3 0z" fill="#F59E0B"/><path d="M14.5 15.5l1.5-3 1.5 3c-.4.4-2.6.4-3 0z" fill="#F59E0B"/><path d="M5 20h4.5" stroke="#FF9933" stroke-width="1.5" stroke-linecap="round"/><path d="M9.8 20h4.4" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/><path d="M14.5 20H19" stroke="#138808" stroke-width="1.5" stroke-linecap="round"/></svg>`
     };
   }
 
@@ -155,7 +155,7 @@ function getPlatformBranding(resourceName: string): { svg: string; color: string
   };
 }
 
-function detectPlatform(hostname: string): string {
+function detectPlatform(hostname: string, url = ''): string {
   const host = hostname.toLowerCase();
   if (host.includes('google.com') || host.includes('gmail.com')) return 'Gmail';
   if (host.includes('github.com')) return 'GitHub';
@@ -168,7 +168,13 @@ function detectPlatform(hostname: string): string {
   if (host.includes('mca.gov.in')) return 'MCA Portal';
   if (host.includes('gst.gov.in')) return 'GST Portal';
   if (host.includes('udyamregistration.gov.in')) return 'Udyam Portal';
-  if (host.includes('incometax.gov.in')) return 'Income Tax Portal';
+  if (host.includes('incometax.gov.in')) {
+    // Only show "Income Tax Portal detected - Secure fill" when on the login pages
+    if (!url || url.includes('#/login')) {
+      return 'Income Tax Portal';
+    }
+    return '';
+  }
   return '';
 }
 
@@ -274,7 +280,7 @@ async function showSessions(email: string) {
   const hostname = tab?.url ? new URL(tab.url).hostname : '';
 
   if (hostname) {
-    const platformName = detectPlatform(hostname);
+    const platformName = detectPlatform(hostname, tab?.url || '');
     if (platformName) {
       const branding = getPlatformBranding(platformName);
       currentSiteEl.style.background = '#f0fdf4';

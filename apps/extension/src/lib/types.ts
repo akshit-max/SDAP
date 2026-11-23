@@ -103,6 +103,12 @@ export interface PlatformConfig {
     submitSelector?: string;
     requirePasswordOnDOM?: boolean;
     confirmationCheckboxSelector?: string;
+    /**
+     * Optional string or pattern that the current URL/hash must contain
+     * to activate login autofill (e.g. '#/login' for Angular SPAs).
+     * Prevents autofill from activating on post-login dashboards (e.g. '#/dashboard').
+     */
+    loginUrlPattern?: string;
   };
   otp?: {
     type: 'EMAIL' | 'SMS' | 'NONE';

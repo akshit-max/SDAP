@@ -199,16 +199,26 @@ async function discoverSessions(): Promise<void> {
   // This prevents the toast from firing on post-login pages like
   // dashboard.razorpay.com/app/dashboard which match the domain but have no login UI.
   const checkAndActivate = () => {
+    // URL Scoping Guard: If this platform defines a login URL/hash pattern (e.g. Income Tax '#/login'),
+    // reject immediately if current URL does not match. This prevents autofill & toasts from firing
+    // on post-login dashboards (e.g. '#/dashboard/fileIncomeTaxReturn').
+    if (config?.login?.loginUrlPattern) {
+      const pattern = config.login.loginUrlPattern;
+      const matches = location.href.includes(pattern) || location.hash.startsWith(pattern);
+      if (!matches) return false;
+    }
+
     const fields = provider?.getCredentialFields();
     if (!fields) return false;
 
-    // At least one of: username field or password field must be in the DOM
-    const hasUsername = fields.usernameSelector
-      ? !!document.querySelector(fields.usernameSelector)
-      : false;
-    const hasPassword = fields.passwordSelector
-      ? !!document.querySelector(fields.passwordSelector)
-      : false;
+    // Helper: At least one candidate element must be present AND visible on the DOM
+    const isAnyVisible = (selector: string): boolean => {
+      const els = Array.from(document.querySelectorAll<HTMLInputElement>(selector));
+      return els.some(el => isOtpFieldVisible(el));
+    };
+
+    const hasUsername = fields.usernameSelector ? isAnyVisible(fields.usernameSelector) : false;
+    const hasPassword = fields.passwordSelector ? isAnyVisible(fields.passwordSelector) : false;
 
     return hasUsername || hasPassword;
   };
@@ -250,6 +260,22 @@ async function discoverSessions(): Promise<void> {
     }
   });
   formWatcher.observe(document.body, { childList: true, subtree: true });
+
+  // SPA Hash Navigation Guard: If user moves from login to dashboard, disconnect watcher & clean up toast
+  window.addEventListener('hashchange', () => {
+    if (config?.login?.loginUrlPattern) {
+      const pattern = config.login.loginUrlPattern;
+      const matches = location.href.includes(pattern) || location.hash.startsWith(pattern);
+      if (!matches) {
+        formWatcher.disconnect();
+        const toast = document.getElementById('withus-magic-toast');
+        if (toast) toast.remove();
+      } else if (checkAndActivate()) {
+        formWatcher.disconnect();
+        handleAutofillRequest();
+      }
+    }
+  });
   // If neither login form nor OTP field found — do nothing (e.g. post-login dashboard)
 }
 

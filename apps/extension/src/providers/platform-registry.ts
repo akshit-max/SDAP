@@ -798,6 +798,7 @@ platformRegistry.register({
   domains: ['incometax.gov.in', 'eportal.incometax.gov.in'],
   login: {
     url: 'https://eportal.incometax.gov.in/iec/foservices/#/login',
+    loginUrlPattern: '#/login',
     usernameSelector: [
       '#panAdhaarUserId',
       'input#panAdhaarUserId',
@@ -809,7 +810,6 @@ platformRegistry.register({
       '#loginPasswordField',
       'input#loginPasswordField',
       'input[name="loginPasswordField"]',
-      'input[type="password"]',
     ].join(', '),
     submitSelector: 'button.large-button-primary, button.large-buttonprimary, button.primary-button, button[type="submit"]',
     confirmationCheckboxSelector: 'mat-checkbox input[type="checkbox"], mat-checkbox',
