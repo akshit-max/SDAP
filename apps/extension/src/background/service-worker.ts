@@ -188,7 +188,7 @@ async function handleMessage(
                   const provider = (s as any).integrationProvider as string | undefined;
                   if (provider) {
                     const config = platformRegistry.getForHost(hostname);
-                    if (config && config.id === provider) return true;
+                    if (config && (config.id === provider || (config.id === 'INCOMETAX' && (provider === 'ITR' || provider.includes('ITR'))))) return true;
                   }
 
                   // ── Path 1b: Vault platformId authoritative match ──────────────────────
@@ -199,7 +199,7 @@ async function handleMessage(
                   const vaultPlatformId = (s as any).platformId as string | undefined;
                   if (vaultPlatformId) {
                     const config = platformRegistry.getForHost(hostname);
-                    if (config && config.id === vaultPlatformId) return true;
+                    if (config && (config.id === vaultPlatformId || (config.id === 'INCOMETAX' && (vaultPlatformId === 'ITR' || vaultPlatformId.includes('ITR'))))) return true;
                   }
 
                   // ── Path 2: resourceName text-match (existing fallback, unchanged) ──────

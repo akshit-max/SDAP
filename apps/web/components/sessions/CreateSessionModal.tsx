@@ -160,17 +160,42 @@ const PLATFORM_CAPABILITY_MAP: Record<string, { key: string; label: string; desc
   ],
 };
 
+const PLATFORM_ALIASES: Record<string, string[]> = {
+  incometax: ['incometax', 'income tax', 'income-tax', 'income_tax', 'itr'],
+  mca: ['mca', 'ministry of corporate affairs'],
+  gst: ['gst', 'goods and services tax'],
+  udyam: ['udyam', 'msme'],
+  godaddy: ['godaddy', 'go daddy'],
+  razorpay: ['razorpay', 'razor pay'],
+  github: ['github', 'git hub'],
+  vercel: ['vercel'],
+  stripe: ['stripe'],
+  shopify: ['shopify'],
+  linkedin: ['linkedin', 'linked in'],
+  gmail: ['gmail', 'google mail', 'google'],
+};
+
 function getCapabilitiesForSecret(
   secretName: string,
   vaultName?: string,
+  platformId?: string | null,
 ): { key: string; label: string; description: string }[] {
-  // Check secret name first, then fall back to vault name.
-  // Users often name secrets like "my-git-r" rather than "github-token",
-  // so the vault name is a more reliable platform identifier.
-  const candidates = [secretName.toLowerCase(), (vaultName ?? '').toLowerCase()];
-  for (const candidate of candidates) {
-    for (const [keyword, caps] of Object.entries(PLATFORM_CAPABILITY_MAP)) {
-      if (candidate.includes(keyword)) return caps;
+  // Check secret name, vault name, and vault platformId.
+  // Users often name vaults like "ITR" or secrets like "my-git-r",
+  // so all identifiers are matched against platform aliases.
+  const norm = (s: string) => s.toLowerCase().replace(/[\s\-_]/g, '');
+  const candidates = [
+    secretName.toLowerCase(),
+    (vaultName ?? '').toLowerCase(),
+    (platformId ?? '').toLowerCase(),
+  ].filter(Boolean);
+
+  for (const [platformKey, caps] of Object.entries(PLATFORM_CAPABILITY_MAP)) {
+    const aliases = PLATFORM_ALIASES[platformKey] || [platformKey];
+    for (const candidate of candidates) {
+      if (aliases.some(alias => candidate === alias || candidate.includes(alias) || alias.includes(candidate) || norm(candidate).includes(norm(alias)))) {
+        return caps;
+      }
     }
   }
   return [];
@@ -251,11 +276,12 @@ export function CreateSessionModal({
     selectedVaultId || null,
   );
 
-  // Resolve available capabilities: check secret name first, then vault name as fallback.
-  // Users often name secrets like "my-git-r" — the vault name is the reliable platform identifier.
+  // Resolve available capabilities: check secret name, vault name, and vault platformId.
+  // Users often name vaults like "ITR" — the vault name is the reliable platform identifier.
   const selectedSecretName = secrets.find(s => s.id === selectedSecretId)?.name ?? '';
-  const selectedVaultName = vaults.find(v => v.id === selectedVaultId)?.name ?? '';
-  const availableCapabilities = getCapabilitiesForSecret(selectedSecretName, selectedVaultName);
+  const selectedVault = vaults.find(v => v.id === selectedVaultId);
+  const selectedVaultName = selectedVault?.name ?? '';
+  const availableCapabilities = getCapabilitiesForSecret(selectedSecretName, selectedVaultName, selectedVault?.platformId);
 
   // Fetch Integrations
   const { data: connections = [] } = useIntegrations(orgId);
@@ -334,10 +360,21 @@ export function CreateSessionModal({
       payload.resourceId = selectedSecretId;
       payload.permission = vaultPermission === 'REVEAL' ? SessionPermission.REVEAL : SessionPermission.EXTENSION;
 
-      const lower = selectedSecretName.toLowerCase();
-      const matchedKeyword = Object.keys(PLATFORM_CAPABILITY_MAP).find(k => lower.includes(k));
-      if (matchedKeyword) {
-        payload.integrationProvider = matchedKeyword.toUpperCase();
+      const lowerSecret = selectedSecretName.toLowerCase();
+      const lowerVault = selectedVaultName.toLowerCase();
+      const vaultPlatId = (selectedVault?.platformId ?? '').toLowerCase();
+      const candidates = [lowerSecret, lowerVault, vaultPlatId].filter(Boolean);
+
+      let matchedProvider: string | null = null;
+      for (const [platformKey, aliases] of Object.entries(PLATFORM_ALIASES)) {
+        if (candidates.some(c => aliases.some(a => c === a || c.includes(a) || a.includes(c)))) {
+          matchedProvider = platformKey.toUpperCase();
+          break;
+        }
+      }
+
+      if (matchedProvider) {
+        payload.integrationProvider = matchedProvider;
       } else {
         const vault = vaults.find(v => v.id === selectedVaultId);
         if (vault) {
