@@ -1,15 +1,9 @@
 /**
- * WITHUS Mobile Secure Browser — Delegated Sessions Dashboard (Polished UI/UX)
- *
- * Implements:
- * - Explicit Organization Selection & Workspace Switching
- * - Incoming delegated session listing (GET /api/v1/organizations/:orgId/sessions/incoming)
- * - Launching controlled Phase 3-5 Secure Browser runtime
- * - Platform badges, permitted username identifier, status, and expiry
- * - Polished enterprise cards, pull-to-refresh, empty states, and modal switcher
+ * WITHUS Mobile Secure Browser — Delegated Sessions Dashboard
+ * Structured, responsive enterprise management matching WITHUS web application
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -19,14 +13,18 @@ import {
   FlatList,
   RefreshControl,
   Modal,
+  Alert,
+  TextInput,
+  ScrollView,
 } from 'react-native';
 import { ApiService, ApiError } from '../services/api.service.ts';
-import { SecureStorageService } from '../services/storage.service.ts';
 import { UserProfile, Organization, DelegatedSession } from '../types/auth.types.ts';
+import { VaultResponse, SecretMetadata, OrganizationMember } from '../types/module.types.ts';
+import { AppHeader } from '../components/AppHeader.tsx';
 import { StatusBadge } from '../components/StatusBadge.tsx';
 import { PlatformBadge } from '../components/PlatformBadge.tsx';
 import { FeedbackBanner } from '../components/FeedbackBanner.tsx';
-import { COLORS, SPACING, RADIUS, ANDROID_STATUS_BAR_HEIGHT } from '../theme/theme.ts';
+import { COLORS, SPACING, RADIUS } from '../theme/theme.ts';
 
 interface SessionsDashboardScreenProps {
   user: UserProfile;
@@ -35,63 +33,66 @@ interface SessionsDashboardScreenProps {
   onLaunchSession: (session: DelegatedSession) => void;
   onLogout: () => void;
   onOpenDrawer?: () => void;
+  onOpenOrgPicker?: () => void;
 }
 
 export const SessionsDashboardScreen: React.FC<SessionsDashboardScreenProps> = ({
   user,
   organization,
-  onSelectOrganization,
   onLaunchSession,
   onLogout,
-  onOpenDrawer,
+  onOpenDrawer = () => {},
+  onOpenOrgPicker = () => {},
 }) => {
-  const [sessions, setSessions] = useState<DelegatedSession[]>([]);
+  const [sessionTab, setSessionTab] = useState<'INCOMING' | 'OUTGOING'>('INCOMING');
+  const [incomingSessions, setIncomingSessions] = useState<DelegatedSession[]>([]);
+  const [outgoingSessions, setOutgoingSessions] = useState<DelegatedSession[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
-  // Organization Switching State
-  const [allOrganizations, setAllOrganizations] = useState<Organization[]>([]);
-  const [showOrgSwitchModal, setShowOrgSwitchModal] = useState(false);
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-
-  useEffect(() => {
-    loadOrganizationsList();
-  }, []);
-
-  const loadOrganizationsList = async () => {
-    try {
-      const orgs = await SecureStorageService.getAllOrganizations();
-      setAllOrganizations(orgs);
-    } catch {
-      // Non-blocking
-    }
-  };
+  // Grant Access Modal State
+  const [showGrantModal, setShowGrantModal] = useState(false);
+  const [members, setMembers] = useState<OrganizationMember[]>([]);
+  const [vaults, setVaults] = useState<VaultResponse[]>([]);
+  const [vaultSecrets, setVaultSecrets] = useState<SecretMetadata[]>([]);
+  const [selectedGranteeId, setSelectedGranteeId] = useState('');
+  const [selectedVaultId, setSelectedVaultId] = useState('');
+  const [selectedSecretId, setSelectedSecretId] = useState('');
+  const [selectedPlatform, setSelectedPlatform] = useState('GITHUB');
+  const [selectedHours, setSelectedHours] = useState('24');
+  const [grantJustification, setGrantJustification] = useState('');
+  const [isSubmittingGrant, setIsSubmittingGrant] = useState(false);
+  const [isLoadingSecretsForGrant, setIsLoadingSecretsForGrant] = useState(false);
 
   const fetchSessions = useCallback(async () => {
-    if (!organization || !organization.id) {
-      setErrorMessage(
-        'No organization workspace selected. Please select an organization.',
-      );
+    if (!organization?.id) {
+      setErrorMessage('No organization workspace selected. Please select a workspace.');
       setIsLoading(false);
       return;
     }
 
     setErrorMessage(null);
     try {
-      const data = await ApiService.getIncomingSessions(organization.id);
-      setSessions(data || []);
+      const [incoming, outgoing] = await Promise.all([
+        ApiService.getIncomingSessions(organization.id).catch(() => []),
+        ApiService.getOutgoingSessions(organization.id).catch(() => []),
+      ]);
+      setIncomingSessions(incoming || []);
+      setOutgoingSessions(outgoing || []);
     } catch (err: any) {
       if (err instanceof ApiError) {
         setErrorMessage(err.message);
       } else {
-        setErrorMessage(err.message || 'Failed to load incoming delegated sessions');
+        setErrorMessage(err.message || 'Failed to load delegated sessions');
       }
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [organization]);
+  }, [organization?.id]);
 
   useEffect(() => {
     fetchSessions();
@@ -102,21 +103,95 @@ export const SessionsDashboardScreen: React.FC<SessionsDashboardScreenProps> = (
     fetchSessions();
   };
 
-  const handleSelectOrg = async (selected: Organization) => {
-    await SecureStorageService.setOrganization(selected);
-    onSelectOrganization(selected);
-    setShowOrgSwitchModal(false);
-    setIsLoading(true);
+  const handleRevokeSession = (sessionId: string) => {
+    if (!organization?.id) return;
+    Alert.alert(
+      'Revoke Delegated Session',
+      'Are you sure you want to terminate this delegated session immediately? The grantee will lose access instantly.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Revoke Access',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await ApiService.revokeSession(organization.id, sessionId);
+              setSuccessBanner('Session revoked successfully.');
+              fetchSessions();
+            } catch (err: any) {
+              setErrorMessage(err.message || 'Failed to revoke session.');
+            }
+          },
+        },
+      ],
+    );
   };
 
-  const handleLogout = async () => {
+  const handleOpenGrantModal = async () => {
+    if (!organization?.id) return;
+    setShowGrantModal(true);
     try {
-      await ApiService.logout();
+      const [membersData, vaultsData] = await Promise.all([
+        ApiService.getMembers(organization.id).catch(() => []),
+        ApiService.getVaults(organization.id, 1, 50).catch(() => ({ items: [], total: 0 })),
+      ]);
+      setMembers(membersData || []);
+      setVaults(vaultsData.items || []);
+      if (membersData?.length > 0) setSelectedGranteeId(membersData[0].userId || membersData[0].id);
+      if (vaultsData.items?.length > 0) {
+        const vId = vaultsData.items[0].id;
+        setSelectedVaultId(vId);
+        handleSelectVaultForGrant(vId);
+      }
     } catch {
-      // Non-blocking logout failure
+      // Non-blocking
+    }
+  };
+
+  const handleSelectVaultForGrant = async (vId: string) => {
+    if (!organization?.id) return;
+    setSelectedVaultId(vId);
+    setIsLoadingSecretsForGrant(true);
+    try {
+      const secrets = await ApiService.getVaultSecrets(organization.id, vId);
+      setVaultSecrets(secrets || []);
+      if (secrets?.length > 0) setSelectedSecretId(secrets[0].id);
+    } catch {
+      setVaultSecrets([]);
     } finally {
-      setShowLogoutConfirm(false);
-      onLogout();
+      setIsLoadingSecretsForGrant(false);
+    }
+  };
+
+  const handleGrantSession = async () => {
+    if (!organization?.id || !selectedGranteeId || !selectedSecretId || isSubmittingGrant) {
+      Alert.alert('Incomplete Form', 'Please select a grantee member, vault, and credential secret.');
+      return;
+    }
+    setIsSubmittingGrant(true);
+
+    try {
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + Number(selectedHours || 24));
+
+      await ApiService.createSession(organization.id, {
+        granteeId: selectedGranteeId,
+        scope: 'SECRET',
+        resourceId: selectedSecretId,
+        permission: 'EXTENSION',
+        integrationProvider: selectedPlatform.toUpperCase(),
+        expiresAt: expiresAt.toISOString(),
+        justification: grantJustification.trim() || undefined,
+      });
+
+      setShowGrantModal(false);
+      setGrantJustification('');
+      setSuccessBanner('Delegated session granted successfully.');
+      fetchSessions();
+    } catch (err: any) {
+      Alert.alert('Grant Failed', err.message || 'Failed to create delegated session.');
+    } finally {
+      setIsSubmittingGrant(false);
     }
   };
 
@@ -130,15 +205,30 @@ export const SessionsDashboardScreen: React.FC<SessionsDashboardScreenProps> = (
       const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
       if (hours > 24) {
         const days = Math.floor(hours / 24);
-        return { text: `${days}d ${hours % 24}h remaining`, isUrgent: false };
+        return { text: `Expires in ${days}d ${hours % 24}h`, isUrgent: false };
       }
-      return { text: `${hours}h ${minutes}m remaining`, isUrgent: hours < 4 };
+      return { text: `Expires in ${hours}h ${minutes}m`, isUrgent: hours < 4 };
     } catch {
       return { text: isoDate, isUrgent: false };
     }
   };
 
-  const renderSessionItem = ({ item }: { item: DelegatedSession }) => {
+  // Filtered sessions based on active tab and search query
+  const rawSessions = sessionTab === 'INCOMING' ? incomingSessions : outgoingSessions;
+  const filteredSessions = useMemo(() => {
+    if (!searchQuery.trim()) return rawSessions;
+    const q = searchQuery.toLowerCase().trim();
+    return rawSessions.filter((s) => {
+      const p = (s.platform || s.integrationProvider || s.platformId || '').toLowerCase();
+      const u = (s.permittedUsername || '').toLowerCase();
+      const sec = (s.secretName || '').toLowerCase();
+      return p.includes(q) || u.includes(q) || sec.includes(q);
+    });
+  }, [rawSessions, searchQuery]);
+
+  const activeCount = rawSessions.filter((s) => s.status === 'ACTIVE').length;
+
+  const renderSessionCard = ({ item }: { item: DelegatedSession }) => {
     const isActive = item.status === 'ACTIVE';
     const expiry = formatExpiry(item.expiresAt);
     const platformKey = (
@@ -146,170 +236,187 @@ export const SessionsDashboardScreen: React.FC<SessionsDashboardScreenProps> = (
       item.integrationProvider ||
       item.platformId ||
       item.resourceName ||
-      'General Platform'
+      'GENERAL'
     ).toUpperCase();
 
     return (
       <View style={styles.sessionCard}>
-        {/* Card Header */}
+        {/* Card Header: Platform + Title + Status */}
         <View style={styles.cardHeader}>
-          <View style={styles.platformRow}>
+          <View style={styles.cardHeaderLeft}>
             <PlatformBadge platform={platformKey} size="medium" />
             <View style={styles.platformMeta}>
-              <Text style={styles.platformName}>
-                {platformKey}
+              <Text style={styles.platformName}>{platformKey}</Text>
+              <Text style={styles.permittedUserText} numberOfLines={1}>
+                {item.permittedUsername ? `Grantee: ${item.permittedUsername}` : 'Delegated Operator'}
               </Text>
-              <View style={styles.permittedUserPill}>
-                <Text style={styles.permittedUserLabel}>ID:</Text>
-                <Text style={styles.permittedUserText} numberOfLines={1}>
-                  {item.permittedUsername || 'Default Grantee'}
-                </Text>
-              </View>
             </View>
           </View>
-          <StatusBadge status={item.status} size="small" />
+          <View style={styles.cardHeaderRight}>
+            <StatusBadge status={item.status} size="small" />
+            {sessionTab === 'INCOMING' && isActive && (
+              <TouchableOpacity
+                style={styles.miniRevokeBtn}
+                onPress={() => handleRevokeSession(item.id)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                activeOpacity={0.7}
+                accessibilityLabel="Revoke Session"
+              >
+                <Text style={styles.miniRevokeText}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
-        {/* Card Metadata Chips */}
+        {/* Metadata Chips: Expiry, Vault, Security */}
         <View style={styles.metaRow}>
           <View style={styles.metaChip}>
             <Text style={styles.metaIcon}>⏱️</Text>
-            <Text
-              style={[
-                styles.expiryText,
-                expiry.isUrgent && styles.expiryTextUrgent,
-              ]}
-            >
+            <Text style={[styles.metaText, expiry.isUrgent && styles.metaTextUrgent]}>
               {expiry.text}
             </Text>
           </View>
 
           {item.secretName ? (
-            <View style={styles.secretChip}>
-              <Text style={styles.metaIcon}>🔐</Text>
-              <Text style={styles.secretTag} numberOfLines={1}>
+            <View style={styles.metaChip}>
+              <Text style={styles.metaIcon}>🔑</Text>
+              <Text style={styles.metaText} numberOfLines={1}>
                 {item.secretName}
               </Text>
             </View>
           ) : null}
+
+          <View style={styles.metaChip}>
+            <Text style={styles.metaIcon}>🛡️</Text>
+            <Text style={styles.metaText}>Isolated Autofill</Text>
+          </View>
         </View>
 
-        {/* Capabilities Chips */}
-        {item.capabilities && item.capabilities.length > 0 ? (
-          <View style={styles.capabilitiesContainer}>
-            {item.capabilities.map((cap, idx) => (
-              <View key={idx} style={styles.capabilityBadge}>
-                <Text style={styles.capabilityText}>{cap}</Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
-
-        {/* Launch Secure Browser Button */}
-        <TouchableOpacity
-          style={[styles.launchButton, !isActive && styles.launchButtonDisabled]}
-          onPress={() => onLaunchSession(item)}
-          disabled={!isActive}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.launchButtonIcon}>{isActive ? '⚡' : '🔒'}</Text>
-          <Text style={styles.launchButtonText}>
-            {isActive ? 'Launch Secure Browser' : `Session ${item.status}`}
-          </Text>
-        </TouchableOpacity>
+        {/* Action Buttons Row */}
+        <View style={styles.actionRow}>
+          {sessionTab === 'INCOMING' ? (
+            <TouchableOpacity
+              style={[
+                styles.launchButton,
+                !isActive && styles.launchButtonDisabled,
+              ]}
+              onPress={() => onLaunchSession(item)}
+              disabled={!isActive}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.launchButtonIcon}>{isActive ? '⚡' : '🔒'}</Text>
+              <Text
+                style={styles.launchButtonText}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {isActive ? 'Launch Secure Browser' : `Session ${item.status}`}
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            isActive && (
+              <TouchableOpacity
+                style={styles.revokeButtonFull}
+                onPress={() => handleRevokeSession(item.id)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.revokeButtonText}>🚫 Revoke Session Access</Text>
+              </TouchableOpacity>
+            )
+          )}
+        </View>
       </View>
     );
   };
 
-  const activeCount = sessions.filter((s) => s.status === 'ACTIVE').length;
-
   return (
     <View style={styles.container}>
-      {/* Top Application Bar */}
-      <View style={styles.header}>
-        <View style={styles.headerTopRow}>
-          {onOpenDrawer ? (
-            <TouchableOpacity
-              style={styles.drawerTriggerButton}
-              onPress={onOpenDrawer}
-              accessibilityLabel="Open Navigation Menu"
-              activeOpacity={0.7}
-            >
-              <Text style={styles.drawerTriggerIcon}>☰</Text>
-            </TouchableOpacity>
-          ) : null}
+      <AppHeader
+        title="Sessions"
+        subtitle="TEMPORARY ALLOCATIONS"
+        organization={organization}
+        onOpenDrawer={onOpenDrawer}
+        onOpenOrgPicker={onOpenOrgPicker}
+      />
 
-          {/* Brand & User Avatar */}
-          <View style={styles.userSection}>
-            <View style={styles.userAvatar}>
-              <Text style={styles.userAvatarText}>
-                {(user.fullName || user.email || 'U').charAt(0).toUpperCase()}
-              </Text>
-            </View>
-            <View>
-              <Text style={styles.userNameText}>{user.fullName || 'WITHUS Operator'}</Text>
-              <Text style={styles.userEmailText} numberOfLines={1}>
-                {user.email}
-              </Text>
-            </View>
-          </View>
-
-          {/* Sign Out Button */}
-          <TouchableOpacity
-            style={styles.logoutButton}
-            onPress={() => setShowLogoutConfirm(true)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.logoutButtonText}>Sign Out</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Workspace / Organization Switcher Pill */}
-        <TouchableOpacity
-          style={styles.orgSwitchButton}
-          onPress={() => setShowOrgSwitchModal(true)}
-          activeOpacity={0.8}
-        >
-          <View style={styles.orgSwitchLeft}>
-            <Text style={styles.orgIcon}>🏢</Text>
-            <Text style={styles.orgLabel}>Workspace:</Text>
-            <Text style={styles.orgText} numberOfLines={1}>
-              {organization?.name || 'Select Workspace'}
+      <View style={styles.body}>
+        {/* Banner matching WITHUS Web */}
+        <View style={styles.headerBanner}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.bannerCaption}>LIVE CREDENTIAL ALLOCATIONS</Text>
+            <Text style={styles.bannerTitle}>Delegated Sessions</Text>
+            <Text style={styles.bannerSubtitle}>
+              Manage time-bound credential sessions with instant kill-switch revocation.
             </Text>
           </View>
-          {allOrganizations.length > 1 ? (
-            <View style={styles.orgCountBadge}>
-              <Text style={styles.orgCountText}>▾ {allOrganizations.length}</Text>
-            </View>
-          ) : null}
-        </TouchableOpacity>
-      </View>
-
-      {/* Main Body */}
-      <View style={styles.body}>
-        {/* Title Bar with Count & Refresh */}
-        <View style={styles.titleRow}>
-          <View style={styles.titleGroup}>
-            <Text style={styles.sectionTitle}>Delegated Sessions</Text>
-            <View style={styles.countBadge}>
-              <Text style={styles.countBadgeText}>{activeCount} Active</Text>
-            </View>
-          </View>
 
           <TouchableOpacity
-            style={styles.refreshButton}
-            onPress={onRefresh}
-            disabled={isLoading || isRefreshing}
-            activeOpacity={0.7}
+            style={styles.grantAccessBtn}
+            onPress={handleOpenGrantModal}
+            activeOpacity={0.8}
           >
-            <Text style={styles.refreshIcon}>↻</Text>
-            <Text style={styles.refreshButtonText}>Refresh</Text>
+            <Text style={styles.grantAccessBtnIcon}>＋</Text>
+            <Text style={styles.grantAccessBtnText}>Grant Access</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Apple Segmented Tab Switcher */}
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[styles.tabSegment, sessionTab === 'INCOMING' && styles.tabSegmentActive]}
+            onPress={() => setSessionTab('INCOMING')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.tabIcon}>🛡️</Text>
+            <Text style={[styles.tabLabel, sessionTab === 'INCOMING' && styles.tabLabelActive]}>
+              My Access ({incomingSessions.length})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.tabSegment, sessionTab === 'OUTGOING' && styles.tabSegmentActive]}
+            onPress={() => setSessionTab('OUTGOING')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.tabIcon}>👥</Text>
+            <Text style={[styles.tabLabel, sessionTab === 'OUTGOING' && styles.tabLabelActive]}>
+              Team Grants ({outgoingSessions.length})
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Search Bar */}
+        <View style={styles.searchBar}>
+          <Text style={styles.searchIcon}>🔍</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by platform or username..."
+            placeholderTextColor={COLORS.textTertiary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Text style={styles.clearSearchIcon}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Success Banner */}
+        {successBanner ? (
+          <View style={{ marginBottom: SPACING.md }}>
+            <FeedbackBanner
+              type="success"
+              message={successBanner}
+              onDismiss={() => setSuccessBanner(null)}
+            />
+          </View>
+        ) : null}
 
         {/* Error Feedback */}
         {errorMessage ? (
-          <View style={styles.errorWrapper}>
+          <View style={{ marginBottom: SPACING.md }}>
             <FeedbackBanner
               type="error"
               message={errorMessage}
@@ -320,18 +427,16 @@ export const SessionsDashboardScreen: React.FC<SessionsDashboardScreenProps> = (
 
         {/* Loading State */}
         {isLoading ? (
-          <View style={styles.centerContainer}>
+          <View style={styles.centerBox}>
             <ActivityIndicator size="large" color={COLORS.accentCyan} />
-            <Text style={styles.loadingTitle}>Connecting to Vault...</Text>
-            <Text style={styles.loadingSubtitle}>
-              Retrieving incoming session authorizations
-            </Text>
+            <Text style={styles.loadingTitle}>Connecting to Secure Vault...</Text>
+            <Text style={styles.loadingSubtitle}>Retrieving delegated session authorizations</Text>
           </View>
         ) : (
           <FlatList
-            data={sessions}
+            data={filteredSessions}
             keyExtractor={(item) => item.id}
-            renderItem={renderSessionItem}
+            renderItem={renderSessionCard}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             refreshControl={
@@ -345,22 +450,41 @@ export const SessionsDashboardScreen: React.FC<SessionsDashboardScreenProps> = (
             ListEmptyComponent={
               !errorMessage ? (
                 <View style={styles.emptyContainer}>
-                  <View style={styles.emptyIconContainer}>
-                    <Text style={styles.emptyIcon}>🛡️</Text>
+                  <View style={styles.emptyIconBox}>
+                    <Text style={styles.emptyEmoji}>🛡️</Text>
                   </View>
-                  <Text style={styles.emptyTitle}>No Active Sessions</Text>
-                  <Text style={styles.emptyDescription}>
-                    There are currently no delegated sessions assigned to you for &quot;
-                    {organization?.name || 'this workspace'}&quot;. When an administrator grants
-                    you access, sessions will appear here automatically.
+                  <Text style={styles.emptyTitle}>
+                    {searchQuery
+                      ? 'No Matching Sessions'
+                      : sessionTab === 'INCOMING'
+                      ? 'No Incoming Delegated Sessions'
+                      : 'No Outgoing Session Grants'}
                   </Text>
-                  <TouchableOpacity
-                    style={styles.emptyActionButton}
-                    onPress={onRefresh}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.emptyActionText}>Check for Incoming Sessions</Text>
-                  </TouchableOpacity>
+                  <Text style={styles.emptyDescription}>
+                    {searchQuery
+                      ? `No sessions found matching "${searchQuery}".`
+                      : sessionTab === 'INCOMING'
+                      ? `There are currently no delegated sessions assigned to you for "${organization?.name || 'this workspace'}". Sessions will appear automatically when access is granted.`
+                      : `You have not granted delegated access to any team members in "${organization?.name || 'this workspace'}". Tap "+ Grant Access" above to delegate credentials without exposing plaintext.`}
+                  </Text>
+
+                  {sessionTab === 'OUTGOING' && !searchQuery ? (
+                    <TouchableOpacity
+                      style={styles.emptyActionButton}
+                      onPress={handleOpenGrantModal}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.emptyActionText}>＋ Grant Access Now</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.emptyActionButton}
+                      onPress={onRefresh}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.emptyActionText}>↻ Refresh Sessions</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               ) : undefined
             }
@@ -368,104 +492,194 @@ export const SessionsDashboardScreen: React.FC<SessionsDashboardScreenProps> = (
         )}
       </View>
 
-      {/* Organization Switcher Modal */}
+      {/* Grant Access Modal */}
       <Modal
-        visible={showOrgSwitchModal}
+        visible={showGrantModal}
         transparent
         animationType="fade"
-        onRequestClose={() => setShowOrgSwitchModal(false)}
+        onRequestClose={() => setShowGrantModal(false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <View>
-                <Text style={styles.modalTitle}>Select Workspace</Text>
+                <Text style={styles.modalTitle}>Grant Delegated Access</Text>
                 <Text style={styles.modalSubtitle}>
-                  Switch between organizations you belong to
+                  Delegate a credential without exposing plaintext secrets
                 </Text>
               </View>
-              <TouchableOpacity onPress={() => setShowOrgSwitchModal(false)}>
+              <TouchableOpacity onPress={() => setShowGrantModal(false)}>
                 <Text style={styles.modalCloseText}>✕</Text>
               </TouchableOpacity>
             </View>
 
-            <View style={styles.orgList}>
-              {allOrganizations.map((org) => {
-                const isSelected = org.id === organization?.id;
-                return (
-                  <TouchableOpacity
-                    key={org.id}
-                    style={[
-                      styles.orgOption,
-                      isSelected && styles.orgOptionSelected,
-                    ]}
-                    onPress={() => handleSelectOrg(org)}
-                    activeOpacity={0.8}
-                  >
-                    <View style={styles.orgOptionContent}>
-                      <View
-                        style={[
-                          styles.orgOptionIcon,
-                          isSelected && styles.orgOptionIconSelected,
-                        ]}
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {/* Step 1: Member */}
+              <Text style={styles.stepLabel}>1. Select Grantee Team Member *</Text>
+              {members.length === 0 ? (
+                <Text style={styles.fieldHint}>No members found</Text>
+              ) : (
+                <View style={styles.pillContainer}>
+                  {members.map((m) => {
+                    const mId = m.userId || m.id;
+                    const isSel = selectedGranteeId === mId;
+                    return (
+                      <TouchableOpacity
+                        key={mId}
+                        style={[styles.chipOption, isSel && styles.chipOptionSelected]}
+                        onPress={() => setSelectedGranteeId(mId)}
                       >
-                        <Text style={styles.orgOptionIconText}>🏢</Text>
-                      </View>
-                      <View style={styles.orgOptionTextGroup}>
-                        <Text
-                          style={[
-                            styles.orgOptionName,
-                            isSelected && styles.orgOptionNameSelected,
-                          ]}
-                        >
-                          {org.name}
+                        <Text style={[styles.chipText, isSel && styles.chipTextSelected]}>
+                          👤 {m.user?.fullName || m.user?.email || m.id.substring(0, 8)}
                         </Text>
-                        <Text style={styles.orgOptionSlug}>
-                          Role: {org.role || 'Member'}
-                        </Text>
-                      </View>
-                    </View>
-                    {isSelected ? (
-                      <View style={styles.selectedCheckBadge}>
-                        <Text style={styles.selectedCheckText}>✓ Active</Text>
-                      </View>
-                    ) : null}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-        </View>
-      </Modal>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
 
-      {/* Logout Confirmation Dialog */}
-      <Modal
-        visible={showLogoutConfirm}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowLogoutConfirm(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Sign Out</Text>
-            <Text style={styles.modalDescription}>
-              Are you sure you want to sign out? This will clear all cached tokens from the
-              device Keystore.
-            </Text>
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.modalCancelButton}
-                onPress={() => setShowLogoutConfirm(false)}
-              >
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.modalDangerButton}
-                onPress={handleLogout}
-              >
-                <Text style={styles.modalDangerText}>Sign Out</Text>
-              </TouchableOpacity>
-            </View>
+              {/* Step 2: Vault */}
+              <Text style={styles.stepLabel}>2. Select Source Vault *</Text>
+              {vaults.length === 0 ? (
+                <Text style={styles.fieldHint}>No vaults found in workspace</Text>
+              ) : (
+                <View style={styles.pillContainer}>
+                  {vaults.map((v) => {
+                    const isSel = selectedVaultId === v.id;
+                    return (
+                      <TouchableOpacity
+                        key={v.id}
+                        style={[styles.chipOption, isSel && styles.chipOptionSelected]}
+                        onPress={() => handleSelectVaultForGrant(v.id)}
+                      >
+                        <Text style={[styles.chipText, isSel && styles.chipTextSelected]}>
+                          🗄️ {v.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+
+              {/* Step 3: Secret */}
+              <Text style={styles.stepLabel}>3. Select Credential Secret *</Text>
+              {isLoadingSecretsForGrant ? (
+                <ActivityIndicator size="small" color={COLORS.accentCyan} style={{ marginVertical: 8 }} />
+              ) : vaultSecrets.length === 0 ? (
+                <Text style={styles.fieldHint}>No credentials in selected vault. Add credentials first.</Text>
+              ) : (
+                <View style={styles.pillContainer}>
+                  {vaultSecrets.map((s) => {
+                    const isSel = selectedSecretId === s.id;
+                    return (
+                      <TouchableOpacity
+                        key={s.id}
+                        style={[styles.chipOption, isSel && styles.chipOptionSelected]}
+                        onPress={() => setSelectedSecretId(s.id)}
+                      >
+                        <Text style={[styles.chipText, isSel && styles.chipTextSelected]}>
+                          🔑 {s.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+
+              {/* Step 4: Platform */}
+              <Text style={styles.stepLabel}>4. Target Platform *</Text>
+              <View style={styles.pillContainer}>
+                {[
+                  'GITHUB',
+                  'VERCEL',
+                  'GODADDY',
+                  'SHOPIFY',
+                  'STRIPE',
+                  'RAZORPAY',
+                  'LINKEDIN',
+                  'MCA',
+                  'GST',
+                  'UDYAM',
+                  'GMAIL',
+                ].map((p) => {
+                  const isSel = selectedPlatform === p;
+                  return (
+                    <TouchableOpacity
+                      key={p}
+                      style={[styles.chipOption, isSel && styles.chipOptionSelected]}
+                      onPress={() => setSelectedPlatform(p)}
+                    >
+                      <Text style={[styles.chipText, isSel && styles.chipTextSelected]}>
+                        {p}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Step 5: Duration */}
+              <Text style={styles.stepLabel}>5. Access Duration *</Text>
+              <View style={styles.pillContainer}>
+                {[
+                  { label: '1 Hour', hours: '1' },
+                  { label: '4 Hours', hours: '4' },
+                  { label: '8 Hours', hours: '8' },
+                  { label: '24 Hours', hours: '24' },
+                  { label: '7 Days', hours: '168' },
+                ].map((d) => {
+                  const isSel = selectedHours === d.hours;
+                  return (
+                    <TouchableOpacity
+                      key={d.hours}
+                      style={[styles.chipOption, isSel && styles.chipOptionSelected]}
+                      onPress={() => setSelectedHours(d.hours)}
+                    >
+                      <Text style={[styles.chipText, isSel && styles.chipTextSelected]}>
+                        ⏱️ {d.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Step 6: Justification */}
+              <Text style={styles.stepLabel}>6. Justification (Optional)</Text>
+              <TextInput
+                style={[styles.textInput, { height: 60, textAlignVertical: 'top' }]}
+                placeholder="Reason for delegation (immutable audit record)"
+                placeholderTextColor={COLORS.textTertiary}
+                multiline
+                numberOfLines={2}
+                value={grantJustification}
+                onChangeText={setGrantJustification}
+              />
+
+              {/* Modal Buttons */}
+              <View style={styles.formActions}>
+                <TouchableOpacity
+                  style={styles.btnSecondary}
+                  onPress={() => setShowGrantModal(false)}
+                  disabled={isSubmittingGrant}
+                >
+                  <Text style={styles.btnSecondaryText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.btnPrimary,
+                    (!selectedGranteeId || !selectedSecretId || isSubmittingGrant) && styles.btnDisabled,
+                  ]}
+                  onPress={handleGrantSession}
+                  disabled={!selectedGranteeId || !selectedSecretId || isSubmittingGrant}
+                >
+                  {isSubmittingGrant ? (
+                    <ActivityIndicator size="small" color={COLORS.bgDarkest} />
+                  ) : (
+                    <Text style={styles.btnPrimaryText}>Grant Access</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -478,178 +692,122 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bgDarkest,
   },
-  header: {
-    backgroundColor: COLORS.bgSecondary,
-    paddingTop: ANDROID_STATUS_BAR_HEIGHT + SPACING.sm,
-    paddingBottom: SPACING.md,
-    paddingHorizontal: SPACING.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderSubtle,
-  },
-  headerTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  drawerTriggerButton: {
-    width: 36,
-    height: 36,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.bgTertiary,
-    borderWidth: 1,
-    borderColor: COLORS.borderMedium,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.sm + 2,
-  },
-  drawerTriggerIcon: {
-    fontSize: 18,
-    color: COLORS.textWhite,
-    fontWeight: 'bold',
-  },
-  userSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  userAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.cyanSubtle,
-    borderColor: COLORS.cyanBorder,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.sm + 2,
-  },
-  userAvatarText: {
-    color: COLORS.textCyan,
-    fontWeight: '800',
-    fontSize: 15,
-  },
-  userNameText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.textWhite,
-  },
-  userEmailText: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
-    marginTop: 1,
-  },
-  logoutButton: {
-    backgroundColor: COLORS.bgTertiary,
-    borderColor: COLORS.borderMedium,
-    borderWidth: 1,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs + 2,
-    borderRadius: RADIUS.md,
-  },
-  logoutButtonText: {
-    color: COLORS.textSecondary,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  orgSwitchButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: COLORS.bgInput,
-    borderColor: COLORS.borderSubtle,
-    borderWidth: 1,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderRadius: RADIUS.md,
-  },
-  orgSwitchLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  orgIcon: {
-    fontSize: 14,
-    marginRight: 6,
-  },
-  orgLabel: {
-    fontSize: 11,
-    color: COLORS.textTertiary,
-    marginRight: 6,
-    fontWeight: '600',
-  },
-  orgText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.textCyan,
-    flex: 1,
-  },
-  orgCountBadge: {
-    backgroundColor: COLORS.cyanSubtle,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: RADIUS.full,
-  },
-  orgCountText: {
-    color: COLORS.textCyan,
-    fontSize: 10,
-    fontWeight: '700',
-  },
   body: {
     flex: 1,
     paddingHorizontal: SPACING.lg,
   },
-  titleRow: {
+  headerBanner: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: SPACING.lg,
-    marginBottom: SPACING.md,
+    paddingVertical: SPACING.md,
+    marginTop: SPACING.xs,
   },
-  titleGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: COLORS.textWhite,
-    marginRight: SPACING.sm,
-  },
-  countBadge: {
-    backgroundColor: COLORS.emeraldSubtle,
-    borderColor: COLORS.emeraldBorder,
-    borderWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: RADIUS.full,
-  },
-  countBadgeText: {
+  bannerCaption: {
     fontSize: 10,
     fontWeight: '700',
-    color: COLORS.textEmerald,
+    color: COLORS.textTertiary,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
-  refreshButton: {
+  bannerTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.textWhite,
+    letterSpacing: -0.3,
+    marginTop: 2,
+  },
+  bannerSubtitle: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+    lineHeight: 15,
+  },
+  grantAccessBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: SPACING.sm + 2,
-    paddingVertical: SPACING.xs + 2,
+    backgroundColor: COLORS.accentCyan,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.md,
+    marginLeft: SPACING.sm,
+    flexShrink: 0,
   },
-  refreshIcon: {
+  grantAccessBtnIcon: {
     fontSize: 14,
-    color: COLORS.textCyan,
+    color: COLORS.textWhite,
+    fontWeight: 'bold',
     marginRight: 4,
   },
-  refreshButtonText: {
+  grantAccessBtnText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.textCyan,
+    fontWeight: '700',
+    color: COLORS.textWhite,
   },
-  errorWrapper: {
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.bgSecondary,
+    borderRadius: RADIUS.lg,
+    padding: 3,
+    borderWidth: 1,
+    borderColor: COLORS.borderSubtle,
     marginBottom: SPACING.md,
   },
+  tabSegment: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.md,
+  },
+  tabSegmentActive: {
+    backgroundColor: COLORS.bgElevated,
+    borderWidth: 1,
+    borderColor: COLORS.borderFocus,
+  },
+  tabIcon: {
+    fontSize: 13,
+    marginRight: 6,
+  },
+  tabLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  tabLabelActive: {
+    color: COLORS.textCyan,
+    fontWeight: '700',
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.bgSecondary,
+    borderWidth: 1,
+    borderColor: COLORS.borderSubtle,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs + 2,
+    marginBottom: SPACING.md,
+  },
+  searchIcon: {
+    fontSize: 13,
+    marginRight: SPACING.xs + 2,
+    opacity: 0.6,
+  },
+  searchInput: {
+    flex: 1,
+    color: COLORS.textWhite,
+    fontSize: 13,
+    padding: 0,
+  },
+  clearSearchIcon: {
+    fontSize: 14,
+    color: COLORS.textTertiary,
+    padding: 4,
+  },
   listContent: {
-    paddingBottom: SPACING.xxxl,
+    paddingBottom: SPACING.xxxl + 20,
   },
   sessionCard: {
     backgroundColor: COLORS.bgSecondary,
@@ -659,9 +817,9 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
     marginBottom: SPACING.md,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
     elevation: 2,
   },
   cardHeader: {
@@ -670,7 +828,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: SPACING.md,
   },
-  platformRow: {
+  cardHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
@@ -685,111 +843,110 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.textWhite,
   },
-  permittedUserPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  permittedUserLabel: {
-    fontSize: 11,
-    color: COLORS.textTertiary,
-    fontWeight: '600',
-    marginRight: 4,
-  },
   permittedUserText: {
     fontSize: 11,
     color: COLORS.textSecondary,
+    marginTop: 2,
     fontFamily: 'monospace',
   },
   metaRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     flexWrap: 'wrap',
-    gap: SPACING.sm,
+    gap: SPACING.xs + 2,
     marginBottom: SPACING.md,
   },
   metaChip: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.bgInput,
-    borderColor: COLORS.borderSubtle,
     borderWidth: 1,
+    borderColor: COLORS.borderSubtle,
+    borderRadius: RADIUS.sm,
     paddingHorizontal: SPACING.sm,
     paddingVertical: SPACING.xs,
-    borderRadius: RADIUS.sm,
   },
   metaIcon: {
     fontSize: 11,
     marginRight: 4,
   },
-  expiryText: {
+  metaText: {
     fontSize: 11,
     color: COLORS.textSecondary,
     fontWeight: '500',
   },
-  expiryTextUrgent: {
+  metaTextUrgent: {
     color: COLORS.textAmber,
     fontWeight: '700',
   },
-  secretChip: {
+  cardHeaderRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.bgInput,
-    borderColor: COLORS.borderSubtle,
-    borderWidth: 1,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs,
-    borderRadius: RADIUS.sm,
-    maxWidth: '50%',
+    gap: SPACING.xs + 2,
   },
-  secretTag: {
+  miniRevokeBtn: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(255, 59, 48, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 59, 48, 0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  miniRevokeText: {
+    color: COLORS.textRose,
     fontSize: 11,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
+    fontWeight: 'bold',
+    lineHeight: 12,
   },
-  capabilitiesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.xs,
-    marginBottom: SPACING.md,
-  },
-  capabilityBadge: {
-    backgroundColor: COLORS.bgTertiary,
-    borderColor: COLORS.borderMedium,
-    borderWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: RADIUS.xs,
-  },
-  capabilityText: {
-    fontSize: 10,
-    color: COLORS.textSecondary,
-    fontFamily: 'monospace',
+  actionRow: {
+    marginTop: SPACING.xs,
+    width: '100%',
   },
   launchButton: {
-    backgroundColor: COLORS.accentCyan,
-    borderRadius: RADIUS.md,
-    paddingVertical: SPACING.md - 2,
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 46,
+    backgroundColor: COLORS.accentCyan,
+    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.md - 2,
+    paddingHorizontal: SPACING.md,
+    minHeight: 48,
   },
   launchButtonDisabled: {
     backgroundColor: COLORS.bgTertiary,
     opacity: 0.6,
   },
   launchButtonIcon: {
-    fontSize: 14,
-    marginRight: SPACING.xs + 2,
+    fontSize: 15,
+    marginRight: 6,
   },
   launchButtonText: {
-    color: COLORS.bgDarkest,
-    fontWeight: '800',
     fontSize: 13,
-    letterSpacing: 0.3,
+    fontWeight: '700',
+    color: COLORS.textWhite,
+    textAlign: 'center',
   },
-  centerContainer: {
+  revokeButtonFull: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 59, 48, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 59, 48, 0.35)',
+    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.md - 2,
+    paddingHorizontal: SPACING.lg,
+    minHeight: 46,
+  },
+  revokeButtonText: {
+    color: COLORS.textRose,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  centerBox: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -811,22 +968,22 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.xxxl,
     paddingHorizontal: SPACING.xl,
   },
-  emptyIconContainer: {
+  emptyIconBox: {
     width: 64,
     height: 64,
     borderRadius: 32,
     backgroundColor: COLORS.cyanSubtle,
-    borderColor: COLORS.cyanBorder,
     borderWidth: 1,
+    borderColor: COLORS.cyanBorder,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: SPACING.md,
   },
-  emptyIcon: {
+  emptyEmoji: {
     fontSize: 28,
   },
   emptyTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
     color: COLORS.textWhite,
     marginBottom: SPACING.xs,
@@ -840,10 +997,10 @@ const styles = StyleSheet.create({
   },
   emptyActionButton: {
     backgroundColor: COLORS.bgSecondary,
-    borderColor: COLORS.borderMedium,
     borderWidth: 1,
+    borderColor: COLORS.borderMedium,
     paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md - 2,
+    paddingVertical: SPACING.sm + 2,
     borderRadius: RADIUS.md,
   },
   emptyActionText: {
@@ -853,7 +1010,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     justifyContent: 'center',
     paddingHorizontal: SPACING.lg,
   },
@@ -863,6 +1020,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.borderMedium,
     padding: SPACING.xl,
+    maxHeight: '88%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -886,103 +1044,89 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     padding: SPACING.xs,
   },
-  modalDescription: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    lineHeight: 20,
-    marginBottom: SPACING.xl,
-  },
-  orgList: {
-    gap: SPACING.sm,
-  },
-  orgOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: COLORS.bgInput,
-    borderColor: COLORS.borderSubtle,
-    borderWidth: 1,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-  },
-  orgOptionSelected: {
-    borderColor: COLORS.borderFocus,
-    backgroundColor: COLORS.bgElevated,
-  },
-  orgOptionContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  orgOptionIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: RADIUS.sm,
-    backgroundColor: COLORS.bgTertiary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.md,
-  },
-  orgOptionIconSelected: {
-    backgroundColor: COLORS.cyanSubtle,
-  },
-  orgOptionIconText: {
-    fontSize: 14,
-  },
-  orgOptionTextGroup: {
-    flex: 1,
-  },
-  orgOptionName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textWhite,
-  },
-  orgOptionNameSelected: {
-    color: COLORS.textCyan,
+  stepLabel: {
+    fontSize: 12,
     fontWeight: '700',
+    color: COLORS.textWhite,
+    marginTop: SPACING.md,
+    marginBottom: SPACING.xs + 2,
   },
-  orgOptionSlug: {
+  fieldHint: {
     fontSize: 11,
     color: COLORS.textTertiary,
-    marginTop: 1,
+    fontStyle: 'italic',
+    marginBottom: SPACING.xs,
   },
-  selectedCheckBadge: {
-    backgroundColor: COLORS.cyanSubtle,
-    borderColor: COLORS.cyanBorder,
+  pillContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.xs + 2,
+    marginBottom: SPACING.xs,
+  },
+  chipOption: {
+    backgroundColor: COLORS.bgInput,
     borderWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+    borderColor: COLORS.borderSubtle,
     borderRadius: RADIUS.full,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs + 2,
   },
-  selectedCheckText: {
-    fontSize: 10,
-    fontWeight: '700',
+  chipOptionSelected: {
+    backgroundColor: COLORS.cyanSubtle,
+    borderColor: COLORS.accentCyan,
+  },
+  chipText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: '500',
+  },
+  chipTextSelected: {
     color: COLORS.textCyan,
+    fontWeight: '700',
   },
-  modalActions: {
+  textInput: {
+    backgroundColor: COLORS.bgInput,
+    borderWidth: 1,
+    borderColor: COLORS.borderSubtle,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    color: COLORS.textWhite,
+    fontSize: 13,
+    marginTop: 4,
+  },
+  formActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     gap: SPACING.sm,
+    marginTop: SPACING.lg,
+    paddingBottom: SPACING.sm,
   },
-  modalCancelButton: {
+  btnSecondary: {
+    backgroundColor: COLORS.bgTertiary,
+    borderWidth: 1,
+    borderColor: COLORS.borderMedium,
+    borderRadius: RADIUS.md,
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm + 2,
-    borderRadius: RADIUS.md,
   },
-  modalCancelText: {
+  btnSecondaryText: {
     color: COLORS.textSecondary,
     fontSize: 13,
     fontWeight: '600',
   },
-  modalDangerButton: {
-    backgroundColor: COLORS.accentRose,
+  btnPrimary: {
+    backgroundColor: COLORS.accentCyan,
+    borderRadius: RADIUS.md,
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm + 2,
-    borderRadius: RADIUS.md,
   },
-  modalDangerText: {
+  btnPrimaryText: {
     color: COLORS.textWhite,
     fontSize: 13,
     fontWeight: '700',
+  },
+  btnDisabled: {
+    opacity: 0.5,
   },
 });

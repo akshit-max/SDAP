@@ -129,15 +129,10 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
       ],
     },
     {
-      category: 'SECURITY',
-      items: [
-        { id: 'AUDIT', label: 'Audit Log', icon: '📜' },
-      ],
-    },
-    {
-      category: 'PLATFORM',
+      category: 'PLATFORM & SECURITY',
       items: [
         { id: 'INTEGRATIONS', label: 'Integrations', icon: '🔌' },
+        { id: 'AUDIT', label: 'Audit Log', icon: '📜' },
       ],
     },
     {

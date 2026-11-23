@@ -1,3 +1,8 @@
+/**
+ * WITHUS Mobile — Enterprise Status Badge
+ * Matches the Apple macOS / iOS badge design from the WITHUS web application
+ */
+
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { COLORS, RADIUS, SPACING } from '../theme/theme.ts';
@@ -12,19 +17,33 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'medium
   let bg = COLORS.cyanSubtle;
   let text = COLORS.textCyan;
   let border = COLORS.cyanBorder;
+  let label = s;
+  let icon = '●';
 
   if (s === 'ACTIVE' || s === 'VERIFIED' || s === 'SUCCESS' || s === 'FILLED') {
-    bg = COLORS.emeraldSubtle;
-    text = COLORS.textEmerald;
-    border = COLORS.emeraldBorder;
-  } else if (s === 'EXPIRED' || s === 'REVOKED' || s === 'ERROR' || s === 'FAILED') {
-    bg = COLORS.roseSubtle;
-    text = COLORS.textRose;
-    border = COLORS.roseBorder;
+    bg = 'rgba(52, 199, 89, 0.15)';
+    text = '#30D158';
+    border = 'rgba(52, 199, 89, 0.35)';
+    label = 'Active';
+    icon = '●';
+  } else if (s === 'REVOKED') {
+    bg = 'rgba(255, 59, 48, 0.15)';
+    text = '#FF453A';
+    border = 'rgba(255, 59, 48, 0.35)';
+    label = 'Revoked';
+    icon = '✕';
+  } else if (s === 'EXPIRED' || s === 'FAILED' || s === 'ERROR') {
+    bg = 'rgba(142, 142, 147, 0.15)';
+    text = '#8E8E93';
+    border = 'rgba(142, 142, 147, 0.3)';
+    label = 'Expired';
+    icon = '⏱';
   } else if (s === 'PENDING' || s === 'FETCHING' || s === 'WARNING') {
-    bg = COLORS.amberSubtle;
-    text = COLORS.textAmber;
-    border = COLORS.amberBorder;
+    bg = 'rgba(255, 149, 0, 0.15)';
+    text = '#FF9F0A';
+    border = 'rgba(255, 149, 0, 0.35)';
+    label = 'Pending';
+    icon = '⏳';
   }
 
   const isSmall = size === 'small';
@@ -37,9 +56,9 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'medium
         isSmall && styles.badgeSmall,
       ]}
     >
-      <View style={[styles.dot, { backgroundColor: text }]} />
+      <Text style={[styles.icon, { color: text }, isSmall && styles.iconSmall]}>{icon}</Text>
       <Text style={[styles.text, { color: text }, isSmall && styles.textSmall]}>
-        {s}
+        {label}
       </Text>
     </View>
   );
@@ -55,23 +74,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   badgeSmall: {
-    paddingHorizontal: SPACING.xs + 2,
+    paddingHorizontal: SPACING.xs + 3,
     paddingVertical: 2,
   },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 6,
+  icon: {
+    fontSize: 9,
+    marginRight: 4,
+    fontWeight: '800',
+  },
+  iconSmall: {
+    fontSize: 8,
+    marginRight: 3,
   },
   text: {
     fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
   textSmall: {
     fontSize: 10,
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
 });
-

@@ -15,6 +15,7 @@ interface AppHeaderProps {
   onOpenDrawer: () => void;
   onOpenOrgPicker: () => void;
   rightAction?: React.ReactNode;
+  onLogout?: () => void;
 }
 
 export const AppHeader: React.FC<AppHeaderProps> = ({
@@ -24,6 +25,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   onOpenDrawer,
   onOpenOrgPicker,
   rightAction,
+  onLogout,
 }) => {
   return (
     <View style={styles.headerContainer}>
@@ -54,18 +56,31 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         {rightAction ? (
           rightAction
         ) : (
-          <TouchableOpacity
-            style={styles.orgChip}
-            onPress={onOpenOrgPicker}
-            activeOpacity={0.8}
-            accessibilityLabel="Switch Organization"
-          >
-            <View style={styles.orgDot} />
-            <Text style={styles.orgText} numberOfLines={1}>
-              {organization?.name || 'Workspace'}
-            </Text>
-            <Text style={styles.orgChevron}>▼</Text>
-          </TouchableOpacity>
+          <View style={styles.rightGroup}>
+            <TouchableOpacity
+              style={styles.orgChip}
+              onPress={onOpenOrgPicker}
+              activeOpacity={0.8}
+              accessibilityLabel="Switch Organization"
+            >
+              <View style={styles.orgDot} />
+              <Text style={styles.orgText} numberOfLines={1}>
+                {organization?.name || 'Workspace'}
+              </Text>
+              <Text style={styles.orgChevron}>▼</Text>
+            </TouchableOpacity>
+
+            {onLogout ? (
+              <TouchableOpacity
+                style={styles.headerLogoutBtn}
+                onPress={onLogout}
+                activeOpacity={0.7}
+                accessibilityLabel="Sign Out"
+              >
+                <Text style={styles.headerLogoutText}>⎋</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
         )}
       </View>
     </View>
@@ -147,6 +162,26 @@ const styles = StyleSheet.create({
     fontSize: 8,
     color: COLORS.textTertiary,
     marginLeft: 5,
+  },
+  rightGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+  },
+  headerLogoutBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: RADIUS.md,
+    backgroundColor: 'rgba(255, 69, 58, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 69, 58, 0.25)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerLogoutText: {
+    color: '#FF453A',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
 

@@ -1,7 +1,7 @@
 /**
  * WITHUS Mobile — Dashboard Overview Screen
- * Displays organization summary metrics, quick actions, active session status,
- * and pending approval highlights.
+ * Displays organization summary metrics, all sidebar modules directory,
+ * active delegated sessions, and hardware security posture.
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -13,6 +13,7 @@ import {
   ScrollView,
   RefreshControl,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { UserProfile, Organization, DelegatedSession } from '../types/auth.types';
 import { NavigationModule } from '../types/module.types';
@@ -29,6 +30,7 @@ interface DashboardOverviewScreenProps {
   onLaunchSession: (session: DelegatedSession) => void;
   onOpenDrawer: () => void;
   onOpenOrgPicker: () => void;
+  onLogout?: () => void;
 }
 
 export const DashboardOverviewScreen: React.FC<DashboardOverviewScreenProps> = ({
@@ -38,6 +40,7 @@ export const DashboardOverviewScreen: React.FC<DashboardOverviewScreenProps> = (
   onLaunchSession,
   onOpenDrawer,
   onOpenOrgPicker,
+  onLogout,
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -47,6 +50,18 @@ export const DashboardOverviewScreen: React.FC<DashboardOverviewScreenProps> = (
   const [memberCount, setMemberCount] = useState<number>(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const handleConfirmLogout = () => {
+    if (!onLogout) return;
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out of your WITHUS workspace session? You will need to authenticate again.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign Out', style: 'destructive', onPress: onLogout },
+      ],
+    );
+  };
+
   const fetchDashboardData = useCallback(async () => {
     if (!organization?.id) {
       setIsLoading(false);
@@ -55,7 +70,6 @@ export const DashboardOverviewScreen: React.FC<DashboardOverviewScreenProps> = (
 
     setErrorMessage(null);
     try {
-      // Parallel fetch for non-blocking aggregated dashboard metrics
       const [vaultsRes, pendingRes, sessionsRes, membersRes] = await Promise.allSettled([
         ApiService.getVaults(organization.id, 1, 10),
         ApiService.getPendingApprovals(organization.id),
@@ -112,6 +126,7 @@ export const DashboardOverviewScreen: React.FC<DashboardOverviewScreenProps> = (
         organization={organization}
         onOpenDrawer={onOpenDrawer}
         onOpenOrgPicker={onOpenOrgPicker}
+        onLogout={onLogout ? handleConfirmLogout : undefined}
       />
 
       <ScrollView
@@ -129,13 +144,47 @@ export const DashboardOverviewScreen: React.FC<DashboardOverviewScreenProps> = (
       >
         {/* Welcome Greeting Banner */}
         <View style={styles.greetingCard}>
-          <Text style={styles.greetingSubtext}>WORKSPACE: {organization?.name || 'WithUs'}</Text>
+          <Text style={styles.greetingSubtext}>
+            WORKSPACE: {organization?.name?.toUpperCase() || 'WITHUS'}
+          </Text>
           <Text style={styles.greetingTitle}>
             {getGreeting()}, {user.fullName || user.email.split('@')[0]} 👋
           </Text>
           <Text style={styles.greetingDescription}>
             Manage your credentials, vaults, and live delegated access sessions with zero raw exposure.
           </Text>
+
+          {/* Quick Action Buttons */}
+          <View style={styles.quickActionButtons}>
+            <TouchableOpacity
+              style={styles.btnActionPrimary}
+              onPress={() => onNavigate('VAULTS')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.btnActionPrimaryIcon}>＋</Text>
+              <Text style={styles.btnActionPrimaryText}>New Vault</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.btnActionSecondary}
+              onPress={() => onNavigate('SESSIONS')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.btnActionSecondaryIcon}>⚡</Text>
+              <Text style={styles.btnActionSecondaryText}>Sessions</Text>
+            </TouchableOpacity>
+
+            {onLogout && (
+              <TouchableOpacity
+                style={styles.btnActionLogout}
+                onPress={handleConfirmLogout}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.btnActionLogoutIcon}>🚪</Text>
+                <Text style={styles.btnActionLogoutText}>Sign Out</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {/* Metric Cards Grid */}
@@ -245,62 +294,209 @@ export const DashboardOverviewScreen: React.FC<DashboardOverviewScreenProps> = (
           </TouchableOpacity>
         </View>
 
-        {/* Quick Actions Bar */}
+        {/* Complete Sidebar Modules Directory */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>QUICK NAVIGATION</Text>
-          <View style={styles.quickActionsRow}>
-            <TouchableOpacity
-              style={styles.actionChip}
-              onPress={() => onNavigate('SESSIONS')}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.actionChipIcon}>⚡</Text>
-              <Text style={styles.actionChipText}>Launch Sessions</Text>
-            </TouchableOpacity>
+          <Text style={styles.sectionTitle}>WORKSPACE MODULES & SERVICES</Text>
 
-            <TouchableOpacity
-              style={styles.actionChip}
-              onPress={() => onNavigate('VAULTS')}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.actionChipIcon}>🔐</Text>
-              <Text style={styles.actionChipText}>Credential Vaults</Text>
-            </TouchableOpacity>
+          {/* 1. Workspace Group */}
+          <View style={styles.moduleCategory}>
+            <Text style={styles.categoryTitle}>WORKSPACE</Text>
+            <View style={styles.moduleList}>
+              <TouchableOpacity
+                style={styles.moduleCard}
+                onPress={() => onNavigate('VAULTS')}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.moduleIconBox, { backgroundColor: COLORS.cyanSubtle }]}>
+                  <Text style={styles.moduleIcon}>🔐</Text>
+                </View>
+                <View style={styles.moduleMeta}>
+                  <View style={styles.moduleTitleRow}>
+                    <Text style={styles.moduleName}>Vaults</Text>
+                    <View style={styles.modulePill}>
+                      <Text style={styles.modulePillText}>{vaultCount} active</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.moduleDesc}>Encrypted credential storage & password secrets</Text>
+                </View>
+                <Text style={styles.chevronIcon}>›</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.actionChip}
-              onPress={() => onNavigate('APPROVALS')}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.actionChipIcon}>📋</Text>
-              <Text style={styles.actionChipText}>Review Approvals</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.moduleCard}
+                onPress={() => onNavigate('SESSIONS')}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.moduleIconBox, { backgroundColor: COLORS.emeraldSubtle }]}>
+                  <Text style={styles.moduleIcon}>🛡️</Text>
+                </View>
+                <View style={styles.moduleMeta}>
+                  <View style={styles.moduleTitleRow}>
+                    <Text style={styles.moduleName}>Sessions</Text>
+                    <View style={[styles.modulePill, activeSessions.length > 0 && styles.modulePillGreen]}>
+                      <Text style={[styles.modulePillText, activeSessions.length > 0 && styles.modulePillGreenText]}>
+                        {activeSessions.length} live
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={styles.moduleDesc}>Delegated access & controlled browser</Text>
+                </View>
+                <Text style={styles.chevronIcon}>›</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.moduleCard}
+                onPress={() => onNavigate('ACTIVITY')}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.moduleIconBox, { backgroundColor: COLORS.purpleSubtle }]}>
+                  <Text style={styles.moduleIcon}>⚡</Text>
+                </View>
+                <View style={styles.moduleMeta}>
+                  <View style={styles.moduleTitleRow}>
+                    <Text style={styles.moduleName}>Activity</Text>
+                    <View style={styles.modulePill}>
+                      <Text style={styles.modulePillText}>Telemetry</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.moduleDesc}>Live team presence & login event history</Text>
+                </View>
+                <Text style={styles.chevronIcon}>›</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.moduleCard}
+                onPress={() => onNavigate('APPROVALS')}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.moduleIconBox, { backgroundColor: COLORS.amberSubtle }]}>
+                  <Text style={styles.moduleIcon}>📋</Text>
+                </View>
+                <View style={styles.moduleMeta}>
+                  <View style={styles.moduleTitleRow}>
+                    <Text style={styles.moduleName}>Approvals</Text>
+                    {pendingApprovalsCount > 0 ? (
+                      <View style={[styles.modulePill, styles.modulePillAmber]}>
+                        <Text style={[styles.modulePillText, styles.modulePillAmberText]}>
+                          {pendingApprovalsCount} pending
+                        </Text>
+                      </View>
+                    ) : (
+                      <View style={styles.modulePill}>
+                        <Text style={styles.modulePillText}>Resolved</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.moduleDesc}>Access request governance & approvals</Text>
+                </View>
+                <Text style={styles.chevronIcon}>›</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* 2. Platform & Security Group */}
+          <View style={styles.moduleCategory}>
+            <Text style={styles.categoryTitle}>PLATFORM & SECURITY</Text>
+            <View style={styles.moduleList}>
+              <TouchableOpacity
+                style={styles.moduleCard}
+                onPress={() => onNavigate('INTEGRATIONS')}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.moduleIconBox, { backgroundColor: COLORS.cyanSubtle }]}>
+                  <Text style={styles.moduleIcon}>🔌</Text>
+                </View>
+                <View style={styles.moduleMeta}>
+                  <View style={styles.moduleTitleRow}>
+                    <Text style={styles.moduleName}>Integrations</Text>
+                    <View style={styles.modulePill}>
+                      <Text style={styles.modulePillText}>11 Platforms</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.moduleDesc}>GitHub, Vercel, Shopify, Stripe, MCA, GST...</Text>
+                </View>
+                <Text style={styles.chevronIcon}>›</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.moduleCard}
+                onPress={() => onNavigate('AUDIT')}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.moduleIconBox, { backgroundColor: 'rgba(142, 142, 147, 0.15)' }]}>
+                  <Text style={styles.moduleIcon}>📜</Text>
+                </View>
+                <View style={styles.moduleMeta}>
+                  <View style={styles.moduleTitleRow}>
+                    <Text style={styles.moduleName}>Audit Log</Text>
+                    <View style={styles.modulePill}>
+                      <Text style={styles.modulePillText}>Immutable</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.moduleDesc}>Tamper-evident security ledger & event audit</Text>
+                </View>
+                <Text style={styles.chevronIcon}>›</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* 3. Organization Group */}
+          <View style={styles.moduleCategory}>
+            <Text style={styles.categoryTitle}>ORGANIZATION</Text>
+            <View style={styles.moduleList}>
+              <TouchableOpacity
+                style={styles.moduleCard}
+                onPress={() => onNavigate('TEAM')}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.moduleIconBox, { backgroundColor: COLORS.purpleSubtle }]}>
+                  <Text style={styles.moduleIcon}>👥</Text>
+                </View>
+                <View style={styles.moduleMeta}>
+                  <View style={styles.moduleTitleRow}>
+                    <Text style={styles.moduleName}>Team</Text>
+                    <View style={styles.modulePill}>
+                      <Text style={styles.modulePillText}>{memberCount} members</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.moduleDesc}>Organization member roster & roles</Text>
+                </View>
+                <Text style={styles.chevronIcon}>›</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.moduleCard}
+                onPress={() => onNavigate('SETTINGS')}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.moduleIconBox, { backgroundColor: COLORS.cyanSubtle }]}>
+                  <Text style={styles.moduleIcon}>⚙️</Text>
+                </View>
+                <View style={styles.moduleMeta}>
+                  <View style={styles.moduleTitleRow}>
+                    <Text style={styles.moduleName}>Settings</Text>
+                    <View style={[styles.modulePill, styles.modulePillGreen]}>
+                      <Text style={[styles.modulePillText, styles.modulePillGreenText]}>Enforced</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.moduleDesc}>Hardware Keystore, FLAG_SECURE & profile</Text>
+                </View>
+                <Text style={styles.chevronIcon}>›</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
         {/* Recent Delegated Sessions Section */}
-        <View style={styles.sectionContainer}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>DELEGATED SESSIONS</Text>
-            <TouchableOpacity onPress={() => onNavigate('SESSIONS')}>
-              <Text style={styles.seeAllText}>View All →</Text>
-            </TouchableOpacity>
-          </View>
+        {recentSessions.length > 0 && (
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.sectionTitle}>RECENT DELEGATED SESSIONS</Text>
+              <TouchableOpacity onPress={() => onNavigate('SESSIONS')}>
+                <Text style={styles.seeAllText}>View All →</Text>
+              </TouchableOpacity>
+            </View>
 
-          {isLoading ? (
-            <View style={styles.loadingBox}>
-              <ActivityIndicator size="small" color={COLORS.accentCyan} />
-              <Text style={styles.loadingText}>Loading sessions...</Text>
-            </View>
-          ) : recentSessions.length === 0 ? (
-            <View style={styles.emptyBox}>
-              <Text style={styles.emptyIcon}>🛡️</Text>
-              <Text style={styles.emptyTitle}>No Delegated Sessions</Text>
-              <Text style={styles.emptyText}>
-                No sessions have been granted to your account in this organization yet.
-              </Text>
-            </View>
-          ) : (
             <View style={styles.sessionsList}>
               {recentSessions.slice(0, 3).map((session) => {
                 const isActive = session.status === 'ACTIVE';
@@ -340,8 +536,8 @@ export const DashboardOverviewScreen: React.FC<DashboardOverviewScreenProps> = (
                 );
               })}
             </View>
-          )}
-        </View>
+          </View>
+        )}
 
         {/* Security Summary Banner */}
         <View style={styles.securityBanner}>
@@ -355,6 +551,31 @@ export const DashboardOverviewScreen: React.FC<DashboardOverviewScreenProps> = (
             </Text>
           </View>
         </View>
+
+        {/* User Account & Session Sign Out Card */}
+        {onLogout && (
+          <View style={styles.accountCard}>
+            <View style={styles.accountCardRow}>
+              <View style={styles.accountAvatar}>
+                <Text style={styles.accountAvatarText}>
+                  {(user.fullName || user.email || 'U').charAt(0).toUpperCase()}
+                </Text>
+              </View>
+              <View style={styles.accountDetails}>
+                <Text style={styles.accountName}>{user.fullName || 'Enterprise Operator'}</Text>
+                <Text style={styles.accountEmail}>{user.email}</Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              style={styles.btnLogoutDashboard}
+              onPress={handleConfirmLogout}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.btnLogoutDashboardIcon}>🚪</Text>
+              <Text style={styles.btnLogoutDashboardText}>Sign Out of WITHUS</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -373,7 +594,7 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.xxxl,
   },
   greetingCard: {
-    backgroundColor: COLORS.bgPrimary,
+    backgroundColor: COLORS.bgSecondary,
     borderRadius: RADIUS.lg,
     padding: SPACING.lg,
     borderWidth: 1,
@@ -392,50 +613,170 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '800',
     color: COLORS.textWhite,
-    letterSpacing: 0.2,
+    letterSpacing: -0.3,
   },
   greetingDescription: {
     fontSize: 12,
     color: COLORS.textSecondary,
-    marginTop: SPACING.xs + 2,
+    marginTop: SPACING.xs,
     lineHeight: 18,
+  },
+  quickActionButtons: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    marginTop: SPACING.md,
+  },
+  btnActionPrimary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.accentCyan,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.md,
+  },
+  btnActionPrimaryIcon: {
+    fontSize: 14,
+    color: COLORS.textWhite,
+    fontWeight: 'bold',
+    marginRight: 4,
+  },
+  btnActionPrimaryText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textWhite,
+  },
+  btnActionSecondary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.bgTertiary,
+    borderWidth: 1,
+    borderColor: COLORS.borderMedium,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.md,
+  },
+  btnActionSecondaryIcon: {
+    fontSize: 12,
+    marginRight: 4,
+  },
+  btnActionSecondaryText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.textWhite,
+  },
+  btnActionLogout: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 69, 58, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 69, 58, 0.3)',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.md,
+  },
+  btnActionLogoutIcon: {
+    fontSize: 12,
+    marginRight: 4,
+  },
+  btnActionLogoutText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FF453A',
+  },
+  accountCard: {
+    backgroundColor: COLORS.bgSecondary,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    borderWidth: 1,
+    borderColor: COLORS.borderSubtle,
+    marginTop: SPACING.lg,
+  },
+  accountCardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+  accountAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.accentCyan,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SPACING.md,
+  },
+  accountAvatarText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.textWhite,
+  },
+  accountDetails: {
+    flex: 1,
+  },
+  accountName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  accountEmail: {
+    fontSize: 12,
+    color: COLORS.textTertiary,
+    marginTop: 2,
+  },
+  btnLogoutDashboard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 69, 58, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 69, 58, 0.3)',
+    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.md,
+  },
+  btnLogoutDashboardIcon: {
+    fontSize: 15,
+    marginRight: SPACING.xs,
+  },
+  btnLogoutDashboardText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FF453A',
   },
   metricsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: SPACING.md,
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.xl,
   },
   metricCard: {
-    flex: 1,
-    minWidth: '47%',
+    width: '47.5%',
     backgroundColor: COLORS.bgSecondary,
     borderRadius: RADIUS.lg,
     padding: SPACING.md,
     borderWidth: 1,
-    borderColor: COLORS.borderMedium,
+    borderColor: COLORS.borderSubtle,
   },
   metricHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: SPACING.sm,
   },
   metricIconBox: {
     width: 32,
     height: 32,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.sm,
     justifyContent: 'center',
     alignItems: 'center',
   },
   metricEmoji: {
-    fontSize: 16,
+    fontSize: 14,
   },
   metricBadge: {
+    backgroundColor: COLORS.bgTertiary,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: RADIUS.sm,
-    backgroundColor: COLORS.bgTertiary,
+    borderRadius: RADIUS.xs,
   },
   metricBadgeText: {
     fontSize: 9,
@@ -445,19 +786,19 @@ const styles = StyleSheet.create({
   },
   metricBadgeLive: {
     backgroundColor: COLORS.emeraldSubtle,
-    borderWidth: 1,
     borderColor: COLORS.emeraldBorder,
+    borderWidth: 1,
   },
   metricBadgeLiveText: {
     color: COLORS.textEmerald,
   },
   metricBadgeAlert: {
     backgroundColor: COLORS.amberSubtle,
-    borderWidth: 1,
     borderColor: COLORS.amberBorder,
+    borderWidth: 1,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: RADIUS.sm,
+    borderRadius: RADIUS.xs,
   },
   metricBadgeAlertText: {
     fontSize: 9,
@@ -466,30 +807,24 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   metricValue: {
-    fontSize: 26,
-    fontWeight: '900',
+    fontSize: 24,
+    fontWeight: '800',
     color: COLORS.textWhite,
-    letterSpacing: 0.5,
+    letterSpacing: -0.5,
   },
   metricLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textWhite,
     marginTop: 2,
   },
   metricSubtext: {
-    fontSize: 11,
-    color: COLORS.textTertiary,
+    fontSize: 10,
+    color: COLORS.textSecondary,
     marginTop: 2,
   },
   sectionContainer: {
     marginBottom: SPACING.xl,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.md,
   },
   sectionTitle: {
     fontSize: 11,
@@ -497,86 +832,120 @@ const styles = StyleSheet.create({
     color: COLORS.textTertiary,
     letterSpacing: 1.2,
     textTransform: 'uppercase',
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
   },
   seeAllText: {
     fontSize: 12,
+    color: COLORS.textCyan,
     fontWeight: '600',
-    color: COLORS.accentCyan,
   },
-  quickActionsRow: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
+  moduleCategory: {
+    marginBottom: SPACING.lg,
   },
-  actionChip: {
-    flex: 1,
-    backgroundColor: COLORS.bgSecondary,
-    borderWidth: 1,
-    borderColor: COLORS.borderMedium,
-    borderRadius: RADIUS.md,
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionChipIcon: {
-    fontSize: 18,
-    marginBottom: SPACING.xs,
-  },
-  actionChipText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    textAlign: 'center',
-  },
-  loadingBox: {
-    padding: SPACING.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingText: {
-    fontSize: 12,
+  categoryTitle: {
+    fontSize: 10,
+    fontWeight: '700',
     color: COLORS.textTertiary,
-    marginTop: SPACING.sm,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: SPACING.xs + 2,
+    paddingLeft: 2,
   },
-  emptyBox: {
+  moduleList: {
     backgroundColor: COLORS.bgSecondary,
     borderRadius: RADIUS.lg,
-    padding: SPACING.xl,
-    alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.borderSubtle,
+    overflow: 'hidden',
   },
-  emptyIcon: {
-    fontSize: 32,
-    marginBottom: SPACING.sm,
+  moduleCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderSubtle,
   },
-  emptyTitle: {
-    fontSize: 15,
+  moduleIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: RADIUS.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SPACING.md,
+  },
+  moduleIcon: {
+    fontSize: 18,
+  },
+  moduleMeta: {
+    flex: 1,
+  },
+  moduleTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginRight: SPACING.xs,
+  },
+  moduleName: {
+    fontSize: 14,
     fontWeight: '700',
     color: COLORS.textWhite,
   },
-  emptyText: {
-    fontSize: 12,
+  modulePill: {
+    backgroundColor: COLORS.bgTertiary,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: RADIUS.full,
+  },
+  modulePillText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  modulePillGreen: {
+    backgroundColor: COLORS.emeraldSubtle,
+  },
+  modulePillGreenText: {
+    color: COLORS.textEmerald,
+    fontWeight: '700',
+  },
+  modulePillAmber: {
+    backgroundColor: COLORS.amberSubtle,
+  },
+  modulePillAmberText: {
+    color: COLORS.textAmber,
+    fontWeight: '700',
+  },
+  moduleDesc: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
+  chevronIcon: {
+    fontSize: 20,
     color: COLORS.textTertiary,
-    textAlign: 'center',
-    marginTop: SPACING.xs,
-    lineHeight: 18,
+    marginLeft: SPACING.xs,
   },
   sessionsList: {
     gap: SPACING.sm,
   },
   sessionCard: {
     backgroundColor: COLORS.bgSecondary,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.md,
     padding: SPACING.md,
     borderWidth: 1,
-    borderColor: COLORS.borderMedium,
+    borderColor: COLORS.borderSubtle,
   },
   sessionCardHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
   sessionCardLeft: {
     flexDirection: 'row',
@@ -594,22 +963,22 @@ const styles = StyleSheet.create({
   },
   sessionPermittedUser: {
     fontSize: 11,
-    color: COLORS.textTertiary,
+    color: COLORS.textSecondary,
+    fontFamily: 'monospace',
     marginTop: 1,
   },
   quickLaunchButton: {
-    marginTop: SPACING.md,
-    backgroundColor: COLORS.cyanSubtle,
-    borderWidth: 1,
-    borderColor: COLORS.cyanBorder,
-    borderRadius: RADIUS.md,
-    paddingVertical: SPACING.sm,
+    marginTop: SPACING.sm,
+    backgroundColor: COLORS.accentCyan,
+    borderRadius: RADIUS.sm,
+    paddingVertical: SPACING.xs + 3,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   quickLaunchText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
-    color: COLORS.textCyan,
+    color: COLORS.textWhite,
   },
   securityBanner: {
     flexDirection: 'row',
@@ -618,13 +987,13 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.lg,
     padding: SPACING.md,
     borderWidth: 1,
-    borderColor: COLORS.cyanBorder,
-    marginTop: SPACING.sm,
+    borderColor: COLORS.borderSubtle,
+    marginTop: SPACING.xs,
   },
   securityBannerIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: RADIUS.md,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: COLORS.cyanSubtle,
     justifyContent: 'center',
     alignItems: 'center',
@@ -637,15 +1006,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   securityBannerTitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: COLORS.textWhite,
   },
   securityBannerSub: {
     fontSize: 10,
-    color: COLORS.textTertiary,
+    color: COLORS.textSecondary,
     marginTop: 2,
     lineHeight: 14,
   },
 });
-

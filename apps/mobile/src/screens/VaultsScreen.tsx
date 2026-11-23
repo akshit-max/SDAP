@@ -1,7 +1,10 @@
 /**
  * WITHUS Mobile — Secure Vaults Screen
- * Lists encrypted credential vaults for the current organization.
- * Strictly adheres to security rules: metadata only, zero raw disclosure.
+ * Full parity with WITHUS Web Vaults:
+ * - Create new encrypted vaults
+ * - Add new credentials (username + password) directly to vaults
+ * - Inspect credential metadata with AES-256 HSM encryption guarantees
+ * - Delete vault & credentials with confirmation
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -15,6 +18,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   Modal,
+  Alert,
 } from 'react-native';
 import { Organization } from '../types/auth.types';
 import { VaultResponse, SecretMetadata } from '../types/module.types';
@@ -38,12 +42,28 @@ export const VaultsScreen: React.FC<VaultsScreenProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
-  // Modal state for viewing secrets metadata inside a vault
+  // Create Vault Modal
+  const [showCreateVaultModal, setShowCreateVaultModal] = useState(false);
+  const [newVaultName, setNewVaultName] = useState('');
+  const [newVaultDesc, setNewVaultDesc] = useState('');
+  const [isSubmittingVault, setIsSubmittingVault] = useState(false);
+
+  // Vault Detail & Secrets Modal
   const [selectedVault, setSelectedVault] = useState<VaultResponse | null>(null);
   const [vaultSecrets, setVaultSecrets] = useState<SecretMetadata[]>([]);
   const [isLoadingSecrets, setIsLoadingSecrets] = useState(false);
   const [secretsError, setSecretsError] = useState<string | null>(null);
+
+  // Add Credential Modal
+  const [showAddSecretModal, setShowAddSecretModal] = useState(false);
+  const [newSecretName, setNewSecretName] = useState('');
+  const [newUsername, setNewUsername] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [newSecretDesc, setNewSecretDesc] = useState('');
+  const [isSubmittingSecret, setIsSubmittingSecret] = useState(false);
 
   const fetchVaults = useCallback(async () => {
     if (!organization?.id) {
@@ -92,6 +112,106 @@ export const VaultsScreen: React.FC<VaultsScreenProps> = ({
     } finally {
       setIsLoadingSecrets(false);
     }
+  };
+
+  const handleCreateVault = async () => {
+    if (!organization?.id || !newVaultName.trim() || isSubmittingVault) return;
+    setIsSubmittingVault(true);
+    setErrorMessage(null);
+
+    try {
+      const created = await ApiService.createVault(organization.id, {
+        name: newVaultName.trim(),
+        description: newVaultDesc.trim() || undefined,
+      });
+      setShowCreateVaultModal(false);
+      setNewVaultName('');
+      setNewVaultDesc('');
+      setSuccessBanner(`Vault "${created.name}" created successfully.`);
+      fetchVaults();
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to create vault.');
+    } finally {
+      setIsSubmittingVault(false);
+    }
+  };
+
+  const handleDeleteVault = async (vaultId: string) => {
+    if (!organization?.id) return;
+    Alert.alert(
+      'Delete Vault',
+      'Are you sure you want to delete this vault? All contained credentials will be permanently removed.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await ApiService.deleteVault(organization.id, vaultId);
+              if (selectedVault?.id === vaultId) {
+                setSelectedVault(null);
+              }
+              setSuccessBanner('Vault deleted.');
+              fetchVaults();
+            } catch (err: any) {
+              setErrorMessage(err.message || 'Failed to delete vault.');
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleCreateSecret = async () => {
+    if (!organization?.id || !selectedVault || !newSecretName.trim() || !newPassword || isSubmittingSecret) return;
+    setIsSubmittingSecret(true);
+
+    try {
+      const plaintext = newUsername.trim()
+        ? `${newUsername.trim()}\n${newPassword}`
+        : newPassword;
+
+      await ApiService.createSecret(organization.id, selectedVault.id, {
+        name: newSecretName.trim(),
+        plaintext,
+        description: newSecretDesc.trim() || undefined,
+        type: 'PASSWORD',
+      });
+
+      setShowAddSecretModal(false);
+      setNewSecretName('');
+      setNewUsername('');
+      setNewPassword('');
+      setNewSecretDesc('');
+      setSuccessBanner('Credential added to vault.');
+      handleOpenVault(selectedVault);
+      fetchVaults();
+    } catch (err: any) {
+      setSecretsError(err.message || 'Failed to add credential.');
+    } finally {
+      setIsSubmittingSecret(false);
+    }
+  };
+
+  const handleDeleteSecret = async (secretId: string) => {
+    if (!organization?.id || !selectedVault) return;
+    Alert.alert('Delete Credential', 'Permanently delete this credential?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await ApiService.deleteSecret(organization.id, selectedVault.id, secretId);
+            handleOpenVault(selectedVault);
+            fetchVaults();
+          } catch (err: any) {
+            setSecretsError(err.message || 'Failed to delete credential.');
+          }
+        },
+      },
+    ]);
   };
 
   const handleCloseModal = () => {
@@ -180,24 +300,45 @@ export const VaultsScreen: React.FC<VaultsScreenProps> = ({
         onOpenOrgPicker={onOpenOrgPicker}
       />
 
-      {/* Search Input Bar */}
-      <View style={styles.searchBar}>
-        <Text style={styles.searchIcon}>🔍</Text>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search vaults..."
-          placeholderTextColor={COLORS.textTertiary}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Text style={styles.clearSearchIcon}>✕</Text>
-          </TouchableOpacity>
-        )}
+      {/* Action Bar: New Vault & Search */}
+      <View style={styles.topActionBar}>
+        <View style={styles.searchBar}>
+          <Text style={styles.searchIcon}>🔍</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search vaults..."
+            placeholderTextColor={COLORS.textTertiary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Text style={styles.clearSearchIcon}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <TouchableOpacity
+          style={styles.newVaultButton}
+          onPress={() => setShowCreateVaultModal(true)}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.newVaultIcon}>＋</Text>
+          <Text style={styles.newVaultText}>New Vault</Text>
+        </TouchableOpacity>
       </View>
+
+      {/* Success Notification */}
+      {successBanner && (
+        <View style={styles.successBanner}>
+          <Text style={styles.successBannerText}>{successBanner}</Text>
+          <TouchableOpacity onPress={() => setSuccessBanner(null)}>
+            <Text style={styles.bannerCloseIcon}>✕</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Main List Area */}
       {isLoading ? (
@@ -223,8 +364,14 @@ export const VaultsScreen: React.FC<VaultsScreenProps> = ({
           <Text style={styles.emptyText}>
             {searchQuery
               ? `No vaults matching "${searchQuery}" in this workspace.`
-              : 'No vaults have been created in this organization yet. Vaults are provisioned via the WITHUS Web Console.'}
+              : 'Create your first secure vault to store encrypted credentials for team delegation.'}
           </Text>
+          <TouchableOpacity
+            style={styles.emptyActionBtn}
+            onPress={() => setShowCreateVaultModal(true)}
+          >
+            <Text style={styles.emptyActionBtnText}>＋ Create New Vault</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -244,7 +391,66 @@ export const VaultsScreen: React.FC<VaultsScreenProps> = ({
         />
       )}
 
-      {/* Secrets Metadata Inspection Modal */}
+      {/* Create Vault Modal */}
+      <Modal
+        visible={showCreateVaultModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCreateVaultModal(false)}
+      >
+        <View style={styles.modalBackdropCenter}>
+          <View style={styles.formCard}>
+            <Text style={styles.formTitle}>Create Secure Vault</Text>
+            <Text style={styles.formSubtitle}>
+              Creates an isolated AES-256 encrypted container for workspace credentials.
+            </Text>
+
+            <Text style={styles.inputLabel}>Vault Name *</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="e.g. Production Credentials, GitHub Orgs"
+              placeholderTextColor={COLORS.textTertiary}
+              value={newVaultName}
+              onChangeText={setNewVaultName}
+              autoFocus
+            />
+
+            <Text style={styles.inputLabel}>Description (Optional)</Text>
+            <TextInput
+              style={[styles.textInput, { height: 70, textAlignVertical: 'top' }]}
+              placeholder="Purpose or platform tags for this vault..."
+              placeholderTextColor={COLORS.textTertiary}
+              value={newVaultDesc}
+              onChangeText={setNewVaultDesc}
+              multiline
+            />
+
+            <View style={styles.formButtons}>
+              <TouchableOpacity
+                style={styles.btnSecondary}
+                onPress={() => setShowCreateVaultModal(false)}
+                disabled={isSubmittingVault}
+              >
+                <Text style={styles.btnSecondaryText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.btnPrimary, isSubmittingVault && styles.btnDisabled]}
+                onPress={handleCreateVault}
+                disabled={isSubmittingVault}
+              >
+                {isSubmittingVault ? (
+                  <ActivityIndicator size="small" color={COLORS.bgDarkest} />
+                ) : (
+                  <Text style={styles.btnPrimaryText}>Create Vault</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Secrets Metadata & Management Modal */}
       <Modal
         visible={selectedVault !== null}
         animationType="slide"
@@ -256,26 +462,46 @@ export const VaultsScreen: React.FC<VaultsScreenProps> = ({
             {/* Modal Header */}
             <View style={styles.modalHeader}>
               <View style={styles.modalTitleGroup}>
-                <Text style={styles.modalLabel}>CREDENTIAL METADATA</Text>
+                <Text style={styles.modalLabel}>CREDENTIAL STORAGE</Text>
                 <Text style={styles.modalVaultName} numberOfLines={1}>
                   {selectedVault?.name}
                 </Text>
               </View>
-              <TouchableOpacity
-                style={styles.modalCloseButton}
-                onPress={handleCloseModal}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Text style={styles.modalCloseIcon}>✕</Text>
-              </TouchableOpacity>
+              <View style={styles.headerRightActions}>
+                <TouchableOpacity
+                  style={styles.deleteVaultBtn}
+                  onPress={() => selectedVault && handleDeleteVault(selectedVault.id)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Text style={styles.deleteVaultIcon}>🗑️</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.modalCloseButton}
+                  onPress={handleCloseModal}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Text style={styles.modalCloseIcon}>✕</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
-            {/* Zero Disclosure Notice */}
-            <View style={styles.securityNotice}>
-              <Text style={styles.securityNoticeIcon}>🛡️</Text>
-              <Text style={styles.securityNoticeText}>
-                Secret values remain encrypted in the backend HSM. Zero plaintext exposure to mobile client.
-              </Text>
+            {/* Zero Disclosure Notice & Add Credential Button */}
+            <View style={styles.vaultDetailSubHeader}>
+              <View style={styles.securityNotice}>
+                <Text style={styles.securityNoticeIcon}>🛡️</Text>
+                <Text style={styles.securityNoticeText}>
+                  Secrets are hardware-encrypted. Plaintext is only streamed directly into authorized WebViews.
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={styles.addSecretButton}
+                onPress={() => setShowAddSecretModal(true)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.addSecretBtnIcon}>＋</Text>
+                <Text style={styles.addSecretBtnText}>Add Credential</Text>
+              </TouchableOpacity>
             </View>
 
             {/* Secrets List inside Modal */}
@@ -293,7 +519,9 @@ export const VaultsScreen: React.FC<VaultsScreenProps> = ({
               <View style={styles.modalEmpty}>
                 <Text style={styles.emptyIcon}>🗝️</Text>
                 <Text style={styles.emptyTitle}>No Credentials in Vault</Text>
-                <Text style={styles.emptyText}>This vault does not contain any secret entries yet.</Text>
+                <Text style={styles.emptyText}>
+                  Tap "+ Add Credential" to securely store login credentials in this vault.
+                </Text>
               </View>
             ) : (
               <FlatList
@@ -310,23 +538,110 @@ export const VaultsScreen: React.FC<VaultsScreenProps> = ({
                       <View style={styles.secretMetaGroup}>
                         <Text style={styles.secretName}>{item.name}</Text>
                         <Text style={styles.secretType}>
-                          {item.type ? item.type.toUpperCase() : 'PASSWORD / SECRET'}
+                          {item.type ? item.type.toUpperCase() : 'PASSWORD / CREDENTIAL'}
                         </Text>
                       </View>
-                      <View style={styles.secretEncryptedPill}>
-                        <Text style={styles.secretEncryptedText}>ENCRYPTED</Text>
-                      </View>
+                      <TouchableOpacity
+                        style={styles.deleteSecretBtn}
+                        onPress={() => handleDeleteSecret(item.id)}
+                      >
+                        <Text style={styles.deleteSecretIcon}>🗑️</Text>
+                      </TouchableOpacity>
                     </View>
                     {item.description ? (
                       <Text style={styles.secretDescription}>{item.description}</Text>
                     ) : null}
-                    <Text style={styles.secretDate}>
-                      Added {formatDate(item.createdAt)}
-                    </Text>
+                    <Text style={styles.secretDate}>Added {formatDate(item.createdAt)}</Text>
                   </View>
                 )}
               />
             )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Add Credential Modal */}
+      <Modal
+        visible={showAddSecretModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowAddSecretModal(false)}
+      >
+        <View style={styles.modalBackdropCenter}>
+          <View style={styles.formCard}>
+            <Text style={styles.formTitle}>Add Credential</Text>
+            <Text style={styles.formSubtitle}>
+              Store encrypted credentials in "{selectedVault?.name}".
+            </Text>
+
+            <Text style={styles.inputLabel}>Credential / Service Name *</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="e.g. GitHub Account, Vercel Production"
+              placeholderTextColor={COLORS.textTertiary}
+              value={newSecretName}
+              onChangeText={setNewSecretName}
+            />
+
+            <Text style={styles.inputLabel}>Permitted Username / Login ID</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="e.g. admin@company.com or username"
+              placeholderTextColor={COLORS.textTertiary}
+              value={newUsername}
+              onChangeText={setNewUsername}
+              autoCapitalize="none"
+            />
+
+            <Text style={styles.inputLabel}>Password / Token *</Text>
+            <View style={styles.passwordRow}>
+              <TextInput
+                style={[styles.textInput, { flex: 1, marginBottom: 0 }]}
+                placeholder="Enter raw password or token"
+                placeholderTextColor={COLORS.textTertiary}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                style={styles.eyeToggle}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁️'}</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.inputLabel}>Description (Optional)</Text>
+            <TextInput
+              style={[styles.textInput, { height: 50 }]}
+              placeholder="e.g. Used for production deployment"
+              placeholderTextColor={COLORS.textTertiary}
+              value={newSecretDesc}
+              onChangeText={setNewSecretDesc}
+            />
+
+            <View style={styles.formButtons}>
+              <TouchableOpacity
+                style={styles.btnSecondary}
+                onPress={() => setShowAddSecretModal(false)}
+                disabled={isSubmittingSecret}
+              >
+                <Text style={styles.btnSecondaryText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.btnPrimary, isSubmittingSecret && styles.btnDisabled]}
+                onPress={handleCreateSecret}
+                disabled={isSubmittingSecret}
+              >
+                {isSubmittingSecret ? (
+                  <ActivityIndicator size="small" color={COLORS.bgDarkest} />
+                ) : (
+                  <Text style={styles.btnPrimaryText}>Save Credential</Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -339,15 +654,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bgDarkest,
   },
+  topActionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: SPACING.lg,
+    marginVertical: SPACING.md,
+    gap: SPACING.sm,
+  },
   searchBar: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.bgSecondary,
     borderWidth: 1,
     borderColor: COLORS.borderMedium,
     borderRadius: RADIUS.md,
-    marginHorizontal: SPACING.lg,
-    marginVertical: SPACING.md,
     paddingHorizontal: SPACING.md,
     height: 44,
   },
@@ -364,6 +685,49 @@ const styles = StyleSheet.create({
   },
   clearSearchIcon: {
     fontSize: 14,
+    color: COLORS.textSecondary,
+    padding: SPACING.xs,
+  },
+  newVaultButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.accentCyan,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    height: 44,
+  },
+  newVaultIcon: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: COLORS.bgDarkest,
+    marginRight: 4,
+  },
+  newVaultText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.bgDarkest,
+  },
+  successBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.emeraldSubtle,
+    borderWidth: 1,
+    borderColor: COLORS.emeraldBorder,
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.md,
+  },
+  successBannerText: {
+    fontSize: 12,
+    color: COLORS.textEmerald,
+    fontWeight: '600',
+    flex: 1,
+  },
+  bannerCloseIcon: {
+    fontSize: 12,
     color: COLORS.textSecondary,
     padding: SPACING.xs,
   },
@@ -537,6 +901,115 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 18,
     maxWidth: 280,
+    marginBottom: SPACING.lg,
+  },
+  emptyActionBtn: {
+    backgroundColor: COLORS.accentCyan,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm + 2,
+    borderRadius: RADIUS.md,
+  },
+  emptyActionBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.bgDarkest,
+  },
+  modalBackdropCenter: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.xl,
+  },
+  formCard: {
+    width: '100%',
+    maxWidth: 380,
+    backgroundColor: COLORS.bgSecondary,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.xl,
+    borderWidth: 1,
+    borderColor: COLORS.borderMedium,
+  },
+  formTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.textWhite,
+    marginBottom: 4,
+  },
+  formSubtitle: {
+    fontSize: 11,
+    color: COLORS.textTertiary,
+    marginBottom: SPACING.lg,
+    lineHeight: 16,
+  },
+  inputLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.xs,
+  },
+  textInput: {
+    backgroundColor: COLORS.bgInput,
+    borderWidth: 1,
+    borderColor: COLORS.borderMedium,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm + 2,
+    color: COLORS.textWhite,
+    fontSize: 13,
+    marginBottom: SPACING.md,
+  },
+  passwordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+    gap: SPACING.xs,
+  },
+  eyeToggle: {
+    width: 44,
+    height: 44,
+    backgroundColor: COLORS.bgInput,
+    borderWidth: 1,
+    borderColor: COLORS.borderMedium,
+    borderRadius: RADIUS.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  eyeIcon: {
+    fontSize: 16,
+  },
+  formButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: SPACING.sm,
+    marginTop: SPACING.sm,
+  },
+  btnSecondary: {
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm + 2,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.bgTertiary,
+  },
+  btnSecondaryText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  btnPrimary: {
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.sm + 2,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.accentCyan,
+    minWidth: 110,
+    alignItems: 'center',
+  },
+  btnPrimaryText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.bgDarkest,
+  },
+  btnDisabled: {
+    opacity: 0.5,
   },
   modalBackdrop: {
     flex: 1,
@@ -547,7 +1020,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.bgPrimary,
     borderTopLeftRadius: RADIUS.xl,
     borderTopRightRadius: RADIUS.xl,
-    maxHeight: '85%',
+    maxHeight: '90%',
     paddingBottom: SPACING.xxxl,
     borderTopWidth: 1,
     borderTopColor: COLORS.borderMedium,
@@ -575,6 +1048,24 @@ const styles = StyleSheet.create({
     color: COLORS.textWhite,
     marginTop: 2,
   },
+  headerRightActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  deleteVaultBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.roseSubtle,
+    borderWidth: 1,
+    borderColor: COLORS.roseBorder,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteVaultIcon: {
+    fontSize: 14,
+  },
   modalCloseButton: {
     width: 32,
     height: 32,
@@ -588,14 +1079,18 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontWeight: 'bold',
   },
+  vaultDetailSubHeader: {
+    padding: SPACING.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderSubtle,
+    gap: SPACING.sm,
+  },
   securityNotice: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.cyanSubtle,
     borderWidth: 1,
     borderColor: COLORS.cyanBorder,
-    marginHorizontal: SPACING.lg,
-    marginTop: SPACING.md,
     borderRadius: RADIUS.md,
     padding: SPACING.md,
   },
@@ -608,6 +1103,25 @@ const styles = StyleSheet.create({
     color: COLORS.textCyan,
     flex: 1,
     lineHeight: 15,
+  },
+  addSecretButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.accentCyan,
+    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.sm + 2,
+  },
+  addSecretBtnIcon: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: COLORS.bgDarkest,
+    marginRight: 6,
+  },
+  addSecretBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.bgDarkest,
   },
   modalLoading: {
     padding: SPACING.xxxl,
@@ -669,19 +1183,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginTop: 1,
   },
-  secretEncryptedPill: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: RADIUS.xs,
-    backgroundColor: COLORS.emeraldSubtle,
-    borderWidth: 1,
-    borderColor: COLORS.emeraldBorder,
+  deleteSecretBtn: {
+    padding: SPACING.xs,
   },
-  secretEncryptedText: {
-    fontSize: 8,
-    fontWeight: '800',
-    color: COLORS.textEmerald,
-    letterSpacing: 0.5,
+  deleteSecretIcon: {
+    fontSize: 14,
   },
   secretDescription: {
     fontSize: 11,
@@ -695,4 +1201,3 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xs,
   },
 });
-

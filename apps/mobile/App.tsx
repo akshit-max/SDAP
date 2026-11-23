@@ -41,6 +41,7 @@ import { IntegrationsScreen } from './src/screens/IntegrationsScreen';
 import { TeamScreen } from './src/screens/TeamScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { NavigationDrawer } from './src/components/NavigationDrawer';
+import { BottomNavBar } from './src/components/BottomNavBar';
 import { SecureStorageService } from './src/services/storage.service';
 import { ApiService } from './src/services/api.service';
 import { UserProfile, Organization, DelegatedSession } from './src/types/auth.types';
@@ -252,6 +253,7 @@ export default function App() {
             onLaunchSession={handleLaunchSession}
             onOpenDrawer={() => setIsDrawerOpen(true)}
             onOpenOrgPicker={() => setShowOrgSwitchModal(true)}
+            onLogout={handleLogout}
           />
         );
 
@@ -273,6 +275,7 @@ export default function App() {
             onLaunchSession={handleLaunchSession}
             onLogout={handleLogout}
             onOpenDrawer={() => setIsDrawerOpen(true)}
+            onOpenOrgPicker={() => setShowOrgSwitchModal(true)}
           />
         );
 
@@ -357,8 +360,23 @@ export default function App() {
             onClose={handleCloseBrowser}
           />
         ) : (
-          <>
-            {renderCurrentScreen()}
+          <View style={styles.appShell}>
+            <View style={styles.screenWrapper}>
+              {renderCurrentScreen()}
+            </View>
+
+            {/* Persistent Enterprise Bottom Navigation Bar */}
+            <BottomNavBar
+              activeModule={activeModule}
+              pendingApprovalsCount={pendingApprovalsCount}
+              onSelectModule={(mod) => {
+                if (mod === 'MORE') {
+                  setIsDrawerOpen(true);
+                } else {
+                  setActiveModule(mod);
+                }
+              }}
+            />
 
             {/* Slide-out Navigation Drawer */}
             <NavigationDrawer
@@ -444,7 +462,7 @@ export default function App() {
                 </View>
               </View>
             </Modal>
-          </>
+          </View>
         )
       ) : (
         <LoginScreen onLoginSuccess={handleLoginSuccess} />
@@ -457,6 +475,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.bgDarkest,
+  },
+  appShell: {
+    flex: 1,
+    backgroundColor: COLORS.bgDarkest,
+  },
+  screenWrapper: {
+    flex: 1,
   },
   splashContainer: {
     flex: 1,

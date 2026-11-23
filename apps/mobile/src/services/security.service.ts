@@ -71,7 +71,13 @@ export const PLATFORM_SECURITY_REGISTRY: Record<string, PlatformSecurityConfig> 
   GST: {
     id: 'GST',
     name: 'GST Portal',
-    allowedDomains: ['gst.gov.in', 'services.gst.gov.in'],
+    allowedDomains: [
+      'gst.gov.in',
+      'services.gst.gov.in',
+      'www.gst.gov.in',
+      'static.gst.gov.in',
+      'tutorial.gst.gov.in',
+    ],
     defaultLoginUrl: 'https://services.gst.gov.in/services/login',
   },
   UDYAM: {
@@ -86,13 +92,31 @@ export const PLATFORM_SECURITY_REGISTRY: Record<string, PlatformSecurityConfig> 
     allowedDomains: [
       'mail.google.com',
       'accounts.google.com',
-      'gds.google.com',
       'myaccount.google.com',
+      'gds.google.com',
+      'contacts.google.com',
+      'apis.google.com',
+      'clients6.google.com',
+      'ogs.google.com',
+      'ssl.gstatic.com',
+      'www.gstatic.com',
+      'gstatic.com',
+      'googleusercontent.com',
+      'googleapis.com',
       'google.co.in',
       'accounts.google.co.in',
       'mail.google.co.in',
       'gds.google.co.in',
       'myaccount.google.co.in',
+      'gmail.com',
+      'www.gmail.com',
+      'm.gmail.com',
+      'gmail.app.goo.gl',
+      'app.goo.gl',
+      'goo.gl',
+      'accounts.youtube.com',
+      'youtube.com',
+      'www.youtube.com',
     ],
     defaultLoginUrl: 'https://mail.google.com',
   },
@@ -179,10 +203,40 @@ export class NavigationSecurityService {
     const hostname = parsed.hostname.toLowerCase();
 
     // Check hostname against allowlisted domains
-    const isDomainPermitted = config.allowedDomains.some((allowedDomain) => {
+    let isDomainPermitted = config.allowedDomains.some((allowedDomain) => {
       const lowerAllowed = allowedDomain.toLowerCase();
       return hostname === lowerAllowed || hostname.endsWith(`.${lowerAllowed}`);
     });
+
+    // Special handling for Gmail sessions:
+    if (!isDomainPermitted && normalizedKey === 'GMAIL') {
+      // 1. Match legitimate Google / YouTube auth subdomains
+      // (Google Account SSO and 2-Step Verification use accounts.youtube.com / SetSID for cross-domain auth sync)
+      if (
+        (hostname === 'google.com' ||
+          hostname.endsWith('.google.com') ||
+          hostname === 'google.co.in' ||
+          hostname.endsWith('.google.co.in') ||
+          hostname === 'youtube.com' ||
+          hostname.endsWith('.youtube.com') ||
+          hostname === 'gstatic.com' ||
+          hostname.endsWith('.gstatic.com')) &&
+        !hostname.startsWith('evil-') &&
+        !hostname.startsWith('phish-')
+      ) {
+        isDomainPermitted = true;
+      }
+      // 2. Permit navigation to any recognized WITHUS platform
+      // (enables clicking magic login links from Vercel, GitHub, Stripe, Shopify, etc. received in inbox)
+      if (!isDomainPermitted) {
+        isDomainPermitted = Object.values(PLATFORM_SECURITY_REGISTRY).some((plat) =>
+          plat.allowedDomains.some((domain) => {
+            const lower = domain.toLowerCase();
+            return hostname === lower || hostname.endsWith(`.${lower}`);
+          }),
+        );
+      }
+    }
 
     if (!isDomainPermitted) {
       return {

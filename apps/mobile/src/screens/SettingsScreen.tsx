@@ -11,11 +11,16 @@ import {
   ScrollView,
   TouchableOpacity,
   Modal,
+  TextInput,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { UserProfile, Organization, BiometricStatus } from '../types/auth.types';
 import { BiometricsService } from '../services/biometrics.service';
 import { SecureStorageService } from '../services/storage.service';
+import { ApiService } from '../services/api.service';
 import { AppHeader } from '../components/AppHeader';
+import { FeedbackBanner } from '../components/FeedbackBanner';
 import { COLORS, SPACING, RADIUS } from '../theme/theme';
 
 interface SettingsScreenProps {
@@ -36,6 +41,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [biometricStatus, setBiometricStatus] = useState<BiometricStatus | null>(null);
   const [apiBaseUrl, setApiBaseUrl] = useState<string>('');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [currentFullName, setCurrentFullName] = useState(user.fullName || '');
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+  const [newFullName, setNewFullName] = useState(user.fullName || '');
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [profileFeedback, setProfileFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
     loadSettingsData();
@@ -51,6 +61,22 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       setApiBaseUrl(url);
     } catch {
       // Non-blocking
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!newFullName.trim() || isUpdatingProfile) return;
+    setIsUpdatingProfile(true);
+    setProfileFeedback(null);
+    try {
+      const updated = await ApiService.updateProfile({ fullName: newFullName.trim() });
+      setCurrentFullName(updated.fullName || newFullName.trim());
+      setShowEditProfileModal(false);
+      setProfileFeedback({ type: 'success', message: 'Profile updated successfully.' });
+    } catch (err: any) {
+      setProfileFeedback({ type: 'error', message: err.message || 'Failed to update profile.' });
+    } finally {
+      setIsUpdatingProfile(false);
     }
   };
 
@@ -71,16 +97,39 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       >
         {/* User Identity Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionHeader}>OPERATOR IDENTITY</Text>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionHeader}>OPERATOR IDENTITY</Text>
+            <TouchableOpacity
+              style={styles.editProfileBtn}
+              onPress={() => {
+                setNewFullName(currentFullName);
+                setShowEditProfileModal(true);
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.editProfileBtnText}>✏️ Edit</Text>
+            </TouchableOpacity>
+          </View>
+
+          {profileFeedback ? (
+            <View style={{ marginBottom: SPACING.sm }}>
+              <FeedbackBanner
+                type={profileFeedback.type}
+                message={profileFeedback.message}
+                onDismiss={() => setProfileFeedback(null)}
+              />
+            </View>
+          ) : null}
+
           <View style={styles.card}>
             <View style={styles.userRow}>
               <View style={styles.avatar}>
                 <Text style={styles.avatarText}>
-                  {(user.fullName || user.email || 'U').charAt(0).toUpperCase()}
+                  {(currentFullName || user.email || 'U').charAt(0).toUpperCase()}
                 </Text>
               </View>
               <View style={styles.userInfo}>
-                <Text style={styles.userName}>{user.fullName || 'WITHUS Operator'}</Text>
+                <Text style={styles.userName}>{currentFullName || 'WITHUS Operator'}</Text>
                 <Text style={styles.userEmail}>{user.email}</Text>
               </View>
             </View>
@@ -266,6 +315,53 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 }}
               >
                 <Text style={styles.confirmLogoutText}>Sign Out</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Profile Modal */}
+      <Modal
+        visible={showEditProfileModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowEditProfileModal(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.confirmCard}>
+            <Text style={styles.confirmTitle}>Edit Profile</Text>
+            <Text style={styles.confirmMessage}>
+              Update your full name as shown across delegated access workspaces.
+            </Text>
+
+            <Text style={styles.inputLabel}>Full Name</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Full Name"
+              placeholderTextColor={COLORS.textTertiary}
+              value={newFullName}
+              onChangeText={setNewFullName}
+            />
+
+            <View style={styles.confirmButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowEditProfileModal(false)}
+                disabled={isUpdatingProfile}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.saveProfileButton, isUpdatingProfile && { opacity: 0.5 }]}
+                onPress={handleUpdateProfile}
+                disabled={isUpdatingProfile}
+              >
+                {isUpdatingProfile ? (
+                  <ActivityIndicator size="small" color={COLORS.bgDarkest} />
+                ) : (
+                  <Text style={styles.saveProfileText}>Save Changes</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -506,6 +602,56 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: COLORS.textWhite,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+  },
+  editProfileBtn: {
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 2,
+    backgroundColor: COLORS.cyanSubtle,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: COLORS.cyanBorder,
+  },
+  editProfileBtnText: {
+    fontSize: 11,
+    color: COLORS.textCyan,
+    fontWeight: '700',
+  },
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+    marginBottom: 6,
+  },
+  textInput: {
+    backgroundColor: COLORS.bgInput,
+    borderWidth: 1,
+    borderColor: COLORS.borderSubtle,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    color: COLORS.textWhite,
+    fontSize: 14,
+    marginBottom: SPACING.lg,
+  },
+  saveProfileButton: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.accentCyan,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 100,
+  },
+  saveProfileText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.bgDarkest,
   },
 });
 

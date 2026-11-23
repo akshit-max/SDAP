@@ -641,4 +641,157 @@ export class ApiService {
     );
     return response.data || response;
   }
+
+  /**
+   * Create a new encrypted vault (POST /api/v1/organizations/:orgId/vaults)
+   */
+  static async createVault(
+    orgId: string,
+    data: { name: string; description?: string },
+  ): Promise<VaultResponse> {
+    if (!orgId || !data.name) {
+      throw new ApiError('Organization ID and Vault Name are required', 400);
+    }
+    const response = await this.request<any>(
+      `organizations/${orgId}/vaults`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      },
+      true,
+    );
+    return response.data || response;
+  }
+
+  /**
+   * Delete an encrypted vault (DELETE /api/v1/organizations/:orgId/vaults/:vaultId)
+   */
+  static async deleteVault(orgId: string, vaultId: string): Promise<void> {
+    if (!orgId || !vaultId) {
+      throw new ApiError('Organization ID and Vault ID are required', 400);
+    }
+    await this.request<void>(
+      `organizations/${orgId}/vaults/${vaultId}`,
+      { method: 'DELETE' },
+      true,
+    );
+  }
+
+  /**
+   * Add a new credential secret into a vault (POST /api/v1/organizations/:orgId/vaults/:vaultId/secrets)
+   */
+  static async createSecret(
+    orgId: string,
+    vaultId: string,
+    data: { name: string; plaintext: string; description?: string; type?: string },
+  ): Promise<SecretMetadata> {
+    if (!orgId || !vaultId || !data.name || !data.plaintext) {
+      throw new ApiError('Organization ID, Vault ID, Name, and Plaintext are required', 400);
+    }
+    const response = await this.request<any>(
+      `organizations/${orgId}/vaults/${vaultId}/secrets`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      },
+      true,
+    );
+    const item = response.data || response;
+    return {
+      id: item.id,
+      vaultId: item.vaultId || vaultId,
+      name: item.name,
+      description: item.description,
+      type: item.type,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+    };
+  }
+
+  /**
+   * Delete a credential secret from a vault (DELETE /api/v1/organizations/:orgId/vaults/:vaultId/secrets/:secretId)
+   */
+  static async deleteSecret(orgId: string, vaultId: string, secretId: string): Promise<void> {
+    if (!orgId || !vaultId || !secretId) {
+      throw new ApiError('Organization ID, Vault ID, and Secret ID are required', 400);
+    }
+    await this.request<void>(
+      `organizations/${orgId}/vaults/${vaultId}/secrets/${secretId}`,
+      { method: 'DELETE' },
+      true,
+    );
+  }
+
+  /**
+   * Create/grant a new delegated session (POST /api/v1/organizations/:orgId/sessions)
+   */
+  static async createSession(orgId: string, data: any): Promise<DelegatedSession> {
+    if (!orgId) {
+      throw new ApiError('Organization ID is required', 400);
+    }
+    const response = await this.request<any>(
+      `organizations/${orgId}/sessions`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      },
+      true,
+    );
+    const raw = response.data || response;
+    return {
+      ...raw,
+      platform: (raw.platform || raw.platformId || raw.resourceName || 'UNKNOWN').toUpperCase(),
+      permittedUsername: raw.permittedUsername || raw.grantee?.email || 'Grantee',
+      secretName: raw.secretName || raw.resourceName || raw.platform,
+    };
+  }
+
+  /**
+   * Invite member to organization (POST /api/v1/organizations/:orgId/invites)
+   */
+  static async inviteMember(
+    orgId: string,
+    email: string,
+    role: string = 'MEMBER',
+  ): Promise<any> {
+    if (!orgId || !email) {
+      throw new ApiError('Organization ID and email are required', 400);
+    }
+    return this.request<any>(
+      `organizations/${orgId}/invites`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ email: email.trim().toLowerCase(), role }),
+      },
+      true,
+    );
+  }
+
+  /**
+   * Remove member from organization (DELETE /api/v1/organizations/:orgId/members/:memberId)
+   */
+  static async removeMember(orgId: string, memberId: string): Promise<any> {
+    if (!orgId || !memberId) {
+      throw new ApiError('Organization ID and Member ID are required', 400);
+    }
+    return this.request<any>(
+      `organizations/${orgId}/members/${memberId}`,
+      { method: 'DELETE' },
+      true,
+    );
+  }
+
+  /**
+   * Update user profile (PATCH /api/v1/users/me)
+   */
+  static async updateProfile(data: { fullName?: string }): Promise<UserProfile> {
+    return this.request<UserProfile>(
+      'users/me',
+      {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      },
+      true,
+    );
+  }
 }

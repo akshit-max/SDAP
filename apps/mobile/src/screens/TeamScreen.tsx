@@ -1,7 +1,9 @@
 /**
  * WITHUS Mobile — Team Members Screen
- * Lists organization members and their role assignments (OWNER, ADMIN, MEMBER).
- * Respects role-based access control policies.
+ * Full parity with WITHUS Web Team Management:
+ * - List organization members and roles (OWNER, ADMIN, MEMBER)
+ * - Send email invitations to new team members
+ * - Remove members with confirmation
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -14,6 +16,8 @@ import {
   RefreshControl,
   ActivityIndicator,
   TouchableOpacity,
+  Modal,
+  Alert,
 } from 'react-native';
 import { Organization } from '../types/auth.types';
 import { OrganizationMember } from '../types/module.types';
@@ -37,6 +41,13 @@ export const TeamScreen: React.FC<TeamScreenProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successBanner, setSuccessBanner] = useState<string | null>(null);
+
+  // Invite Member Modal State
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<'MEMBER' | 'ADMIN'>('MEMBER');
+  const [isSendingInvite, setIsSendingInvite] = useState(false);
 
   const fetchMembers = useCallback(async () => {
     if (!organization?.id) {
@@ -68,6 +79,50 @@ export const TeamScreen: React.FC<TeamScreenProps> = ({
   const onRefresh = () => {
     setIsRefreshing(true);
     fetchMembers();
+  };
+
+  const handleSendInvite = async () => {
+    if (!organization?.id || !inviteEmail.trim() || isSendingInvite) return;
+    setIsSendingInvite(true);
+    setErrorMessage(null);
+
+    try {
+      await ApiService.inviteMember(organization.id, inviteEmail.trim(), inviteRole);
+      setShowInviteModal(false);
+      setInviteEmail('');
+      setInviteRole('MEMBER');
+      setSuccessBanner(`Invitation sent to ${inviteEmail.trim()}.`);
+      fetchMembers();
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to send invitation.');
+    } finally {
+      setIsSendingInvite(false);
+    }
+  };
+
+  const handleRemoveMember = (member: OrganizationMember) => {
+    if (!organization?.id) return;
+    const name = member.user?.fullName || member.user?.email || 'this member';
+    Alert.alert(
+      'Remove Member',
+      `Are you sure you want to remove ${name} from ${organization.name}? All active delegated sessions will be revoked.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await ApiService.removeMember(organization.id, member.userId || member.id);
+              setSuccessBanner(`Removed ${name}.`);
+              fetchMembers();
+            } catch (err: any) {
+              setErrorMessage(err.message || 'Failed to remove member.');
+            }
+          },
+        },
+      ],
+    );
   };
 
   const formatDate = (iso: string) => {
@@ -124,6 +179,7 @@ export const TeamScreen: React.FC<TeamScreenProps> = ({
     const roleStyle = getRoleStyle(item.role);
     const displayName = item.user?.fullName || item.user?.email?.split('@')[0] || 'Member';
     const email = item.user?.email || 'Unknown User';
+    const isOwner = item.role.toUpperCase() === 'OWNER';
 
     return (
       <View style={styles.card}>
@@ -155,6 +211,17 @@ export const TeamScreen: React.FC<TeamScreenProps> = ({
               {item.role.toUpperCase()}
             </Text>
           </View>
+
+          {/* Remove Member Button */}
+          {!isOwner && (
+            <TouchableOpacity
+              style={styles.removeBtn}
+              onPress={() => handleRemoveMember(item)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={styles.removeIcon}>✕</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={styles.cardFooter}>
@@ -174,24 +241,45 @@ export const TeamScreen: React.FC<TeamScreenProps> = ({
         onOpenOrgPicker={onOpenOrgPicker}
       />
 
-      {/* Search Bar */}
-      <View style={styles.searchBar}>
-        <Text style={styles.searchIcon}>🔍</Text>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search team members..."
-          placeholderTextColor={COLORS.textTertiary}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <Text style={styles.clearSearchIcon}>✕</Text>
-          </TouchableOpacity>
-        )}
+      {/* Top Action Bar: Search & Invite */}
+      <View style={styles.topActionBar}>
+        <View style={styles.searchBar}>
+          <Text style={styles.searchIcon}>🔍</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search team members..."
+            placeholderTextColor={COLORS.textTertiary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Text style={styles.clearSearchIcon}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <TouchableOpacity
+          style={styles.inviteButton}
+          onPress={() => setShowInviteModal(true)}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.inviteBtnIcon}>＋</Text>
+          <Text style={styles.inviteBtnText}>Invite</Text>
+        </TouchableOpacity>
       </View>
+
+      {/* Success Notification */}
+      {successBanner && (
+        <View style={styles.successBanner}>
+          <Text style={styles.successBannerText}>{successBanner}</Text>
+          <TouchableOpacity onPress={() => setSuccessBanner(null)}>
+            <Text style={styles.bannerCloseIcon}>✕</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Main List Area */}
       {isLoading ? (
@@ -215,7 +303,7 @@ export const TeamScreen: React.FC<TeamScreenProps> = ({
           <Text style={styles.emptyText}>
             {searchQuery
               ? `No members matching "${searchQuery}".`
-              : 'No members in this organization yet.'}
+              : 'No team members invited yet. Tap "+ Invite" to add colleagues.'}
           </Text>
         </View>
       ) : (
@@ -235,6 +323,96 @@ export const TeamScreen: React.FC<TeamScreenProps> = ({
           }
         />
       )}
+
+      {/* Invite Member Modal */}
+      <Modal
+        visible={showInviteModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowInviteModal(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Invite Team Member</Text>
+            <Text style={styles.modalSubtitle}>
+              Send an invitation link to onboard a new member into {organization?.name}.
+            </Text>
+
+            <Text style={styles.inputLabel}>Colleague Email Address *</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="e.g. colleague@company.com"
+              placeholderTextColor={COLORS.textTertiary}
+              value={inviteEmail}
+              onChangeText={setInviteEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoFocus
+            />
+
+            <Text style={styles.inputLabel}>Workspace Role</Text>
+            <View style={styles.rolePickerRow}>
+              <TouchableOpacity
+                style={[
+                  styles.roleOption,
+                  inviteRole === 'MEMBER' && styles.roleOptionActive,
+                ]}
+                onPress={() => setInviteRole('MEMBER')}
+              >
+                <Text
+                  style={[
+                    styles.roleOptionText,
+                    inviteRole === 'MEMBER' && styles.roleOptionTextActive,
+                  ]}
+                >
+                  Member
+                </Text>
+                <Text style={styles.roleOptionSub}>Standard delegated access</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.roleOption,
+                  inviteRole === 'ADMIN' && styles.roleOptionActive,
+                ]}
+                onPress={() => setInviteRole('ADMIN')}
+              >
+                <Text
+                  style={[
+                    styles.roleOptionText,
+                    inviteRole === 'ADMIN' && styles.roleOptionTextActive,
+                  ]}
+                >
+                  Admin
+                </Text>
+                <Text style={styles.roleOptionSub}>Can grant sessions & invite</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.btnSecondary}
+                onPress={() => setShowInviteModal(false)}
+                disabled={isSendingInvite}
+              >
+                <Text style={styles.btnSecondaryText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.btnPrimary, isSendingInvite && styles.btnDisabled]}
+                onPress={handleSendInvite}
+                disabled={isSendingInvite}
+              >
+                {isSendingInvite ? (
+                  <ActivityIndicator size="small" color={COLORS.bgDarkest} />
+                ) : (
+                  <Text style={styles.btnPrimaryText}>Send Invite</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -244,15 +422,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bgDarkest,
   },
+  topActionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: SPACING.lg,
+    marginVertical: SPACING.md,
+    gap: SPACING.sm,
+  },
   searchBar: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.bgSecondary,
     borderWidth: 1,
     borderColor: COLORS.borderMedium,
     borderRadius: RADIUS.md,
-    marginHorizontal: SPACING.lg,
-    marginVertical: SPACING.md,
     paddingHorizontal: SPACING.md,
     height: 44,
   },
@@ -269,6 +453,49 @@ const styles = StyleSheet.create({
   },
   clearSearchIcon: {
     fontSize: 14,
+    color: COLORS.textSecondary,
+    padding: SPACING.xs,
+  },
+  inviteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.accentCyan,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    height: 44,
+  },
+  inviteBtnIcon: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: COLORS.bgDarkest,
+    marginRight: 4,
+  },
+  inviteBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.bgDarkest,
+  },
+  successBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.emeraldSubtle,
+    borderWidth: 1,
+    borderColor: COLORS.emeraldBorder,
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.md,
+  },
+  successBannerText: {
+    fontSize: 12,
+    color: COLORS.textEmerald,
+    fontWeight: '600',
+    flex: 1,
+  },
+  bannerCloseIcon: {
+    fontSize: 12,
     color: COLORS.textSecondary,
     padding: SPACING.xs,
   },
@@ -322,6 +549,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: RADIUS.sm,
     borderWidth: 1,
+    marginRight: SPACING.xs,
   },
   roleIcon: {
     fontSize: 10,
@@ -331,6 +559,18 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.5,
+  },
+  removeBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.bgTertiary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  removeIcon: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
   },
   cardFooter: {
     marginTop: SPACING.sm,
@@ -408,5 +648,111 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     maxWidth: 280,
   },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.xl,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 380,
+    backgroundColor: COLORS.bgSecondary,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.xl,
+    borderWidth: 1,
+    borderColor: COLORS.borderMedium,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.textWhite,
+    marginBottom: 4,
+  },
+  modalSubtitle: {
+    fontSize: 11,
+    color: COLORS.textTertiary,
+    marginBottom: SPACING.lg,
+    lineHeight: 16,
+  },
+  inputLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.xs,
+  },
+  textInput: {
+    backgroundColor: COLORS.bgInput,
+    borderWidth: 1,
+    borderColor: COLORS.borderMedium,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm + 2,
+    color: COLORS.textWhite,
+    fontSize: 13,
+    marginBottom: SPACING.md,
+  },
+  rolePickerRow: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    marginBottom: SPACING.lg,
+  },
+  roleOption: {
+    flex: 1,
+    backgroundColor: COLORS.bgPrimary,
+    borderWidth: 1,
+    borderColor: COLORS.borderSubtle,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+  },
+  roleOptionActive: {
+    backgroundColor: COLORS.cyanSubtle,
+    borderColor: COLORS.cyanBorder,
+  },
+  roleOptionText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+  },
+  roleOptionTextActive: {
+    color: COLORS.textCyan,
+  },
+  roleOptionSub: {
+    fontSize: 9,
+    color: COLORS.textTertiary,
+    marginTop: 2,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: SPACING.sm,
+  },
+  btnSecondary: {
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm + 2,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.bgTertiary,
+  },
+  btnSecondaryText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  btnPrimary: {
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.sm + 2,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.accentCyan,
+    minWidth: 110,
+    alignItems: 'center',
+  },
+  btnPrimaryText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.bgDarkest,
+  },
+  btnDisabled: {
+    opacity: 0.5,
+  },
 });
-

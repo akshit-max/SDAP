@@ -125,26 +125,26 @@ export const SecureBrowserScreen: React.FC<SecureBrowserScreenProps> = ({
         if (webViewRef.current) {
           try {
             const clearDomScript = `
-              (function() {
-                try {
-                  var sensitiveInputs = document.querySelectorAll(
-                    'input[type="password"], input[autocomplete="current-password"], input[autocomplete="one-time-code"], input[name*="otp" i], input[id*="otp" i]'
-                  );
-                  for (var i = 0; i < sensitiveInputs.length; i++) {
-                    var el = sensitiveInputs[i];
-                    var nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value');
-                    if (nativeSetter && nativeSetter.set) {
-                      nativeSetter.set.call(el, '');
-                    } else {
-                      el.value = '';
-                    }
-                    el.dispatchEvent(new Event('input', { bubbles: true }));
-                    el.dispatchEvent(new Event('change', { bubbles: true }));
-                  }
-                } catch(e) {}
-              })();
-              true;
-            `;
+  (function () {
+    try {
+      var sensitiveInputs = document.querySelectorAll(
+        'input[type="password"], input[autocomplete="current-password"], input[autocomplete="one-time-code"], input[name*="otp" i], input[id*="otp" i]'
+      );
+      for (var i = 0; i < sensitiveInputs.length; i++) {
+        var el = sensitiveInputs[i];
+        var nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value');
+        if (nativeSetter && nativeSetter.set) {
+          nativeSetter.set.call(el, '');
+        } else {
+          el.value = '';
+        }
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    } catch (e) { }
+  })();
+true;
+`;
             webViewRef.current.injectJavaScript(clearDomScript);
           } catch {
             // Ignore if webView is unmounting
@@ -169,6 +169,29 @@ export const SecureBrowserScreen: React.FC<SecureBrowserScreenProps> = ({
    */
   const handleShouldStartLoad = useCallback(
     (request: { url: string; isTopFrame?: boolean }) => {
+      // 1. Non-top-frame requests (iframes, background pings, service workers)
+      // must NEVER trigger the full-screen "Navigation Blocked" modal
+      if (request.isTopFrame === false) {
+        return true;
+      }
+
+      const lower = request.url.toLowerCase();
+
+      // 2. Silently prevent external app intents, Play Store redirects, and smart app banners (e.g. app.goo.gl)
+      // from hijacking the WebView or triggering an error modal
+      if (
+        lower.startsWith('intent:') ||
+        lower.startsWith('market:') ||
+        lower.startsWith('android-app:') ||
+        lower.startsWith('mailto:') ||
+        lower.startsWith('tel:') ||
+        lower.includes('play.google.com') ||
+        lower.includes('app.goo.gl') ||
+        lower.includes('goo.gl')
+      ) {
+        return false;
+      }
+
       const evaluation = NavigationSecurityService.evaluateNavigation(
         request.url,
         platformKey,
@@ -220,7 +243,7 @@ export const SecureBrowserScreen: React.FC<SecureBrowserScreenProps> = ({
   const handleFillCredentials = async () => {
     const evaluation = NavigationSecurityService.evaluateNavigation(currentUrl, platformKey);
     if (!evaluation.isAllowed) {
-      setAutofillFeedback(`Cannot autofill: You are not on a verified ${platformKey} domain.`);
+      setAutofillFeedback(`Cannot autofill: You are not on a verified ${ platformKey } domain.`);
       setAutofillStatus('ERROR');
       return;
     }
@@ -236,7 +259,7 @@ export const SecureBrowserScreen: React.FC<SecureBrowserScreenProps> = ({
         const launchResult = await ApiService.launchSession(
           session.organizationId,
           session.id,
-          `Mobile Secure Browser Autofill on ${platformKey}`,
+          `Mobile Secure Browser Autofill on ${ platformKey } `,
         );
 
         credentials = CredentialService.parsePlaintext(
@@ -273,7 +296,7 @@ export const SecureBrowserScreen: React.FC<SecureBrowserScreenProps> = ({
   const handleFetchAndFillOtp = async () => {
     const evaluation = NavigationSecurityService.evaluateNavigation(currentUrl, platformKey);
     if (!evaluation.isAllowed) {
-      setOtpFeedback(`Cannot fetch OTP: You are not on a verified ${platformKey} domain.`);
+      setOtpFeedback(`Cannot fetch OTP: You are not on a verified ${ platformKey } domain.`);
       setOtpStatus('ERROR');
       return;
     }
@@ -282,7 +305,7 @@ export const SecureBrowserScreen: React.FC<SecureBrowserScreenProps> = ({
     const now = Date.now();
     if (now - lastOtpFetchTimeRef.current < 5000) {
       const waitTime = Math.ceil((5000 - (now - lastOtpFetchTimeRef.current)) / 1000);
-      setOtpFeedback(`Cooldown active: Please wait ${waitTime}s before checking Gmail again.`);
+      setOtpFeedback(`Cooldown active: Please wait ${ waitTime }s before checking Gmail again.`);
       return;
     }
     lastOtpFetchTimeRef.current = now;
@@ -322,7 +345,7 @@ export const SecureBrowserScreen: React.FC<SecureBrowserScreenProps> = ({
         webViewRef.current.injectJavaScript(script);
       }
       setOtpStatus('FILLED');
-      setOtpFeedback(`OTP (${extractedOtp.length}-digit code) inserted into form.`);
+      setOtpFeedback(`OTP(${ extractedOtp.length } - digit code) inserted into form.`);
     } catch (err: any) {
       setOtpStatus('ERROR');
       if (err instanceof ApiError) {
@@ -373,7 +396,7 @@ export const SecureBrowserScreen: React.FC<SecureBrowserScreenProps> = ({
           setOtpStatus('FILLED');
           setOtpFeedback(
             payload.isMultiBox
-              ? `OTP distributed across ${payload.count} digit boxes.`
+              ? `OTP distributed across ${ payload.count } digit boxes.`
               : 'OTP code inserted into verification input.',
           );
         } else {
@@ -529,7 +552,7 @@ export const SecureBrowserScreen: React.FC<SecureBrowserScreenProps> = ({
                 </Text>
                 <Text style={styles.otpButtonText}>
                   {cooldownSeconds > 0
-                    ? `Wait ${cooldownSeconds}s`
+                    ? `Wait ${ cooldownSeconds } s`
                     : otpStatus === 'FILLED'
                     ? 'Re-fetch OTP'
                     : 'Fetch OTP'}
@@ -569,7 +592,7 @@ export const SecureBrowserScreen: React.FC<SecureBrowserScreenProps> = ({
           <View
             style={[
               styles.progressBarFill,
-              { width: `${Math.max(10, Math.min(100, loadProgress * 100))}%` },
+              { width: `${ Math.max(10, Math.min(100, loadProgress * 100)) }% ` },
             ]}
           />
         </View>
@@ -603,13 +626,16 @@ export const SecureBrowserScreen: React.FC<SecureBrowserScreenProps> = ({
           // Security Configurations
           javaScriptEnabled={true}
           domStorageEnabled={true}
-          mixedContentMode="never" // Strictly block mixed HTTP content
+          mixedContentMode="compatibility"
+          thirdPartyCookiesEnabled={true}
+          sharedCookiesEnabled={true}
+          setSupportMultipleWindows={false}
+          userAgent="Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
           allowFileAccess={false} // Strictly block local file access
           allowFileAccessFromFileURLs={false}
           allowUniversalAccessFromFileURLs={false}
           geolocationEnabled={false}
           mediaPlaybackRequiresUserAction={true}
-          incognito={true} // Isolated session cookie jar
           // Early DOM Hiding Injection for Show-Password Toggles & Restricted Navigation
           injectedJavaScriptBeforeContentLoaded={AutofillService.buildDomHidingScript(platformKey)}
           // Navigation Guards

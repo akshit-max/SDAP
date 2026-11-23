@@ -181,6 +181,10 @@ export const PLATFORM_HIDE_CSS: Record<string, string[]> = {
   ],
   GMAIL: [
     'div[jsname="wQNmvb"]',
+    'a[href*="app.goo.gl"]',
+    'a[href*="goo.gl"]',
+    'div[data-smartbanner]',
+    'header a[href*="goo.gl"]',
   ],
   GOOGLE_ADS: [],
 };
@@ -232,6 +236,22 @@ export class AutofillService {
 
     return `
 (function() {
+  // Gracefully polyfill Web Notification API to prevent webmail notification errors in embedded runtime
+  try {
+    if (typeof window !== 'undefined') {
+      var DummyNotification = function(title, options) {
+        this.title = title;
+        this.options = options;
+      };
+      DummyNotification.permission = 'granted';
+      DummyNotification.requestPermission = function() {
+        return Promise.resolve('granted');
+      };
+      DummyNotification.maxActions = 2;
+      window.Notification = DummyNotification;
+    }
+  } catch (_) {}
+
   var styleId = 'withus-capability-enforcer-css';
   var rules = ${escapedRulesJson};
   if (!rules || rules.length === 0) return;
@@ -260,8 +280,11 @@ export class AutofillService {
           applyStyles();
         }
       });
-      observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
-      window.__WITHUS_MUTATION_OBSERVER__ = true;
+      var target = document.documentElement || document.body;
+      if (target) {
+        observer.observe(target, { childList: true, subtree: true });
+        window.__WITHUS_MUTATION_OBSERVER__ = true;
+      }
     } catch(e) {}
   }
 })();
