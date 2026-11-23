@@ -217,8 +217,8 @@ export class EntitlementService {
    * Asserts the org is entitled to use the given Vault platform.
    *
    * Rules:
-   *  - PRO / BUSINESS: all 11 platforms allowed; generic (null) Vaults allowed.
-   *  - FREE: platformId must be non-null, must be in the 11-catalog, org must be
+   *  - PRO / BUSINESS: all 12 platforms allowed; generic (null) Vaults allowed.
+   *  - FREE: platformId must be non-null, must be in the 12-catalog, org must be
    *    COMPLIANT, and the platform must be in selectedPlatforms.
    *
    * Authorization uses trusted DB state only — never client-supplied platform values.

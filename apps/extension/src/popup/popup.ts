@@ -138,6 +138,14 @@ function getPlatformBranding(resourceName: string): { svg: string; color: string
     };
   }
 
+  if (name.includes('incometax') || name.includes('income tax')) {
+    return {
+      name: 'Income Tax Portal',
+      color: '#1e3a8a',
+      svg: `<svg class="platform-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 10h18M5 10v11M19 10v11M9 10v11M15 10v11M12 2L2 7h20L12 2z"/></svg>`
+    };
+  }
+
   // Capitalize name
   const capitalized = resourceName.charAt(0).toUpperCase() + resourceName.slice(1);
   return {
@@ -160,6 +168,7 @@ function detectPlatform(hostname: string): string {
   if (host.includes('mca.gov.in')) return 'MCA Portal';
   if (host.includes('gst.gov.in')) return 'GST Portal';
   if (host.includes('udyamregistration.gov.in')) return 'Udyam Portal';
+  if (host.includes('incometax.gov.in')) return 'Income Tax Portal';
   return '';
 }
 

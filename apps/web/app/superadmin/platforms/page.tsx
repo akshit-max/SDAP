@@ -111,6 +111,12 @@ function PlatformBrandIcon({ platformId }: { platformId: string }) {
           <FileText className="w-5 h-5" />
         </div>
       );
+    case 'INCOMETAX':
+      return (
+        <div className="w-10 h-10 rounded-lg bg-blue-700 text-white flex items-center justify-center font-bold shadow-sm flex-shrink-0">
+          <Landmark className="w-5 h-5" />
+        </div>
+      );
     default:
       return (
         <div className="w-10 h-10 rounded-lg bg-zinc-800 text-white flex items-center justify-center font-bold shadow-sm flex-shrink-0">
@@ -693,7 +699,7 @@ export default function SuperAdminPlatformsPage() {
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 font-medium">
             {isConnectionsTab
               ? 'Native API integrations — Vercel, GitHub, GoDaddy, Gmail. API-level delegation and session revocation.'
-              : '11 official WITHUS Vault & Extension platforms. Credential storage, delegated sessions, and extension autofill.'}
+              : '12 official WITHUS Vault & Extension platforms. Credential storage, delegated sessions, and extension autofill.'}
           </p>
         </div>
 
@@ -710,7 +716,7 @@ export default function SuperAdminPlatformsPage() {
             <Layers className="w-3.5 h-3.5" />
             Platform Ecosystem
             <span className="ml-1 px-1.5 py-0.2 rounded text-[9px] font-bold bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300">
-              11 platforms
+              12 platforms
             </span>
           </a>
           <a

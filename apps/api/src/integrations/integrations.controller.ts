@@ -44,7 +44,9 @@ export class IntegrationsController {
    * List all supported providers and their connection status.
    */
   @Get()
-  @ApiOperation({ summary: 'List all integration connections for an organization' })
+  @ApiOperation({
+    summary: 'List all integration connections for an organization',
+  })
   @RequirePermissions(Permission.INTEGRATION_READ)
   listConnections(@Param('orgId') orgId: string) {
     return this.integrationsService.listConnections(orgId);
@@ -55,12 +57,15 @@ export class IntegrationsController {
    * Connect a provider using a PAT.
    */
   @Post('connect')
-  @ApiOperation({ summary: 'Connect an integration provider with a Personal Access Token' })
+  @ApiOperation({
+    summary: 'Connect an integration provider with a Personal Access Token',
+  })
   @RequirePermissions(Permission.INTEGRATION_CONNECT)
   connect(
     @Param('orgId') orgId: string,
     @Request() req: RequestWithUser,
-    @Body(new ZodValidationPipe(ConnectIntegrationSchema)) dto: ConnectIntegrationDto,
+    @Body(new ZodValidationPipe(ConnectIntegrationSchema))
+    dto: ConnectIntegrationDto,
   ) {
     return this.integrationsService.connect(orgId, req.user.id, dto);
   }
@@ -77,7 +82,9 @@ export class IntegrationsController {
     @Param('provider') provider: IntegrationProvider,
   ) {
     // Generate a random state or CSRF token if needed, passing a dummy 'state' for now
-    const state = Buffer.from(JSON.stringify({ orgId, provider, ts: Date.now() })).toString('base64');
+    const state = Buffer.from(
+      JSON.stringify({ orgId, provider, ts: Date.now() }),
+    ).toString('base64');
     return this.integrationsService.getOAuthUrl(orgId, provider, state);
   }
 
@@ -86,7 +93,9 @@ export class IntegrationsController {
    * Handle the OAuth callback and complete the connection.
    */
   @Post(':provider/oauth/callback')
-  @ApiOperation({ summary: 'Complete an OAuth connection using the authorization code' })
+  @ApiOperation({
+    summary: 'Complete an OAuth connection using the authorization code',
+  })
   @RequirePermissions(Permission.INTEGRATION_CONNECT)
   handleOAuthCallback(
     @Param('orgId') orgId: string,
@@ -94,7 +103,12 @@ export class IntegrationsController {
     @Request() req: RequestWithUser,
     @Body(new ZodValidationPipe(OAuthCallbackSchema)) dto: OAuthCallbackDto,
   ) {
-    return this.integrationsService.handleOAuthCallback(orgId, req.user.id, provider, dto.code);
+    return this.integrationsService.handleOAuthCallback(
+      orgId,
+      req.user.id,
+      provider,
+      dto.code,
+    );
   }
 
   /**
@@ -145,12 +159,15 @@ export class IntegrationsController {
    * Grant platform access to a principal via the provider.
    */
   @Post(':provider/grant')
-  @ApiOperation({ summary: 'Grant access to a resource on the integration provider' })
+  @ApiOperation({
+    summary: 'Grant access to a resource on the integration provider',
+  })
   @RequirePermissions(Permission.SESSION_START)
   grantAccess(
     @Param('orgId') orgId: string,
     @Param('provider') provider: IntegrationProvider,
-    @Body(new ZodValidationPipe(GrantIntegrationAccessSchema)) dto: GrantIntegrationAccessDto,
+    @Body(new ZodValidationPipe(GrantIntegrationAccessSchema))
+    dto: GrantIntegrationAccessDto,
     @Request() _req: RequestWithUser,
   ) {
     return this.integrationsService.grantAccess(orgId, provider, dto);
@@ -161,12 +178,15 @@ export class IntegrationsController {
    * Revoke platform access from a principal via the provider.
    */
   @Post(':provider/revoke')
-  @ApiOperation({ summary: 'Revoke access from a resource on the integration provider' })
+  @ApiOperation({
+    summary: 'Revoke access from a resource on the integration provider',
+  })
   @RequirePermissions(Permission.SESSION_REVOKE)
   revokeAccess(
     @Param('orgId') orgId: string,
     @Param('provider') provider: IntegrationProvider,
-    @Body(new ZodValidationPipe(RevokeIntegrationAccessSchema)) dto: RevokeIntegrationAccessDto,
+    @Body(new ZodValidationPipe(RevokeIntegrationAccessSchema))
+    dto: RevokeIntegrationAccessDto,
     @Request() _req: RequestWithUser,
   ) {
     return this.integrationsService.revokeAccess(orgId, provider, dto);
@@ -186,26 +206,47 @@ export class IntegrationsController {
   ) {
     try {
       const urlObj = new URL(dto.url);
-      
+
       if (urlObj.protocol !== 'https:') {
         return { compatible: false, platform: null, reason: 'not_https' };
       }
 
       const hostname = urlObj.hostname.toLowerCase();
-      const isMatch = (domain: string) => hostname === domain || hostname.endsWith(`.${domain}`);
+      const isMatch = (domain: string) =>
+        hostname === domain || hostname.endsWith(`.${domain}`);
 
-      if (isMatch('github.com')) return { compatible: true, platform: 'GitHub' };
-      if (isMatch('vercel.com')) return { compatible: true, platform: 'Vercel' };
-      if (isMatch('godaddy.com') || isMatch('sso.godaddy.com')) return { compatible: true, platform: 'GoDaddy' };
-      if (isMatch('linkedin.com') || isMatch('www.linkedin.com')) return { compatible: true, platform: 'LinkedIn' };
-      if (isMatch('shopify.com') || isMatch('accounts.shopify.com') || isMatch('admin.shopify.com')) return { compatible: true, platform: 'Shopify' };
-      if (isMatch('stripe.com') || isMatch('dashboard.stripe.com')) return { compatible: true, platform: 'Stripe' };
-      if (isMatch('accounts.razorpay.com')) return { compatible: true, platform: 'Razorpay' };
-      if (isMatch('www.mca.gov.in') || isMatch('mca.gov.in')) return { compatible: true, platform: 'MCA Portal' };
-      if (isMatch('gst.gov.in') || isMatch('services.gst.gov.in')) return { compatible: true, platform: 'GST Portal' };
-      if (isMatch('udyamregistration.gov.in')) return { compatible: true, platform: 'Udyam Portal' };
+      if (isMatch('github.com'))
+        return { compatible: true, platform: 'GitHub' };
+      if (isMatch('vercel.com'))
+        return { compatible: true, platform: 'Vercel' };
+      if (isMatch('godaddy.com') || isMatch('sso.godaddy.com'))
+        return { compatible: true, platform: 'GoDaddy' };
+      if (isMatch('linkedin.com') || isMatch('www.linkedin.com'))
+        return { compatible: true, platform: 'LinkedIn' };
+      if (
+        isMatch('shopify.com') ||
+        isMatch('accounts.shopify.com') ||
+        isMatch('admin.shopify.com')
+      )
+        return { compatible: true, platform: 'Shopify' };
+      if (isMatch('stripe.com') || isMatch('dashboard.stripe.com'))
+        return { compatible: true, platform: 'Stripe' };
+      if (isMatch('accounts.razorpay.com'))
+        return { compatible: true, platform: 'Razorpay' };
+      if (isMatch('www.mca.gov.in') || isMatch('mca.gov.in'))
+        return { compatible: true, platform: 'MCA Portal' };
+      if (isMatch('gst.gov.in') || isMatch('services.gst.gov.in'))
+        return { compatible: true, platform: 'GST Portal' };
+      if (isMatch('udyamregistration.gov.in'))
+        return { compatible: true, platform: 'Udyam Portal' };
+      if (isMatch('incometax.gov.in') || isMatch('eportal.incometax.gov.in'))
+        return { compatible: true, platform: 'Income Tax Portal' };
 
-      return { compatible: false, platform: null, reason: 'unrecognized_platform' };
+      return {
+        compatible: false,
+        platform: null,
+        reason: 'unrecognized_platform',
+      };
     } catch (e) {
       return { compatible: false, platform: null, reason: 'invalid_url' };
     }

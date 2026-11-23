@@ -21,6 +21,7 @@ export type ComplianceState =
 export const WITHUS_VAULT_PLATFORMS = [
   'GITHUB', 'VERCEL', 'GODADDY', 'LINKEDIN', 'SHOPIFY',
   'STRIPE', 'RAZORPAY', 'MCA', 'GST', 'UDYAM', 'GMAIL',
+  'INCOMETAX',
 ] as const;
 export type VaultPlatformId = typeof WITHUS_VAULT_PLATFORMS[number];
 
@@ -36,6 +37,7 @@ export const PLATFORM_LABELS: Record<VaultPlatformId, string> = {
   GST: 'GST Portal',
   UDYAM: 'Udyam',
   GMAIL: 'Gmail',
+  INCOMETAX: 'Income Tax Portal',
 };
 
 export interface SubscriptionStatusResponse {

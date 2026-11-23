@@ -646,7 +646,7 @@ export default function PublicWithusPage() {
             </div>
           </div>
 
-          {/* Platform Integration Pill Strip - CATEGORIZED 11 APPROVED PLATFORMS */}
+          {/* Platform Integration Pill Strip - CATEGORIZED 12 APPROVED PLATFORMS */}
           <div className="mt-12 p-6 sm:p-8 rounded-2xl bg-neutral-900/40 border border-neutral-850 shadow-md space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-800 pb-5">
               <div>
@@ -657,7 +657,7 @@ export default function PublicWithusPage() {
               </div>
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-900 border border-neutral-800 text-xs font-mono text-neutral-300 w-fit">
                 <CheckCircle2 className="w-3.5 h-3.5 text-white" />
-                <span>11 Verified Platforms</span>
+                <span>12 Verified Platforms</span>
               </div>
             </div>
 
@@ -747,6 +747,10 @@ export default function PublicWithusPage() {
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-medium text-neutral-200 hover:bg-neutral-850 hover:border-neutral-700 transition-all">
                       <CheckCircle2 className="w-3.5 h-3.5 text-white shrink-0" />
                       <span>Udyam</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-medium text-neutral-200 hover:bg-neutral-850 hover:border-neutral-700 transition-all">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-white shrink-0" />
+                      <span>Income Tax</span>
                     </div>
                   </div>
                 </div>
@@ -840,7 +844,7 @@ export default function PublicWithusPage() {
                     <div className="w-9 h-9 rounded-lg bg-neutral-800 border border-neutral-750 flex items-center justify-center text-white mb-3">
                       <Key className="w-4.5 h-4.5" />
                     </div>
-                    <div className="text-3xl font-medium text-white font-mono">11</div>
+                    <div className="text-3xl font-medium text-white font-mono">12</div>
                     <div className="text-[11px] font-mono uppercase tracking-wider text-neutral-400 font-semibold mt-1">Active Vaults</div>
                   </div>
                   <ChevronRight className="w-5 h-5 text-neutral-600" />

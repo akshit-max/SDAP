@@ -781,3 +781,71 @@ platformRegistry.register({
   },
   manualStepMessage: 'Email filled. Google requires manual sign-in due to passkey / 2FA / account chooser. Click "Next" and continue manually.',
 });
+
+/**
+ * Income Tax e-Filing Portal — Partial Support (Government of India)
+ *
+ * Authentication flow:
+ *   PAN / Aadhaar / Other User ID → "Continue" → Manual step (Password / Aadhaar OTP)
+ *
+ * What we automate:
+ *   ✅ Fill PAN/Aadhaar/User ID in the identifier field
+ *   ⏸  Pause: Show toast instructing user to click Continue and complete authentication manually
+ */
+platformRegistry.register({
+  id: 'INCOMETAX',
+  name: 'Income Tax Portal',
+  domains: ['incometax.gov.in', 'eportal.incometax.gov.in'],
+  login: {
+    url: 'https://eportal.incometax.gov.in/iec/foservices/#/login',
+    usernameSelector: [
+      '#panAdhaarUserId',
+      'input#panAdhaarUserId',
+      'input[name="panAdhaarUserId"]',
+      'input[placeholder*="PAN/ Aadhaar" i]',
+      'input[placeholder*="User ID" i]',
+    ].join(', '),
+    submitSelector: 'button.large-buttonprimary, button.primary-button, button[type="submit"]',
+  },
+  manualStepMessage: 'WithUs Vault: User ID filled. Click "Continue" to proceed with authentication.',
+  capabilityRestrictions: {
+    'incometax.individual_huf': {
+      hideElementsCSS: [
+        'li#main-menu-link-contentdff00481-de9a-4454-bcb4-af07db0c91d9',
+        'li:has(> a[href*="individual"])',
+        'a[href*="/tax-payer/individual"]',
+      ],
+    },
+    'incometax.company': {
+      hideElementsCSS: [
+        'li#main-menu-link-contente4f61e62-3f3d-4fb4-af4b-39b2a7e7f049',
+        'li:has(> a[href*="company"])',
+      ],
+    },
+    'incometax.non_company': {
+      hideElementsCSS: [
+        'li#main-menu-link-content686055ee-7e73-4a80-9fd0-b84d8f9c61e1',
+        'li:has(> a[href*="non-company"])',
+      ],
+    },
+    'incometax.tax_professionals': {
+      hideElementsCSS: [
+        'li#main-menu-link-content5a66f6c5-fe40-4870-8e29-fb492d6a725e',
+        'li:has(> a[href*="tax-professional"])',
+        'li:has(> a[href*="/ca/"])',
+      ],
+    },
+    'incometax.downloads': {
+      hideElementsCSS: [
+        'li#main-menu-link-content7b4e468a-3402-4016-b566-dce3b57caebf',
+        'a[href*="/downloads"]',
+      ],
+    },
+    'incometax.help': {
+      hideElementsCSS: [
+        'li#main-menu-link-content58936a37-0c06-47c6-b3e1-a8066ceb875b',
+        'a[href*="/help"]',
+      ],
+    },
+  },
+});

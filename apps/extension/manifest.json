@@ -31,7 +31,9 @@
     "https://*.linkedin.com/*",
     "https://mail.google.com/*",
     "https://accounts.google.com/*",
-    "https://ads.google.com/*"
+    "https://ads.google.com/*",
+    "https://*.incometax.gov.in/*",
+    "https://incometax.gov.in/*"
   ],
   "background": {
     "service_worker": "background/service-worker.js",
@@ -58,7 +60,9 @@
         "https://udyamregistration.gov.in/*",
         "https://ads.google.com/*",
         "https://accounts.google.com/*",
-        "https://mail.google.com/*"
+        "https://mail.google.com/*",
+        "https://*.incometax.gov.in/*",
+        "https://incometax.gov.in/*"
       ],
       "exclude_matches": [
         "https://dashboard.razorpay.com/*",
@@ -92,7 +96,9 @@
         "http://127.0.0.1:8080/*",
         "http://mca.localhost:8080/*",
         "https://mail.google.com/*",
-        "https://accounts.google.com/*"
+        "https://accounts.google.com/*",
+        "https://*.incometax.gov.in/*",
+        "https://incometax.gov.in/*"
       ],
       "js": ["content/capability-enforcer.js"],
       "run_at": "document_start"

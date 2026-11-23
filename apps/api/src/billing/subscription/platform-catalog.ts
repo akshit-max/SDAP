@@ -1,4 +1,4 @@
-﻿/**
+/**
  * WITHUS Vault Platform Catalog
  *
  * Authoritative list of 11 Vault platform identifiers for the
@@ -22,6 +22,7 @@ export const WITHUS_VAULT_PLATFORMS = [
   'GST',
   'UDYAM',
   'GMAIL',
+  'INCOMETAX',
 ] as const;
 
 export type VaultPlatformId = (typeof WITHUS_VAULT_PLATFORMS)[number];

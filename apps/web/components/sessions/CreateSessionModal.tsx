@@ -150,6 +150,14 @@ const PLATFORM_CAPABILITY_MAP: Record<string, { key: string; label: string; desc
     { key: 'gmail.settings', label: 'Settings', description: 'Restrict access to Gmail settings' },
     { key: 'gmail.contacts', label: 'Contacts', description: 'Restrict access to Google Contacts' },
   ],
+  incometax: [
+    { key: 'incometax.individual_huf', label: 'Individual / HUF', description: 'Restrict access to Individual & HUF tax filings and guidance' },
+    { key: 'incometax.company', label: 'Company', description: 'Restrict access to Domestic and Foreign Company returns and forms' },
+    { key: 'incometax.non_company', label: 'Non-Company (Firms/LLPs/Trusts)', description: 'Restrict access to Partnership Firm, LLP, and Trust services' },
+    { key: 'incometax.tax_professionals', label: 'Tax Professionals & CAs', description: 'Restrict access to CA, ERI, and Tax Deductor/Collector services' },
+    { key: 'incometax.downloads', label: 'Downloads', description: 'Restrict access to offline utilities and ITR schema downloads' },
+    { key: 'incometax.help', label: 'Help & Guidance', description: 'Restrict access to help topics and assisted filing guidance' },
+  ],
 };
 
 function getCapabilitiesForSecret(

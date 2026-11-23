@@ -26,6 +26,14 @@ build/
 dist/
 apps/extension/dist/
 apps/extension/*.zip
+apps/mobile/.expo/
+apps/mobile/android/.gradle/
+apps/mobile/android/app/.cxx/
+apps/mobile/android/app/build/
+apps/mobile/android/build/
+apps/mobile/android/local.properties
+*.apk
+*.aab
 
 # Uploads & Temp files
 uploads/

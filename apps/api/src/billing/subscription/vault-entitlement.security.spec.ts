@@ -82,7 +82,7 @@ describe('EntitlementService.assertVaultPlatformAllowed()', () => {
       ).resolves.toBeUndefined();
     });
 
-    it('allows all 11 platforms on PRO', async () => {
+    it('allows all 12 platforms on PRO', async () => {
       const platforms = [
         'GITHUB',
         'VERCEL',
@@ -95,6 +95,7 @@ describe('EntitlementService.assertVaultPlatformAllowed()', () => {
         'GST',
         'UDYAM',
         'GMAIL',
+        'INCOMETAX',
       ];
       for (const p of platforms) {
         await expect(
@@ -115,7 +116,7 @@ describe('EntitlementService.assertVaultPlatformAllowed()', () => {
       });
     });
 
-    it('allows all 11 platforms on BUSINESS', async () => {
+    it('allows all 12 platforms on BUSINESS', async () => {
       const platforms = [
         'GITHUB',
         'VERCEL',
@@ -128,6 +129,7 @@ describe('EntitlementService.assertVaultPlatformAllowed()', () => {
         'GST',
         'UDYAM',
         'GMAIL',
+        'INCOMETAX',
       ];
       for (const p of platforms) {
         await expect(

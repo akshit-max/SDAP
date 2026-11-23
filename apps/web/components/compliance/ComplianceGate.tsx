@@ -313,7 +313,7 @@ export default function ComplianceGate() {
 
         {/* Upgrade nudge */}
         <p className="text-center text-xs text-slate-500 dark:text-slate-400 mt-4">
-          Want all 11 platforms?{" "}
+          Want all 12 platforms?{" "}
           <a
             href="/pricing"
             className="font-semibold text-slate-900 dark:text-slate-100 hover:underline inline-flex items-center gap-0.5"

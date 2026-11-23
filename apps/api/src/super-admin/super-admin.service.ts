@@ -881,12 +881,12 @@ export class SuperAdminService {
   }
 
   // ─── WITHUS Platform Ecosystem ─────────────────────────────────────────────
-  // Returns the 11 official WITHUS Vault platforms enriched with real DB data.
+  // Returns the 12 official WITHUS Vault platforms enriched with real DB data.
   // Google Ads is intentionally excluded — not a WITHUS Vault platform.
   // Extension-only platforms show null (not 0) for session/org counts since
   // those metrics cannot be derived without a platform field on Secret.
   async getPlatformEcosystem() {
-    // The 11 official WITHUS Vault platforms (source of truth: platform-registry.ts)
+    // The 12 official WITHUS Vault platforms (source of truth: platform-registry.ts)
     const VAULT_PLATFORMS = [
       {
         id: 'GITHUB',
@@ -994,6 +994,16 @@ export class SuperAdminService {
         otpSupport: false,
         limitations:
           'OTP-based login — no password field. Udyam Registration Number is filled; mobile number and OTP are completed manually by the user.',
+      },
+      {
+        id: 'INCOMETAX',
+        name: 'Income Tax Portal',
+        category: 'Government (India)',
+        autofillSupport: 'manual_step' as const,
+        nativeApiIntegration: false,
+        otpSupport: false,
+        limitations:
+          'Anti-phishing Secure Access Message confirmation + Aadhaar/Mobile OTP. Credentials filled; user confirms message and completes OTP manually.',
       },
     ];
 

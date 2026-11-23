@@ -35,7 +35,7 @@ export function CreateVaultModal({ orgId, isOpen, onClose }: CreateVaultModalPro
 
   const isFree = compliance?.plan === 'FREE';
   // FREE: only the 2 selected platforms are available.
-  // PRO/BUSINESS: all 11 platforms are available (optional).
+  // PRO/BUSINESS: all 12 platforms are available (optional).
   const availablePlatforms: string[] = isFree
     ? (compliance?.selectedPlatforms ?? [])
     : [...WITHUS_VAULT_PLATFORMS];

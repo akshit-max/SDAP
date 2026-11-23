@@ -235,7 +235,7 @@ export class SuperAdminController {
   }
 
   // ─── WITHUS Platform Ecosystem ─────────────────────────────────────────────
-  // Returns all 11 official WITHUS Vault platforms with real DB data.
+  // Returns all 12 official WITHUS Vault platforms with real DB data.
   // Google Ads is intentionally excluded.
 
   @Get('platform-ecosystem')
