@@ -205,6 +205,82 @@ async function initEnforcer() {
         }
       }
     }
+
+    // --- INCOMETAX PORTAL SPA ENFORCER ---
+    // Income Tax Portal renders its menu dynamically via Angular components.
+    // In addition to CSS selectors, we scan navbar elements and hide matching items by text and attribute.
+    if (config.id === 'INCOMETAX' && restrictionsToApply.length > 0) {
+      const ITR_TEXT_MAP: Record<string, string[]> = {
+        'incometax.individual_huf': ['individual', 'huf', 'e-file'],
+        'incometax.company': ['company', 'authorised partners'],
+        'incometax.non_company': ['non-company', 'pending actions'],
+        'incometax.tax_professionals': ['tax professional', 'tax professionals & others', 'services'],
+        'incometax.downloads': ['downloads', 'ais'],
+        'incometax.help': ['help', 'grievances', 'help & guidance'],
+      };
+
+      const hideByText = () => {
+        const keywordsToHide: string[] = [];
+        for (const cap of restrictionsToApply) {
+          const words = ITR_TEXT_MAP[cap];
+          if (words) keywordsToHide.push(...words);
+        }
+        if (keywordsToHide.length === 0) return;
+
+        // Query candidate buttons, links, and list items in the navigation/header
+        const candidates = document.querySelectorAll<HTMLElement>(
+          'nav button, nav a, nav li, header button, header a, header li, [role="navigation"] button, [role="navigation"] a, [id*="navBar-"], app-menu-item-unlogged button, .mat-mdc-tab-header, .mat-mdc-tab, button, a'
+        );
+
+        candidates.forEach(el => {
+          const rect = el.getBoundingClientRect();
+          // Navbar elements are within the top 200px of the viewport
+          if (rect.top > 200 && rect.height > 0) return;
+
+          const text = (el.innerText || el.textContent || '').trim().toLowerCase();
+          const nameAttr = (el.getAttribute('name') || '').trim().toLowerCase();
+          const idAttr = (el.getAttribute('id') || '').trim().toLowerCase();
+
+          const matches = keywordsToHide.some(kw => {
+            if (kw === 'company') {
+              if (text.includes('non-company') || nameAttr.includes('non-company')) return false;
+            }
+            return (
+              text === kw ||
+              nameAttr === kw ||
+              idAttr === kw ||
+              (kw.length >= 4 && (text.includes(kw) || nameAttr.includes(kw) || idAttr.includes(kw)))
+            );
+          });
+
+          if (matches) {
+            el.style.setProperty('display', 'none', 'important');
+            el.style.setProperty('visibility', 'hidden', 'important');
+            el.style.setProperty('opacity', '0', 'important');
+            el.style.setProperty('pointer-events', 'none', 'important');
+            const parent = el.closest('span, li, div.nav-item');
+            if (parent && parent !== document.body && parent.children.length <= 2) {
+              (parent as HTMLElement).style.setProperty('display', 'none', 'important');
+            }
+          }
+        });
+      };
+
+      const startEnforcing = () => {
+        hideByText();
+        const target = document.body || document.documentElement;
+        if (target) {
+          const itrObserver = new MutationObserver(() => hideByText());
+          itrObserver.observe(target, { childList: true, subtree: true });
+        }
+      };
+
+      if (document.body) {
+        startEnforcing();
+      } else {
+        window.addEventListener('DOMContentLoaded', startEnforcing, { once: true });
+      }
+    }
   }
 
   // 2. Intercept SPA routing

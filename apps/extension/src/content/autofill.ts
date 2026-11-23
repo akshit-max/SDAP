@@ -195,6 +195,49 @@ async function discoverSessions(): Promise<void> {
   }
   // ── End presence signals ────────────────────────────────────────────────
 
+  // ── URL Scoping Guard ────────────────────────────────────────────────────
+  // If this platform defines a login URL/hash pattern (e.g. Income Tax '#/login'),
+  // exit immediately if current URL does not match. This prevents autofill & toasts
+  // from firing on post-login dashboards (e.g. '#/dashboard/fileIncomeTaxReturn').
+  if (config?.login?.loginUrlPattern) {
+    const pattern = config.login.loginUrlPattern;
+    const matches = location.href.includes(pattern) || location.hash.startsWith(pattern);
+    if (!matches) {
+      removeToast();
+      return;
+    }
+  }
+
+  // SPA Navigation Guard: Listen to hashchange & popstate so moving away from login cleans up toast
+  const handleNavChange = () => {
+    if (config?.login?.loginUrlPattern) {
+      const pattern = config.login.loginUrlPattern;
+      const matches = location.href.includes(pattern) || location.hash.startsWith(pattern);
+      if (!matches) {
+        removeToast();
+      }
+    }
+  };
+  window.addEventListener('hashchange', handleNavChange);
+  window.addEventListener('popstate', handleNavChange);
+
+  // Intercept history.pushState / history.replaceState for Angular SPA transitions
+  if (!(window as any).__WITHUS_HISTORY_PATCHED__) {
+    (window as any).__WITHUS_HISTORY_PATCHED__ = true;
+    const origPush = history.pushState;
+    const origReplace = history.replaceState;
+    history.pushState = function(...args) {
+      const res = origPush.apply(this, args);
+      handleNavChange();
+      return res;
+    };
+    history.replaceState = function(...args) {
+      const res = origReplace.apply(this, args);
+      handleNavChange();
+      return res;
+    };
+  }
+
   // Only activate if this page has a login form OR a visible OTP field.
   // This prevents the toast from firing on post-login pages like
   // dashboard.razorpay.com/app/dashboard which match the domain but have no login UI.
@@ -248,6 +291,15 @@ async function discoverSessions(): Promise<void> {
       formWatcher.disconnect();
       return;
     }
+    if (config?.login?.loginUrlPattern) {
+      const pattern = config.login.loginUrlPattern;
+      const matches = location.href.includes(pattern) || location.hash.startsWith(pattern);
+      if (!matches) {
+        formWatcher.disconnect();
+        removeToast();
+        return;
+      }
+    }
     if (checkAndActivate()) {
       formWatcher.disconnect();
       handleAutofillRequest();
@@ -268,8 +320,7 @@ async function discoverSessions(): Promise<void> {
       const matches = location.href.includes(pattern) || location.hash.startsWith(pattern);
       if (!matches) {
         formWatcher.disconnect();
-        const toast = document.getElementById('withus-magic-toast');
-        if (toast) toast.remove();
+        removeToast();
       } else if (checkAndActivate()) {
         formWatcher.disconnect();
         handleAutofillRequest();
@@ -281,6 +332,8 @@ async function discoverSessions(): Promise<void> {
 
 
 // ─── Magic Toast ──────────────────────────────────────────────────────────────
+
+let toastTimeout: any = null;
 
 function showToast(message: string, isError = false): void {
   let toast = document.getElementById('withus-magic-toast');
@@ -325,15 +378,23 @@ function showToast(message: string, isError = false): void {
     toast.style.background = '#030303';
     toast.style.border = '1px solid rgba(239, 68, 68, 0.4)';
     toast.style.color = '#ef4444';
-    setTimeout(() => {
-      toast?.style.setProperty('opacity', '0');
-      toast?.style.setProperty('transform', 'translateY(-10px)');
-      setTimeout(() => toast?.remove(), 300);
-    }, 4000);
+  } else {
+    toast.style.background = '#030303';
+    toast.style.border = '1px solid rgba(255,255,255,0.15)';
+    toast.style.color = '#ffffff';
   }
+
+  if (toastTimeout) clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => {
+    removeToast();
+  }, 4000);
 }
 
 function removeToast(): void {
+  if (toastTimeout) {
+    clearTimeout(toastTimeout);
+    toastTimeout = null;
+  }
   const toast = document.getElementById('withus-magic-toast');
   if (toast) {
     toast.style.opacity = '0';
@@ -474,6 +535,13 @@ async function handleAutofillRequest(): Promise<void> {
     // Wait 200ms after filling all fields so React fully commits both email + password
     // state before we click submit. Without this, the form may submit with empty values.
     await new Promise(r => setTimeout(r, 200));
+
+    // Skip auto-click if this is the password step for Income Tax Portal or skipAutoSubmit is configured
+    const isIncomeTaxPasswordPage = config?.id === 'INCOMETAX' && location.href.includes('/password');
+    if (isIncomeTaxPasswordPage || (config?.login?.skipAutoSubmit && location.href.includes('/password'))) {
+      showToast('Password filled. Click Continue to proceed.');
+      return;
+    }
 
     // Auto-submit — clickSubmitButton tries CSS selector then exact text-content match,
     // retrying up to 10 times with 150ms intervals to handle React re-renders.
@@ -718,6 +786,12 @@ function startPasswordWatcher(
 
       // Hand off to OTP watcher if this platform expects an OTP after password
       if (config?.otp) startOtpWatcher(sessionId, orgId, loginStartTime);
+
+      // Income Tax Portal: User explicitly requested NOT to auto-click Continue on password step.
+      if (config?.id === 'INCOMETAX' || config?.login?.skipAutoSubmit) {
+        showToast('Password filled. Click Continue to proceed.');
+        return;
+      }
 
       // Wait 200ms so framework commits reactive validation before clicking submit
       await new Promise(r => setTimeout(r, 200));

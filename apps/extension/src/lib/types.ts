@@ -109,6 +109,7 @@ export interface PlatformConfig {
      * Prevents autofill from activating on post-login dashboards (e.g. '#/dashboard').
      */
     loginUrlPattern?: string;
+    skipAutoSubmit?: boolean;
   };
   otp?: {
     type: 'EMAIL' | 'SMS' | 'NONE';
