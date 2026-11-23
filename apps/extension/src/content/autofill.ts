@@ -360,6 +360,9 @@ async function handleAutofillRequest(): Promise<void> {
       // Safety: the username and password selectors must not match the SAME element.
       if (usernameEl && usernameEl !== pwEl) {
         fillField(usernameEl, username);
+        if (!pwEl) {
+          usernameEl.dispatchEvent(new Event('blur', { bubbles: true }));
+        }
         await new Promise(r => setTimeout(r, 150));
       }
     }
@@ -377,9 +380,16 @@ async function handleAutofillRequest(): Promise<void> {
           );
           if (confirmCheckbox && !confirmCheckbox.checked) {
             confirmCheckbox.click();
+            const matCheckbox = confirmCheckbox.closest('mat-checkbox');
+            if (matCheckbox && !confirmCheckbox.checked) {
+              (matCheckbox as HTMLElement).click();
+            }
+            confirmCheckbox.checked = true;
+            confirmCheckbox.dispatchEvent(new Event('input', { bubbles: true }));
             confirmCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
           }
           fillField(pwEl, password, config?.id !== 'MCA');
+          pwEl.dispatchEvent(new Event('blur', { bubbles: true }));
         } catch { /* ignore */ }
       } else {
         startPasswordWatcher(
@@ -487,6 +497,7 @@ function fillField(
 
   // Dispatch a realistic sequence of events so React/Angular/Vue pick up the change.
   el.dispatchEvent(new InputEvent('input',  { bubbles: true, data: value, inputType: 'insertText' }));
+  el.dispatchEvent(new Event('input', { bubbles: true }));
   el.dispatchEvent(new Event('change', { bubbles: true }));
   el.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: value.slice(-1) }));
   el.dispatchEvent(new KeyboardEvent('keyup',   { bubbles: true, key: value.slice(-1) }));
@@ -521,7 +532,7 @@ function queryShadowRoots<T extends Element = HTMLElement>(selector: string): T[
  */
 function clickSubmitButton(
   selector?: string,
-  maxAttempts = 10,
+  maxAttempts = 20,
   intervalMs = 150,
 ): void {
   const SUBMIT_LABELS = new Set(['login', 'log in', 'continue', 'verify', 'submit', 'next', 'sign in', 'signin', 'proceed']);
@@ -529,12 +540,32 @@ function clickSubmitButton(
   // e.g. "Sign in with Google", "Sign in with Microsoft", "Continue with Apple"
   const SOCIAL_KEYWORDS = ['google', 'microsoft', 'apple', 'facebook', 'github', 'twitter', 'sso', 'saml'];
 
+  let clicked = false;
+  let btnObserver: MutationObserver | null = null;
+
+  const doClick = (btn: HTMLElement) => {
+    if (clicked) return;
+    clicked = true;
+    if (btnObserver) {
+      btnObserver.disconnect();
+      btnObserver = null;
+    }
+    btn.click();
+  };
+
+  const isButtonEnabled = (el: HTMLElement): boolean => {
+    if ((el as any).disabled) return false;
+    if (el.hasAttribute('disabled')) return false;
+    if (el.getAttribute('aria-disabled') === 'true') return false;
+    return true;
+  };
+
   const tryFind = (): HTMLElement | null => {
     // 1. CSS selector path — most specific
     if (selector) {
       const els = Array.from(document.querySelectorAll<HTMLElement>(selector));
       const visible = els.find(el => {
-        if ((el as any).disabled) return false;
+        if (!isButtonEnabled(el)) return false;
         const rect = el.getBoundingClientRect();
         if (rect.width === 0 || rect.height === 0) return false;
         // Skip social login buttons even if they match the CSS selector
@@ -547,10 +578,10 @@ function clickSubmitButton(
     // 2. Text-content fallback — EXACT match only to avoid clicking social auth
     // buttons like "Sign in with Microsoft" (which starts with "sign in")
     return Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(btn => {
-      if (btn.disabled) return false;
+      if (!isButtonEnabled(btn)) return false;
       const rect = btn.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) return false;
-      const text = btn.textContent?.trim().toLowerCase() ?? '';
+      const text = btn.textContent?.replace(/\s+/g, ' ').trim().toLowerCase() ?? '';
       // Reject any button that contains social provider keywords
       if (SOCIAL_KEYWORDS.some(kw => text.includes(kw))) return false;
       // EXACT match only — "sign in with microsoft" ≠ "sign in"
@@ -558,19 +589,56 @@ function clickSubmitButton(
     }) ?? null;
   };
 
+  const findCandidate = (): HTMLElement | null => {
+    if (selector) {
+      const els = Array.from(document.querySelectorAll<HTMLElement>(selector));
+      const candidate = els.find(el => {
+        const rect = el.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return false;
+        const text = el.textContent?.toLowerCase() ?? '';
+        return !SOCIAL_KEYWORDS.some(kw => text.includes(kw));
+      });
+      if (candidate) return candidate;
+    }
+    return Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(btn => {
+      const rect = btn.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return false;
+      const text = btn.textContent?.replace(/\s+/g, ' ').trim().toLowerCase() ?? '';
+      if (SOCIAL_KEYWORDS.some(kw => text.includes(kw))) return false;
+      return SUBMIT_LABELS.has(text);
+    }) ?? null;
+  };
+
   let attempts = 0;
   const retry = () => {
+    if (clicked) return;
     attempts++;
     const btn = tryFind();
     if (btn) {
-      btn.click();
+      doClick(btn);
       return;
     }
+
+    // If button exists but is currently disabled (e.g. Angular validating form),
+    // observe it for enablement so we click immediately when disabled attribute is removed
+    const candidate = findCandidate();
+    if (candidate && !btnObserver) {
+      btnObserver = new MutationObserver(() => {
+        if (isButtonEnabled(candidate)) {
+          doClick(candidate);
+        }
+      });
+      btnObserver.observe(candidate, { attributes: true, attributeFilter: ['disabled', 'class', 'aria-disabled'] });
+    }
+
     if (attempts < maxAttempts) {
       setTimeout(retry, intervalMs);
+    } else {
+      if (btnObserver) {
+        btnObserver.disconnect();
+        btnObserver = null;
+      }
     }
-    // If still not found after all attempts — silently give up.
-    // Credentials are already filled; user can click manually.
   };
 
   retry();
@@ -589,7 +657,7 @@ function startPasswordWatcher(
   sessionId: string,
   orgId: string,
 ): void {
-  const observer = new MutationObserver(() => {
+  const observer = new MutationObserver(async () => {
     const pwEls = Array.from(document.querySelectorAll<HTMLInputElement>(passwordSelector));
     const pwEl = pwEls.find(el => isOtpFieldVisible(el));
     if (!pwEl) return;
@@ -604,12 +672,24 @@ function startPasswordWatcher(
       );
       if (confirmCheckbox && !confirmCheckbox.checked) {
         confirmCheckbox.click();
+        const matCheckbox = confirmCheckbox.closest('mat-checkbox');
+        if (matCheckbox && !confirmCheckbox.checked) {
+          (matCheckbox as HTMLElement).click();
+        }
+        confirmCheckbox.checked = true;
+        confirmCheckbox.dispatchEvent(new Event('input', { bubbles: true }));
         confirmCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
       }
 
       fillField(pwEl, password);
+      pwEl.dispatchEvent(new Event('blur', { bubbles: true }));
+
       // Hand off to OTP watcher if this platform expects an OTP after password
       if (config?.otp) startOtpWatcher(sessionId, orgId, loginStartTime);
+
+      // Wait 200ms so framework commits reactive validation before clicking submit
+      await new Promise(r => setTimeout(r, 200));
+
       // Click submit button — retries automatically if not immediately rendered
       clickSubmitButton(submitSelector);
     } catch {

@@ -811,7 +811,7 @@ platformRegistry.register({
       'input[name="loginPasswordField"]',
       'input[type="password"]',
     ].join(', '),
-    submitSelector: 'button.large-buttonprimary, button.primary-button, button[type="submit"]',
+    submitSelector: 'button.large-button-primary, button.large-buttonprimary, button.primary-button, button[type="submit"]',
   },
   hideElementsCSS: [
     '.mat-mdc-form-field-icon-suffix button',
