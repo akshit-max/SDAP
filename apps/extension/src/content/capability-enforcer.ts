@@ -211,12 +211,18 @@ async function initEnforcer() {
     // In addition to CSS selectors, we scan navbar elements and hide matching items by text and attribute.
     if (config.id === 'INCOMETAX' && restrictionsToApply.length > 0) {
       const ITR_TEXT_MAP: Record<string, string[]> = {
+        'incometax.efile': ['e-file'],
+        'incometax.authorised_partners': ['authorised partners', 'authorised partner', 'authorised'],
+        'incometax.services': ['services'],
+        'incometax.ais': ['ais'],
+        'incometax.pending_actions': ['pending actions', 'pending action'],
+        'incometax.grievances': ['grievances', 'grievance'],
+        'incometax.help': ['help', 'help & guidance'],
         'incometax.individual_huf': ['individual', 'huf', 'e-file'],
         'incometax.company': ['company', 'authorised partners'],
         'incometax.non_company': ['non-company', 'pending actions'],
         'incometax.tax_professionals': ['tax professional', 'tax professionals & others', 'services'],
         'incometax.downloads': ['downloads', 'ais'],
-        'incometax.help': ['help', 'grievances', 'help & guidance'],
       };
 
       const hideByText = () => {
@@ -229,27 +235,30 @@ async function initEnforcer() {
 
         // Query candidate buttons, links, and list items in the navigation/header
         const candidates = document.querySelectorAll<HTMLElement>(
-          'nav button, nav a, nav li, header button, header a, header li, [role="navigation"] button, [role="navigation"] a, [id*="navBar-"], app-menu-item-unlogged button, .mat-mdc-tab-header, .mat-mdc-tab, button, a'
+          'nav button, nav a, nav li, header button, header a, header li, [role="navigation"] button, [role="navigation"] a, [id*="navBar-"], app-menu-item-unlogged button, .mat-mdc-tab-header, .mat-mdc-tab, .mat-mdc-menu-trigger, .menuText, [role="menuitem"], [id="e-File"], [id="Authorised Partners"], [id="Services"], [id="AIS"], [id="Pending Actions"], [id="Grievances"], [id="Help"], button, a'
         );
 
         candidates.forEach(el => {
-          const rect = el.getBoundingClientRect();
-          // Navbar elements are within the top 200px of the viewport
-          if (rect.top > 200 && rect.height > 0) return;
-
           const text = (el.innerText || el.textContent || '').trim().toLowerCase();
+          const labelText = (el.querySelector('.mdc-button__label')?.textContent || '').trim().toLowerCase();
           const nameAttr = (el.getAttribute('name') || '').trim().toLowerCase();
           const idAttr = (el.getAttribute('id') || '').trim().toLowerCase();
 
+          // Target navigation IDs should never be excluded by vertical offset
+          const isKnownNavId = ['e-file', 'authorised partners', 'services', 'ais', 'pending actions', 'grievances', 'help'].includes(idAttr);
+          const rect = el.getBoundingClientRect();
+          if (!isKnownNavId && rect.top > 400 && rect.height > 0) return;
+
           const matches = keywordsToHide.some(kw => {
             if (kw === 'company') {
-              if (text.includes('non-company') || nameAttr.includes('non-company')) return false;
+              if (text.includes('non-company') || nameAttr.includes('non-company') || labelText.includes('non-company')) return false;
             }
             return (
               text === kw ||
+              labelText === kw ||
               nameAttr === kw ||
               idAttr === kw ||
-              (kw.length >= 4 && (text.includes(kw) || nameAttr.includes(kw) || idAttr.includes(kw)))
+              (kw.length >= 3 && (text.includes(kw) || labelText.includes(kw) || nameAttr.includes(kw) || idAttr.includes(kw)))
             );
           });
 
@@ -258,9 +267,10 @@ async function initEnforcer() {
             el.style.setProperty('visibility', 'hidden', 'important');
             el.style.setProperty('opacity', '0', 'important');
             el.style.setProperty('pointer-events', 'none', 'important');
-            const parent = el.closest('span, li, div.nav-item');
-            if (parent && parent !== document.body && parent.children.length <= 2) {
+            const parent = el.closest('span, li, div.nav-item, app-menu-item, div.menuText');
+            if (parent && parent !== document.body && parent.parentElement && parent.parentElement !== document.body) {
               (parent as HTMLElement).style.setProperty('display', 'none', 'important');
+              (parent as HTMLElement).style.setProperty('visibility', 'hidden', 'important');
             }
           }
         });

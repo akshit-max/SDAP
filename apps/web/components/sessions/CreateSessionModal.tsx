@@ -151,12 +151,18 @@ const PLATFORM_CAPABILITY_MAP: Record<string, { key: string; label: string; desc
     { key: 'gmail.contacts', label: 'Contacts', description: 'Restrict access to Google Contacts' },
   ],
   incometax: [
+    { key: 'incometax.efile', label: 'e-File', description: 'Restrict access to e-File returns, forms, and e-verification' },
+    { key: 'incometax.authorised_partners', label: 'Authorised Partners', description: 'Restrict access to CA assignments and representative assessees' },
+    { key: 'incometax.services', label: 'Services', description: 'Restrict access to e-services, PAN services, and tax payment status' },
+    { key: 'incometax.ais', label: 'AIS (Annual Information Statement)', description: 'Restrict access to Annual Information Statement (AIS) and TIS' },
+    { key: 'incometax.pending_actions', label: 'Pending Actions', description: 'Restrict access to Worklist, e-Proceedings, and outstanding demand' },
+    { key: 'incometax.grievances', label: 'Grievances', description: 'Restrict access to Submit Grievance and Grievance Status' },
+    { key: 'incometax.help', label: 'Help', description: 'Restrict access to Help topics, user manuals, and portal FAQs' },
     { key: 'incometax.individual_huf', label: 'Individual / HUF', description: 'Restrict access to Individual & HUF tax filings and guidance' },
     { key: 'incometax.company', label: 'Company', description: 'Restrict access to Domestic and Foreign Company returns and forms' },
     { key: 'incometax.non_company', label: 'Non-Company (Firms/LLPs/Trusts)', description: 'Restrict access to Partnership Firm, LLP, and Trust services' },
     { key: 'incometax.tax_professionals', label: 'Tax Professionals & CAs', description: 'Restrict access to CA, ERI, and Tax Deductor/Collector services' },
     { key: 'incometax.downloads', label: 'Downloads', description: 'Restrict access to offline utilities and ITR schema downloads' },
-    { key: 'incometax.help', label: 'Help & Guidance', description: 'Restrict access to help topics and assisted filing guidance' },
   ],
 };
 

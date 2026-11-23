@@ -168,13 +168,7 @@ function detectPlatform(hostname: string, url = ''): string {
   if (host.includes('mca.gov.in')) return 'MCA Portal';
   if (host.includes('gst.gov.in')) return 'GST Portal';
   if (host.includes('udyamregistration.gov.in')) return 'Udyam Portal';
-  if (host.includes('incometax.gov.in')) {
-    // Only show "Income Tax Portal detected - Secure fill" when on the login pages
-    if (!url || url.includes('#/login')) {
-      return 'Income Tax Portal';
-    }
-    return '';
-  }
+  if (host.includes('incometax.gov.in')) return 'Income Tax Portal';
   return '';
 }
 
