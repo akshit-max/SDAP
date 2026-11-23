@@ -805,9 +805,19 @@ platformRegistry.register({
       'input[placeholder*="PAN/ Aadhaar" i]',
       'input[placeholder*="User ID" i]',
     ].join(', '),
+    passwordSelector: [
+      '#loginPasswordField',
+      'input#loginPasswordField',
+      'input[name="loginPasswordField"]',
+      'input[type="password"]',
+    ].join(', '),
     submitSelector: 'button.large-buttonprimary, button.primary-button, button[type="submit"]',
   },
-  manualStepMessage: 'WithUs Vault: User ID filled. Click "Continue" to proceed with authentication.',
+  hideElementsCSS: [
+    '.mat-mdc-form-field-icon-suffix button',
+    'button[aria-label*="password" i]',
+    'button[aria-label*="visibility" i]',
+  ],
   capabilityRestrictions: {
     'incometax.individual_huf': {
       hideElementsCSS: [

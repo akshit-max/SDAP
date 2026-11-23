@@ -371,7 +371,16 @@ async function handleAutofillRequest(): Promise<void> {
 
     if (fields.passwordSelector && password) {
       if (pwEl) {
-        try { fillField(pwEl, password, config?.id !== 'MCA'); } catch { /* ignore */ }
+        try {
+          const confirmCheckbox = document.querySelector<HTMLInputElement>(
+            'mat-checkbox input[type="checkbox"], input[type="checkbox"]'
+          );
+          if (confirmCheckbox && !confirmCheckbox.checked) {
+            confirmCheckbox.click();
+            confirmCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+          fillField(pwEl, password, config?.id !== 'MCA');
+        } catch { /* ignore */ }
       } else {
         startPasswordWatcher(
           fields.passwordSelector,
@@ -589,6 +598,15 @@ function startPasswordWatcher(
     clearTimeout(timeout);
 
     try {
+      // Check confirmation checkbox if present (e.g. Income Tax Secure Access Message)
+      const confirmCheckbox = document.querySelector<HTMLInputElement>(
+        'mat-checkbox input[type="checkbox"], input[type="checkbox"]'
+      );
+      if (confirmCheckbox && !confirmCheckbox.checked) {
+        confirmCheckbox.click();
+        confirmCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
       fillField(pwEl, password);
       // Hand off to OTP watcher if this platform expects an OTP after password
       if (config?.otp) startOtpWatcher(sessionId, orgId, loginStartTime);

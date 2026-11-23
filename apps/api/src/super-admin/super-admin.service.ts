@@ -999,11 +999,11 @@ export class SuperAdminService {
         id: 'INCOMETAX',
         name: 'Income Tax Portal',
         category: 'Government (India)',
-        autofillSupport: 'manual_step' as const,
+        autofillSupport: 'full' as const,
         nativeApiIntegration: false,
         otpSupport: false,
         limitations:
-          'Anti-phishing Secure Access Message confirmation + Aadhaar/Mobile OTP. Credentials filled; user confirms message and completes OTP manually.',
+          'Two-step identifier + password flow with anti-phishing confirmation. Aadhaar/Mobile OTP if enabled on taxpayer account.',
       },
     ];
 
