@@ -410,7 +410,7 @@ export const DashboardOverviewScreen: React.FC<DashboardOverviewScreenProps> = (
                   <View style={styles.moduleTitleRow}>
                     <Text style={styles.moduleName}>Integrations</Text>
                     <View style={styles.modulePill}>
-                      <Text style={styles.modulePillText}>11 Platforms</Text>
+                      <Text style={styles.modulePillText}>12 Platforms</Text>
                     </View>
                   </View>
                   <Text style={styles.moduleDesc}>GitHub, Vercel, Shopify, Stripe, MCA, GST...</Text>

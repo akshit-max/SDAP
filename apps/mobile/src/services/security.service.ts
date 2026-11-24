@@ -120,6 +120,18 @@ export const PLATFORM_SECURITY_REGISTRY: Record<string, PlatformSecurityConfig> 
     ],
     defaultLoginUrl: 'https://mail.google.com',
   },
+  INCOMETAX: {
+    id: 'INCOMETAX',
+    name: 'Income Tax Portal',
+    allowedDomains: ['incometax.gov.in', 'eportal.incometax.gov.in'],
+    defaultLoginUrl: 'https://eportal.incometax.gov.in/iec/foservices/#/login',
+  },
+  ITR: {
+    id: 'INCOMETAX',
+    name: 'Income Tax Portal',
+    allowedDomains: ['incometax.gov.in', 'eportal.incometax.gov.in'],
+    defaultLoginUrl: 'https://eportal.incometax.gov.in/iec/foservices/#/login',
+  },
   GOOGLE_ADS: {
     id: 'GOOGLE_ADS',
     name: 'Google Ads',

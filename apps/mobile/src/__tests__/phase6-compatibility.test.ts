@@ -20,7 +20,7 @@ console.log('================================================================');
 console.log('WITHUS MOBILE SECURE BROWSER PoC — PHASE 6 COMPATIBILITY SUITE');
 console.log('================================================================');
 
-const ALL_11_PLATFORMS = [
+const ALL_12_PLATFORMS = [
   { id: 'GITHUB', name: 'GitHub', type: 'DIRECT_PASS', expectedDomain: 'github.com' },
   { id: 'VERCEL', name: 'Vercel', type: 'CONDITIONAL', expectedDomain: 'vercel.com' },
   { id: 'GODADDY', name: 'GoDaddy', type: 'CONDITIONAL', expectedDomain: 'godaddy.com' },
@@ -31,12 +31,13 @@ const ALL_11_PLATFORMS = [
   { id: 'MCA', name: 'MCA Portal', type: 'CONDITIONAL', expectedDomain: 'mca.gov.in' },
   { id: 'GST', name: 'GST Portal', type: 'CONDITIONAL', expectedDomain: 'gst.gov.in' },
   { id: 'UDYAM', name: 'Udyam Portal', type: 'CONDITIONAL', expectedDomain: 'udyamregistration.gov.in' },
+  { id: 'INCOMETAX', name: 'Income Tax Portal', type: 'CONDITIONAL', expectedDomain: 'incometax.gov.in' },
   { id: 'GMAIL', name: 'Gmail', type: 'BLOCKED_BY_POLICY', expectedDomain: 'mail.google.com' },
 ];
 
-// Test 1: Configuration Verification across all 11 platforms
-console.log('\n[Test 1] Platform Security Registry Completeness (All 11 Platforms)');
-for (const p of ALL_11_PLATFORMS) {
+// Test 1: Configuration Verification across all 12 platforms
+console.log('\n[Test 1] Platform Security Registry Completeness (All 12 Platforms)');
+for (const p of ALL_12_PLATFORMS) {
   const config = PLATFORM_SECURITY_REGISTRY[p.id];
   assert.ok(config, `Security config missing for platform ${p.id}`);
   assert.strictEqual(config.id, p.id, `Platform ID mismatch for ${p.id}`);
@@ -47,7 +48,7 @@ for (const p of ALL_11_PLATFORMS) {
 
 // Test 2: HTTPS & Origin Allowlist Enforcement
 console.log('\n[Test 2] HTTPS Enforcement & Domain Boundary Isolation');
-for (const p of ALL_11_PLATFORMS) {
+for (const p of ALL_12_PLATFORMS) {
   const config = PLATFORM_SECURITY_REGISTRY[p.id];
   
   // Valid entrypoint
@@ -68,11 +69,11 @@ for (const p of ALL_11_PLATFORMS) {
   const jsEval = NavigationSecurityService.evaluateNavigation('javascript:alert(1)', p.id);
   assert.strictEqual(jsEval.isAllowed, false, `JavaScript scheme must be blocked for ${p.id}`);
 }
-console.log('  ✓ HTTPS and domain isolation verified across all 11 platforms');
+console.log('  ✓ HTTPS and domain isolation verified across all 12 platforms');
 
 // Test 3: Selector Registry Completeness
 console.log('\n[Test 3] Platform Selector Registry Completeness');
-for (const p of ALL_11_PLATFORMS) {
+for (const p of ALL_12_PLATFORMS) {
   const selectors = PLATFORM_SELECTORS[p.id];
   assert.ok(selectors, `Autofill selectors missing for ${p.id}`);
   assert.ok(selectors.usernameSelector.length > 0, `Username selector missing for ${p.id}`);
@@ -81,9 +82,9 @@ for (const p of ALL_11_PLATFORMS) {
   console.log(`  ✓ ${p.id.padEnd(10)}: User='${selectors.usernameSelector.slice(0, 30)}...' Pass='${selectors.passwordSelector.slice(0, 30)}...' OTP='${selectors.otpSelector.slice(0, 30)}...'`);
 }
 
-// Test 4: Autofill Script Generation for all 11 platforms
+// Test 4: Autofill Script Generation for all 12 platforms
 console.log('\n[Test 4] Autofill Script Generation & Sanitization');
-for (const p of ALL_11_PLATFORMS) {
+for (const p of ALL_12_PLATFORMS) {
   const script = AutofillService.buildAutofillScript(p.id, 'test_user@withus.security', 'SecretP@ssword123!');
   assert.ok(script.includes('AUTOFILL_RESULT'), `Script must post AUTOFILL_RESULT for ${p.id}`);
   assert.ok(script.includes('u = null;'), `Script must clear username variable for ${p.id}`);
@@ -91,18 +92,18 @@ for (const p of ALL_11_PLATFORMS) {
   assert.ok(!script.includes('.submit()'), `Script must NOT auto-submit form for ${p.id}`);
   assert.ok(!script.includes('form.requestSubmit'), `Script must NOT call requestSubmit for ${p.id}`);
 }
-console.log('  ✓ Autofill script generation validated across all 11 platforms');
+console.log('  ✓ Autofill script generation validated across all 12 platforms');
 
 // Test 5: OTP Script Generation (Single-Box and Multi-Box)
 console.log('\n[Test 5] OTP Script Generation & Platform-Specific Variations');
-for (const p of ALL_11_PLATFORMS) {
+for (const p of ALL_12_PLATFORMS) {
   const otpScript = AutofillService.buildOtpFillScript(p.id, '849201');
   assert.ok(otpScript.includes('OTP_FILL_RESULT'), `OTP script must post OTP_FILL_RESULT for ${p.id}`);
   assert.ok(otpScript.includes('code = null;'), `OTP script must nullify code variable for ${p.id}`);
   assert.ok(!otpScript.includes('.submit()'), `OTP script must NOT auto-submit for ${p.id}`);
   assert.ok(otpScript.includes('matches.length > 1'), `OTP script must handle multi-box inputs for ${p.id}`);
 }
-console.log('  ✓ OTP script generation validated across all 11 platforms');
+console.log('  ✓ OTP script generation validated across all 12 platforms');
 
 // Test 6: Google OAuth Policy Categorization (Part 4)
 console.log('\n[Test 6] Google OAuth Embedded-WebView Classification');

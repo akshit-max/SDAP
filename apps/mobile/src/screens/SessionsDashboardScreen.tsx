@@ -600,6 +600,7 @@ export const SessionsDashboardScreen: React.FC<SessionsDashboardScreenProps> = (
                   'MCA',
                   'GST',
                   'UDYAM',
+                  'INCOMETAX',
                   'GMAIL',
                 ].map((p) => {
                   const isSel = selectedPlatform === p;

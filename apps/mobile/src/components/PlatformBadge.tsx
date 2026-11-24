@@ -26,6 +26,8 @@ const PLATFORM_ICONS: Record<string, string> = {
   GST: '📑',
   UDYAM: '🇮🇳',
   GMAIL: '✉️',
+  INCOMETAX: '₹',
+  ITR: '₹',
   DEFAULT: '🔐',
 };
 

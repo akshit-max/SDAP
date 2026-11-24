@@ -88,6 +88,8 @@ export const PLATFORM_COLORS: Record<string, { bg: string; text: string; border:
   GST: { bg: '#1E293B', text: '#34D399', border: '#065F46' },
   UDYAM: { bg: '#1C1917', text: '#F97316', border: '#7C2D12' },
   GMAIL: { bg: '#2D1515', text: '#F87171', border: '#7F1D1D' },
+  INCOMETAX: { bg: '#172554', text: '#60A5FA', border: '#1E3A8A' },
+  ITR: { bg: '#172554', text: '#60A5FA', border: '#1E3A8A' },
   DEFAULT: { bg: '#1E293B', text: '#94A3B8', border: '#334155' },
 };
 
